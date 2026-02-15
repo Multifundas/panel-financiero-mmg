@@ -6,23 +6,12 @@ function initApp() {
   const existingConfig = loadData(STORAGE_KEYS.config);
 
   if (!existingConfig || !existingConfig.initialized) {
-    // First run: generate and save sample data
-    const sampleData = generateSampleData();
-    saveData(STORAGE_KEYS.config,           sampleData.config);
-    saveData(STORAGE_KEYS.categorias_gasto, sampleData.categorias_gasto);
-    saveData(STORAGE_KEYS.instituciones,    sampleData.instituciones);
-    saveData(STORAGE_KEYS.tipos_cambio,     sampleData.tipos_cambio);
-    saveData(STORAGE_KEYS.cuentas,          sampleData.cuentas);
-    saveData(STORAGE_KEYS.movimientos,      sampleData.movimientos);
-    saveData(STORAGE_KEYS.rendimientos,     sampleData.rendimientos);
-    saveData(STORAGE_KEYS.transferencias,   sampleData.transferencias);
-    saveData(STORAGE_KEYS.prestamos,       sampleData.prestamos);
-    saveData(STORAGE_KEYS.propiedades,     sampleData.propiedades);
-    saveData(STORAGE_KEYS.historial_patrimonio, sampleData.historial_patrimonio);
-    saveData(STORAGE_KEYS.presupuestos,        sampleData.presupuestos);
-    saveData(STORAGE_KEYS.plantillas_recurrentes, sampleData.plantillas_recurrentes);
-    saveData(STORAGE_KEYS.metas,                 sampleData.metas);
-    console.log('Panel Financiero: datos de ejemplo generados.');
+    // First run: initialize with default config and empty data (no sample data)
+    saveData(STORAGE_KEYS.config,           getDefaultConfig());
+    saveData(STORAGE_KEYS.categorias_gasto, getDefaultCategorias());
+    saveData(STORAGE_KEYS.instituciones,    getDefaultInstituciones());
+    saveData(STORAGE_KEYS.tipos_cambio,     getDefaultTiposCambio());
+    console.log('Panel Financiero: configuracion inicial creada.');
   }
 
   // Apply theme
