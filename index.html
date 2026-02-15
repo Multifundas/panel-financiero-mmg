@@ -183,6 +183,9 @@
           </div>
         </div>
         <div class="header-right">
+          <button class="theme-toggle" onclick="openManual()" title="Manual de uso">
+            <i class="fas fa-book"></i>
+          </button>
           <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
             <i id="themeIcon" class="fas fa-moon"></i>
           </button>
@@ -221,6 +224,17 @@
         <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
       </div>
       <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Manual Modal -->
+  <div id="manualOverlay" class="manual-overlay" onclick="closeManual(event)">
+    <div class="manual-content" onclick="event.stopPropagation()">
+      <div class="manual-header">
+        <h2><i class="fas fa-book"></i> Manual de Uso</h2>
+        <button class="modal-close" onclick="closeManual()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="manual-body" id="manualBody"></div>
     </div>
   </div>
 
@@ -275,6 +289,7 @@
   <script src="js/mod-simulador.js"></script>
   <script src="js/mod-configuracion.js"></script>
   <script src="js/mod-ai-assistant.js"></script>
+  <script src="js/manual.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
