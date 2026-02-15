@@ -1,9 +1,37 @@
+/* ---------- Live Comma Formatting Helper ---------- */
+function simFormatCommaInput(el) {
+  var cursorPos = el.selectionStart;
+  var raw = el.value.replace(/[^0-9.]/g, '');
+  // Handle multiple dots - keep only the first
+  var parts = raw.split('.');
+  if (parts.length > 2) {
+    raw = parts[0] + '.' + parts.slice(1).join('');
+  }
+  var intPart = parts[0];
+  var decPart = parts.length > 1 ? '.' + parts[1] : '';
+  // Add commas to integer part
+  var formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + decPart;
+  // Calculate how many commas were added before cursor
+  var oldLen = el.value.length;
+  el.value = formatted;
+  var newLen = formatted.length;
+  var diff = newLen - oldLen;
+  el.setSelectionRange(cursorPos + diff, cursorPos + diff);
+}
+
+function simParseCommaValue(id) {
+  var el = document.getElementById(id);
+  if (!el) return 0;
+  return parseFloat(el.value.replace(/,/g, '')) || 0;
+}
+
 function renderSimulador() {
   const el = document.getElementById('module-simulador');
 
   // -- Load data for pre-filling --
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
   // Patrimonio total (active accounts in MXN)
@@ -29,6 +57,33 @@ function renderSimulador() {
   });
   const totalIngresos3m = ingresosRecientes.reduce((s, mv) => s + toMXN(mv.monto, mv.moneda, tiposCambio), 0);
   const ingresoMensualProm = ingresosRecientes.length > 0 ? Math.round(totalIngresos3m / 3) : 0;
+
+  // -- Average annual interest from last 12 months rendimientos (weighted by capital) --
+  const cuentaMap = {};
+  cuentas.forEach(c => { cuentaMap[c.id] = c; });
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const rend12 = rendimientos.filter(r => {
+    if (!r.periodo) return false;
+    var parts = r.periodo.split('-');
+    var rDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+    return rDate >= twelveMonthsAgo;
+  });
+  let sumCapTasa12 = 0;
+  let sumCap12 = 0;
+  rend12.forEach(r => {
+    var cta = cuentaMap[r.cuenta_id];
+    var capital = cta ? toMXN(cta.saldo, cta.moneda, tiposCambio) : 0;
+    var tasa = r.rendimiento_pct || 0;
+    if (capital > 0 && tasa > 0) {
+      sumCapTasa12 += capital * tasa;
+      sumCap12 += capital;
+    }
+  });
+  // Annualize: rendimiento_pct in rendimientos is typically per-period (monthly),
+  // so we use it as-is since users enter annual rate in the rendimientos module.
+  // If rendimientos store monthly rates, multiply by 12. We'll use as-is (annual).
+  const avgRendAnual12 = sumCap12 > 0 ? (sumCapTasa12 / sumCap12) : 8;
+  const avgRendRedondeado = Math.round(avgRendAnual12 * 10) / 10;
 
   el.innerHTML = `
     <!-- Tab Navigation -->
@@ -59,15 +114,15 @@ function renderSimulador() {
         <div class="grid-2" style="margin-bottom:16px;">
           <div class="form-group">
             <label class="form-label">Capital actual (MXN)</label>
-            <input type="number" class="form-input" id="dur-capital" value="${Math.round(patrimonioTotal)}" step="1000">
+            <input type="text" class="form-input sim-money-input" id="dur-capital" value="${Math.round(patrimonioTotal).toLocaleString('en-US')}" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Gasto mensual estimado (MXN)</label>
-            <input type="number" class="form-input" id="dur-gasto" value="${gastoMensualProm}" step="500">
+            <input type="text" class="form-input sim-money-input" id="dur-gasto" value="${gastoMensualProm.toLocaleString('en-US')}" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Rendimiento anual esperado (%)</label>
-            <input type="number" class="form-input" id="dur-rendimiento" value="8" step="0.1">
+            <input type="number" class="form-input" id="dur-rendimiento" value="${avgRendRedondeado}" step="0.1">
           </div>
           <div class="form-group">
             <label class="form-label">Tasa de inflacion anual (%)</label>
@@ -75,7 +130,7 @@ function renderSimulador() {
           </div>
           <div class="form-group">
             <label class="form-label">Ingresos fijos mensuales (MXN)</label>
-            <input type="number" class="form-input" id="dur-ingresos" value="${ingresoMensualProm}" step="500">
+            <input type="text" class="form-input sim-money-input" id="dur-ingresos" value="${ingresoMensualProm.toLocaleString('en-US')}" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
         </div>
         <button class="btn btn-primary" onclick="calcularDuracion()">
@@ -124,11 +179,11 @@ function renderSimulador() {
         <div class="grid-2" style="margin-bottom:16px;">
           <div class="form-group">
             <label class="form-label">Monto a invertir (MXN)</label>
-            <input type="number" class="form-input" id="inv-monto" value="500000" step="10000">
+            <input type="text" class="form-input sim-money-input" id="inv-monto" value="500,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Tasa rendimiento anual (%)</label>
-            <input type="number" class="form-input" id="inv-tasa" value="10" step="0.1">
+            <input type="number" class="form-input" id="inv-tasa" value="${avgRendRedondeado}" step="0.1">
           </div>
           <div class="form-group">
             <label class="form-label">Plazo (meses)</label>
@@ -136,7 +191,7 @@ function renderSimulador() {
           </div>
           <div class="form-group">
             <label class="form-label">Aportaciones mensuales adicionales (MXN)</label>
-            <input type="number" class="form-input" id="inv-aportacion" value="0" step="1000">
+            <input type="text" class="form-input sim-money-input" id="inv-aportacion" value="0" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Inflacion anual (%)</label>
@@ -209,7 +264,7 @@ function renderSimulador() {
               </div>
               <div class="form-group">
                 <label class="form-label">Monto inicial (MXN)</label>
-                <input type="number" class="form-input" id="comp-monto-0" value="500000" step="10000">
+                <input type="text" class="form-input sim-money-input" id="comp-monto-0" value="500,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
               </div>
               <div class="form-group">
                 <label class="form-label">Tasa anual (%)</label>
@@ -234,7 +289,7 @@ function renderSimulador() {
               </div>
               <div class="form-group">
                 <label class="form-label">Monto inicial (MXN)</label>
-                <input type="number" class="form-input" id="comp-monto-1" value="500000" step="10000">
+                <input type="text" class="form-input sim-money-input" id="comp-monto-1" value="500,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
               </div>
               <div class="form-group">
                 <label class="form-label">Tasa anual (%)</label>
@@ -259,7 +314,7 @@ function renderSimulador() {
               </div>
               <div class="form-group">
                 <label class="form-label">Monto inicial (MXN)</label>
-                <input type="number" class="form-input" id="comp-monto-2" value="500000" step="10000">
+                <input type="text" class="form-input sim-money-input" id="comp-monto-2" value="500,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
               </div>
               <div class="form-group">
                 <label class="form-label">Tasa anual (%)</label>
@@ -340,7 +395,7 @@ function renderSimulador() {
               </div>
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Monto (MXN)</label>
-                <input type="number" class="form-input imp-evento-monto" value="200000" step="10000">
+                <input type="text" class="form-input sim-money-input imp-evento-monto" value="200,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
               </div>
             </div>
           </div>
@@ -352,8 +407,10 @@ function renderSimulador() {
         </div>
         <div class="grid-2" style="margin-bottom:16px;">
           <div class="form-group">
-            <label class="form-label">Rendimiento anual supuesto (%)</label>
-            <input type="number" class="form-input" id="imp-rendimiento" value="8" step="0.1">
+            <label class="form-label">Rendimiento anual supuesto (%)
+              ${rend12.length > 0 ? '<span style="font-size:11px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
+            </label>
+            <input type="number" class="form-input" id="imp-rendimiento" value="${avgRendRedondeado}" step="0.1">
           </div>
           <div class="form-group">
             <label class="form-label">Inflacion anual supuesta (%)</label>
@@ -404,11 +461,11 @@ function renderSimulador() {
         <div class="grid-3" style="margin-bottom:16px;">
           <div class="form-group">
             <label class="form-label">Capital inicial</label>
-            <input type="number" class="form-input" id="ic-capital" value="100000" step="1000" min="0">
+            <input type="text" class="form-input sim-money-input" id="ic-capital" value="100,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Tasa de interes anual (%)</label>
-            <input type="number" class="form-input" id="ic-tasa" value="10" step="0.1" min="0">
+            <input type="number" class="form-input" id="ic-tasa" value="${avgRendRedondeado}" step="0.1" min="0">
           </div>
           <div class="form-group">
             <label class="form-label">Plazo en anos</label>
@@ -425,7 +482,7 @@ function renderSimulador() {
           </div>
           <div class="form-group">
             <label class="form-label">Aportacion periodica</label>
-            <input type="number" class="form-input" id="ic-aportacion" value="0" step="100" min="0">
+            <input type="text" class="form-input sim-money-input" id="ic-aportacion" value="0" inputmode="decimal" oninput="simFormatCommaInput(this)">
           </div>
           <div class="form-group">
             <label class="form-label">Frecuencia de aportacion</label>
@@ -520,11 +577,11 @@ function switchSimTab(tab) {
    7a. DURACION DE AHORROS -- Calculo
    ============================================================ */
 function calcularDuracion() {
-  const capital = parseFloat(document.getElementById('dur-capital').value) || 0;
-  const gastoMensual = parseFloat(document.getElementById('dur-gasto').value) || 0;
+  const capital = simParseCommaValue('dur-capital');
+  const gastoMensual = simParseCommaValue('dur-gasto');
   const rendAnual = parseFloat(document.getElementById('dur-rendimiento').value) || 0;
   const inflAnual = parseFloat(document.getElementById('dur-inflacion').value) || 0;
-  const ingresosMens = parseFloat(document.getElementById('dur-ingresos').value) || 0;
+  const ingresosMens = simParseCommaValue('dur-ingresos');
 
   if (capital <= 0) {
     showToast('El capital debe ser mayor a 0', 'warning');
@@ -707,10 +764,10 @@ function calcularDuracion() {
    7b. SIMULADOR DE INVERSION -- Calculo
    ============================================================ */
 function simularInversion() {
-  const monto = parseFloat(document.getElementById('inv-monto').value) || 0;
+  const monto = simParseCommaValue('inv-monto');
   const tasaAnual = parseFloat(document.getElementById('inv-tasa').value) || 0;
   const plazoMeses = parseInt(document.getElementById('inv-plazo').value) || 0;
-  const aportacionMensual = parseFloat(document.getElementById('inv-aportacion').value) || 0;
+  const aportacionMensual = simParseCommaValue('inv-aportacion');
   const inflAnual = parseFloat(document.getElementById('inv-inflacion').value) || 0;
   const reinversion = document.getElementById('inv-reinversion').checked;
 
@@ -897,7 +954,7 @@ function compararEscenarios() {
 
   for (let i = 0; i < 3; i++) {
     const nombre = document.getElementById('comp-nombre-' + i).value.trim();
-    const monto = parseFloat(document.getElementById('comp-monto-' + i).value) || 0;
+    const monto = simParseCommaValue('comp-monto-' + i);
     const tasa = parseFloat(document.getElementById('comp-tasa-' + i).value) || 0;
     const plazo = parseInt(document.getElementById('comp-plazo-' + i).value) || 0;
     const inflacion = parseFloat(document.getElementById('comp-inflacion-' + i).value) || 0;
@@ -1041,7 +1098,7 @@ function agregarEventoImpacto() {
   var div = document.createElement('div');
   div.className = 'imp-evento-row';
   div.style.cssText = 'padding:12px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);margin-bottom:10px;';
-  div.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:600;font-size:13px;color:var(--text-primary);">Evento ' + count + '</span><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="this.closest(\'.imp-evento-row\').remove();"><i class="fas fa-trash"></i></button></div><div class="grid-2"><div class="form-group" style="margin-bottom:0;"><label class="form-label">Tipo de evento</label><select class="form-select imp-evento-tipo"><option value="retiro">Retiro de capital</option><option value="compra">Compra grande</option><option value="aumento_gasto">Aumento de gasto mensual</option><option value="reduccion_ingreso">Reduccion de ingreso</option><option value="reduccion_gasto">Reduccion de gasto mensual</option></select></div><div class="form-group" style="margin-bottom:0;"><label class="form-label">Monto (MXN)</label><input type="number" class="form-input imp-evento-monto" value="0" step="10000"></div></div>';
+  div.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:600;font-size:13px;color:var(--text-primary);">Evento ' + count + '</span><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="this.closest(\'.imp-evento-row\').remove();"><i class="fas fa-trash"></i></button></div><div class="grid-2"><div class="form-group" style="margin-bottom:0;"><label class="form-label">Tipo de evento</label><select class="form-select imp-evento-tipo"><option value="retiro">Retiro de capital</option><option value="compra">Compra grande</option><option value="aumento_gasto">Aumento de gasto mensual</option><option value="reduccion_ingreso">Reduccion de ingreso</option><option value="reduccion_gasto">Reduccion de gasto mensual</option></select></div><div class="form-group" style="margin-bottom:0;"><label class="form-label">Monto (MXN)</label><input type="text" class="form-input sim-money-input imp-evento-monto" value="0" inputmode="decimal" oninput="simFormatCommaInput(this)"></div></div>';
   container.appendChild(div);
 }
 
@@ -1051,7 +1108,8 @@ function simularImpacto() {
   var eventos = [];
   rows.forEach(function(row) {
     var tipo = row.querySelector('.imp-evento-tipo').value;
-    var monto = parseFloat(row.querySelector('.imp-evento-monto').value) || 0;
+    var rawVal = row.querySelector('.imp-evento-monto').value || '0';
+    var monto = parseFloat(rawVal.replace(/,/g, '')) || 0;
     if (monto > 0) eventos.push({ tipo: tipo, monto: monto });
   });
 
@@ -1250,11 +1308,11 @@ function simularImpacto() {
    7e. CALCULADORA DE INTERES COMPUESTO
    ============================================================ */
 function calcularInteresCompuesto() {
-  const P = parseFloat(document.getElementById('ic-capital').value) || 0;
+  const P = simParseCommaValue('ic-capital');
   const tasaAnual = parseFloat(document.getElementById('ic-tasa').value) || 0;
   const anos = parseInt(document.getElementById('ic-plazo').value) || 0;
   const n = parseInt(document.getElementById('ic-frecuencia-cap').value) || 12;
-  const PMT = parseFloat(document.getElementById('ic-aportacion').value) || 0;
+  const PMT = simParseCommaValue('ic-aportacion');
   const nAport = parseInt(document.getElementById('ic-frecuencia-aport').value) || 12;
   const moneda = document.getElementById('ic-moneda').value || 'MXN';
 
