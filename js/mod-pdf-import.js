@@ -138,9 +138,165 @@ function extractPdfText(typedArray) {
 
 /* ---------- Parse Bank Statement Text ---------- */
 function parseBankStatement(text) {
+  console.log('=== PDF RAW TEXT START ===');
+  console.log(text);
+  console.log('=== PDF RAW TEXT END ===');
+
   var lines = text.split('\n');
   var rows = [];
-  // Date patterns: DD/MM/YYYY, DD/MM/YY, DD-MM-YYYY, DD MMM YYYY, DD-MMM-YY
+
+  // Try BBVA parser first
+  rows = parseBBVA(lines, text);
+  if (rows.length > 0) {
+    console.log('Parser BBVA detected ' + rows.length + ' rows');
+    return rows;
+  }
+
+  // Try generic parser as fallback
+  rows = parseGeneric(lines);
+  console.log('Parser Generic detected ' + rows.length + ' rows');
+  return rows;
+}
+
+/* ---------- BBVA Mexico Parser ---------- */
+function parseBBVA(lines, fullText) {
+  var rows = [];
+
+  // BBVA uses format: DD/Mmm (e.g., 02/Ene, 15/Feb) or DD/MMM
+  // Typical line with tabs: FechaOp\tFechaApl\tConcepto\tCargo\tAbono\tSaldo
+  // Or sometimes: DD/Mmm\tDD/Mmm\tDESCRIPCION\t1,234.56\t\t12,345.67
+  // Also possible: DD/Mmm\tDESCRIPCION\t1,234.56\t12,345.67
+
+  var meses = {
+    'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06',
+    'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'
+  };
+
+  // Detect year from text (BBVA statements usually show "Estado de Cuenta" with a period)
+  var yearMatch = fullText.match(/20[2-3]\d/);
+  var statementYear = yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
+
+  // BBVA short date: DD/Mmm (e.g., 02/Ene, 15/Feb, 3/Mar)
+  var bbvaDateRegex = /^(\d{1,2})\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)/i;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line.length < 5) continue;
+
+    // Check if line starts with a BBVA-style date
+    var dateMatch = line.match(bbvaDateRegex);
+    if (!dateMatch) continue;
+
+    var day = dateMatch[1].padStart(2, '0');
+    var monthName = dateMatch[2].toLowerCase().substring(0, 3);
+    var monthNum = meses[monthName];
+    if (!monthNum) continue;
+
+    var fecha = statementYear + '-' + monthNum + '-' + day;
+
+    // Split by tab to get columns
+    var parts = line.split('\t');
+
+    // Extract amounts from the line
+    var amounts = [];
+    var amountPositions = []; // track which column index has amounts
+    var moneyRegex = /^[\$]?\s*([\d,]+\.\d{2})$/;
+
+    // Check each part for amounts (skip first 1-2 parts which are dates)
+    for (var p = 0; p < parts.length; p++) {
+      var cleaned = parts[p].trim().replace(/[\$,]/g, '');
+      var numVal = parseFloat(cleaned);
+      var amtMatch = parts[p].trim().match(/^[\$]?\s*([\d,]+\.\d{2})$/);
+      if (amtMatch) {
+        var val = parseFloat(amtMatch[1].replace(/,/g, ''));
+        if (val > 0) {
+          amounts.push({ value: val, colIdx: p });
+        }
+      }
+    }
+
+    if (amounts.length === 0) continue;
+
+    // Extract description: parts that are not dates and not amounts
+    var descParts = [];
+    for (var p2 = 0; p2 < parts.length; p2++) {
+      var part = parts[p2].trim();
+      if (!part) continue;
+      // Skip if it's a date
+      if (part.match(bbvaDateRegex)) continue;
+      // Skip if it's a pure number/amount
+      if (part.match(/^[\$]?\s*[\d,]+\.\d{2}$/)) continue;
+      // Skip if it matches partial date (just DD/Mmm)
+      if (part.match(/^\d{1,2}\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)/i)) continue;
+      descParts.push(part);
+    }
+
+    var descripcion = descParts.join(' ').replace(/\s+/g, ' ').trim();
+    if (!descripcion || descripcion.length < 2) {
+      descripcion = 'Movimiento bancario';
+    }
+
+    // Determine type and amount
+    // BBVA columns: typically ... | Cargo | Abono | Saldo
+    // If 3+ amounts: last is saldo, second-to-last could be abono, first is cargo
+    // If 2 amounts: one is cargo/abono, last is saldo
+    var monto, tipo;
+
+    if (amounts.length >= 3) {
+      // Last = saldo, middle = abono, first = cargo
+      var cargo = amounts[0].value;
+      var abono = amounts[1].value;
+      // Determine based on which column is populated (the other is usually 0 or missing)
+      // In BBVA: if cargo column has value, it's a gasto; if abono, it's ingreso
+      // Both could have values in rare cases
+      monto = cargo;
+      tipo = 'gasto';
+      // Check if abono is significantly different from saldo
+      if (abono !== amounts[amounts.length - 1].value) {
+        // Both cargo and abono columns present
+        monto = cargo;
+        tipo = 'gasto';
+      }
+    } else if (amounts.length === 2) {
+      // One is the movement, the other is the running balance (saldo)
+      // The balance is usually the larger number and the last column
+      monto = amounts[0].value;
+      // Determine type by keywords
+      var lineUpper = line.toUpperCase();
+      if (lineUpper.indexOf('ABONO') >= 0 || lineUpper.indexOf('DEPOSITO') >= 0 ||
+          lineUpper.indexOf('PAGO RECIBIDO') >= 0 || lineUpper.indexOf('NOMINA') >= 0 ||
+          lineUpper.indexOf('DEVOLUCION') >= 0 || lineUpper.indexOf('BONIFICACION') >= 0 ||
+          lineUpper.indexOf('RENDIMIENTO') >= 0 || lineUpper.indexOf('INTERES') >= 0 ||
+          lineUpper.indexOf('SPEI RECIBIDO') >= 0 || lineUpper.indexOf('TRANSFERENCIA RECIBIDA') >= 0 ||
+          lineUpper.indexOf('DEP ') >= 0 || lineUpper.indexOf('REEMBOLSO') >= 0) {
+        tipo = 'ingreso';
+      } else {
+        tipo = 'gasto';
+      }
+    } else {
+      monto = amounts[0].value;
+      tipo = 'gasto';
+    }
+
+    if (monto < 1) continue;
+
+    rows.push({
+      fecha: fecha,
+      descripcion: descripcion,
+      monto: monto,
+      tipo: tipo,
+      categoria_id: null,
+      categoria_nombre: '',
+      selected: false
+    });
+  }
+
+  return rows;
+}
+
+/* ---------- Generic Parser (fallback) ---------- */
+function parseGeneric(lines) {
+  var rows = [];
   var dateRegex = /(\d{1,2})[\/\-](\d{1,2}|\w{3})[\/\-](\d{2,4})/;
   var moneyRegex = /[\$]?\s*([\d,]+\.\d{2})/g;
 
@@ -154,9 +310,8 @@ function parseBankStatement(text) {
     // Try to extract amounts
     var amounts = [];
     var m;
-    var tmpLine = line;
     moneyRegex.lastIndex = 0;
-    while ((m = moneyRegex.exec(tmpLine)) !== null) {
+    while ((m = moneyRegex.exec(line)) !== null) {
       var val = parseFloat(m[1].replace(/,/g, ''));
       if (val > 0 && val < 999999999) {
         amounts.push(val);
@@ -174,7 +329,6 @@ function parseBankStatement(text) {
     var firstAmountMatch = line.match(/[\$]?\s*[\d,]+\.\d{2}/);
     var amountStart = firstAmountMatch ? line.indexOf(firstAmountMatch[0]) : line.length;
     var descripcion = line.substring(dateEnd, amountStart).trim();
-    // Clean up description
     descripcion = descripcion.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
     if (!descripcion || descripcion.length < 2) {
       descripcion = 'Movimiento bancario';
@@ -183,12 +337,7 @@ function parseBankStatement(text) {
     // Determine type and amount
     var monto, tipo;
     if (amounts.length >= 2) {
-      // Two columns: typically Cargo (gasto) and Abono (ingreso)
-      // The non-zero or larger one in position determines which it is
-      // Common: first column = cargo, second = abono, or vice versa
-      // Heuristic: if first amount is in "left" position, it's cargo (gasto)
-      monto = amounts[amounts.length - 1]; // Use last amount (often the relevant one)
-      // Check if line contains keywords suggesting income
+      monto = amounts[amounts.length - 1];
       var lineUpper = line.toUpperCase();
       if (lineUpper.indexOf('ABONO') >= 0 || lineUpper.indexOf('DEPOSITO') >= 0 ||
           lineUpper.indexOf('TRANSFERENCIA RECIBIDA') >= 0 || lineUpper.indexOf('NOMINA') >= 0 ||
@@ -196,7 +345,6 @@ function parseBankStatement(text) {
           lineUpper.indexOf('BONIFICACION') >= 0 || lineUpper.indexOf('RENDIMIENTO') >= 0 ||
           lineUpper.indexOf('INTERES') >= 0 || lineUpper.indexOf('DIVIDENDO') >= 0) {
         tipo = 'ingreso';
-        // For two-column statements, income is often the second amount
         monto = amounts.length >= 2 ? amounts[1] : amounts[0];
       } else {
         tipo = 'gasto';
@@ -204,7 +352,6 @@ function parseBankStatement(text) {
       }
     } else {
       monto = amounts[0];
-      // Single amount: check for +/- or keywords
       var lineCheck = line.toUpperCase();
       if (line.indexOf('+') >= 0 || lineCheck.indexOf('ABONO') >= 0 ||
           lineCheck.indexOf('DEPOSITO') >= 0 || lineCheck.indexOf('NOMINA') >= 0 ||
@@ -215,7 +362,6 @@ function parseBankStatement(text) {
       }
     }
 
-    // Skip very small amounts likely to be balances or headers
     if (monto < 1) continue;
 
     rows.push({
