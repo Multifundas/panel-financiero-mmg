@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panel Financiero</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- SheetJS for Excel parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Supabase Auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LOGIN OVERLAY (shown when Supabase auth is configured) -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div id="loginOverlay" class="login-overlay" style="display:flex;">
+    <div class="login-container">
+      <div class="login-brand">
+        <div class="brand-icon" style="width:64px;height:64px;font-size:22px;margin:0 auto;">MMG</div>
+        <h1 style="font-size:24px;font-weight:800;color:var(--text-primary);margin:0;">Panel Financiero</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin:0;">Gestion financiera personal</p>
+      </div>
+      <div id="loginFormContainer">
+        <form id="loginForm" onsubmit="handleLocalLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Usuario</label>
+            <input type="text" id="authUser" class="form-input" required placeholder="Usuario" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contrasena</label>
+            <input type="password" id="authPassword" class="form-input" required placeholder="********" autocomplete="current-password">
+          </div>
+          <div id="authError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">
+            <i class="fas fa-sign-in-alt"></i> Iniciar Sesion
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LOCK SCREEN (shown after inactivity) -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div id="lockScreen" class="lock-screen" style="display:none;">
+    <div class="login-container">
+      <div class="login-brand">
+        <div class="brand-icon" style="width:56px;height:56px;font-size:22px;">
+          <i class="fas fa-lock"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--text-primary);margin:0;">Sesion Bloqueada</h2>
+        <p id="lockUserEmail" style="font-size:13px;color:var(--text-muted);margin:0;"></p>
+      </div>
+      <form onsubmit="handleUnlock(event)">
+        <div class="form-group">
+          <label class="form-label">Contrasena</label>
+          <input type="password" id="lockPassword" class="form-input" required placeholder="Ingresa tu contrasena">
+        </div>
+        <div id="lockError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">
+          <i class="fas fa-unlock"></i> Desbloquear
+        </button>
+      </form>
+      <div style="margin-top:16px;text-align:center;">
+        <a onclick="handleLogout()" style="color:var(--accent-red);cursor:pointer;font-size:13px;">Cerrar sesion</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- APP LAYOUT -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="app-layout" style="display:none;">
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SIDEBAR                                      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">MMG</div>
+        <span class="brand-text">Panel Financiero</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a class="nav-item active" data-module="dashboard" onclick="navigateTo('dashboard')">
+          <i class="fas fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-module="cuentas" onclick="navigateTo('cuentas')">
+          <i class="fas fa-wallet"></i>
+          <span>Cuentas</span>
+        </a>
+        <a class="nav-item" data-module="movimientos" onclick="navigateTo('movimientos')">
+          <i class="fas fa-exchange-alt"></i>
+          <span>Movimientos</span>
+        </a>
+
+        <div class="nav-section-label">Analisis</div>
+        <a class="nav-item" data-module="rendimientos" onclick="navigateTo('rendimientos')">
+          <i class="fas fa-chart-line"></i>
+          <span>Rendimientos</span>
+        </a>
+        <a class="nav-item" data-module="gastos" onclick="navigateTo('gastos')">
+          <i class="fas fa-receipt"></i>
+          <span>Gastos</span>
+        </a>
+        <a class="nav-item" data-module="transferencias" onclick="navigateTo('transferencias')">
+          <i class="fas fa-arrows-alt-h"></i>
+          <span>Transferencias</span>
+        </a>
+        <a class="nav-item" data-module="metas" onclick="navigateTo('metas')">
+          <i class="fas fa-bullseye"></i>
+          <span>Metas</span>
+        </a>
+
+        <div class="nav-section-label">Activos</div>
+        <a class="nav-item" data-module="prestamos" onclick="navigateTo('prestamos')">
+          <i class="fas fa-handshake"></i>
+          <span>Prestamos</span>
+        </a>
+        <a class="nav-item" data-module="propiedades" onclick="navigateTo('propiedades')">
+          <i class="fas fa-building"></i>
+          <span>Propiedades</span>
+        </a>
+
+        <div class="nav-section-label">Herramientas</div>
+        <a class="nav-item" data-module="simulador" onclick="navigateTo('simulador')">
+          <i class="fas fa-calculator"></i>
+          <span>Simulador</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-item" data-module="configuracion" onclick="navigateTo('configuracion')">
+          <i class="fas fa-cog"></i>
+          <span>Configuracion</span>
+        </a>
+        <a class="nav-item" id="logoutNavItem" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesion</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Sidebar backdrop overlay for mobile -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- MAIN CONTENT                                 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="main-area">
+
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="sidebar-toggle" onclick="toggleSidebar()" title="Colapsar menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div>
+            <div class="header-title" id="headerTitle">Dashboard</div>
+            <div class="header-date" id="headerDate"></div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+            <i id="themeIcon" class="fas fa-moon"></i>
+          </button>
+          <div class="patrimonio-badge">
+            <div>
+              <div class="label">Patrimonio Total</div>
+              <div class="value" id="headerPatrimonio">$0.00</div>
+              <div id="headerTipoCambio" style="font-size:10px;color:var(--text-muted);margin-top:2px;letter-spacing:0.3px;"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <div id="module-dashboard" class="module-section active"></div>
+        <div id="module-cuentas" class="module-section"></div>
+        <div id="module-movimientos" class="module-section"></div>
+        <div id="module-rendimientos" class="module-section"></div>
+        <div id="module-gastos" class="module-section"></div>
+        <div id="module-transferencias" class="module-section"></div>
+        <div id="module-prestamos" class="module-section"></div>
+        <div id="module-propiedades" class="module-section"></div>
+        <div id="module-metas" class="module-section"></div>
+        <div id="module-simulador" class="module-section"></div>
+        <div id="module-configuracion" class="module-section"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" id="modalContent" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle"></h3>
+        <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- AI Assistant Chat -->
+  <div id="aiAssistantBtn" class="ai-fab" onclick="toggleAIAssistant()" title="Asistente AI">
+    <i class="fas fa-robot"></i>
+  </div>
+  <div id="aiAssistantPanel" class="ai-panel" style="display:none;">
+    <div class="ai-panel-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-robot" style="color:var(--accent-blue);"></i>
+        <span style="font-weight:700;">Asistente Financiero AI</span>
+      </div>
+      <button onclick="toggleAIAssistant()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="aiChatMessages" class="ai-chat-messages">
+      <div class="ai-message ai-bot">
+        <div class="ai-avatar"><i class="fas fa-robot"></i></div>
+        <div class="ai-bubble">Hola! Soy tu asistente financiero. Puedo ayudarte a analizar tus inversiones, gastos, y darte sugerencias. Preguntame lo que necesites.</div>
+      </div>
+    </div>
+    <div class="ai-chat-input">
+      <input type="text" id="aiChatInput" class="form-input" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendAIMessage()">
+      <button class="btn btn-primary" onclick="sendAIMessage()" style="padding:8px 12px;">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript (load order matters) -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/mod-dashboard.js"></script>
+  <script src="js/mod-cuentas.js"></script>
+  <script src="js/mod-movimientos.js"></script>
+  <script src="js/mod-rendimientos.js"></script>
+  <script src="js/mod-gastos.js"></script>
+  <script src="js/mod-transferencias.js"></script>
+  <script src="js/mod-prestamos.js"></script>
+  <script src="js/mod-propiedades.js"></script>
+  <script src="js/mod-carga-masiva.js"></script>
+  <script src="js/mod-metas.js"></script>
+  <script src="js/mod-simulador.js"></script>
+  <script src="js/mod-configuracion.js"></script>
+  <script src="js/mod-ai-assistant.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
