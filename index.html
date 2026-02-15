@@ -41,10 +41,10 @@
         <p style="font-size:13px;color:var(--text-muted);margin:0;">Gestion financiera personal</p>
       </div>
       <div id="loginFormContainer">
-        <form id="loginForm" onsubmit="handleLocalLogin(event)">
+        <form id="loginForm" onsubmit="handleLogin(event)">
           <div class="form-group">
-            <label class="form-label">Usuario</label>
-            <input type="text" id="authUser" class="form-input" required placeholder="Usuario" autocomplete="username">
+            <label class="form-label">Correo electronico</label>
+            <input type="email" id="authEmail" class="form-input" required placeholder="tu@correo.com" autocomplete="email">
           </div>
           <div class="form-group">
             <label class="form-label">Contrasena</label>

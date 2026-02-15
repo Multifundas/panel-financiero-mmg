@@ -597,10 +597,12 @@ function clearAllData() {
   if (!confirm('\u00BFDeseas borrar TODOS los datos?')) return;
   if (!confirm('ESTA ACCION ES IRREVERSIBLE. Se eliminaran todas las cuentas, movimientos, rendimientos y configuraciones. \u00BFContinuar?')) return;
   for (const key of Object.values(STORAGE_KEYS)) {
-    localStorage.removeItem(key);
+    _dataCache[key] = undefined;
   }
-  showToast('Todos los datos han sido eliminados. Recargando...');
-  setTimeout(() => location.reload(), 1000);
+  clearAllSupabaseData().then(function() {
+    showToast('Todos los datos han sido eliminados. Recargando...');
+    setTimeout(() => location.reload(), 1000);
+  });
 }
 
 /* ============================================================
@@ -611,14 +613,7 @@ function clearAllData() {
  * Calculate approximate localStorage usage in bytes for all STORAGE_KEYS.
  */
 function calcularTamanoLocalStorage() {
-  var totalBytes = 0;
-  for (var key of Object.values(STORAGE_KEYS)) {
-    var valor = localStorage.getItem(key);
-    if (valor) {
-      totalBytes += (key.length + valor.length) * 2;
-    }
-  }
-  return totalBytes;
+  return typeof calcularTamanoCache === 'function' ? calcularTamanoCache() : 0;
 }
 
 /**

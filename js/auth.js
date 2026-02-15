@@ -16,33 +16,25 @@ function getSupabaseClient() {
 }
 
 function initAuth() {
-  // Check if already logged in this session
-  if (sessionStorage.getItem('pf_logged_in') === 'true') {
-    document.getElementById('loginOverlay').style.display = 'none';
-    var layout = document.querySelector('.app-layout');
-    if (layout) layout.style.display = 'flex';
-    initApp();
-    return;
-  }
-
   if (!isSupabaseConfigured()) {
-    // Show login screen for local auth
-    console.log('Panel Financiero: modo local con autenticacion.');
-    return; // Wait for user to login
+    console.error('Panel Financiero: Supabase no configurado.');
+    return;
   }
   var client = getSupabaseClient();
   client.auth.getSession().then(function(res) {
     var session = res.data.session;
     if (session) {
       hideLoginScreen();
-      initApp();
+      hydrateCache().then(function() {
+        initApp();
+      });
       setupInactivityTimer(AUTH_INACTIVITY_TIMEOUT);
     } else {
       showLoginScreen();
     }
   }).catch(function(err) {
     console.error('Auth error:', err);
-    initApp();
+    showLoginScreen();
   });
 }
 
@@ -75,32 +67,12 @@ function handleLogin(event) {
         errDiv.style.display = 'block';
       } else {
         hideLoginScreen();
-        initApp();
+        hydrateCache().then(function() {
+          initApp();
+        });
         setupInactivityTimer(AUTH_INACTIVITY_TIMEOUT);
       }
     });
-}
-
-function showSignUpForm() {
-  var container = document.getElementById('loginFormContainer');
-  container.innerHTML = '<form id="signupForm" onsubmit="handleSignUp(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="signupEmail" class="form-input" required placeholder="tu@correo.com"></div><div class="form-group"><label class="form-label">Contrasena</label><input type="password" id="signupPassword" class="form-input" required placeholder="Minimo 6 caracteres" minlength="6"></div><div class="form-group"><label class="form-label">Confirmar contrasena</label><input type="password" id="signupConfirm" class="form-input" required placeholder="********"></div><div id="signupError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div><div id="signupSuccess" style="display:none;color:var(--accent-green);font-size:13px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-user-plus"></i> Crear Cuenta</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showOriginalLoginForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Volver al login</a></div>';
-}
-
-function handleSignUp(event) {
-  event.preventDefault();
-  var email = document.getElementById('signupEmail').value;
-  var password = document.getElementById('signupPassword').value;
-  var confirm = document.getElementById('signupConfirm').value;
-  var errDiv = document.getElementById('signupError');
-  var successDiv = document.getElementById('signupSuccess');
-  errDiv.style.display = 'none';
-  successDiv.style.display = 'none';
-  if (password !== confirm) { errDiv.textContent = 'Las contrasenas no coinciden'; errDiv.style.display = 'block'; return; }
-  var client = getSupabaseClient();
-  client.auth.signUp({ email: email, password: password }).then(function(res) {
-    if (res.error) { errDiv.textContent = res.error.message || 'Error al crear cuenta'; errDiv.style.display = 'block'; }
-    else { successDiv.textContent = 'Cuenta creada. Revisa tu correo para confirmar.'; successDiv.style.display = 'block'; }
-  });
 }
 
 function showResetForm() {
@@ -123,21 +95,23 @@ function handlePasswordReset(event) {
 
 function showOriginalLoginForm() {
   var container = document.getElementById('loginFormContainer');
-  container.innerHTML = '<form id="loginForm" onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="authEmail" class="form-input" required placeholder="tu@correo.com"></div><div class="form-group"><label class="form-label">Contrasena</label><input type="password" id="authPassword" class="form-input" required placeholder="********"></div><div id="authError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showSignUpForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Crear cuenta</a><span style="color:var(--text-muted);margin:0 8px;">|</span><a onclick="showResetForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Olvide mi contrasena</a></div>';
+  container.innerHTML = '<form id="loginForm" onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="authEmail" class="form-input" required placeholder="tu@correo.com"></div><div class="form-group"><label class="form-label">Contrasena</label><input type="password" id="authPassword" class="form-input" required placeholder="********"></div><div id="authError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showResetForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Olvide mi contrasena</a></div>';
 }
 
 function handleLogout() {
-  var client = getSupabaseClient();
-  if (client) {
-    client.auth.signOut().then(function() {});
-  }
-  sessionStorage.removeItem('pf_logged_in');
-  sessionStorage.removeItem('pf_user');
-  document.getElementById('loginOverlay').style.display = 'flex';
-  var layout = document.querySelector('.app-layout');
-  if (layout) layout.style.display = 'none';
-  var pwdField = document.getElementById('authPassword');
-  if (pwdField) pwdField.value = '';
+  flushPendingSaves().then(function() {
+    var client = getSupabaseClient();
+    if (client) {
+      client.auth.signOut().then(function() {});
+    }
+    clearCache();
+    sessionStorage.removeItem('pf_logged_in');
+    sessionStorage.removeItem('pf_user');
+    document.getElementById('loginOverlay').style.display = 'flex';
+    var layout = document.querySelector('.app-layout');
+    if (layout) layout.style.display = 'none';
+    showOriginalLoginForm();
+  });
 }
 
 /* -- Inactivity Timer -- */
@@ -188,44 +162,4 @@ function handleUnlock(event) {
       else { document.getElementById('lockScreen').style.display = 'none'; document.getElementById('lockPassword').value = ''; _lastActivity = Date.now(); setupInactivityTimer(AUTH_INACTIVITY_TIMEOUT); }
     });
   });
-}
-
-/* ============================================================
-   LOCAL AUTHENTICATION (no Supabase required)
-   ============================================================ */
-function handleLocalLogin(event) {
-  event.preventDefault();
-  var user = document.getElementById('authUser').value.trim();
-  var password = document.getElementById('authPassword').value;
-  var errDiv = document.getElementById('authError');
-  errDiv.style.display = 'none';
-
-  var config = loadData(STORAGE_KEYS.config) || {};
-
-  // First time: no credentials set yet, create them
-  if (!config.local_user) {
-    config.local_user = user;
-    config.local_pass = btoa(password);
-    saveData(STORAGE_KEYS.config, config);
-    completeLocalLogin(user);
-    showToast('Credenciales creadas. Usa estos datos para futuros accesos.', 'info');
-    return;
-  }
-
-  // Validate credentials
-  if (config.local_user === user && config.local_pass === btoa(password)) {
-    completeLocalLogin(user);
-  } else {
-    errDiv.textContent = 'Usuario o contrasena incorrectos';
-    errDiv.style.display = 'block';
-  }
-}
-
-function completeLocalLogin(user) {
-  document.getElementById('loginOverlay').style.display = 'none';
-  var layout = document.querySelector('.app-layout');
-  if (layout) layout.style.display = 'flex';
-  sessionStorage.setItem('pf_logged_in', 'true');
-  sessionStorage.setItem('pf_user', user);
-  initApp();
 }

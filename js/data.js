@@ -1,5 +1,5 @@
 /* ============================================================
-   DATA MODEL  -  localStorage helpers
+   DATA MODEL  -  In-memory cache backed by Supabase
    ============================================================ */
 const STORAGE_KEYS = {
   cuentas:          'pf_cuentas',
@@ -18,10 +18,18 @@ const STORAGE_KEYS = {
   metas:                 'pf_metas',
 };
 
+/* ---------- In-memory cache ---------- */
+var _dataCache = {};
+var _cacheReady = false;
+var _pendingSaves = {};
+var _saveTimers = {};
+var _SAVE_DEBOUNCE_MS = 300;
+
 function loadData(key) {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    var val = _dataCache[key];
+    if (val === undefined || val === null) return null;
+    return JSON.parse(JSON.stringify(val)); // deep clone
   } catch (e) {
     console.error('Error loading', key, e);
     return null;
@@ -30,27 +38,230 @@ function loadData(key) {
 
 function saveData(key, data) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    _dataCache[key] = JSON.parse(JSON.stringify(data)); // deep clone into cache
+    _scheduleSyncToSupabase(key);
   } catch (e) {
     console.error('Error saving', key, e);
   }
 }
 
 function loadAll() {
-  const store = {};
-  for (const [name, key] of Object.entries(STORAGE_KEYS)) {
+  var store = {};
+  for (var name in STORAGE_KEYS) {
+    var key = STORAGE_KEYS[name];
     store[name] = loadData(key) || [];
   }
-  // config and tipos_cambio are objects, not arrays
   if (!store.config || Array.isArray(store.config)) store.config = {};
   if (!store.tipos_cambio || Array.isArray(store.tipos_cambio)) store.tipos_cambio = {};
   return store;
 }
 
 function saveAll(store) {
-  for (const [name, key] of Object.entries(STORAGE_KEYS)) {
+  for (var name in STORAGE_KEYS) {
+    var key = STORAGE_KEYS[name];
     saveData(key, store[name]);
   }
+}
+
+/* ---------- Supabase sync helpers ---------- */
+
+function _scheduleSyncToSupabase(key) {
+  if (_saveTimers[key]) clearTimeout(_saveTimers[key]);
+  _pendingSaves[key] = true;
+  _saveTimers[key] = setTimeout(function() {
+    _syncKeyToSupabase(key);
+  }, _SAVE_DEBOUNCE_MS);
+}
+
+function _syncKeyToSupabase(key) {
+  var client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+  if (!client) return Promise.resolve();
+  return client.auth.getSession().then(function(res) {
+    var session = res.data.session;
+    if (!session) return;
+    var userId = session.user.id;
+    return client.from('user_data').upsert({
+      user_id: userId,
+      data_key: key,
+      data_value: _dataCache[key] !== undefined ? _dataCache[key] : null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,data_key' }).then(function(res2) {
+      if (res2.error) {
+        console.error('Supabase sync error for', key, res2.error.message);
+      } else {
+        delete _pendingSaves[key];
+      }
+    });
+  }).catch(function(err) {
+    console.error('Supabase sync failed for', key, err);
+  });
+}
+
+/**
+ * Download all user_data rows from Supabase into _dataCache.
+ * If Supabase has no data but localStorage does, migrate automatically.
+ * Returns a Promise.
+ */
+function hydrateCache() {
+  var client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+  if (!client) {
+    // Fallback: load from localStorage
+    for (var k in STORAGE_KEYS) {
+      var key = STORAGE_KEYS[k];
+      try {
+        var raw = localStorage.getItem(key);
+        if (raw) _dataCache[key] = JSON.parse(raw);
+      } catch(e) { /* ignore */ }
+    }
+    _cacheReady = true;
+    return Promise.resolve();
+  }
+  return client.auth.getSession().then(function(res) {
+    var session = res.data.session;
+    if (!session) {
+      _cacheReady = true;
+      return;
+    }
+    var userId = session.user.id;
+    return client.from('user_data')
+      .select('data_key, data_value')
+      .eq('user_id', userId)
+      .then(function(res2) {
+        if (res2.error) {
+          console.error('hydrateCache error:', res2.error.message);
+          _cacheReady = true;
+          return;
+        }
+        var rows = res2.data || [];
+        if (rows.length > 0) {
+          // Load from Supabase
+          rows.forEach(function(row) {
+            _dataCache[row.data_key] = row.data_value;
+          });
+          console.log('Cache hydrated from Supabase:', rows.length, 'keys');
+        } else {
+          // No data in Supabase — check localStorage for migration
+          var hasLocal = false;
+          for (var k2 in STORAGE_KEYS) {
+            var key2 = STORAGE_KEYS[k2];
+            try {
+              var raw2 = localStorage.getItem(key2);
+              if (raw2) {
+                _dataCache[key2] = JSON.parse(raw2);
+                hasLocal = true;
+              }
+            } catch(e2) { /* ignore */ }
+          }
+          if (hasLocal) {
+            console.log('Migrating localStorage data to Supabase...');
+            return _migrateToSupabase(userId, client);
+          }
+        }
+        _cacheReady = true;
+      });
+  }).catch(function(err) {
+    console.error('hydrateCache failed:', err);
+    _cacheReady = true;
+  });
+}
+
+function _migrateToSupabase(userId, client) {
+  var rows = [];
+  for (var k in STORAGE_KEYS) {
+    var key = STORAGE_KEYS[k];
+    if (_dataCache[key] !== undefined) {
+      rows.push({
+        user_id: userId,
+        data_key: key,
+        data_value: _dataCache[key],
+        updated_at: new Date().toISOString()
+      });
+    }
+  }
+  if (rows.length === 0) {
+    _cacheReady = true;
+    return Promise.resolve();
+  }
+  return client.from('user_data').upsert(rows, { onConflict: 'user_id,data_key' })
+    .then(function(res) {
+      if (res.error) {
+        console.error('Migration error:', res.error.message);
+      } else {
+        console.log('Migration complete:', rows.length, 'keys uploaded');
+        // Clear localStorage after successful migration
+        for (var k2 in STORAGE_KEYS) {
+          localStorage.removeItem(STORAGE_KEYS[k2]);
+        }
+      }
+      _cacheReady = true;
+    }).catch(function(err) {
+      console.error('Migration failed:', err);
+      _cacheReady = true;
+    });
+}
+
+/**
+ * Flush all pending saves to Supabase immediately.
+ * Returns a Promise that resolves when all syncs complete.
+ */
+function flushPendingSaves() {
+  var promises = [];
+  for (var key in _pendingSaves) {
+    if (_saveTimers[key]) {
+      clearTimeout(_saveTimers[key]);
+      delete _saveTimers[key];
+    }
+    promises.push(_syncKeyToSupabase(key));
+  }
+  if (promises.length === 0) return Promise.resolve();
+  return Promise.all(promises);
+}
+
+/**
+ * Clear the in-memory cache (used on logout).
+ */
+function clearCache() {
+  _dataCache = {};
+  _cacheReady = false;
+  _pendingSaves = {};
+  for (var t in _saveTimers) {
+    clearTimeout(_saveTimers[t]);
+  }
+  _saveTimers = {};
+}
+
+/**
+ * Delete ALL user_data rows for the current user in Supabase.
+ * Returns a Promise.
+ */
+function clearAllSupabaseData() {
+  var client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+  if (!client) return Promise.resolve();
+  return client.auth.getSession().then(function(res) {
+    var session = res.data.session;
+    if (!session) return;
+    return client.from('user_data').delete().eq('user_id', session.user.id)
+      .then(function(res2) {
+        if (res2.error) console.error('clearAllSupabaseData error:', res2.error.message);
+        else console.log('All Supabase data cleared for user');
+      });
+  });
+}
+
+/**
+ * Calculate approximate data size in bytes for all cached keys.
+ */
+function calcularTamanoCache() {
+  var totalBytes = 0;
+  for (var key in STORAGE_KEYS) {
+    var k = STORAGE_KEYS[key];
+    var val = _dataCache[k];
+    if (val !== undefined && val !== null) {
+      var str = JSON.stringify(val);
+      totalBytes += (k.length + str.length) * 2;
+    }
+  }
+  return totalBytes;
 }
 
 /* ============================================================
