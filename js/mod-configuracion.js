@@ -596,12 +596,19 @@ function resetSampleData() {
 function clearAllData() {
   if (!confirm('\u00BFDeseas borrar TODOS los datos?')) return;
   if (!confirm('ESTA ACCION ES IRREVERSIBLE. Se eliminaran todas las cuentas, movimientos, rendimientos y configuraciones. \u00BFContinuar?')) return;
+  // Cancel all pending debounced saves first to prevent race conditions
+  for (var t in _saveTimers) {
+    clearTimeout(_saveTimers[t]);
+  }
+  _saveTimers = {};
+  _pendingSaves = {};
   for (const key of Object.values(STORAGE_KEYS)) {
     _dataCache[key] = undefined;
+    localStorage.removeItem(key);
   }
   clearAllSupabaseData().then(function() {
     showToast('Todos los datos han sido eliminados. Recargando...');
-    setTimeout(() => location.reload(), 1000);
+    setTimeout(() => location.reload(), 1500);
   });
 }
 
