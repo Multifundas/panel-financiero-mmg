@@ -103,6 +103,9 @@ function renderSimulador() {
       <button class="btn btn-secondary" id="simTab-compuesto" onclick="switchSimTab('compuesto')">
         <i class="fas fa-percentage"></i> Interes Compuesto
       </button>
+      <button class="btn btn-secondary" id="simTab-oportunidad" onclick="switchSimTab('oportunidad')">
+        <i class="fas fa-balance-scale-right"></i> Costo de Oportunidad
+      </button>
     </div>
 
     <!-- 7a. DURACION DE AHORROS -->
@@ -555,6 +558,104 @@ function renderSimulador() {
         </div>
       </div>
     </div>
+
+    <!-- 7f. CALCULADORA DE COSTO DE OPORTUNIDAD -->
+    <div id="simPanel-oportunidad" class="sim-panel" style="display:none;">
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-balance-scale-right" style="margin-right:8px;color:var(--accent-amber);"></i>Costo de Oportunidad</span>
+        </div>
+        <div style="margin-bottom:16px;font-size:13px;color:var(--text-secondary);">
+          <i class="fas fa-lightbulb" style="margin-right:4px;color:var(--accent-amber);"></i>
+          Si en vez de gastar ese dinero lo inviertes, <strong>cuanto tendrias en el futuro?</strong>
+        </div>
+        <div class="grid-2" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Monto del gasto (MXN)</label>
+            <input type="text" class="form-input sim-money-input" id="opo-monto" value="50,000" inputmode="decimal" oninput="simFormatCommaInput(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripcion (opcional)</label>
+            <input type="text" class="form-input" id="opo-descripcion" placeholder="Ej: Viaje, auto, renovacion...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Frecuencia del gasto</label>
+            <select class="form-select" id="opo-frecuencia">
+              <option value="unico">Gasto unico</option>
+              <option value="mensual">Gasto mensual</option>
+              <option value="anual">Gasto anual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horizonte temporal (anos)</label>
+            <input type="number" class="form-input" id="opo-horizonte" value="10" step="1" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rendimiento anual esperado (%)
+              ${rend12.length > 0 ? '<span style="font-size:11px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
+            </label>
+            <input type="number" class="form-input" id="opo-rendimiento" value="${avgRendRedondeado}" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Inflacion anual (%)</label>
+            <input type="number" class="form-input" id="opo-inflacion" value="4.5" step="0.1">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="calcularOportunidad()">
+          <i class="fas fa-calculator"></i> Calcular Costo de Oportunidad
+        </button>
+      </div>
+      <div id="opo-resultados" style="display:none;">
+        <div class="card" style="margin-bottom:24px;border-left:4px solid var(--accent-amber);background:var(--bg-base);">
+          <div id="opo-frase" style="font-size:16px;font-weight:600;color:var(--text-primary);line-height:1.5;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+          <div class="card" style="border-left:3px solid var(--accent-green);">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Futuro</div>
+            <div id="opo-kpi-futuro" style="font-size:20px;font-weight:800;color:var(--accent-green);"></div>
+          </div>
+          <div class="card" style="border-left:3px solid var(--accent-amber);">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Costo de Oportunidad</div>
+            <div id="opo-kpi-costo" style="font-size:20px;font-weight:800;color:var(--accent-amber);"></div>
+          </div>
+          <div class="card" style="border-left:3px solid var(--accent-blue);">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Real (ajustado)</div>
+            <div id="opo-kpi-real" style="font-size:20px;font-weight:800;color:var(--accent-blue);"></div>
+          </div>
+          <div class="card" style="border-left:3px solid var(--accent-red);">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Total Gastado</div>
+            <div id="opo-kpi-gastado" style="font-size:20px;font-weight:800;color:var(--accent-red);"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-amber);"></i>Crecimiento si Inviertes</span>
+          </div>
+          <div style="position:relative;height:340px;">
+            <canvas id="opoChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Escenarios por Horizonte</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table" id="opo-tabla">
+              <thead>
+                <tr>
+                  <th>Horizonte</th>
+                  <th style="text-align:right;">Total Gastado</th>
+                  <th style="text-align:right;">Valor Futuro</th>
+                  <th style="text-align:right;">Costo Oportunidad</th>
+                  <th style="text-align:right;">Valor Real</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -562,7 +663,7 @@ function renderSimulador() {
    SIMULADOR -- Tab Switching
    ============================================================ */
 function switchSimTab(tab) {
-  const tabs = ['duracion', 'inversion', 'comparador', 'impacto', 'compuesto'];
+  const tabs = ['duracion', 'inversion', 'comparador', 'impacto', 'compuesto', 'oportunidad'];
   tabs.forEach(t => {
     const panel = document.getElementById('simPanel-' + t);
     const btn = document.getElementById('simTab-' + t);
@@ -1510,6 +1611,200 @@ function calcularInteresCompuesto() {
         tooltip: {
           callbacks: {
             label: function(ctx2) { return ctx2.dataset.label + ': ' + formatCurrency(ctx2.parsed.y, moneda); },
+          },
+        },
+      },
+    },
+  });
+}
+
+/* ============================================================
+   7f. CALCULADORA DE COSTO DE OPORTUNIDAD
+   ============================================================ */
+function calcularOportunidad() {
+  const monto = simParseCommaValue('opo-monto');
+  const descripcion = (document.getElementById('opo-descripcion').value || '').trim();
+  const frecuencia = document.getElementById('opo-frecuencia').value;
+  const horizonte = parseInt(document.getElementById('opo-horizonte').value) || 10;
+  const rendAnual = parseFloat(document.getElementById('opo-rendimiento').value) || 0;
+  const inflAnual = parseFloat(document.getElementById('opo-inflacion').value) || 0;
+
+  if (monto <= 0) {
+    showToast('El monto debe ser mayor a 0', 'warning');
+    return;
+  }
+  if (horizonte <= 0 || horizonte > 50) {
+    showToast('El horizonte debe estar entre 1 y 50 anos', 'warning');
+    return;
+  }
+
+  const r = rendAnual / 100;
+  const infl = inflAnual / 100;
+  const rMensual = Math.pow(1 + r, 1 / 12) - 1;
+
+  // Helper: calculate FV and total spent for a given number of years
+  function calcEscenario(anos) {
+    var fv = 0;
+    var totalGastado = 0;
+
+    if (frecuencia === 'unico') {
+      fv = monto * Math.pow(1 + r, anos);
+      totalGastado = monto;
+    } else if (frecuencia === 'mensual') {
+      var nMeses = anos * 12;
+      if (rMensual > 0) {
+        fv = monto * ((Math.pow(1 + rMensual, nMeses) - 1) / rMensual);
+      } else {
+        fv = monto * nMeses;
+      }
+      totalGastado = monto * nMeses;
+    } else if (frecuencia === 'anual') {
+      if (r > 0) {
+        fv = monto * ((Math.pow(1 + r, anos) - 1) / r);
+      } else {
+        fv = monto * anos;
+      }
+      totalGastado = monto * anos;
+    }
+
+    var valorReal = fv / Math.pow(1 + infl, anos);
+    var costoOportunidad = fv - totalGastado;
+
+    return {
+      anos: anos,
+      fv: fv,
+      totalGastado: totalGastado,
+      costoOportunidad: costoOportunidad,
+      valorReal: valorReal,
+    };
+  }
+
+  // Main calculation for the user's chosen horizon
+  const resultado = calcEscenario(horizonte);
+
+  // Show results
+  document.getElementById('opo-resultados').style.display = 'block';
+
+  // Build phrase
+  var gastoLabel = descripcion || 'ese gasto';
+  var freqLabel = frecuencia === 'mensual' ? ' cada mes' : frecuencia === 'anual' ? ' cada ano' : '';
+  var frase = '';
+  if (frecuencia === 'unico') {
+    frase = '<i class="fas fa-lightbulb" style="color:var(--accent-amber);margin-right:8px;"></i>' +
+      'Si en vez de gastar <strong>' + formatCurrency(monto, 'MXN') + '</strong> en ' + gastoLabel +
+      ', lo inviertes a ' + rendAnual + '% anual, en <strong>' + horizonte + ' ano' + (horizonte > 1 ? 's' : '') +
+      '</strong> tendrias <strong class="text-green">' + formatCurrency(resultado.fv, 'MXN') + '</strong>';
+  } else {
+    frase = '<i class="fas fa-lightbulb" style="color:var(--accent-amber);margin-right:8px;"></i>' +
+      'Si en vez de gastar <strong>' + formatCurrency(monto, 'MXN') + freqLabel + '</strong> en ' + gastoLabel +
+      ', lo inviertes a ' + rendAnual + '% anual, en <strong>' + horizonte + ' ano' + (horizonte > 1 ? 's' : '') +
+      '</strong> acumularias <strong class="text-green">' + formatCurrency(resultado.fv, 'MXN') + '</strong>' +
+      ' (habrias gastado ' + formatCurrency(resultado.totalGastado, 'MXN') + ')';
+  }
+  document.getElementById('opo-frase').innerHTML = frase;
+
+  // KPI cards
+  document.getElementById('opo-kpi-futuro').textContent = formatCurrency(resultado.fv, 'MXN');
+  document.getElementById('opo-kpi-costo').textContent = formatCurrency(resultado.costoOportunidad, 'MXN');
+  document.getElementById('opo-kpi-real').textContent = formatCurrency(resultado.valorReal, 'MXN');
+  document.getElementById('opo-kpi-gastado').textContent = formatCurrency(resultado.totalGastado, 'MXN');
+
+  // Scenario table: 5, 10, 15, 20 years (plus user's horizon if different)
+  var escenarioAnos = [5, 10, 15, 20];
+  if (escenarioAnos.indexOf(horizonte) === -1) {
+    escenarioAnos.push(horizonte);
+    escenarioAnos.sort(function(a, b) { return a - b; });
+  }
+  escenarioAnos = escenarioAnos.filter(function(a) { return a <= 50; });
+
+  var escenarios = escenarioAnos.map(function(a) { return calcEscenario(a); });
+
+  var tbody = document.querySelector('#opo-tabla tbody');
+  tbody.innerHTML = escenarios.map(function(e) {
+    var isSelected = e.anos === horizonte;
+    return '<tr style="' + (isSelected ? 'background:var(--accent-amber-soft);' : '') + '">' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + e.anos + ' ano' + (e.anos > 1 ? 's' : '') +
+        (isSelected ? ' <span class="badge badge-amber" style="font-size:10px;">Seleccionado</span>' : '') + '</td>' +
+      '<td style="text-align:right;" class="text-red">' + formatCurrency(e.totalGastado, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;" class="text-green">' + formatCurrency(e.fv, 'MXN') + '</td>' +
+      '<td style="text-align:right;" class="text-amber">' + formatCurrency(e.costoOportunidad, 'MXN') + '</td>' +
+      '<td style="text-align:right;" class="text-blue">' + formatCurrency(e.valorReal, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // Chart: year-by-year growth
+  var chartLabels = [];
+  var chartFV = [];
+  var chartGastado = [];
+  for (var yr = 0; yr <= horizonte; yr++) {
+    chartLabels.push('Ano ' + yr);
+    var e = calcEscenario(yr);
+    chartFV.push(e.fv);
+    chartGastado.push(e.totalGastado);
+  }
+
+  var chartColorsTheme = (typeof getChartColors === 'function') ? getChartColors() : { gridColor: 'rgba(51,65,85,0.5)', fontColor: '#94a3b8' };
+
+  window._charts = window._charts || {};
+  if (window._charts.oportunidad) window._charts.oportunidad.destroy();
+  var ctx = document.getElementById('opoChart').getContext('2d');
+
+  window._charts.oportunidad = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartLabels,
+      datasets: [
+        {
+          label: 'Valor si inviertes',
+          data: chartFV,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.10)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2.5,
+        },
+        {
+          label: 'Total gastado',
+          data: chartGastado,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.05)',
+          fill: true,
+          tension: 0,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          borderDash: [6, 3],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { color: chartColorsTheme.gridColor },
+          ticks: { color: chartColorsTheme.fontColor, font: { size: 11, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
+        },
+        y: {
+          grid: { color: chartColorsTheme.gridColor },
+          ticks: {
+            color: chartColorsTheme.fontColor,
+            font: { size: 11, family: "'Plus Jakarta Sans'" },
+            callback: function(v) { return formatCurrency(v, 'MXN'); },
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: chartColorsTheme.fontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" } },
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx2) { return ctx2.dataset.label + ': ' + formatCurrency(ctx2.parsed.y, 'MXN'); },
           },
         },
       },
