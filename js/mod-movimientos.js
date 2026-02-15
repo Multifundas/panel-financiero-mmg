@@ -101,6 +101,9 @@ function renderMovimientos() {
           <button class="btn btn-secondary" onclick="openCargaMasiva()">
             <i class="fas fa-file-excel" style="margin-right:4px;"></i>Carga Masiva
           </button>
+          <button class="btn btn-secondary" onclick="openPdfImport()" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
+            <i class="fas fa-file-pdf" style="margin-right:4px;"></i>Cargar PDF
+          </button>
           <button class="btn btn-primary" onclick="editMovimiento(null)">
             <i class="fas fa-plus"></i> Nuevo Movimiento
           </button>

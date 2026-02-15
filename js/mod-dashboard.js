@@ -582,8 +582,11 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  // -- Build Resumen Panel --
+  var resumenPanelHTML = buildResumenPanel(movimientos, cuentas, prestamos, propiedades);
+
   // -- Render HTML --
-  el.innerHTML = `
+  el.innerHTML = resumenPanelHTML + `
     <!-- Filtros -->
     <div class="card" style="margin-bottom:16px;padding:12px 16px;">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -1524,4 +1527,217 @@ function guardarHistorialPatrimonio() {
   showToast('Historial de patrimonio guardado.', 'success');
   closeModal();
   renderDashboard();
+}
+
+/* ============================================================
+   RESUMEN / RECORDATORIOS PANEL
+   ============================================================ */
+function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
+  // Don't show if user dismissed for this session
+  if (sessionStorage.getItem('pf_resumen_hidden') === '1') return '';
+
+  var now = new Date();
+  var hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // -- Greeting --
+  var hour = now.getHours();
+  var saludo = hour < 12 ? 'Buenos dias' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
+
+  // -- Weekly summary --
+  var hace7 = new Date(hoy.getTime() - 7 * 86400000);
+  var hace14 = new Date(hoy.getTime() - 14 * 86400000);
+  var ingresosWeek = 0, gastosWeek = 0, countWeek = 0;
+  var ingresosPrev = 0, gastosPrev = 0;
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+
+  (movimientos || []).forEach(function(mv) {
+    var f = new Date(mv.fecha);
+    var montoMXN = mv.monto;
+    if (mv.moneda === 'USD') montoMXN = mv.monto * (tiposCambio.USD_MXN || 17);
+    else if (mv.moneda === 'EUR') montoMXN = mv.monto * (tiposCambio.EUR_MXN || 19);
+
+    if (f >= hace7 && f <= hoy) {
+      countWeek++;
+      if (mv.tipo === 'ingreso') ingresosWeek += montoMXN;
+      else gastosWeek += montoMXN;
+    } else if (f >= hace14 && f < hace7) {
+      if (mv.tipo === 'ingreso') ingresosPrev += montoMXN;
+      else gastosPrev += montoMXN;
+    }
+  });
+
+  var gastosDiff = gastosPrev > 0 ? ((gastosWeek - gastosPrev) / gastosPrev * 100) : 0;
+  var gastosDiffSign = gastosDiff > 0 ? '+' : '';
+  var gastosDiffColor = gastosDiff > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+
+  // -- Pending actions --
+  var pendingItems = [];
+
+  // Plantillas recurrentes pendientes
+  var plantillas = loadData(STORAGE_KEYS.plantillas_recurrentes) || [];
+  var pendingPlantillas = plantillas.filter(function(p) {
+    return typeof _plantillaEstaPendiente === 'function' && _plantillaEstaPendiente(p);
+  });
+  if (pendingPlantillas.length > 0) {
+    pendingItems.push({
+      icon: 'fa-sync-alt',
+      color: 'var(--accent-amber)',
+      text: pendingPlantillas.length + ' plantilla(s) recurrente(s) por aplicar',
+      action: 'onclick="navigateTo(\'movimientos\'); setTimeout(function(){ openPlantillasRecurrentes(); }, 300);"'
+    });
+  }
+
+  // Vencimientos proximos (30 dias)
+  var en30 = new Date(hoy.getTime() + 30 * 86400000);
+  var vencimientoCount = 0;
+  (cuentas || []).forEach(function(c) {
+    if (c.activa !== false && c.tipo === 'inversion' && c.fecha_vencimiento) {
+      var fv = new Date(c.fecha_vencimiento);
+      if (fv >= hoy && fv <= en30) vencimientoCount++;
+    }
+  });
+  (prestamos || []).forEach(function(p) {
+    if (p.estado === 'activo' && p.fecha_vencimiento) {
+      var fv = new Date(p.fecha_vencimiento);
+      if (fv >= hoy && fv <= en30) vencimientoCount++;
+    }
+  });
+  if (vencimientoCount > 0) {
+    pendingItems.push({
+      icon: 'fa-exclamation-triangle',
+      color: 'var(--accent-red)',
+      text: vencimientoCount + ' inversion(es) o prestamo(s) vencen en los proximos 30 dias',
+      action: ''
+    });
+  }
+
+  // -- Reminders --
+  var reminderItems = [];
+
+  // Backup reminder
+  var config = loadData(STORAGE_KEYS.config) || {};
+  var lastBackup = config.ultima_respaldo;
+  if (lastBackup) {
+    var backupDate = new Date(lastBackup);
+    var daysSinceBackup = Math.floor((hoy - backupDate) / 86400000);
+    if (daysSinceBackup > 30) {
+      reminderItems.push({
+        icon: 'fa-database',
+        color: 'var(--accent-amber)',
+        text: 'Ultimo respaldo hace ' + daysSinceBackup + ' dias. Considera exportar un respaldo.'
+      });
+    }
+  } else {
+    reminderItems.push({
+      icon: 'fa-database',
+      color: 'var(--accent-amber)',
+      text: 'Nunca has hecho un respaldo. Ve a Configuracion para exportar uno.'
+    });
+  }
+
+  // Inactive accounts (no movements in 30+ days)
+  var inactiveCuentas = [];
+  (cuentas || []).forEach(function(c) {
+    if (c.activa === false || c.tipo === 'inmueble' || c.tipo === 'activo_fijo') return;
+    var lastMov = null;
+    (movimientos || []).forEach(function(mv) {
+      if (mv.cuenta_id === c.id) {
+        var f = new Date(mv.fecha);
+        if (!lastMov || f > lastMov) lastMov = f;
+      }
+    });
+    if (!lastMov || (hoy - lastMov) > 30 * 86400000) {
+      inactiveCuentas.push(c.nombre);
+    }
+  });
+  if (inactiveCuentas.length > 0 && inactiveCuentas.length <= 5) {
+    reminderItems.push({
+      icon: 'fa-clock',
+      color: 'var(--text-muted)',
+      text: 'Sin movimientos en 30+ dias: ' + inactiveCuentas.join(', ')
+    });
+  }
+
+  // -- Build HTML --
+  var hasPending = pendingItems.length > 0;
+  var hasReminders = reminderItems.length > 0;
+  var hasWeekData = countWeek > 0 || ingresosWeek > 0 || gastosWeek > 0;
+
+  // If nothing to show, skip
+  if (!hasPending && !hasReminders && !hasWeekData) return '';
+
+  var html = '<div class="resumen-panel" id="resumenPanel">';
+  html += '<div class="resumen-header">';
+  html += '<div style="display:flex;align-items:center;gap:10px;">';
+  html += '<i class="fas fa-sun" style="color:var(--accent-amber);font-size:18px;"></i>';
+  html += '<div>';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text-primary);">' + saludo + '!</div>';
+  html += '<div style="font-size:12px;color:var(--text-muted);">Resumen y recordatorios</div>';
+  html += '</div></div>';
+  html += '<button onclick="dismissResumenPanel()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px;" title="Ocultar hasta el proximo login">';
+  html += '<i class="fas fa-times"></i></button>';
+  html += '</div>';
+
+  html += '<div class="resumen-body">';
+
+  // Pending actions
+  if (hasPending) {
+    html += '<div class="resumen-section resumen-pending">';
+    html += '<div class="resumen-section-title"><i class="fas fa-bell"></i> Acciones Pendientes</div>';
+    pendingItems.forEach(function(item) {
+      html += '<div class="resumen-item" ' + item.action + ' style="' + (item.action ? 'cursor:pointer;' : '') + '">';
+      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
+      html += '<span>' + item.text + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Weekly summary
+  if (hasWeekData) {
+    html += '<div class="resumen-section resumen-weekly">';
+    html += '<div class="resumen-section-title"><i class="fas fa-chart-bar"></i> Ultimos 7 dias</div>';
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+    html += '<div class="resumen-stat">';
+    html += '<div class="resumen-stat-label">Ingresos</div>';
+    html += '<div class="resumen-stat-value" style="color:var(--accent-green);">+$' + formatCurrency(ingresosWeek) + '</div>';
+    html += '</div>';
+    html += '<div class="resumen-stat">';
+    html += '<div class="resumen-stat-label">Gastos</div>';
+    html += '<div class="resumen-stat-value" style="color:var(--accent-red);">-$' + formatCurrency(gastosWeek) + '</div>';
+    html += '</div>';
+    html += '<div class="resumen-stat">';
+    html += '<div class="resumen-stat-label">Movimientos</div>';
+    html += '<div class="resumen-stat-value">' + countWeek + '</div>';
+    html += '</div>';
+    if (gastosPrev > 0) {
+      html += '<div class="resumen-stat">';
+      html += '<div class="resumen-stat-label">Gastos vs semana anterior</div>';
+      html += '<div class="resumen-stat-value" style="color:' + gastosDiffColor + ';">' + gastosDiffSign + gastosDiff.toFixed(1) + '%</div>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  // Reminders
+  if (hasReminders) {
+    html += '<div class="resumen-section resumen-reminders">';
+    html += '<div class="resumen-section-title"><i class="fas fa-info-circle"></i> Recordatorios</div>';
+    reminderItems.forEach(function(item) {
+      html += '<div class="resumen-item">';
+      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
+      html += '<span>' + item.text + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div></div>';
+  return html;
+}
+
+function dismissResumenPanel() {
+  sessionStorage.setItem('pf_resumen_hidden', '1');
+  var panel = document.getElementById('resumenPanel');
+  if (panel) panel.style.display = 'none';
 }

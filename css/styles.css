@@ -1560,3 +1560,120 @@
     font-size: 14px;
   }
 }
+
+/* ── PDF Import Preview ── */
+.pdf-preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pdf-cat-select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pdf-cat-select:focus {
+  border-color: var(--accent-blue);
+  outline: none;
+}
+.pdf-row-selected {
+  background: rgba(239, 68, 68, 0.06) !important;
+}
+.pdf-row-selected td {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* ── Resumen / Recordatorios Panel ── */
+.resumen-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.resumen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(245,158,11,0.05));
+}
+.resumen-body {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.resumen-section {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 20px;
+  border-right: 1px solid var(--border-subtle);
+}
+.resumen-section:last-child {
+  border-right: none;
+}
+.resumen-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.resumen-section-title i {
+  font-size: 12px;
+}
+.resumen-pending .resumen-section-title { color: var(--accent-amber); }
+.resumen-weekly .resumen-section-title { color: var(--accent-blue); }
+.resumen-reminders .resumen-section-title { color: var(--text-muted); }
+.resumen-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.resumen-item:last-child { margin-bottom: 0; }
+.resumen-item i { margin-top: 2px; flex-shrink: 0; }
+.resumen-stat {
+  min-width: 100px;
+}
+.resumen-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.resumen-stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .resumen-body {
+    flex-direction: column;
+  }
+  .resumen-section {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .resumen-section:last-child {
+    border-bottom: none;
+  }
+}
