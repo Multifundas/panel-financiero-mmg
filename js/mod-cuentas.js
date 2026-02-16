@@ -254,6 +254,9 @@ function filterCuentas() {
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
           <i class="fas fa-pen"></i>
         </button>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verEstadoCuenta('${c.id}')" title="Estado de Cuenta">
+          <i class="fas fa-file-invoice-dollar"></i>
+        </button>
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="verHistorialCuenta('${c.id}')" title="Ver Historial">
           <i class="fas fa-history"></i>
         </button>
@@ -853,4 +856,191 @@ function verHistorialCuenta(cuentaId) {
     '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
 
   openModal('Historial de Saldos: ' + cuenta.nombre, bodyHTML);
+}
+
+/* ============================================================
+   ESTADO DE CUENTA
+   ============================================================ */
+var _estadoCuentaId = null;
+
+function verEstadoCuenta(cuentaId) {
+  _estadoCuentaId = cuentaId;
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var instituciones = loadData(STORAGE_KEYS.instituciones) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return;
+  var moneda = cuenta.moneda || 'MXN';
+  var instMap = {};
+  instituciones.forEach(function(i) { instMap[i.id] = i.nombre; });
+  var instNombre = instMap[cuenta.institucion_id] || '\u2014';
+
+  var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Institucion</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + instNombre + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Moneda</div><div style="font-size:14px;font-weight:700;color:var(--accent-blue);">' + moneda + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
+    '</div></div>' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">' +
+    '<input type="date" id="edoCtaDesde" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:150px;" onchange="filterEstadoCuenta()" placeholder="Desde">' +
+    '<input type="date" id="edoCtaHasta" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:150px;" onchange="filterEstadoCuenta()" placeholder="Hasta">' +
+    '<select id="edoCtaTipo" class="form-select" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:140px;" onchange="filterEstadoCuenta()">' +
+    '<option value="">Todos</option><option value="ingreso">Abonos</option><option value="gasto">Cargos</option></select>' +
+    '<input type="text" id="edoCtaSearch" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:180px;" placeholder="Buscar..." oninput="filterEstadoCuenta()">' +
+    '</div>' +
+    '<div id="edoCtaContenido"></div>' +
+    '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeEstadoCuenta()">Cerrar</button></div>';
+
+  openModal('Estado de Cuenta: ' + cuenta.nombre, bodyHTML);
+  document.querySelector('.modal-content').classList.add('modal-wide');
+  filterEstadoCuenta();
+}
+
+function closeEstadoCuenta() {
+  document.querySelector('.modal-content').classList.remove('modal-wide');
+  _estadoCuentaId = null;
+  closeModal();
+}
+
+function filterEstadoCuenta() {
+  var cuentaId = _estadoCuentaId;
+  if (!cuentaId) return;
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return;
+  var moneda = cuenta.moneda || 'MXN';
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+
+  // Filter movements for this account
+  var movsCuenta = movimientos.filter(function(m) { return m.cuenta_id === cuentaId; });
+
+  // Build unified events array
+  var eventos = [];
+
+  movsCuenta.forEach(function(m) {
+    var origen = 'Manual';
+    if (m.transferencia_id) origen = 'Transferencia';
+    else if (m.notas && m.notas.indexOf('Prestamo ID:') !== -1) origen = 'Prestamo';
+    else if (m.notas && m.notas.indexOf('Importado desde PDF') !== -1) origen = 'PDF';
+    else if (m.notas && m.notas.indexOf('Generado desde plantilla') !== -1) origen = 'Recurrente';
+
+    eventos.push({
+      fecha: m.fecha || '',
+      descripcion: m.descripcion || '',
+      tipo: m.tipo,
+      monto: m.monto || 0,
+      notas: m.notas || '',
+      origen: origen,
+      esCierre: false
+    });
+  });
+
+  // Add cierres mensuales as informative rows
+  var historial = cuenta.historial_saldos || [];
+  historial.forEach(function(h) {
+    var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
+    var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
+    var rend = h.rendimiento != null ? h.rendimiento : (sFinal - sInicio);
+    eventos.push({
+      fecha: h.fecha || '',
+      descripcion: 'Cierre de cuenta — Saldo: ' + formatCurrency(sInicio, moneda) + ' \u2192 ' + formatCurrency(sFinal, moneda) + ' (rend: ' + (rend >= 0 ? '+' : '') + formatCurrency(rend, moneda) + ')',
+      tipo: 'cierre',
+      monto: 0,
+      notas: '',
+      origen: 'Cierre',
+      esCierre: true
+    });
+  });
+
+  // Apply filters
+  var fDesde = document.getElementById('edoCtaDesde') ? document.getElementById('edoCtaDesde').value : '';
+  var fHasta = document.getElementById('edoCtaHasta') ? document.getElementById('edoCtaHasta').value : '';
+  var fTipo = document.getElementById('edoCtaTipo') ? document.getElementById('edoCtaTipo').value : '';
+  var fSearch = document.getElementById('edoCtaSearch') ? document.getElementById('edoCtaSearch').value.toLowerCase().trim() : '';
+
+  var filtered = eventos.filter(function(e) {
+    if (fDesde && e.fecha < fDesde) return false;
+    if (fHasta && e.fecha > fHasta) return false;
+    if (fTipo && e.tipo !== fTipo && !e.esCierre) return false;
+    if (fSearch) {
+      var text = (e.descripcion + ' ' + e.notas + ' ' + e.origen).toLowerCase();
+      if (text.indexOf(fSearch) === -1) return false;
+    }
+    return true;
+  });
+
+  // Sort chronologically (oldest first) to calculate running balance
+  filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || '') || (a.esCierre ? 1 : 0) - (b.esCierre ? 1 : 0); });
+
+  // Calculate running balance
+  // saldo_inicial = saldo_actual - sum(ingresos) + sum(gastos) of ALL filtered movements
+  var sumIngresos = 0, sumGastos = 0;
+  filtered.forEach(function(e) {
+    if (e.esCierre) return;
+    if (e.tipo === 'ingreso') sumIngresos += e.monto;
+    else if (e.tipo === 'gasto') sumGastos += e.monto;
+  });
+  var saldoInicial = cuenta.saldo - sumIngresos + sumGastos;
+  var saldoRunning = saldoInicial;
+
+  var contenedor = document.getElementById('edoCtaContenido');
+  if (!contenedor) return;
+
+  if (filtered.length === 0) {
+    contenedor.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-file-invoice-dollar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos para esta cuenta.</div>';
+    return;
+  }
+
+  // Build table rows
+  var rows = filtered.map(function(e) {
+    if (e.esCierre) {
+      return '<tr style="background:rgba(59,130,246,0.06);">' +
+        '<td style="white-space:nowrap;color:var(--accent-blue);font-weight:600;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
+        '<td colspan="3" style="font-size:12px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
+        '<td></td>' +
+        '</tr>';
+    }
+
+    var cargo = '', abono = '';
+    if (e.tipo === 'gasto') {
+      cargo = formatCurrency(e.monto, moneda);
+      saldoRunning -= e.monto;
+    } else if (e.tipo === 'ingreso') {
+      abono = formatCurrency(e.monto, moneda);
+      saldoRunning += e.monto;
+    }
+
+    // Determine origin badge
+    var origenBadge = '';
+    if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
+    else if (e.origen === 'Prestamo') origenBadge = '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;">Prestamo</span>';
+    else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:9px;margin-left:6px;">PDF</span>';
+    else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:9px;margin-left:6px;">Recurrente</span>';
+
+    return '<tr>' +
+      '<td style="white-space:nowrap;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
+      '<td style="font-size:12px;">' + e.descripcion + origenBadge + '</td>' +
+      '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +
+      '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abono + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrency(saldoRunning, moneda) + '</td>' +
+      '</tr>';
+  });
+
+  // Show newest first
+  rows.reverse();
+
+  var countMovs = filtered.filter(function(e) { return !e.esCierre; }).length;
+
+  var html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
+    '<table class="data-table" style="min-width:0;"><thead><tr>' +
+    '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th>' +
+    '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' +
+    '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Inicial</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:15px;font-weight:800;color:var(--accent-red);">' + formatCurrency(sumGastos, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(sumIngresos, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Movimientos</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + countMovs + '</div></div>' +
+    '</div>';
+
+  contenedor.innerHTML = html;
 }
