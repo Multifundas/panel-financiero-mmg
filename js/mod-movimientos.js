@@ -107,6 +107,9 @@ function renderMovimientos() {
           <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="border-color:var(--accent-purple);color:var(--accent-purple);">
             <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Transferencia
           </button>
+          <button class="btn btn-secondary" onclick="cierreMensual()" style="border-color:var(--accent-green);color:var(--accent-green);">
+            <i class="fas fa-calendar-check" style="margin-right:4px;"></i>Cierre Mensual
+          </button>
           <button class="btn btn-primary" onclick="editMovimiento(null)">
             <i class="fas fa-plus"></i> Nuevo Movimiento
           </button>

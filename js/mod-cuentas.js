@@ -836,7 +836,9 @@ function verHistorialCuenta(cuentaId) {
     tablaHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-chart-bar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay historial de saldos.<br><span style="font-size:12px;">Usa "Cierre Mensual" para registrar saldos al final de cada mes.</span></div>';
   } else {
     var sorted = [...historial].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
-    var rows = sorted.map(function(h) {
+    var rows = sorted.map(function(h, sortedIdx) {
+      // Find the original index in historial array
+      var origIdx = historial.indexOf(h);
       var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
       var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
       var rend = h.rendimiento != null ? h.rendimiento : (sFinal - sInicio);
@@ -850,10 +852,13 @@ function verHistorialCuenta(cuentaId) {
         '<td style="text-align:right;font-weight:600;">' + formatCurrency(sFinal, moneda) + '</td>' +
         '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + formatCurrency(rend, moneda) + '</td>' +
         '<td style="text-align:right;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '%</td>' +
-        '</tr>';
+        '<td style="text-align:center;white-space:nowrap;">' +
+        '<button class="btn btn-secondary" style="padding:3px 7px;font-size:10px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Editar"><i class="fas fa-pen"></i></button>' +
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+        '</td></tr>';
     });
     tablaHTML = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
-      '<th>Periodo</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th>' +
+      '<th>Periodo</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th><th style="text-align:center;">Acciones</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
 
     // Chart data (chronological order)
@@ -909,6 +914,129 @@ function verHistorialCuenta(cuentaId) {
     '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
 
   openModal('Historial de Saldos: ' + cuenta.nombre, bodyHTML);
+  document.querySelector('.modal-content').classList.add('modal-wide');
+}
+
+/* -- Edit a cierre in historial_saldos -- */
+function editCierreHistorial(cuentaId, idx) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta || !cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
+  var h = cuenta.historial_saldos[idx];
+  var moneda = cuenta.moneda || 'MXN';
+  var esDebito = cuenta.tipo === 'debito';
+
+  var formHTML = '<form id="formEditCierre" onsubmit="saveEditCierre(event, \'' + cuentaId + '\', ' + idx + ')">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Fecha</label>' +
+    '<input type="date" id="editCierreFecha" class="form-input" required value="' + (h.fecha || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Saldo Inicio</label>' +
+    '<input type="number" id="editCierreSaldoInicio" class="form-input" step="0.01" required value="' + (h.saldo_inicio != null ? h.saldo_inicio : h.saldo || 0) + '"></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Saldo Final</label>' +
+    '<input type="number" id="editCierreSaldoFinal" class="form-input" step="0.01" required value="' + (h.saldo_final != null ? h.saldo_final : h.saldo || 0) + '"></div>' +
+    '<div class="form-group"><label class="form-label">Rendimiento' + (esDebito ? ' (N/A debito)' : '') + '</label>' +
+    '<input type="number" id="editCierreRendimiento" class="form-input" step="0.01" value="' + (h.rendimiento || 0) + '"' + (esDebito ? ' readonly style="opacity:0.5;"' : '') + '></div>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="verHistorialCuenta(\'' + cuentaId + '\')">Cancelar</button>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>' +
+    '</div></form>';
+
+  openModal('Editar Cierre — ' + (h.fecha ? h.fecha.substring(0, 7) : ''), formHTML);
+}
+
+function saveEditCierre(event, cuentaId, idx) {
+  event.preventDefault();
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+  if (ctaIdx === -1) return;
+  var cuenta = cuentas[ctaIdx];
+  if (!cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
+
+  var fecha = document.getElementById('editCierreFecha').value;
+  var saldoInicio = parseFloat(document.getElementById('editCierreSaldoInicio').value) || 0;
+  var saldoFinal = parseFloat(document.getElementById('editCierreSaldoFinal').value) || 0;
+  var rendimiento = parseFloat(document.getElementById('editCierreRendimiento').value) || 0;
+
+  // Update the historial entry
+  cuenta.historial_saldos[idx].fecha = fecha;
+  cuenta.historial_saldos[idx].saldo_inicio = saldoInicio;
+  cuenta.historial_saldos[idx].saldo_final = saldoFinal;
+  cuenta.historial_saldos[idx].rendimiento = cuenta.tipo === 'debito' ? 0 : rendimiento;
+
+  // If this is the most recent cierre, update the account saldo to the saldo_final
+  var sorted = [...cuenta.historial_saldos].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+  if (sorted[0] === cuenta.historial_saldos[idx]) {
+    cuenta.saldo = saldoFinal;
+  }
+
+  cuentas[ctaIdx] = cuenta;
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+
+  // Also update matching rendimiento record
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var periodo = fecha.slice(0, 7);
+  var rIdx = rendimientos.findIndex(function(r) {
+    return r.cuenta_id === cuentaId && r.periodo === periodo;
+  });
+  if (rIdx !== -1) {
+    rendimientos[rIdx].saldo_inicial = saldoInicio;
+    rendimientos[rIdx].saldo_final = saldoFinal;
+    rendimientos[rIdx].rendimiento_monto = rendimiento;
+    rendimientos[rIdx].rendimiento_pct = saldoInicio > 0 ? ((rendimiento / saldoInicio) * 100) : 0;
+    saveData(STORAGE_KEYS.rendimientos, rendimientos);
+  }
+
+  showToast('Cierre actualizado.', 'success');
+  verHistorialCuenta(cuentaId);
+  if (typeof renderCuentas === 'function') renderCuentas();
+  if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
+}
+
+/* -- Delete a cierre from historial_saldos -- */
+function deleteCierreHistorial(cuentaId, idx) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+  if (ctaIdx === -1) return;
+  var cuenta = cuentas[ctaIdx];
+  if (!cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
+
+  var h = cuenta.historial_saldos[idx];
+  var confirmar = confirm('\u00BFEliminar el cierre de ' + (h.fecha ? h.fecha.substring(0, 7) : 'fecha desconocida') + '?\n\nSaldo Inicio: ' + formatCurrency(h.saldo_inicio || 0, cuenta.moneda || 'MXN') + '\nSaldo Final: ' + formatCurrency(h.saldo_final || 0, cuenta.moneda || 'MXN'));
+  if (!confirmar) return;
+
+  // Remove from historial
+  var removedFecha = h.fecha;
+  cuenta.historial_saldos.splice(idx, 1);
+
+  // If we removed the last cierre, revert saldo to previous cierre's saldo_final or saldo_inicial
+  if (cuenta.historial_saldos.length > 0) {
+    var sorted = [...cuenta.historial_saldos].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+    cuenta.saldo = sorted[0].saldo_final != null ? sorted[0].saldo_final : sorted[0].saldo;
+  } else {
+    // No more cierres, revert to saldo_inicial
+    cuenta.saldo = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  }
+
+  cuentas[ctaIdx] = cuenta;
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+
+  // Remove matching rendimiento record
+  if (removedFecha) {
+    var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+    var periodo = removedFecha.slice(0, 7);
+    var newRendimientos = rendimientos.filter(function(r) {
+      return !(r.cuenta_id === cuentaId && r.periodo === periodo);
+    });
+    saveData(STORAGE_KEYS.rendimientos, newRendimientos);
+  }
+
+  showToast('Cierre eliminado.', 'info');
+  verHistorialCuenta(cuentaId);
+  if (typeof renderCuentas === 'function') renderCuentas();
+  if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
 }
 
 /* ============================================================
