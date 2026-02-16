@@ -99,6 +99,32 @@ function showOriginalLoginForm() {
 }
 
 function handleLogout() {
+  // Show modal asking if user wants a backup before logging out
+  var modalHTML = '<div style="text-align:center;margin-bottom:20px;">' +
+    '<div style="width:56px;height:56px;border-radius:14px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">' +
+    '<i class="fas fa-sign-out-alt" style="color:var(--accent-amber);font-size:22px;"></i></div>' +
+    '<div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Cerrar Sesion</div>' +
+    '<div style="font-size:13px;color:var(--text-muted);">Deseas exportar un respaldo de tus datos antes de cerrar sesion?</div></div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    '<button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="logoutWithBackup()">' +
+    '<i class="fas fa-download" style="margin-right:8px;"></i>Exportar Respaldo y Cerrar</button>' +
+    '<button class="btn btn-secondary" style="width:100%;justify-content:center;padding:12px;" onclick="logoutDirect()">' +
+    '<i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Cerrar sin Respaldo</button>' +
+    '<button class="btn btn-secondary" style="width:100%;justify-content:center;padding:12px;opacity:0.7;" onclick="closeModal()">' +
+    'Cancelar</button></div>';
+  openModal('', modalHTML);
+}
+
+function logoutWithBackup() {
+  closeModal();
+  if (typeof exportarRespaldo === 'function') {
+    exportarRespaldo();
+  }
+  setTimeout(function() { logoutDirect(); }, 500);
+}
+
+function logoutDirect() {
+  closeModal();
   flushPendingSaves().then(function() {
     var client = getSupabaseClient();
     if (client) {

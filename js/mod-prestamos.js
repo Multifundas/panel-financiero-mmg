@@ -136,6 +136,7 @@ function filterPrestamos() {
     var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
     var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
     if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
+    if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
     acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="verHistorialPagos(\'' + p.id + '\')" title="Ver Pagos"><i class="fas fa-history"></i></button>';
     acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
     var sc = p.saldo_pendiente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
@@ -309,23 +310,134 @@ function savePago(event, prestamoId) {
   renderPrestamos();
 }
 
+function prestarMas(prestamoId) {
+  const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  const prestamo = prestamos.find(p => p.id === prestamoId);
+  if (!prestamo) return;
+  const hoy = new Date().toISOString().split('T')[0];
+  const formHTML = `
+    <form id="formPrestarMas" onsubmit="savePrestamoAdicional(event, '${prestamoId}')">
+      <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Monto original: <strong style="color:var(--text-primary);">${formatCurrency(prestamo.monto_original, prestamo.moneda || 'MXN')}</strong></div>
+        <div style="font-size:12px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrency(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
+      </div>
+      <div class="form-group"><label class="form-label">Monto Adicional a Prestar *</label>
+        <input type="number" id="prestarMasMonto" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Fecha *</label>
+        <input type="date" id="prestarMasFecha" class="form-input" required value="${hoy}"></div>
+      <div class="form-group"><label class="form-label">Notas</label>
+        <textarea id="prestarMasNotas" class="form-input" rows="2" style="resize:vertical;" placeholder="Notas del prestamo adicional..."></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Prestar Mas</button>
+      </div>
+    </form>`;
+  openModal('Prestar Mas a ' + prestamo.persona, formHTML);
+}
+
+function savePrestamoAdicional(event, prestamoId) {
+  event.preventDefault();
+  const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  const pIdx = prestamos.findIndex(p => p.id === prestamoId);
+  if (pIdx === -1) { showToast('No se encontro el prestamo.', 'error'); return; }
+  const prestamo = prestamos[pIdx];
+  const monto = parseFloat(document.getElementById('prestarMasMonto').value) || 0;
+  const fecha = document.getElementById('prestarMasFecha').value;
+  const notas = document.getElementById('prestarMasNotas').value.trim();
+  if (monto <= 0 || !fecha) { showToast('Por favor completa todos los campos obligatorios.', 'warning'); return; }
+
+  if (!prestamo.pagos) prestamo.pagos = [];
+  prestamo.pagos.push({ id: uuid(), fecha: fecha, monto: monto, notas: notas, tipo: 'prestamo_adicional' });
+  prestamo.monto_original += monto;
+  prestamo.saldo_pendiente += monto;
+  if (prestamo.estado === 'pagado') prestamo.estado = 'activo';
+  prestamos[pIdx] = prestamo;
+
+  if (prestamo.cuenta_id) {
+    const ctaIdx = cuentas.findIndex(c => c.id === prestamo.cuenta_id);
+    if (ctaIdx !== -1) {
+      if (prestamo.tipo === 'otorgado') {
+        movimientos.push({ id: uuid(), cuenta_id: prestamo.cuenta_id, tipo: 'gasto', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: 'Prestamo adicional a ' + prestamo.persona, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId, created: new Date().toISOString() });
+        cuentas[ctaIdx].saldo -= monto;
+      } else if (prestamo.tipo === 'recibido') {
+        movimientos.push({ id: uuid(), cuenta_id: prestamo.cuenta_id, tipo: 'ingreso', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: 'Prestamo adicional de ' + prestamo.persona, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId, created: new Date().toISOString() });
+        cuentas[ctaIdx].saldo += monto;
+      }
+      saveData(STORAGE_KEYS.cuentas, cuentas);
+      saveData(STORAGE_KEYS.movimientos, movimientos);
+    }
+  }
+  saveData(STORAGE_KEYS.prestamos, prestamos);
+  closeModal();
+  showToast('Prestamo adicional de ' + formatCurrency(monto, prestamo.moneda || 'MXN') + ' registrado.', 'success');
+  renderPrestamos();
+}
+
 function verHistorialPagos(prestamoId) {
   const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
   const prestamo = prestamos.find(p => p.id === prestamoId);
   if (!prestamo) return;
   const pagos = prestamo.pagos || [];
   const moneda = prestamo.moneda || 'MXN';
-  let totalPagado = 0;
-  pagos.forEach(function(p) { totalPagado += p.monto; });
+
+  // Calculate totals
+  let totalPrestado = 0, totalAbonado = 0;
+  pagos.forEach(function(p) {
+    if (p.tipo === 'prestamo_adicional') totalPrestado += p.monto;
+    else totalAbonado += p.monto;
+  });
 
   let tablaPagos = '';
   if (pagos.length === 0) {
-    tablaPagos = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-receipt" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay pagos registrados para este prestamo.</div>';
+    tablaPagos = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-receipt" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos registrados para este prestamo.</div>';
   } else {
-    var sorted = [...pagos].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
-    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Fecha</th><th style="text-align:right;">Monto</th><th>Notas</th></tr></thead><tbody>' +
-      sorted.map(function(p) { return '<tr><td>' + (p.fecha ? formatDate(p.fecha) : '\u2014') + '</td><td style="text-align:right;color:var(--accent-green);font-weight:600;">' + formatCurrency(p.monto, moneda) + '</td><td style="color:var(--text-muted);">' + (p.notas || '\u2014') + '</td></tr>'; }).join('') +
-      '</tbody></table></div><div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:600;color:var(--text-muted);">Total Pagado</span><span style="font-size:16px;font-weight:800;color:var(--accent-green);">' + formatCurrency(totalPagado, moneda) + '</span></div>';
+    // Sort chronologically (oldest first) to calculate running balance
+    var sorted = [...pagos].sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+
+    // Calculate running balance starting from the initial loan amount (monto_original minus all additions)
+    var montoInicialOriginal = prestamo.monto_original - totalPrestado;
+    var saldoRunning = montoInicialOriginal;
+
+    var rows = sorted.map(function(p) {
+      var esAdicional = p.tipo === 'prestamo_adicional';
+      if (esAdicional) {
+        saldoRunning += p.monto;
+      } else {
+        saldoRunning -= p.monto;
+      }
+      if (saldoRunning < 0) saldoRunning = 0;
+
+      var tipoBadge = esAdicional
+        ? '<span class="badge badge-amber" style="font-size:10px;">Prestamo</span>'
+        : '<span class="badge badge-green" style="font-size:10px;">Abono</span>';
+      var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
+      var montoPrefix = esAdicional ? '+' : '-';
+
+      return '<tr>' +
+        '<td>' + (p.fecha ? formatDate(p.fecha) : '\u2014') + '</td>' +
+        '<td>' + tipoBadge + '</td>' +
+        '<td style="text-align:right;color:' + montoColor + ';font-weight:600;">' + montoPrefix + formatCurrency(p.monto, moneda) + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(saldoRunning, moneda) + '</td>' +
+        '<td style="color:var(--text-muted);font-size:12px;">' + (p.notas || '\u2014') + '</td>' +
+        '</tr>';
+    });
+
+    // Reverse to show newest first
+    rows.reverse();
+
+    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+      '<th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Saldo</th><th>Notas</th>' +
+      '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+
+    // Summary row
+    tablaPagos += '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
+      '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Prestado</div><div style="font-size:15px;font-weight:800;color:var(--accent-amber);">' + formatCurrency(montoInicialOriginal + totalPrestado, moneda) + '</div></div>' +
+      '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonado</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(totalAbonado, moneda) + '</div></div>' +
+      '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Actual</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(prestamo.saldo_pendiente, moneda) + '</div></div>' +
+      '</div>';
   }
 
   const bodyHTML = `
@@ -339,7 +451,7 @@ function verHistorialPagos(prestamoId) {
     </div>
     ${tablaPagos}
     <div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>`;
-  openModal('Historial de Pagos', bodyHTML);
+  openModal('Historial de Movimientos', bodyHTML);
 }
 
 function checkVencimientos() {

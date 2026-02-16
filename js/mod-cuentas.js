@@ -131,6 +131,9 @@ function renderCuentas() {
           <button class="btn btn-secondary" onclick="exportarExcel('cuentas')" title="Exportar a Excel">
             <i class="fas fa-download" style="margin-right:4px;"></i>Exportar
           </button>
+          <button class="btn btn-secondary" onclick="cierreMensual()" style="border-color:var(--accent-green);color:var(--accent-green);">
+            <i class="fas fa-calendar-check"></i> Cierre Mensual
+          </button>
           <button class="btn btn-primary" onclick="editCuenta(null)">
             <i class="fas fa-plus"></i> Nueva Cuenta
           </button>
@@ -250,6 +253,9 @@ function filterCuentas() {
       <td style="text-align:center;">
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
           <i class="fas fa-pen"></i>
+        </button>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="verHistorialCuenta('${c.id}')" title="Ver Historial">
+          <i class="fas fa-history"></i>
         </button>
         <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="deleteCuenta('${c.id}')" title="Eliminar">
           <i class="fas fa-trash"></i>
@@ -630,4 +636,214 @@ function deleteCuenta(id) {
     renderCuentas();
     updateHeaderPatrimonio();
   }
+}
+
+/* ============================================================
+   CIERRE MENSUAL DE CUENTAS
+   ============================================================ */
+function cierreMensual() {
+  const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  const activas = cuentas.filter(c => c.activa !== false);
+  if (activas.length === 0) { showToast('No hay cuentas activas.', 'warning'); return; }
+
+  var hoy = new Date();
+  var mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
+
+  var filas = activas.map(function(c) {
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '<br><span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span></td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" step="0.01" min="0" placeholder="Saldo final" style="padding:6px 10px;font-size:13px;min-width:130px;" oninput="recalcCierreRendimiento(this)"></td>' +
+      '<td style="text-align:right;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">—</span></td>' +
+      '</tr>';
+  }).join('');
+
+  var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
+    '<div style="margin-bottom:16px;">' +
+    '<div class="form-group" style="margin-bottom:12px;">' +
+    '<label class="form-label">Periodo de Cierre</label>' +
+    '<input type="month" id="cierrePeriodo" class="form-input" value="' + mesActual + '" style="max-width:200px;">' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
+    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa el saldo final de cada cuenta al cierre del mes. Solo se guardaran las cuentas donde captures un saldo.</div>' +
+    '</div>' +
+    '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+    '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Cierre</button>' +
+    '</div></form>';
+
+  openModal('Cierre Mensual de Cuentas', formHTML);
+}
+
+function recalcCierreRendimiento(inputEl) {
+  var cuentaId = inputEl.getAttribute('data-cuenta-id');
+  var saldoInicio = parseFloat(inputEl.getAttribute('data-saldo-inicio')) || 0;
+  var saldoFinal = parseFloat(inputEl.value) || 0;
+  var rend = saldoFinal - saldoInicio;
+  var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
+
+  var cell = document.querySelector('.cierre-rend-cell[data-cuenta-id="' + cuentaId + '"]');
+  if (cell) {
+    if (inputEl.value === '') {
+      cell.innerHTML = '<span style="color:var(--text-muted);">\u2014</span>';
+    } else {
+      var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var sign = rend >= 0 ? '+' : '';
+      cell.innerHTML = '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, 'MXN') + '</span>' +
+        '<br><span style="font-size:11px;color:' + color + ';">(' + sign + rendPct.toFixed(2) + '%)</span>';
+    }
+  }
+}
+
+function saveCierreMensual(event) {
+  event.preventDefault();
+  var periodo = document.getElementById('cierrePeriodo').value;
+  if (!periodo) { showToast('Selecciona un periodo.', 'warning'); return; }
+
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var inputs = document.querySelectorAll('.cierre-saldo-final');
+  var cambios = 0;
+
+  inputs.forEach(function(input) {
+    if (input.value === '' || input.value === null) return;
+    var cuentaId = input.getAttribute('data-cuenta-id');
+    var saldoInicio = parseFloat(input.getAttribute('data-saldo-inicio')) || 0;
+    var saldoFinal = parseFloat(input.value) || 0;
+    var rend = saldoFinal - saldoInicio;
+    var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
+
+    var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+    if (ctaIdx === -1) return;
+
+    // Update account balance
+    cuentas[ctaIdx].saldo = saldoFinal;
+    cuentas[ctaIdx].updated = new Date().toISOString();
+
+    // Add to historial_saldos
+    if (!cuentas[ctaIdx].historial_saldos) cuentas[ctaIdx].historial_saldos = [];
+    cuentas[ctaIdx].historial_saldos.push({
+      fecha: periodo + '-01',
+      saldo_inicio: saldoInicio,
+      saldo_final: saldoFinal,
+      rendimiento: rend
+    });
+
+    // Create rendimiento record
+    rendimientos.push({
+      id: uuid(),
+      cuenta_id: cuentaId,
+      periodo: periodo,
+      saldo_inicial: saldoInicio,
+      saldo_final: saldoFinal,
+      rendimiento_monto: rend,
+      rendimiento_pct: rendPct,
+      fecha: periodo + '-01',
+      created: new Date().toISOString()
+    });
+
+    cambios++;
+  });
+
+  if (cambios === 0) { showToast('No se capturo ningun saldo final.', 'warning'); return; }
+
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+  saveData(STORAGE_KEYS.rendimientos, rendimientos);
+  closeModal();
+  showToast('Cierre mensual guardado para ' + cambios + ' cuenta' + (cambios > 1 ? 's' : '') + '.', 'success');
+  renderCuentas();
+  updateHeaderPatrimonio();
+}
+
+/* ============================================================
+   HISTORIAL DE SALDOS POR CUENTA
+   ============================================================ */
+function verHistorialCuenta(cuentaId) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return;
+  var historial = cuenta.historial_saldos || [];
+  var moneda = cuenta.moneda || 'MXN';
+
+  var tablaHTML = '';
+  if (historial.length === 0) {
+    tablaHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-chart-bar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay historial de saldos.<br><span style="font-size:12px;">Usa "Cierre Mensual" para registrar saldos al final de cada mes.</span></div>';
+  } else {
+    var sorted = [...historial].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+    var rows = sorted.map(function(h) {
+      var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
+      var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
+      var rend = h.rendimiento != null ? h.rendimiento : (sFinal - sInicio);
+      var rendPct = sInicio > 0 ? ((rend / sInicio) * 100) : 0;
+      var rendColor = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var rendSign = rend >= 0 ? '+' : '';
+      var fechaLabel = h.fecha ? h.fecha.substring(0, 7) : '\u2014';
+      return '<tr>' +
+        '<td style="font-weight:600;">' + fechaLabel + '</td>' +
+        '<td style="text-align:right;">' + formatCurrency(sInicio, moneda) + '</td>' +
+        '<td style="text-align:right;font-weight:600;">' + formatCurrency(sFinal, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + formatCurrency(rend, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '%</td>' +
+        '</tr>';
+    });
+    tablaHTML = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+      '<th>Periodo</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th>' +
+      '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+
+    // Chart data (chronological order)
+    var chartSorted = [...historial].sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+    tablaHTML += '<div style="margin-top:20px;"><canvas id="historialCuentaChart" height="200"></canvas></div>';
+
+    // We'll render the chart after modal opens
+    setTimeout(function() {
+      var ctx = document.getElementById('historialCuentaChart');
+      if (!ctx) return;
+      var labels = chartSorted.map(function(h) { return h.fecha ? h.fecha.substring(0, 7) : ''; });
+      var data = chartSorted.map(function(h) { return h.saldo_final != null ? h.saldo_final : h.saldo; });
+      var chartColorsTheme = (typeof getChartColors === 'function') ? getChartColors() : { gridColor: 'rgba(51,65,85,0.5)', fontColor: '#94a3b8' };
+      new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Saldo',
+            data: data,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            borderWidth: 2.5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { color: chartColorsTheme.gridColor }, ticks: { color: chartColorsTheme.fontColor, font: { size: 11 } } },
+            y: { grid: { color: chartColorsTheme.gridColor }, ticks: { color: chartColorsTheme.fontColor, font: { size: 11 }, callback: function(v) { return formatCurrency(v, moneda); } } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx2) { return formatCurrency(ctx2.parsed.y, moneda); } } }
+          }
+        }
+      });
+    }, 300);
+  }
+
+  var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Registros</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + historial.length + ' mes' + (historial.length !== 1 ? 'es' : '') + '</div></div>' +
+    '</div></div>' +
+    tablaHTML +
+    '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
+
+  openModal('Historial de Saldos: ' + cuenta.nombre, bodyHTML);
 }

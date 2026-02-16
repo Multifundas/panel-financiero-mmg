@@ -15,6 +15,7 @@ const moduleTitles = {
   metas:          'Metas Financieras',
   simulador:      'Simulador de Inversiones',
   configuracion:  'Configuracion',
+  ingresos_futuros: 'Ingresos Futuros',
 };
 
 function navigateTo(moduleId) {
@@ -46,6 +47,7 @@ function navigateTo(moduleId) {
     metas:          typeof renderMetas === 'function' ? renderMetas : function(){},
     simulador:      renderSimulador,
     configuracion:  renderConfiguracion,
+    ingresos_futuros: typeof renderIngresosFuturos === 'function' ? renderIngresosFuturos : function(){},
   };
   if (renderFns[moduleId]) renderFns[moduleId]();
 
