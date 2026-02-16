@@ -1116,20 +1116,21 @@ function filterEstadoCuenta() {
     });
   });
 
-  // Add cierres mensuales as informative rows
+  // Add cierres mensuales como abonos/cargos (diferencia saldo_final - saldo_inicio)
   var historial = cuenta.historial_saldos || [];
   historial.forEach(function(h) {
     var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
     var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
-    var rend = h.rendimiento != null ? h.rendimiento : (sFinal - sInicio);
+    var diff = sFinal - sInicio;
+    var rend = h.rendimiento != null ? h.rendimiento : diff;
     eventos.push({
       fecha: h.fecha || '',
-      descripcion: 'Cierre de cuenta — Saldo: ' + formatCurrency(sInicio, moneda) + ' \u2192 ' + formatCurrency(sFinal, moneda) + ' (rend: ' + (rend >= 0 ? '+' : '') + formatCurrency(rend, moneda) + ')',
-      tipo: 'cierre',
-      monto: 0,
+      descripcion: 'Cierre mensual' + (rend !== 0 ? ' (rend: ' + (rend >= 0 ? '+' : '') + formatCurrency(rend, moneda) + ')' : ''),
+      tipo: diff >= 0 ? 'ingreso' : 'gasto',
+      monto: Math.abs(diff),
       notas: '',
       origen: 'Cierre',
-      esCierre: true
+      esCierre: false
     });
   });
 
@@ -1142,7 +1143,7 @@ function filterEstadoCuenta() {
   var filtered = eventos.filter(function(e) {
     if (fDesde && e.fecha < fDesde) return false;
     if (fHasta && e.fecha > fHasta) return false;
-    if (fTipo && e.tipo !== fTipo && !e.esCierre) return false;
+    if (fTipo && e.tipo !== fTipo) return false;
     if (fSearch) {
       var text = (e.descripcion + ' ' + e.notas + ' ' + e.origen).toLowerCase();
       if (text.indexOf(fSearch) === -1) return false;
@@ -1151,7 +1152,7 @@ function filterEstadoCuenta() {
   });
 
   // Sort chronologically (oldest first) to calculate running balance
-  filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || '') || (a.esCierre ? 1 : 0) - (b.esCierre ? 1 : 0); });
+  filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
   // Saldo inicial permanente de la cuenta
   var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
@@ -1160,7 +1161,6 @@ function filterEstadoCuenta() {
   // Calculate totals from filtered movements
   var sumIngresos = 0, sumGastos = 0;
   filtered.forEach(function(e) {
-    if (e.esCierre) return;
     if (e.tipo === 'ingreso') sumIngresos += e.monto;
     else if (e.tipo === 'gasto') sumGastos += e.monto;
   });
@@ -1181,14 +1181,6 @@ function filterEstadoCuenta() {
 
   // Build table rows for movements and cierres
   var rows = filtered.map(function(e) {
-    if (e.esCierre) {
-      return '<tr style="background:rgba(59,130,246,0.06);">' +
-        '<td style="white-space:nowrap;color:var(--accent-blue);font-weight:600;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
-        '<td colspan="3" style="font-size:12px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
-        '<td></td>' +
-        '</tr>';
-    }
-
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
       cargo = formatCurrency(e.monto, moneda);
@@ -1200,7 +1192,8 @@ function filterEstadoCuenta() {
 
     // Determine origin badge
     var origenBadge = '';
-    if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
+    if (e.origen === 'Cierre') origenBadge = '<span class="badge badge-blue" style="font-size:9px;margin-left:6px;">Cierre</span>';
+    else if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
     else if (e.origen === 'Prestamo') origenBadge = '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;">Prestamo</span>';
     else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:9px;margin-left:6px;">PDF</span>';
     else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:9px;margin-left:6px;">Recurrente</span>';
