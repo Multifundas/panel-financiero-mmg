@@ -651,11 +651,11 @@ function cierreMensual() {
 
   var filas = activas.map(function(c) {
     return '<tr>' +
-      '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '<br><span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span></td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
-      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:6px 10px;font-size:13px;min-width:140px;"></td>' +
-      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" step="0.01" min="0" placeholder="Saldo final" style="padding:6px 10px;font-size:13px;min-width:130px;" oninput="recalcCierreRendimiento(this)"></td>' +
-      '<td style="text-align:right;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">—</span></td>' +
+      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span></td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
+      '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">—</span></td>' +
       '</tr>';
   }).join('');
 
@@ -664,15 +664,21 @@ function cierreMensual() {
     '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. Solo se guardaran las cuentas donde captures un saldo.</div>' +
     '</div>' +
-    '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+    '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
     '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
-    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+    '<button type="button" class="btn btn-secondary" onclick="closeCierreModal()">Cancelar</button>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Cierre</button>' +
     '</div></form>';
 
   openModal('Cierre de Cuentas', formHTML);
+  document.querySelector('.modal-content').classList.add('modal-wide');
+}
+
+function closeCierreModal() {
+  document.querySelector('.modal-content').classList.remove('modal-wide');
+  closeModal();
 }
 
 function recalcCierreRendimiento(inputEl) {
@@ -753,7 +759,7 @@ function saveCierreMensual(event) {
 
   saveData(STORAGE_KEYS.cuentas, cuentas);
   saveData(STORAGE_KEYS.rendimientos, rendimientos);
-  closeModal();
+  closeCierreModal();
   showToast('Cierre guardado para ' + cambios + ' cuenta' + (cambios > 1 ? 's' : '') + '.', 'success');
   renderCuentas();
   updateHeaderPatrimonio();
