@@ -66,6 +66,11 @@ function autoActualizarTipoCambio() {
 
 // -- Launch --
 document.addEventListener('DOMContentLoaded', function() {
+  // Setup auto-formatting of numeric inputs with commas
+  if (typeof _setupNumericFormatting === 'function') {
+    _setupNumericFormatting();
+  }
+
   if (typeof initAuth === 'function') {
     initAuth();
   } else {

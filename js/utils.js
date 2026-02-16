@@ -72,3 +72,85 @@ function mesNombre(monthIndex) {
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   return meses[monthIndex];
 }
+
+/* ============================================================
+   AUTO-FORMAT NUMERIC INPUTS WITH COMMAS
+   On blur: show number with commas (type=text)
+   On focus: restore raw number (type=number)
+   On form submit: restore all inputs to raw values first
+   ============================================================ */
+var _numericFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 4
+});
+
+function _formatWithCommas(val) {
+  if (val === '' || val == null || isNaN(val)) return '';
+  return _numericFormatter.format(Number(val));
+}
+
+function _restoreFormattedInput(input) {
+  if (input.getAttribute('data-was-number') !== 'true') return;
+  var raw = input.getAttribute('data-raw-value') || '';
+  input.type = 'number';
+  input.value = raw;
+  input.removeAttribute('data-was-number');
+}
+
+function _restoreAllFormatted(container) {
+  if (!container) container = document;
+  var inputs = container.querySelectorAll('input[data-was-number="true"]');
+  inputs.forEach(_restoreFormattedInput);
+}
+
+function _setupNumericFormatting() {
+  // Blur: switch to text with commas
+  document.addEventListener('blur', function(e) {
+    var input = e.target;
+    if (input.tagName !== 'INPUT') return;
+    if (input.getAttribute('data-no-commas') === 'true') return;
+    if (input.type !== 'number') return;
+    var val = input.value;
+    if (val === '' || val == null) return;
+    input.setAttribute('data-raw-value', val);
+    input.setAttribute('data-was-number', 'true');
+    input.type = 'text';
+    input.value = _formatWithCommas(val);
+  }, true);
+
+  // Focus: restore this input AND all other formatted inputs in the same
+  // modal/form so that any oninput handler reading sibling values works
+  document.addEventListener('focus', function(e) {
+    var input = e.target;
+    if (input.tagName !== 'INPUT') return;
+    // Restore this input if it was formatted
+    _restoreFormattedInput(input);
+    // Also restore all formatted inputs in the nearest form or modal
+    var container = input.closest('form') || input.closest('.modal-content') || input.closest('.card');
+    if (container) _restoreAllFormatted(container);
+  }, true);
+
+  // Before form submit: restore all formatted inputs to raw values
+  document.addEventListener('submit', function(e) {
+    _restoreAllFormatted(e.target);
+  }, true);
+
+  // On click of submit/primary button: restore formatted inputs
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button[type="submit"], button.btn-primary, button.btn-danger');
+    if (!btn) return;
+    // Restore all formatted inputs in the whole document
+    // (buttons may use onclick handlers outside of forms)
+    _restoreAllFormatted(document);
+  }, true);
+}
+
+/** Get the numeric value of an input (handles comma-formatted state) */
+function getInputNumericValue(inputOrId) {
+  var input = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
+  if (!input) return 0;
+  if (input.getAttribute('data-was-number') === 'true') {
+    return parseFloat(input.getAttribute('data-raw-value')) || 0;
+  }
+  return parseFloat(input.value) || 0;
+}
