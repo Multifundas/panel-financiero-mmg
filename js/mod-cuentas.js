@@ -326,11 +326,16 @@ function editCuenta(id) {
         </select>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">Saldo *</label>
+          <label class="form-label">Saldo Inicial *</label>
           <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
                  value="${isEdit ? cuenta.saldo : ''}" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha Saldo Inicial</label>
+          <input type="date" id="cuentaFechaSaldoInicial" class="form-input"
+                 value="${isEdit && cuenta.fecha_saldo_inicial ? cuenta.fecha_saldo_inicial : ''}">
         </div>
         <div class="form-group" id="rendimientoGroup" style="display:${(isEdit && cuenta.tipo === 'inversion') || (!isEdit) ? 'block' : 'none'};">
           <label class="form-label" id="rendimientoLabel">Rendimiento Anual (%)</label>
@@ -534,6 +539,7 @@ function saveCuenta(event) {
   const moneda = document.getElementById('cuentaMoneda').value;
   const institucion_id = document.getElementById('cuentaInstitucion').value;
   const saldo = parseFloat(document.getElementById('cuentaSaldo').value) || 0;
+  const fecha_saldo_inicial = document.getElementById('cuentaFechaSaldoInicial') ? document.getElementById('cuentaFechaSaldoInicial').value : '';
   const rendimiento_anual = tipo === 'inversion'
     ? (parseFloat(document.getElementById('cuentaRendimiento').value) || 0)
     : 0;
@@ -579,6 +585,7 @@ function saveCuenta(event) {
       cuentas[idx].moneda = moneda;
       cuentas[idx].institucion_id = institucion_id;
       cuentas[idx].saldo = saldo;
+      cuentas[idx].fecha_saldo_inicial = fecha_saldo_inicial;
       cuentas[idx].rendimiento_anual = rendimiento_anual;
       cuentas[idx].subtipo = subtipo;
       cuentas[idx].pagare_fecha_inicio = pagare_fecha_inicio;
@@ -600,6 +607,7 @@ function saveCuenta(event) {
       moneda: moneda,
       institucion_id: institucion_id,
       saldo: saldo,
+      fecha_saldo_inicial: fecha_saldo_inicial,
       rendimiento_anual: rendimiento_anual,
       subtipo: subtipo,
       pagare_fecha_inicio: pagare_fecha_inicio,
@@ -644,6 +652,25 @@ function deleteCuenta(id) {
 /* ============================================================
    CIERRE MENSUAL DE CUENTAS
    ============================================================ */
+function _getUltimoCierre(cuenta) {
+  var h = cuenta.historial_saldos || [];
+  if (h.length === 0) return cuenta.fecha_saldo_inicial || cuenta.created || '';
+  var sorted = h.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+  return sorted[0].fecha || '';
+}
+
+function _calcMovimientosNetos(cuentaId, desdeExcl) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var ingresos = 0, gastos = 0;
+  movimientos.forEach(function(m) {
+    if (m.cuenta_id !== cuentaId) return;
+    if (desdeExcl && m.fecha <= desdeExcl) return;
+    if (m.tipo === 'ingreso') ingresos += m.monto;
+    else if (m.tipo === 'gasto') gastos += m.monto;
+  });
+  return { ingresos: ingresos, gastos: gastos, neto: ingresos - gastos };
+}
+
 function cierreMensual() {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const activas = cuentas.filter(c => c.activa !== false);
@@ -653,19 +680,22 @@ function cierreMensual() {
   var fechaHoy = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
 
   var filas = activas.map(function(c) {
+    var ultimoCierre = _getUltimoCierre(c);
+    var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
     return '<tr>' +
-      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span></td>' +
+      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span>' +
+      '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span></td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
       '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
-      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
-      '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">—</span></td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
+      '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">\u2014</span></td>' +
       '</tr>';
   }).join('');
 
   var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
     '<div style="margin-bottom:16px;">' +
     '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
-    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. Solo se guardaran las cuentas donde captures un saldo.</div>' +
+    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos (ingresos/gastos) del periodo.</div>' +
     '</div>' +
     '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
@@ -688,7 +718,12 @@ function recalcCierreRendimiento(inputEl) {
   var cuentaId = inputEl.getAttribute('data-cuenta-id');
   var saldoInicio = parseFloat(inputEl.getAttribute('data-saldo-inicio')) || 0;
   var saldoFinal = parseFloat(inputEl.value) || 0;
-  var rend = saldoFinal - saldoInicio;
+  var movNeto = parseFloat(inputEl.getAttribute('data-mov-neto')) || 0;
+  // Rendimiento = cambio en saldo - movimientos netos del periodo
+  // Si entraron 5000 (ingresos) y salieron 2000 (gastos), neto = +3000
+  // saldo_final - saldo_inicio = cambio total (incluye movimientos + rendimiento)
+  // rendimiento = (saldo_final - saldo_inicio) - neto_movimientos
+  var rend = (saldoFinal - saldoInicio) - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
 
   var cell = document.querySelector('.cierre-rend-cell[data-cuenta-id="' + cuentaId + '"]');
@@ -717,7 +752,8 @@ function saveCierreMensual(event) {
     var cuentaId = input.getAttribute('data-cuenta-id');
     var saldoInicio = parseFloat(input.getAttribute('data-saldo-inicio')) || 0;
     var saldoFinal = parseFloat(input.value) || 0;
-    var rend = saldoFinal - saldoInicio;
+    var movNeto = parseFloat(input.getAttribute('data-mov-neto')) || 0;
+    var rend = (saldoFinal - saldoInicio) - movNeto;
     var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
 
     // Get individual date for this account
@@ -739,6 +775,7 @@ function saveCierreMensual(event) {
       fecha: fecha,
       saldo_inicio: saldoInicio,
       saldo_final: saldoFinal,
+      movimientos_neto: movNeto,
       rendimiento: rend
     });
 
@@ -749,6 +786,7 @@ function saveCierreMensual(event) {
       periodo: periodo,
       saldo_inicial: saldoInicio,
       saldo_final: saldoFinal,
+      movimientos_neto: movNeto,
       rendimiento_monto: rend,
       rendimiento_pct: rendPct,
       fecha: fecha,
@@ -1026,8 +1064,7 @@ function filterEstadoCuenta() {
       '</tr>';
   });
 
-  // Show newest first
-  rows.reverse();
+  // Oldest first (chronological order, like a bank statement)
 
   var countMovs = filtered.filter(function(e) { return !e.esCierre; }).length;
 
