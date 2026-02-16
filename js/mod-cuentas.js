@@ -696,8 +696,8 @@ function cierreMensual() {
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span>' +
       (esDebito ? '<br><span class="badge badge-blue" style="font-size:9px;">Debito</span>' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
-      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
-      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
+      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
       rendCell +
       '</tr>';
   }).join('');
@@ -705,7 +705,7 @@ function cierreMensual() {
   var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
     '<div style="margin-bottom:16px;">' +
     '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
-    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos (ingresos/gastos) del periodo.</div>' +
+    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos del periodo y se anualiza segun los dias transcurridos.</div>' +
     '</div>' +
     '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
@@ -724,17 +724,30 @@ function closeCierreModal() {
   closeModal();
 }
 
+function _calcDiasEntreFechas(fechaDesde, fechaHasta) {
+  if (!fechaDesde || !fechaHasta) return 0;
+  var d1 = new Date(fechaDesde + 'T00:00:00');
+  var d2 = new Date(fechaHasta + 'T00:00:00');
+  var diff = d2.getTime() - d1.getTime();
+  return Math.max(Math.round(diff / (1000 * 60 * 60 * 24)), 1);
+}
+
 function recalcCierreRendimiento(inputEl) {
   var cuentaId = inputEl.getAttribute('data-cuenta-id');
   var tipoCuenta = inputEl.getAttribute('data-tipo') || '';
-  // Las cuentas de debito no generan rendimiento
   if (tipoCuenta === 'debito') return;
 
   var saldoInicio = parseFloat(inputEl.getAttribute('data-saldo-inicio')) || 0;
   var saldoFinal = parseFloat(inputEl.value) || 0;
   var movNeto = parseFloat(inputEl.getAttribute('data-mov-neto')) || 0;
+  var fechaUltimoCierre = inputEl.getAttribute('data-fecha-ultimo-cierre') || '';
+  var fechaInput = document.querySelector('.cierre-fecha[data-cuenta-id="' + cuentaId + '"]');
+  var fechaCierre = fechaInput ? fechaInput.value : '';
+  var dias = _calcDiasEntreFechas(fechaUltimoCierre, fechaCierre);
+
   var rend = (saldoFinal - saldoInicio) - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
+  var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
   var cell = document.querySelector('.cierre-rend-cell[data-cuenta-id="' + cuentaId + '"]');
   if (cell) {
@@ -744,8 +757,17 @@ function recalcCierreRendimiento(inputEl) {
       var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var sign = rend >= 0 ? '+' : '';
       cell.innerHTML = '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, 'MXN') + '</span>' +
-        '<br><span style="font-size:11px;color:' + color + ';">(' + sign + rendPct.toFixed(2) + '%)</span>';
+        '<br><span style="font-size:11px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% en ' + dias + 'd</span>' +
+        '<br><span style="font-size:10px;color:' + color + ';opacity:0.8;">(' + sign + rendPctAnual.toFixed(2) + '% anual)</span>';
     }
+  }
+}
+
+function recalcCierreRendimientoByDate(fechaInput) {
+  var cuentaId = fechaInput.getAttribute('data-cuenta-id');
+  var saldoInput = document.querySelector('.cierre-saldo-final[data-cuenta-id="' + cuentaId + '"]');
+  if (saldoInput && saldoInput.value !== '') {
+    recalcCierreRendimiento(saldoInput);
   }
 }
 
@@ -764,16 +786,22 @@ function saveCierreMensual(event) {
     var saldoInicio = parseFloat(input.getAttribute('data-saldo-inicio')) || 0;
     var saldoFinal = parseFloat(input.value) || 0;
     var movNeto = parseFloat(input.getAttribute('data-mov-neto')) || 0;
-    // Las cuentas de debito no generan rendimiento
-    var esDebito = tipoCuenta === 'debito';
-    var rend = esDebito ? 0 : (saldoFinal - saldoInicio) - movNeto;
-    var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
+    var fechaUltimoCierre = input.getAttribute('data-fecha-ultimo-cierre') || '';
 
     // Get individual date for this account
     var fechaInput = document.querySelector('.cierre-fecha[data-cuenta-id="' + cuentaId + '"]');
     var fecha = fechaInput ? fechaInput.value : new Date().toISOString().slice(0, 10);
     if (!fecha) { return; }
     var periodo = fecha.slice(0, 7); // YYYY-MM
+
+    // Calculate days between ultimo cierre and this cierre
+    var dias = _calcDiasEntreFechas(fechaUltimoCierre, fecha);
+
+    // Las cuentas de debito no generan rendimiento
+    var esDebito = tipoCuenta === 'debito';
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio) - movNeto;
+    var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
+    var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
     var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
     if (ctaIdx === -1) return;
@@ -789,7 +817,10 @@ function saveCierreMensual(event) {
       saldo_inicio: saldoInicio,
       saldo_final: saldoFinal,
       movimientos_neto: movNeto,
-      rendimiento: rend
+      rendimiento: rend,
+      dias: dias,
+      rendimiento_pct: rendPct,
+      rendimiento_pct_anual: rendPctAnual
     });
 
     // Create rendimiento record (solo para cuentas que no son debito)
@@ -803,6 +834,8 @@ function saveCierreMensual(event) {
         movimientos_neto: movNeto,
         rendimiento_monto: rend,
         rendimiento_pct: rendPct,
+        rendimiento_pct_anual: rendPctAnual,
+        dias: dias,
         fecha: fecha,
         created: new Date().toISOString()
       });
@@ -842,23 +875,27 @@ function verHistorialCuenta(cuentaId) {
       var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
       var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
       var rend = h.rendimiento != null ? h.rendimiento : (sFinal - sInicio);
-      var rendPct = sInicio > 0 ? ((rend / sInicio) * 100) : 0;
+      var rendPct = h.rendimiento_pct != null ? h.rendimiento_pct : (sInicio > 0 ? ((rend / sInicio) * 100) : 0);
+      var dias = h.dias || 0;
+      var rendPctAnual = h.rendimiento_pct_anual != null ? h.rendimiento_pct_anual : (sInicio > 0 && dias > 0 ? ((rend / sInicio) * (365 / dias) * 100) : rendPct);
       var rendColor = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var rendSign = rend >= 0 ? '+' : '';
       var fechaLabel = h.fecha ? h.fecha.substring(0, 7) : '\u2014';
       return '<tr>' +
         '<td style="font-weight:600;">' + fechaLabel + '</td>' +
+        '<td style="text-align:center;">' + (dias > 0 ? dias + 'd' : '\u2014') + '</td>' +
         '<td style="text-align:right;">' + formatCurrency(sInicio, moneda) + '</td>' +
         '<td style="text-align:right;font-weight:600;">' + formatCurrency(sFinal, moneda) + '</td>' +
         '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + formatCurrency(rend, moneda) + '</td>' +
         '<td style="text-align:right;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '%</td>' +
+        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + rendPctAnual.toFixed(2) + '%</td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
         '<button class="btn btn-secondary" style="padding:3px 7px;font-size:10px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Editar"><i class="fas fa-pen"></i></button>' +
         '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
         '</td></tr>';
     });
     tablaHTML = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
-      '<th>Periodo</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th><th style="text-align:center;">Acciones</th>' +
+      '<th>Periodo</th><th style="text-align:center;">Dias</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th><th style="text-align:right;">Rend. Anual</th><th style="text-align:center;">Acciones</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
 
     // Chart data (chronological order)
@@ -927,17 +964,21 @@ function editCierreHistorial(cuentaId, idx) {
   var esDebito = cuenta.tipo === 'debito';
 
   var formHTML = '<form id="formEditCierre" onsubmit="saveEditCierre(event, \'' + cuentaId + '\', ' + idx + ')">' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
     '<div class="form-group"><label class="form-label">Fecha</label>' +
     '<input type="date" id="editCierreFecha" class="form-input" required value="' + (h.fecha || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Dias</label>' +
+    '<input type="number" id="editCierreDias" class="form-input" step="1" min="1" value="' + (h.dias || 0) + '"></div>' +
     '<div class="form-group"><label class="form-label">Saldo Inicio</label>' +
     '<input type="number" id="editCierreSaldoInicio" class="form-input" step="0.01" required value="' + (h.saldo_inicio != null ? h.saldo_inicio : h.saldo || 0) + '"></div>' +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
     '<div class="form-group"><label class="form-label">Saldo Final</label>' +
     '<input type="number" id="editCierreSaldoFinal" class="form-input" step="0.01" required value="' + (h.saldo_final != null ? h.saldo_final : h.saldo || 0) + '"></div>' +
     '<div class="form-group"><label class="form-label">Rendimiento' + (esDebito ? ' (N/A debito)' : '') + '</label>' +
     '<input type="number" id="editCierreRendimiento" class="form-input" step="0.01" value="' + (h.rendimiento || 0) + '"' + (esDebito ? ' readonly style="opacity:0.5;"' : '') + '></div>' +
+    '<div class="form-group"><label class="form-label">Rend. % Anual</label>' +
+    '<input type="number" id="editCierreRendPctAnual" class="form-input" step="0.01" value="' + (h.rendimiento_pct_anual || 0).toFixed(2) + '" readonly style="opacity:0.7;"></div>' +
     '</div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
     '<button type="button" class="btn btn-secondary" onclick="verHistorialCuenta(\'' + cuentaId + '\')">Cancelar</button>' +
@@ -956,15 +997,22 @@ function saveEditCierre(event, cuentaId, idx) {
   if (!cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
 
   var fecha = document.getElementById('editCierreFecha').value;
+  var dias = parseInt(document.getElementById('editCierreDias').value) || 0;
   var saldoInicio = parseFloat(document.getElementById('editCierreSaldoInicio').value) || 0;
   var saldoFinal = parseFloat(document.getElementById('editCierreSaldoFinal').value) || 0;
   var rendimiento = parseFloat(document.getElementById('editCierreRendimiento').value) || 0;
+  var esDebito = cuenta.tipo === 'debito';
+  var rendPct = (!esDebito && saldoInicio > 0) ? ((rendimiento / saldoInicio) * 100) : 0;
+  var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rendimiento / saldoInicio) * (365 / dias) * 100) : rendPct;
 
   // Update the historial entry
   cuenta.historial_saldos[idx].fecha = fecha;
+  cuenta.historial_saldos[idx].dias = dias;
   cuenta.historial_saldos[idx].saldo_inicio = saldoInicio;
   cuenta.historial_saldos[idx].saldo_final = saldoFinal;
-  cuenta.historial_saldos[idx].rendimiento = cuenta.tipo === 'debito' ? 0 : rendimiento;
+  cuenta.historial_saldos[idx].rendimiento = esDebito ? 0 : rendimiento;
+  cuenta.historial_saldos[idx].rendimiento_pct = esDebito ? 0 : rendPct;
+  cuenta.historial_saldos[idx].rendimiento_pct_anual = esDebito ? 0 : rendPctAnual;
 
   // If this is the most recent cierre, update the account saldo to the saldo_final
   var sorted = [...cuenta.historial_saldos].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
@@ -985,7 +1033,9 @@ function saveEditCierre(event, cuentaId, idx) {
     rendimientos[rIdx].saldo_inicial = saldoInicio;
     rendimientos[rIdx].saldo_final = saldoFinal;
     rendimientos[rIdx].rendimiento_monto = rendimiento;
-    rendimientos[rIdx].rendimiento_pct = saldoInicio > 0 ? ((rendimiento / saldoInicio) * 100) : 0;
+    rendimientos[rIdx].rendimiento_pct = rendPct;
+    rendimientos[rIdx].rendimiento_pct_anual = rendPctAnual;
+    rendimientos[rIdx].dias = dias;
     saveData(STORAGE_KEYS.rendimientos, rendimientos);
   }
 

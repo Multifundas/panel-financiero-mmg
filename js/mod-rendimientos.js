@@ -31,13 +31,13 @@ function renderRendimientos() {
       return s + toMXN(r.rendimiento_monto, cta ? cta.moneda : 'MXN', tiposCambio);
     }, 0);
 
-  // Tasa promedio ponderada
+  // Tasa promedio ponderada (usa tasa anualizada)
   let sumCapitalTasa = 0;
   let sumCapital = 0;
   rendimientos.filter(r => r.periodo === periodoActual).forEach(r => {
     const cta = cuentaMap[r.cuenta_id];
     const capital = cta ? toMXN(cta.saldo, cta.moneda, tiposCambio) : 0;
-    const tasa = r.rendimiento_pct || 0;
+    const tasa = r.rendimiento_pct_anual != null ? r.rendimiento_pct_anual : (r.rendimiento_pct || 0);
     sumCapitalTasa += capital * tasa;
     sumCapital += capital;
   });
@@ -141,7 +141,9 @@ function renderRendimientos() {
             <tr>
               <th>Cuenta</th>
               <th style="text-align:right;">Capital</th>
+              <th style="text-align:center;">Dias</th>
               <th style="text-align:right;">Tasa (%)</th>
+              <th style="text-align:right;">Tasa Anual (%)</th>
               <th style="text-align:right;">Rendimiento Periodo</th>
               <th style="text-align:right;">Rendimiento Acumulado</th>
               <th>Fecha</th>
@@ -425,7 +427,7 @@ function filterRendimientos() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No hay rendimientos registrados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:24px;">No hay rendimientos registrados</td></tr>';
     return;
   }
 
@@ -435,6 +437,8 @@ function filterRendimientos() {
     const moneda = cta ? cta.moneda : 'MXN';
     const capital = r.saldo_inicial || (cta ? cta.saldo : 0);
     const tasa = r.rendimiento_pct || 0;
+    const tasaAnual = r.rendimiento_pct_anual != null ? r.rendimiento_pct_anual : tasa;
+    const dias = r.dias || 0;
     const rendPeriodo = r.rendimiento_monto || 0;
     const acum = acumuladoByCuenta[r.cuenta_id] || 0;
     const tipo = r.tipo || 'Interes';
@@ -443,7 +447,9 @@ function filterRendimientos() {
     return `<tr>
       <td>${ctaNombre}</td>
       <td style="text-align:right;">${formatCurrency(capital, moneda)}</td>
+      <td style="text-align:center;">${dias > 0 ? dias + 'd' : '\u2014'}</td>
       <td style="text-align:right;">${formatPct(tasa)}</td>
+      <td style="text-align:right;font-weight:600;">${formatPct(tasaAnual)}</td>
       <td style="text-align:right;color:var(--accent-green);">${formatCurrency(rendPeriodo, moneda)}${reinvTag}</td>
       <td style="text-align:right;color:var(--accent-blue);">${formatCurrency(acum, 'MXN')}</td>
       <td>${r.fecha ? formatDate(r.fecha) : r.periodo || '-'}</td>
