@@ -19,6 +19,8 @@ const moduleTitles = {
 };
 
 function navigateTo(moduleId) {
+  // Transferencias ahora vive dentro de Movimientos
+  if (moduleId === 'transferencias') moduleId = 'movimientos';
   // Hide all modules
   document.querySelectorAll('.module-section').forEach(el => el.classList.remove('active'));
   // Show target

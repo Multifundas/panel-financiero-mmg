@@ -154,7 +154,6 @@ function renderCuentas() {
               <th style="text-align:right;">Saldo</th>
               <th style="text-align:right;">Rendimiento %</th>
               <th>Subtipo</th>
-              <th>Estado</th>
               <th style="text-align:center;">Acciones</th>
             </tr>
           </thead>
@@ -203,7 +202,7 @@ function filterCuentas() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+        <td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
           <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No se encontraron cuentas con los filtros aplicados.
         </td>
@@ -219,11 +218,6 @@ function filterCuentas() {
     const tipoLabel = c.tipo === 'inversion' ? 'Inversion'
       : c.tipo === 'inmueble' ? 'Inmueble'
       : c.tipo === 'activo_fijo' ? 'Activo Fijo' : 'Debito';
-
-    // Estado badge
-    const activa = c.activa !== false;
-    const estadoBadge = activa ? 'badge-green' : 'badge-red';
-    const estadoLabel = activa ? 'Activa' : 'Inactiva';
 
     // Rendimiento display
     const rendimiento = c.rendimiento_anual
@@ -249,7 +243,6 @@ function filterCuentas() {
       <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(c.saldo, c.moneda)}</td>
       <td style="text-align:right;color:${c.rendimiento_anual ? 'var(--accent-green)' : 'var(--text-muted)'};">${rendimiento}</td>
       <td>${subtipoHTML}</td>
-      <td><span class="badge ${estadoBadge}">${estadoLabel}</span></td>
       <td style="text-align:center;">
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
           <i class="fas fa-pen"></i>
@@ -328,9 +321,9 @@ function editCuenta(id) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">Saldo Inicial *</label>
-          <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
-                 value="${isEdit ? cuenta.saldo : ''}" placeholder="0.00">
+          <label class="form-label">${isEdit ? 'Saldo Inicial (no editable)' : 'Saldo Inicial *'}</label>
+          <input type="number" id="cuentaSaldo" class="form-input" ${isEdit ? 'readonly style="background:var(--bg-base);opacity:0.7;"' : 'required'} step="0.01" min="0"
+                 value="${isEdit ? (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo) : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label">Fecha Saldo Inicial</label>
@@ -584,8 +577,8 @@ function saveCuenta(event) {
       cuentas[idx].tipo = tipo;
       cuentas[idx].moneda = moneda;
       cuentas[idx].institucion_id = institucion_id;
-      cuentas[idx].saldo = saldo;
-      cuentas[idx].fecha_saldo_inicial = fecha_saldo_inicial;
+      // saldo_inicial y saldo NO se sobrescriben al editar
+      if (fecha_saldo_inicial) cuentas[idx].fecha_saldo_inicial = fecha_saldo_inicial;
       cuentas[idx].rendimiento_anual = rendimiento_anual;
       cuentas[idx].subtipo = subtipo;
       cuentas[idx].pagare_fecha_inicio = pagare_fecha_inicio;
@@ -607,6 +600,7 @@ function saveCuenta(event) {
       moneda: moneda,
       institucion_id: institucion_id,
       saldo: saldo,
+      saldo_inicial: saldo,
       fecha_saldo_inicial: fecha_saldo_inicial,
       rendimiento_anual: rendimiento_anual,
       subtipo: subtipo,
@@ -629,24 +623,36 @@ function saveCuenta(event) {
   updateHeaderPatrimonio();
 }
 
-/* -- Soft-delete a cuenta (set activa=false) -- */
+/* -- Delete a cuenta permanently -- */
 function deleteCuenta(id) {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const cuenta = cuentas.find(c => c.id === id);
   if (!cuenta) return;
 
-  const confirmar = confirm('\u00BFEstas seguro de desactivar la cuenta "' + cuenta.nombre + '"?\nLa cuenta quedara marcada como inactiva.');
+  const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  const movsCount = movimientos.filter(m => m.cuenta_id === id).length;
+  var msg = '\u00BFEstas seguro de ELIMINAR la cuenta "' + cuenta.nombre + '"?\n\nEsta accion es permanente y no se puede deshacer.';
+  if (movsCount > 0) msg += '\n\nNota: La cuenta tiene ' + movsCount + ' movimiento(s) asociado(s) que tambien se eliminaran.';
+
+  const confirmar = confirm(msg);
   if (!confirmar) return;
 
-  const idx = cuentas.findIndex(c => c.id === id);
-  if (idx !== -1) {
-    cuentas[idx].activa = false;
-    cuentas[idx].updated = new Date().toISOString();
-    saveData(STORAGE_KEYS.cuentas, cuentas);
-    showToast('Cuenta "' + cuenta.nombre + '" desactivada.', 'info');
-    renderCuentas();
-    updateHeaderPatrimonio();
-  }
+  // Remove associated movimientos
+  const newMovimientos = movimientos.filter(m => m.cuenta_id !== id);
+  saveData(STORAGE_KEYS.movimientos, newMovimientos);
+
+  // Remove associated rendimientos
+  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  const newRendimientos = rendimientos.filter(r => r.cuenta_id !== id);
+  saveData(STORAGE_KEYS.rendimientos, newRendimientos);
+
+  // Remove the cuenta
+  const newCuentas = cuentas.filter(c => c.id !== id);
+  saveData(STORAGE_KEYS.cuentas, newCuentas);
+
+  showToast('Cuenta "' + cuenta.nombre + '" eliminada permanentemente.', 'info');
+  renderCuentas();
+  updateHeaderPatrimonio();
 }
 
 /* ============================================================
@@ -682,13 +688,17 @@ function cierreMensual() {
   var filas = activas.map(function(c) {
     var ultimoCierre = _getUltimoCierre(c);
     var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
+    var esDebito = c.tipo === 'debito';
+    var rendCell = esDebito
+      ? '<td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:11px;">N/A</td>'
+      : '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">\u2014</span></td>';
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span>' +
-      '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span></td>' +
+      (esDebito ? '<br><span class="badge badge-blue" style="font-size:9px;">Debito</span>' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
       '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
-      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
-      '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">\u2014</span></td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
+      rendCell +
       '</tr>';
   }).join('');
 
@@ -716,13 +726,13 @@ function closeCierreModal() {
 
 function recalcCierreRendimiento(inputEl) {
   var cuentaId = inputEl.getAttribute('data-cuenta-id');
+  var tipoCuenta = inputEl.getAttribute('data-tipo') || '';
+  // Las cuentas de debito no generan rendimiento
+  if (tipoCuenta === 'debito') return;
+
   var saldoInicio = parseFloat(inputEl.getAttribute('data-saldo-inicio')) || 0;
   var saldoFinal = parseFloat(inputEl.value) || 0;
   var movNeto = parseFloat(inputEl.getAttribute('data-mov-neto')) || 0;
-  // Rendimiento = cambio en saldo - movimientos netos del periodo
-  // Si entraron 5000 (ingresos) y salieron 2000 (gastos), neto = +3000
-  // saldo_final - saldo_inicio = cambio total (incluye movimientos + rendimiento)
-  // rendimiento = (saldo_final - saldo_inicio) - neto_movimientos
   var rend = (saldoFinal - saldoInicio) - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
 
@@ -750,11 +760,14 @@ function saveCierreMensual(event) {
   inputs.forEach(function(input) {
     if (input.value === '' || input.value === null) return;
     var cuentaId = input.getAttribute('data-cuenta-id');
+    var tipoCuenta = input.getAttribute('data-tipo') || '';
     var saldoInicio = parseFloat(input.getAttribute('data-saldo-inicio')) || 0;
     var saldoFinal = parseFloat(input.value) || 0;
     var movNeto = parseFloat(input.getAttribute('data-mov-neto')) || 0;
-    var rend = (saldoFinal - saldoInicio) - movNeto;
-    var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
+    // Las cuentas de debito no generan rendimiento
+    var esDebito = tipoCuenta === 'debito';
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio) - movNeto;
+    var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
 
     // Get individual date for this account
     var fechaInput = document.querySelector('.cierre-fecha[data-cuenta-id="' + cuentaId + '"]');
@@ -779,19 +792,21 @@ function saveCierreMensual(event) {
       rendimiento: rend
     });
 
-    // Create rendimiento record
-    rendimientos.push({
-      id: uuid(),
-      cuenta_id: cuentaId,
-      periodo: periodo,
-      saldo_inicial: saldoInicio,
-      saldo_final: saldoFinal,
-      movimientos_neto: movNeto,
-      rendimiento_monto: rend,
-      rendimiento_pct: rendPct,
-      fecha: fecha,
-      created: new Date().toISOString()
-    });
+    // Create rendimiento record (solo para cuentas que no son debito)
+    if (!esDebito) {
+      rendimientos.push({
+        id: uuid(),
+        cuenta_id: cuentaId,
+        periodo: periodo,
+        saldo_inicial: saldoInicio,
+        saldo_final: saldoFinal,
+        movimientos_neto: movNeto,
+        rendimiento_monto: rend,
+        rendimiento_pct: rendPct,
+        fecha: fecha,
+        created: new Date().toISOString()
+      });
+    }
 
     cambios++;
   });
@@ -1076,7 +1091,7 @@ function filterEstadoCuenta() {
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Inicial</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:15px;font-weight:800;color:var(--accent-red);">' + formatCurrency(sumGastos, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(sumIngresos, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Movimientos</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + countMovs + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
     '</div>';
 
   contenedor.innerHTML = html;

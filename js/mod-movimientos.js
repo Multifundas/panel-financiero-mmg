@@ -104,6 +104,9 @@ function renderMovimientos() {
           <button class="btn btn-secondary" onclick="openPdfImport()" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
             <i class="fas fa-file-pdf" style="margin-right:4px;"></i>Cargar PDF
           </button>
+          <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="border-color:var(--accent-purple);color:var(--accent-purple);">
+            <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Transferencia
+          </button>
           <button class="btn btn-primary" onclick="editMovimiento(null)">
             <i class="fas fa-plus"></i> Nuevo Movimiento
           </button>
@@ -983,4 +986,186 @@ function aplicarTodasPendientes() {
   if (typeof updateHeaderPatrimonio === 'function') {
     updateHeaderPatrimonio();
   }
+}
+
+/* ============================================================
+   TRANSFERENCIAS (modal integrado en Movimientos)
+   ============================================================ */
+function openTransferenciaModal() {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
+  var cuentaOpciones = cuentasActivas.map(function(c) {
+    return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
+  }).join('');
+
+  var hoy = new Date().toISOString().split('T')[0];
+
+  var formHTML = '<form id="formTransferenciaModal" onsubmit="executeTransferenciaModal(event)">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Cuenta Origen *</label>' +
+    '<select id="tmCuentaOrigen" class="form-select" required onchange="onTransferModalChange()">' +
+    '<option value="">Seleccionar cuenta...</option>' + cuentaOpciones + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Cuenta Destino *</label>' +
+    '<select id="tmCuentaDestino" class="form-select" required onchange="onTransferModalChange()">' +
+    '<option value="">Seleccionar cuenta...</option>' + cuentaOpciones + '</select></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Monto Origen *</label>' +
+    '<input type="number" id="tmMontoOrigen" class="form-input" required step="0.01" min="0.01" placeholder="0.00" oninput="onTransferModalChange()"></div>' +
+    '<div class="form-group"><label class="form-label">Fecha *</label>' +
+    '<input type="date" id="tmFecha" class="form-input" required value="' + hoy + '"></div>' +
+    '</div>' +
+    '<div id="tmTipoCambioSection" style="display:none;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Tipo de Cambio *</label>' +
+    '<input type="number" id="tmTipoCambio" class="form-input" step="0.0001" min="0.0001" placeholder="Ej: 17.50" oninput="onTransferModalChange()"></div>' +
+    '<div class="form-group"><label class="form-label">Monto Destino (calculado)</label>' +
+    '<input type="text" id="tmMontoDestino" class="form-input" readonly style="background:var(--bg-base);color:var(--accent-green);font-weight:700;" placeholder="---"></div>' +
+    '</div></div>' +
+    '<div class="form-group"><label class="form-label">Motivo / Descripcion</label>' +
+    '<input type="text" id="tmMotivo" class="form-input" placeholder="Ej: Inversion en CETES"></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-exchange-alt"></i> Transferir</button>' +
+    '</div></form>';
+
+  openModal('Nueva Transferencia', formHTML);
+}
+
+function onTransferModalChange() {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var origenId = document.getElementById('tmCuentaOrigen').value;
+  var destinoId = document.getElementById('tmCuentaDestino').value;
+  var tcSection = document.getElementById('tmTipoCambioSection');
+  var tcInput = document.getElementById('tmTipoCambio');
+  var montoDestinoInput = document.getElementById('tmMontoDestino');
+  var montoOrigen = parseFloat(document.getElementById('tmMontoOrigen').value) || 0;
+
+  if (!origenId || !destinoId) { tcSection.style.display = 'none'; return; }
+  var ctaOrigen = cuentaMap[origenId];
+  var ctaDestino = cuentaMap[destinoId];
+  if (!ctaOrigen || !ctaDestino) { tcSection.style.display = 'none'; return; }
+
+  if (ctaOrigen.moneda !== ctaDestino.moneda) {
+    tcSection.style.display = 'block';
+    if (!tcInput.value || parseFloat(tcInput.value) === 0) {
+      var suggestedRate = 1;
+      if (ctaOrigen.moneda === 'MXN' && ctaDestino.moneda === 'USD') suggestedRate = 1 / (tiposCambio['USD_MXN'] || 17.50);
+      else if (ctaOrigen.moneda === 'USD' && ctaDestino.moneda === 'MXN') suggestedRate = tiposCambio['USD_MXN'] || 17.50;
+      else if (ctaOrigen.moneda === 'MXN' && ctaDestino.moneda === 'EUR') suggestedRate = 1 / (tiposCambio['EUR_MXN'] || 19.20);
+      else if (ctaOrigen.moneda === 'EUR' && ctaDestino.moneda === 'MXN') suggestedRate = tiposCambio['EUR_MXN'] || 19.20;
+      tcInput.value = suggestedRate.toFixed(4);
+    }
+    var tc = parseFloat(tcInput.value) || 0;
+    var montoDestCalc = montoOrigen * tc;
+    montoDestinoInput.value = montoDestCalc > 0 ? formatCurrency(montoDestCalc, ctaDestino.moneda) : '---';
+  } else {
+    tcSection.style.display = 'none';
+  }
+}
+
+function executeTransferenciaModal(event) {
+  event.preventDefault();
+
+  var transferencias = loadData(STORAGE_KEYS.transferencias) || [];
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+
+  var cuenta_origen_id = document.getElementById('tmCuentaOrigen').value;
+  var cuenta_destino_id = document.getElementById('tmCuentaDestino').value;
+  var monto_origen = parseFloat(document.getElementById('tmMontoOrigen').value) || 0;
+  var fecha = document.getElementById('tmFecha').value;
+  var descripcion = document.getElementById('tmMotivo').value.trim();
+
+  if (!cuenta_origen_id || !cuenta_destino_id || monto_origen <= 0 || !fecha) {
+    showToast('Por favor completa todos los campos obligatorios.', 'warning');
+    return;
+  }
+  if (cuenta_origen_id === cuenta_destino_id) {
+    showToast('La cuenta origen y destino no pueden ser la misma.', 'warning');
+    return;
+  }
+
+  var origenIdx = cuentas.findIndex(function(c) { return c.id === cuenta_origen_id; });
+  var destinoIdx = cuentas.findIndex(function(c) { return c.id === cuenta_destino_id; });
+  if (origenIdx === -1 || destinoIdx === -1) {
+    showToast('Una de las cuentas seleccionadas no existe.', 'error');
+    return;
+  }
+
+  var ctaOrigen = cuentas[origenIdx];
+  var ctaDestino = cuentas[destinoIdx];
+  var monto_destino = monto_origen;
+  var moneda_origen = ctaOrigen.moneda;
+  var moneda_destino = ctaDestino.moneda;
+
+  if (moneda_origen !== moneda_destino) {
+    var tc = parseFloat(document.getElementById('tmTipoCambio').value) || 0;
+    if (tc <= 0) { showToast('Por favor ingresa un tipo de cambio valido.', 'warning'); return; }
+    monto_destino = monto_origen * tc;
+  }
+
+  if (ctaOrigen.saldo < monto_origen) {
+    var confirmar = confirm('La cuenta origen tiene un saldo de ' + formatCurrency(ctaOrigen.saldo, moneda_origen) + ' que es menor al monto. \u00BFContinuar?');
+    if (!confirmar) return;
+  }
+
+  var transId = uuid();
+  transferencias.push({
+    id: transId,
+    cuenta_origen_id: cuenta_origen_id,
+    cuenta_destino_id: cuenta_destino_id,
+    monto_origen: monto_origen,
+    monto_destino: monto_destino,
+    moneda_origen: moneda_origen,
+    moneda_destino: moneda_destino,
+    fecha: fecha,
+    descripcion: descripcion,
+    notas: '',
+    created: new Date().toISOString(),
+  });
+
+  movimientos.push({
+    id: uuid(),
+    cuenta_id: cuenta_origen_id,
+    tipo: 'gasto',
+    monto: monto_origen,
+    moneda: moneda_origen,
+    categoria_id: null,
+    descripcion: 'Transferencia a ' + ctaDestino.nombre + (descripcion ? ' - ' + descripcion : ''),
+    fecha: fecha,
+    notas: 'Transferencia ID: ' + transId,
+    transferencia_id: transId,
+    created: new Date().toISOString(),
+  });
+
+  movimientos.push({
+    id: uuid(),
+    cuenta_id: cuenta_destino_id,
+    tipo: 'ingreso',
+    monto: monto_destino,
+    moneda: moneda_destino,
+    categoria_id: null,
+    descripcion: 'Transferencia desde ' + ctaOrigen.nombre + (descripcion ? ' - ' + descripcion : ''),
+    fecha: fecha,
+    notas: 'Transferencia ID: ' + transId,
+    transferencia_id: transId,
+    created: new Date().toISOString(),
+  });
+
+  cuentas[origenIdx].saldo -= monto_origen;
+  cuentas[destinoIdx].saldo += monto_destino;
+
+  saveData(STORAGE_KEYS.transferencias, transferencias);
+  saveData(STORAGE_KEYS.movimientos, movimientos);
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+
+  closeModal();
+  showToast('Transferencia realizada exitosamente.', 'success');
+  renderMovimientos();
+  updateHeaderPatrimonio();
 }
