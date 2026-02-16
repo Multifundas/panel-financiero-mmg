@@ -1153,26 +1153,33 @@ function filterEstadoCuenta() {
   // Sort chronologically (oldest first) to calculate running balance
   filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || '') || (a.esCierre ? 1 : 0) - (b.esCierre ? 1 : 0); });
 
-  // Calculate running balance
-  // saldo_inicial = saldo_actual - sum(ingresos) + sum(gastos) of ALL filtered movements
+  // Saldo inicial permanente de la cuenta
+  var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  var fechaSaldoInicial = cuenta.fecha_saldo_inicial || '';
+
+  // Calculate totals from filtered movements
   var sumIngresos = 0, sumGastos = 0;
   filtered.forEach(function(e) {
     if (e.esCierre) return;
     if (e.tipo === 'ingreso') sumIngresos += e.monto;
     else if (e.tipo === 'gasto') sumGastos += e.monto;
   });
-  var saldoInicial = cuenta.saldo - sumIngresos + sumGastos;
+
   var saldoRunning = saldoInicial;
 
   var contenedor = document.getElementById('edoCtaContenido');
   if (!contenedor) return;
 
-  if (filtered.length === 0) {
-    contenedor.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-file-invoice-dollar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos para esta cuenta.</div>';
-    return;
-  }
+  // Build first row: Saldo Inicial
+  var filaInicial = '<tr style="background:rgba(16,185,129,0.08);font-weight:700;">' +
+    '<td style="white-space:nowrap;color:var(--text-primary);">' + (fechaSaldoInicial ? formatDate(fechaSaldoInicial) : '\u2014') + '</td>' +
+    '<td style="font-size:12px;color:var(--text-primary);"><i class="fas fa-flag" style="margin-right:6px;color:var(--accent-green);"></i>Saldo Inicial</td>' +
+    '<td></td>' +
+    '<td></td>' +
+    '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</td>' +
+    '</tr>';
 
-  // Build table rows
+  // Build table rows for movements and cierres
   var rows = filtered.map(function(e) {
     if (e.esCierre) {
       return '<tr style="background:rgba(59,130,246,0.06);">' +
@@ -1207,19 +1214,17 @@ function filterEstadoCuenta() {
       '</tr>';
   });
 
-  // Oldest first (chronological order, like a bank statement)
-
-  var countMovs = filtered.filter(function(e) { return !e.esCierre; }).length;
+  var saldoFinal = saldoRunning;
 
   var html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
     '<table class="data-table" style="min-width:0;"><thead><tr>' +
     '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th>' +
-    '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' +
+    '</tr></thead><tbody>' + filaInicial + rows.join('') + '</tbody></table></div>' +
     '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Inicial</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:15px;font-weight:800;color:var(--accent-red);">' + formatCurrency(sumGastos, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(sumIngresos, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(saldoFinal, moneda) + '</div></div>' +
     '</div>';
 
   contenedor.innerHTML = html;
