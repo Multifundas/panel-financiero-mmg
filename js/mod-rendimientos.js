@@ -296,7 +296,13 @@ function renderRendimientos() {
   const bgReal = [];
 
   cuentasInversion.forEach(cta => {
-    const tasaNominal = cta.rendimiento_anual || 0;
+    // Usar tasa anualizada del ultimo cierre, o fallback al campo estatico
+    let tasaNominal = cta.rendimiento_anual || 0;
+    const hist = cta.historial_saldos || [];
+    if (hist.length > 0) {
+      const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
+      if (ultimoCierre.rendimiento_pct_anual != null) tasaNominal = ultimoCierre.rendimiento_pct_anual;
+    }
     const tasaReal = tasaNominal - inflacionAnual;
     rendRealLabels.push(cta.nombre);
     dataNominal.push(tasaNominal);

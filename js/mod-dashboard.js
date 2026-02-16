@@ -116,13 +116,23 @@ function renderDashboard() {
     .reduce((sum, mv) => sum + toMXN(mv.monto, mv.moneda, tiposCambio), 0);
   const balanceNeto = rendPeriodo + ingresosPeriodo - gastosPeriodo;
 
-  // -- KPI 5: Rendimiento Promedio Ponderado --
-  const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion' && c.rendimiento_anual > 0);
+  // -- KPI 5: Rendimiento Promedio Ponderado (usa tasa anualizada del ultimo cierre) --
+  const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion');
   let sumPonderado = 0;
   let sumPesos = 0;
   invCuentas.forEach(c => {
     const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
-    sumPonderado += valMXN * c.rendimiento_anual;
+    // Obtener tasa anualizada del ultimo cierre, o fallback al campo estatico
+    let tasaAnual = c.rendimiento_anual || 0;
+    const hist = c.historial_saldos || [];
+    if (hist.length > 0) {
+      const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
+      if (ultimoCierre.rendimiento_pct_anual != null) {
+        tasaAnual = ultimoCierre.rendimiento_pct_anual;
+      }
+    }
+    if (tasaAnual === 0) return;
+    sumPonderado += valMXN * tasaAnual;
     sumPesos += valMXN;
   });
   const rendPromedio = sumPesos > 0 ? (sumPonderado / sumPesos) : 0;
@@ -1372,14 +1382,27 @@ function mostrarDesgloseRendimiento() {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
-  const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion' && c.rendimiento_anual > 0);
+  const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion');
 
   let sumPesos = 0;
   const rows = invCuentas.map(c => {
     const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
-    sumPesos += valMXN;
-    return { nombre: c.nombre, moneda: c.moneda, saldo: c.saldo, valMXN: valMXN, rendimiento: c.rendimiento_anual };
-  });
+    // Obtener tasa anualizada del ultimo cierre, o fallback al campo estatico
+    let tasaAnual = c.rendimiento_anual || 0;
+    let dias = 0;
+    let fuente = 'Manual';
+    const hist = c.historial_saldos || [];
+    if (hist.length > 0) {
+      const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
+      if (ultimoCierre.rendimiento_pct_anual != null) {
+        tasaAnual = ultimoCierre.rendimiento_pct_anual;
+        dias = ultimoCierre.dias || 0;
+        fuente = 'Cierre ' + (ultimoCierre.fecha || '').substring(0, 7);
+      }
+    }
+    if (tasaAnual !== 0) sumPesos += valMXN;
+    return { nombre: c.nombre, moneda: c.moneda, saldo: c.saldo, valMXN: valMXN, rendimiento: tasaAnual, dias: dias, fuente: fuente };
+  }).filter(r => r.rendimiento !== 0);
 
   let sumPonderado = 0;
   rows.forEach(r => { sumPonderado += r.valMXN * r.rendimiento; });
@@ -1393,19 +1416,22 @@ function mostrarDesgloseRendimiento() {
           <th>Moneda</th>
           <th style="text-align:right;">Saldo</th>
           <th style="text-align:right;">Valor (MXN)</th>
-          <th style="text-align:right;">Rendimiento %</th>
+          <th style="text-align:right;">Rend. Anual %</th>
+          <th style="text-align:center;">Dias</th>
           <th style="text-align:right;">Peso</th>
         </tr>
       </thead>
       <tbody>
         ${rows.map(r => {
           const peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : 0;
+          const rendColor = r.rendimiento >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
           return `<tr>
-            <td style="font-weight:600;color:var(--text-primary);">${r.nombre}</td>
+            <td style="font-weight:600;color:var(--text-primary);">${r.nombre}<br><span style="font-size:10px;color:var(--text-muted);">${r.fuente}</span></td>
             <td><span class="badge badge-blue">${r.moneda}</span></td>
             <td style="text-align:right;">${formatCurrency(r.saldo, r.moneda)}</td>
             <td style="text-align:right;">${formatCurrency(r.valMXN, 'MXN')}</td>
-            <td style="text-align:right;color:var(--accent-green);font-weight:600;">${r.rendimiento.toFixed(2)}%</td>
+            <td style="text-align:right;color:${rendColor};font-weight:600;">${r.rendimiento >= 0 ? '+' : ''}${r.rendimiento.toFixed(2)}%</td>
+            <td style="text-align:center;">${r.dias > 0 ? r.dias + 'd' : '\u2014'}</td>
             <td style="text-align:right;color:var(--text-muted);">${peso}%</td>
           </tr>`;
         }).join('')}
@@ -1417,13 +1443,14 @@ function mostrarDesgloseRendimiento() {
           <td></td>
           <td style="text-align:right;">${formatCurrency(sumPesos, 'MXN')}</td>
           <td style="text-align:right;color:var(--accent-amber);font-size:16px;">${promedio.toFixed(2)}%</td>
+          <td></td>
           <td style="text-align:right;color:var(--text-muted);">100%</td>
         </tr>
       </tfoot>
     </table>
     <div style="font-size:12px;color:var(--text-muted);">
       <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-      El rendimiento promedio ponderado se calcula usando el valor en MXN de cada producto como peso.
+      Tasa anualizada calculada del ultimo cierre mensual. Formula: (rendimiento / capital) * (365 / dias) * 100.
     </div>
   `;
 

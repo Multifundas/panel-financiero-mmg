@@ -219,10 +219,17 @@ function filterCuentas() {
       : c.tipo === 'inmueble' ? 'Inmueble'
       : c.tipo === 'activo_fijo' ? 'Activo Fijo' : 'Debito';
 
-    // Rendimiento display
-    const rendimiento = c.rendimiento_anual
-      ? Number(c.rendimiento_anual).toFixed(2) + '%'
+    // Rendimiento display (usar tasa anualizada del ultimo cierre, o fallback al campo estatico)
+    let rendAnualCalc = c.rendimiento_anual || 0;
+    const histCta = c.historial_saldos || [];
+    if (histCta.length > 0) {
+      const ultCierre = [...histCta].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
+      if (ultCierre.rendimiento_pct_anual != null) rendAnualCalc = ultCierre.rendimiento_pct_anual;
+    }
+    const rendimiento = rendAnualCalc !== 0
+      ? (rendAnualCalc >= 0 ? '+' : '') + Number(rendAnualCalc).toFixed(2) + '%'
       : '\u2014';
+    const rendColor = rendAnualCalc > 0 ? 'var(--accent-green)' : rendAnualCalc < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
 
     // Subtipo display
     let subtipoHTML = '\u2014';
@@ -230,6 +237,8 @@ function filterCuentas() {
       subtipoHTML = '<span class="badge badge-blue">Pagare</span>';
     } else if (c.subtipo === 'renta_variable') {
       subtipoHTML = '<span class="badge badge-purple">Renta Variable</span>';
+    } else if (c.subtipo === 'accion_club') {
+      subtipoHTML = '<span class="badge badge-amber">Accion/Membresia</span>';
     }
 
     // Zebra striping
@@ -241,7 +250,7 @@ function filterCuentas() {
       <td>${instMap[c.institucion_id] || '\u2014'}</td>
       <td><span class="badge badge-blue">${c.moneda}</span></td>
       <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(c.saldo, c.moneda)}</td>
-      <td style="text-align:right;color:${c.rendimiento_anual ? 'var(--accent-green)' : 'var(--text-muted)'};">${rendimiento}</td>
+      <td style="text-align:right;color:${rendColor};font-weight:${rendAnualCalc !== 0 ? '600' : 'normal'};">${rendimiento}</td>
       <td>${subtipoHTML}</td>
       <td style="text-align:center;">
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
@@ -344,6 +353,7 @@ function editCuenta(id) {
           <option value="" ${isEdit && !cuenta.subtipo ? 'selected' : ''}>General</option>
           <option value="pagare" ${isEdit && cuenta.subtipo === 'pagare' ? 'selected' : ''}>Pagare a plazo fijo</option>
           <option value="renta_variable" ${isEdit && cuenta.subtipo === 'renta_variable' ? 'selected' : ''}>Renta variable</option>
+          <option value="accion_club" ${isEdit && cuenta.subtipo === 'accion_club' ? 'selected' : ''}>Accion / Membresia</option>
         </select>
       </div>
 
@@ -1166,18 +1176,23 @@ function filterEstadoCuenta() {
     });
   });
 
-  // Add cierres mensuales como abonos/cargos (diferencia saldo_final - saldo_inicio)
+  // Add cierres mensuales como abonos/cargos por el RENDIMIENTO (no la diferencia bruta)
+  // La diferencia bruta ya está cubierta por los movimientos individuales listados arriba.
+  // El cierre solo representa la parte orgánica (rendimiento) que no tiene movimiento propio.
   var historial = cuenta.historial_saldos || [];
   historial.forEach(function(h) {
     var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
     var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
     var diff = sFinal - sInicio;
     var rend = h.rendimiento != null ? h.rendimiento : diff;
+    // Solo agregar si el rendimiento es distinto de cero
+    if (rend === 0) return;
+    var diasLabel = h.dias ? ' (' + h.dias + 'd' + (h.rendimiento_pct_anual ? ', ' + (h.rendimiento_pct_anual >= 0 ? '+' : '') + h.rendimiento_pct_anual.toFixed(2) + '% anual' : '') + ')' : '';
     eventos.push({
       fecha: h.fecha || '',
-      descripcion: 'Cierre mensual' + (rend !== 0 ? ' (rend: ' + (rend >= 0 ? '+' : '') + formatCurrency(rend, moneda) + ')' : ''),
-      tipo: diff >= 0 ? 'ingreso' : 'gasto',
-      monto: Math.abs(diff),
+      descripcion: 'Rendimiento' + diasLabel,
+      tipo: rend >= 0 ? 'ingreso' : 'gasto',
+      monto: Math.abs(rend),
       notas: '',
       origen: 'Cierre',
       esCierre: false
