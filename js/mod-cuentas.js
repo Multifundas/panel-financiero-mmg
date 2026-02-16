@@ -647,12 +647,13 @@ function cierreMensual() {
   if (activas.length === 0) { showToast('No hay cuentas activas.', 'warning'); return; }
 
   var hoy = new Date();
-  var mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
+  var fechaHoy = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
 
   var filas = activas.map(function(c) {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '<br><span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span></td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:6px 10px;font-size:13px;min-width:140px;"></td>' +
       '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-saldo-inicio="' + c.saldo + '" step="0.01" min="0" placeholder="Saldo final" style="padding:6px 10px;font-size:13px;min-width:130px;" oninput="recalcCierreRendimiento(this)"></td>' +
       '<td style="text-align:right;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">—</span></td>' +
       '</tr>';
@@ -660,22 +661,18 @@ function cierreMensual() {
 
   var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
     '<div style="margin-bottom:16px;">' +
-    '<div class="form-group" style="margin-bottom:12px;">' +
-    '<label class="form-label">Periodo de Cierre</label>' +
-    '<input type="month" id="cierrePeriodo" class="form-input" value="' + mesActual + '" style="max-width:200px;">' +
-    '</div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
-    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa el saldo final de cada cuenta al cierre del mes. Solo se guardaran las cuentas donde captures un saldo.</div>' +
+    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. Solo se guardaran las cuentas donde captures un saldo.</div>' +
     '</div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
-    '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
+    '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
     '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
     '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Cierre</button>' +
     '</div></form>';
 
-  openModal('Cierre Mensual de Cuentas', formHTML);
+  openModal('Cierre de Cuentas', formHTML);
 }
 
 function recalcCierreRendimiento(inputEl) {
@@ -700,8 +697,6 @@ function recalcCierreRendimiento(inputEl) {
 
 function saveCierreMensual(event) {
   event.preventDefault();
-  var periodo = document.getElementById('cierrePeriodo').value;
-  if (!periodo) { showToast('Selecciona un periodo.', 'warning'); return; }
 
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
@@ -716,6 +711,12 @@ function saveCierreMensual(event) {
     var rend = saldoFinal - saldoInicio;
     var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
 
+    // Get individual date for this account
+    var fechaInput = document.querySelector('.cierre-fecha[data-cuenta-id="' + cuentaId + '"]');
+    var fecha = fechaInput ? fechaInput.value : new Date().toISOString().slice(0, 10);
+    if (!fecha) { return; }
+    var periodo = fecha.slice(0, 7); // YYYY-MM
+
     var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
     if (ctaIdx === -1) return;
 
@@ -726,7 +727,7 @@ function saveCierreMensual(event) {
     // Add to historial_saldos
     if (!cuentas[ctaIdx].historial_saldos) cuentas[ctaIdx].historial_saldos = [];
     cuentas[ctaIdx].historial_saldos.push({
-      fecha: periodo + '-01',
+      fecha: fecha,
       saldo_inicio: saldoInicio,
       saldo_final: saldoFinal,
       rendimiento: rend
@@ -741,7 +742,7 @@ function saveCierreMensual(event) {
       saldo_final: saldoFinal,
       rendimiento_monto: rend,
       rendimiento_pct: rendPct,
-      fecha: periodo + '-01',
+      fecha: fecha,
       created: new Date().toISOString()
     });
 
@@ -753,7 +754,7 @@ function saveCierreMensual(event) {
   saveData(STORAGE_KEYS.cuentas, cuentas);
   saveData(STORAGE_KEYS.rendimientos, rendimientos);
   closeModal();
-  showToast('Cierre mensual guardado para ' + cambios + ' cuenta' + (cambios > 1 ? 's' : '') + '.', 'success');
+  showToast('Cierre guardado para ' + cambios + ' cuenta' + (cambios > 1 ? 's' : '') + '.', 'success');
   renderCuentas();
   updateHeaderPatrimonio();
 }
