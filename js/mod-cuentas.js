@@ -1165,22 +1165,9 @@ function filterEstadoCuenta() {
   // Filter movements for this account
   var movsCuenta = movimientos.filter(function(m) { return m.cuenta_id === cuentaId; });
 
-  // Build unified events array
+  // Build unified events array — only real movements, no cierre artifacts
   var eventos = [];
-  var historial = cuenta.historial_saldos || [];
 
-  // Build cierre date ranges to calculate organic rendimiento (diff not explained by movements)
-  var cierreRanges = [];
-  var fechaSaldoInicialCta = cuenta.fecha_saldo_inicial || cuenta.created || '';
-  // Sort historial chronologically for correct range building
-  var historialSorted = historial.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
-  historialSorted.forEach(function(h, i) {
-    var desde = i === 0 ? fechaSaldoInicialCta : (historialSorted[i - 1].fecha || '');
-    var hasta = h.fecha || '';
-    cierreRanges.push({ desde: desde, hasta: hasta, cierre: h });
-  });
-
-  // All movements are shown (no filtering by cierre)
   movsCuenta.forEach(function(m) {
     var origen = 'Manual';
     if (m.transferencia_id) origen = 'Transferencia';
@@ -1194,40 +1181,7 @@ function filterEstadoCuenta() {
       tipo: m.tipo,
       monto: m.monto || 0,
       notas: m.notas || '',
-      origen: origen,
-      esCierre: false,
-      cubiertoPorCierre: false
-    });
-  });
-
-  // For each cierre, calculate organic rendimiento (diff not explained by movements)
-  // Rendimiento organico = (saldoFinal - saldoInicio) - movNeto del periodo
-  cierreRanges.forEach(function(r) {
-    var h = r.cierre;
-    var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
-    var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
-    var diff = sFinal - sInicio;
-    // Calculate net movements in this period
-    var movNetoPeriodo = 0;
-    movsCuenta.forEach(function(m) {
-      if (m.fecha > r.desde && m.fecha <= r.hasta) {
-        if (m.tipo === 'ingreso') movNetoPeriodo += m.monto;
-        else if (m.tipo === 'gasto') movNetoPeriodo -= m.monto;
-      }
-    });
-    var rendOrganico = diff - movNetoPeriodo;
-    // Solo agregar si hay rendimiento organico significativo (> 0.01)
-    if (Math.abs(rendOrganico) < 0.01) return;
-    var diasLabel = h.dias ? ' (' + h.dias + 'd' + (h.rendimiento_pct_anual ? ', ' + (h.rendimiento_pct_anual >= 0 ? '+' : '') + h.rendimiento_pct_anual.toFixed(2) + '% anual' : '') + ')' : '';
-    eventos.push({
-      fecha: h.fecha || '',
-      descripcion: 'Rendimiento / Ajuste de Cierre' + diasLabel,
-      tipo: rendOrganico >= 0 ? 'ingreso' : 'gasto',
-      monto: Math.abs(rendOrganico),
-      notas: 'Rendimiento organico del periodo',
-      origen: 'Cierre',
-      esCierre: false,
-      cubiertoPorCierre: false
+      origen: origen
     });
   });
 
@@ -1276,7 +1230,7 @@ function filterEstadoCuenta() {
     '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</td>' +
     '</tr>';
 
-  // Build table rows for movements and cierres
+  // Build table rows for movements
   var rows = filtered.map(function(e) {
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
@@ -1289,15 +1243,12 @@ function filterEstadoCuenta() {
 
     // Determine origin badge
     var origenBadge = '';
-    if (e.origen === 'Cierre') origenBadge = '<span class="badge badge-blue" style="font-size:9px;margin-left:6px;">Cierre</span>';
-    else if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
+    if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
     else if (e.origen === 'Prestamo') origenBadge = '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;">Prestamo</span>';
     else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:9px;margin-left:6px;">PDF</span>';
     else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:9px;margin-left:6px;">Recurrente</span>';
 
-    var rowStyle = e.origen === 'Cierre' ? ' style="background:rgba(59,130,246,0.06);"' : '';
-
-    return '<tr' + rowStyle + '>' +
+    return '<tr>' +
       '<td style="white-space:nowrap;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
       '<td style="font-size:12px;">' + e.descripcion + origenBadge + '</td>' +
       '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +
