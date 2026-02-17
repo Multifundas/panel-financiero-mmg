@@ -76,7 +76,10 @@ function renderMovimientos() {
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;">
-          <i class="fas fa-download" style="margin-right:3px;"></i>Exportar
+          <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
+        </button>
+        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:11px;">
+          <i class="fas fa-file-pdf" style="margin-right:3px;color:#ef4444;"></i>PDF
         </button>
         <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:11px;">
           <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
@@ -105,6 +108,7 @@ function renderMovimientos() {
         <table class="data-table" id="tablaMovimientos" style="font-size:12px;">
           <thead>
             <tr>
+              <th style="width:30px;"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
               <th>Fecha</th>
               <th>Descripcion</th>
               <th>Tipo</th>
@@ -192,7 +196,7 @@ function filterMovimientos() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+        <td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
           <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No se encontraron movimientos con los filtros aplicados.
         </td>
@@ -219,6 +223,7 @@ function filterMovimientos() {
 
     return `
       <tr>
+        <td><input type="checkbox" class="mov-checkbox" value="${m.id}" onchange="onMovCheckboxChange()"></td>
         <td>${formatDate(m.fecha)}</td>
         <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}</td>
         <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
@@ -1233,4 +1238,142 @@ function executeTransferenciaModal(event) {
   showToast('Transferencia realizada exitosamente.', 'success');
   renderMovimientos();
   updateHeaderPatrimonio();
+}
+
+/* ============================================================
+   CHECKBOX SELECTION & EXPORT (PDF / Excel)
+   ============================================================ */
+
+function toggleAllMovCheckboxes(masterCb) {
+  var checkboxes = document.querySelectorAll('.mov-checkbox');
+  checkboxes.forEach(function(cb) { cb.checked = masterCb.checked; });
+  onMovCheckboxChange();
+}
+
+function onMovCheckboxChange() {
+  var checked = document.querySelectorAll('.mov-checkbox:checked');
+  var bar = document.getElementById('movSelectionBar');
+  if (!bar) {
+    // Create selection bar
+    var container = document.getElementById('module-movimientos');
+    if (!container) return;
+    var div = document.createElement('div');
+    div.id = 'movSelectionBar';
+    div.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:var(--accent-blue);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:8px;margin-top:8px;z-index:10;';
+    div.innerHTML = '<span id="movSelCount" style="font-weight:700;font-size:13px;">0 seleccionados</span>' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button class="btn" onclick="exportarSeleccionExcel()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
+      '<button class="btn" onclick="exportarSeleccionPDF()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
+      '</div>';
+    container.appendChild(div);
+    bar = div;
+  }
+  var count = checked.length;
+  if (count > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('movSelCount').textContent = count + ' seleccionado' + (count > 1 ? 's' : '');
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function _getSelectedOrAllMovs() {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
+
+  var checked = document.querySelectorAll('.mov-checkbox:checked');
+  var selectedIds = [];
+  checked.forEach(function(cb) { selectedIds.push(cb.value); });
+
+  var list;
+  if (selectedIds.length > 0) {
+    list = movimientos.filter(function(m) { return selectedIds.indexOf(m.id) !== -1; });
+  } else {
+    // Use current filtered list from the visible table
+    list = movimientos;
+  }
+  list = list.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+
+  return { movimientos: list, cuentaMap: cuentaMap, catMap: catMap };
+}
+
+function exportarSeleccionExcel() {
+  if (typeof XLSX === 'undefined') { showToast('XLSX no esta cargada.', 'error'); return; }
+  var data = _getSelectedOrAllMovs();
+  var rows = data.movimientos.map(function(m) {
+    var cta = data.cuentaMap[m.cuenta_id];
+    return {
+      'Fecha': m.fecha || '',
+      'Descripcion': m.descripcion || '',
+      'Tipo': m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+      'Cuenta': cta ? cta.nombre : '',
+      'Categoria': m.categoria_id ? (data.catMap[m.categoria_id] || '') : '',
+      'Monto': m.monto || 0,
+      'Moneda': cta ? cta.moneda : 'MXN'
+    };
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
+  XLSX.writeFile(wb, 'Movimientos_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  showToast('Excel exportado con ' + rows.length + ' movimientos.', 'success');
+}
+
+function exportarSeleccionPDF() {
+  _exportMovsToPDF(_getSelectedOrAllMovs(), 'Movimientos Seleccionados');
+}
+
+function exportarMovsPDF() {
+  _exportMovsToPDF(_getSelectedOrAllMovs(), 'Movimientos');
+}
+
+function _exportMovsToPDF(data, titulo) {
+  if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+    showToast('jsPDF no esta cargada. Verifica tu conexion.', 'error');
+    return;
+  }
+  var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jspdf.jsPDF;
+  var doc = new jsPDF('l', 'mm', 'letter');
+
+  // Header
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Panel Financiero MMG', 14, 15);
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+  doc.text(titulo + ' — ' + new Date().toLocaleDateString('es-MX'), 14, 22);
+
+  // Table
+  var tableData = data.movimientos.map(function(m) {
+    var cta = data.cuentaMap[m.cuenta_id];
+    return [
+      m.fecha || '',
+      m.descripcion || '',
+      m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+      cta ? cta.nombre : '',
+      m.categoria_id ? (data.catMap[m.categoria_id] || '') : '',
+      (m.tipo === 'ingreso' ? '+' : '-') + formatCurrency(m.monto, cta ? cta.moneda : 'MXN')
+    ];
+  });
+
+  doc.autoTable({
+    startY: 28,
+    head: [['Fecha', 'Descripcion', 'Tipo', 'Cuenta', 'Categoria', 'Monto']],
+    body: tableData,
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      5: { halign: 'right', cellWidth: 30 }
+    }
+  });
+
+  doc.save(titulo.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.pdf');
+  showToast('PDF exportado con ' + data.movimientos.length + ' movimientos.', 'success');
 }

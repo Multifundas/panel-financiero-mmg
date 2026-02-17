@@ -330,12 +330,12 @@ function editCuenta(id) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">Saldo Inicial *</label>
+          <label class="form-label">Saldo de Apertura *</label>
           <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
                  value="${isEdit ? (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo) : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
-          <label class="form-label">Fecha Saldo Inicial</label>
+          <label class="form-label">Fecha de Apertura</label>
           <input type="date" id="cuentaFechaSaldoInicial" class="form-input"
                  value="${isEdit && cuenta.fecha_saldo_inicial ? cuenta.fecha_saldo_inicial : ''}">
         </div>
@@ -382,7 +382,7 @@ function editCuenta(id) {
       <!-- Campos Renta Variable -->
       <div id="rentaVarFields" style="display:none;">
         <div class="form-group">
-          <label class="form-label">Saldo Inicial (al momento de invertir)</label>
+          <label class="form-label">Saldo de Apertura (al momento de invertir)</label>
           <input type="number" id="cuentaRentaVarSaldoInicial" class="form-input" step="0.01" min="0"
                  value="${isEdit && cuenta.renta_var_saldo_inicial != null ? cuenta.renta_var_saldo_inicial : ''}" placeholder="0.00">
         </div>
@@ -724,7 +724,7 @@ function cierreMensual() {
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos del periodo y se anualiza segun los dias transcurridos.</div>' +
     '</div>' +
     '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
-    '<th>Cuenta</th><th style="text-align:right;">Saldo Inicio</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
+    '<th>Cuenta</th><th style="text-align:right;">Saldo Inicial</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
     '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
     '<button type="button" class="btn btn-secondary" onclick="closeCierreModal()">Cancelar</button>' +
@@ -888,6 +888,7 @@ function verHistorialCuenta(cuentaId) {
   if (historial.length === 0) {
     tablaHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-chart-bar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay historial de saldos.<br><span style="font-size:12px;">Usa "Cierre Mensual" para registrar saldos al final de cada mes.</span></div>';
   } else {
+    var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var sorted = [...historial].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
     var rows = sorted.map(function(h, sortedIdx) {
       // Find the original index in historial array
@@ -900,23 +901,30 @@ function verHistorialCuenta(cuentaId) {
       var rendPctAnual = h.rendimiento_pct_anual != null ? h.rendimiento_pct_anual : (sInicio > 0 && dias > 0 ? ((rend / sInicio) * (365 / dias) * 100) : rendPct);
       var rendColor = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var rendSign = rend >= 0 ? '+' : '';
-      var fechaLabel = h.fecha ? h.fecha.substring(0, 7) : '\u2014';
+      // Fecha legible: "Ene 2026 (30d)"
+      var fechaLabel = '\u2014';
+      if (h.fecha) {
+        var parts = h.fecha.split('-');
+        var mesIdx = parseInt(parts[1], 10) - 1;
+        fechaLabel = meses[mesIdx] + ' ' + parts[0];
+      }
+      var diasLabel = dias > 0 ? '<br><span style="font-size:10px;color:var(--text-muted);">' + dias + ' dias</span>' : '';
+      // Rendimiento compacto: monto + % periodo + % anual en una celda
+      var rendHTML = rendSign + formatCurrency(rend, moneda) +
+        '<br><span style="font-size:10px;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '% &middot; ' + rendSign + rendPctAnual.toFixed(2) + '% anual</span>';
       return '<tr>' +
-        '<td style="font-weight:600;">' + fechaLabel + '</td>' +
-        '<td style="text-align:center;">' + (dias > 0 ? dias + 'd' : '\u2014') + '</td>' +
-        '<td style="text-align:right;">' + formatCurrency(sInicio, moneda) + '</td>' +
-        '<td style="text-align:right;font-weight:600;">' + formatCurrency(sFinal, moneda) + '</td>' +
-        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + formatCurrency(rend, moneda) + '</td>' +
-        '<td style="text-align:right;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '%</td>' +
-        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;">' + rendSign + rendPctAnual.toFixed(2) + '%</td>' +
+        '<td style="font-weight:600;">' + fechaLabel + diasLabel + '</td>' +
+        '<td style="text-align:right;font-size:12px;">' + formatCurrency(sInicio, moneda) + '</td>' +
+        '<td style="text-align:right;font-weight:600;font-size:12px;">' + formatCurrency(sFinal, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;font-size:12px;">' + rendHTML + '</td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
         '<button class="btn btn-secondary" style="padding:3px 7px;font-size:10px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Editar"><i class="fas fa-pen"></i></button>' +
         '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
         '</td></tr>';
     });
-    tablaHTML = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
-      '<th>Periodo</th><th style="text-align:center;">Dias</th><th style="text-align:right;">Saldo Inicio</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:right;">Rend. %</th><th style="text-align:right;">Rend. Anual</th><th style="text-align:center;">Acciones</th>' +
-      '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+    tablaHTML = '<table class="data-table" style="font-size:13px;"><thead><tr>' +
+      '<th>Periodo</th><th style="text-align:right;">Saldo Inicial</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:center;">Acciones</th>' +
+      '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
 
     // Chart data (chronological order)
     var chartSorted = [...historial].sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
@@ -989,7 +997,7 @@ function editCierreHistorial(cuentaId, idx) {
     '<input type="date" id="editCierreFecha" class="form-input" required value="' + (h.fecha || '') + '"></div>' +
     '<div class="form-group"><label class="form-label">Dias</label>' +
     '<input type="number" id="editCierreDias" class="form-input" step="1" min="1" value="' + (h.dias || 0) + '"></div>' +
-    '<div class="form-group"><label class="form-label">Saldo Inicio</label>' +
+    '<div class="form-group"><label class="form-label">Saldo Inicial</label>' +
     '<input type="number" id="editCierreSaldoInicio" class="form-input" step="0.01" required value="' + (h.saldo_inicio != null ? h.saldo_inicio : h.saldo || 0) + '"></div>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
@@ -1074,7 +1082,7 @@ function deleteCierreHistorial(cuentaId, idx) {
   if (!cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
 
   var h = cuenta.historial_saldos[idx];
-  var confirmar = confirm('\u00BFEliminar el cierre de ' + (h.fecha ? h.fecha.substring(0, 7) : 'fecha desconocida') + '?\n\nSaldo Inicio: ' + formatCurrency(h.saldo_inicio || 0, cuenta.moneda || 'MXN') + '\nSaldo Final: ' + formatCurrency(h.saldo_final || 0, cuenta.moneda || 'MXN'));
+  var confirmar = confirm('\u00BFEliminar el cierre de ' + (h.fecha ? h.fecha.substring(0, 7) : 'fecha desconocida') + '?\n\nSaldo Inicial: ' + formatCurrency(h.saldo_inicio || 0, cuenta.moneda || 'MXN') + '\nSaldo Final: ' + formatCurrency(h.saldo_final || 0, cuenta.moneda || 'MXN'));
   if (!confirmar) return;
 
   // Remove from historial
@@ -1138,6 +1146,10 @@ function verEstadoCuenta(cuentaId) {
     '<select id="edoCtaTipo" class="form-select" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:140px;" onchange="filterEstadoCuenta()">' +
     '<option value="">Todos</option><option value="ingreso">Abonos</option><option value="gasto">Cargos</option></select>' +
     '<input type="text" id="edoCtaSearch" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:180px;" placeholder="Buscar..." oninput="filterEstadoCuenta()">' +
+    '<div style="margin-left:auto;display:flex;gap:6px;">' +
+    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="exportarEdoCuentaExcel()" title="Exportar Excel"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
+    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;border-color:var(--accent-red);color:var(--accent-red);" onclick="exportarEdoCuentaPDF()" title="Exportar PDF"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
+    '</div>' +
     '</div>' +
     '<div id="edoCtaContenido"></div>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeEstadoCuenta()">Cerrar</button></div>';
@@ -1247,10 +1259,10 @@ function filterEstadoCuenta() {
   var contenedor = document.getElementById('edoCtaContenido');
   if (!contenedor) return;
 
-  // Build first row: Saldo Inicial
+  // Build first row: Saldo de Apertura
   var filaInicial = '<tr style="background:rgba(16,185,129,0.08);font-weight:700;">' +
     '<td style="white-space:nowrap;color:var(--text-primary);">' + (fechaSaldoInicial ? formatDate(fechaSaldoInicial) : '\u2014') + '</td>' +
-    '<td style="font-size:12px;color:var(--text-primary);"><i class="fas fa-flag" style="margin-right:6px;color:var(--accent-green);"></i>Saldo Inicial</td>' +
+    '<td style="font-size:12px;color:var(--text-primary);"><i class="fas fa-flag" style="margin-right:6px;color:var(--accent-green);"></i>Saldo de Apertura</td>' +
     '<td></td>' +
     '<td></td>' +
     '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</td>' +
@@ -1302,11 +1314,214 @@ function filterEstadoCuenta() {
     '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th>' +
     '</tr></thead><tbody>' + filaInicial + rows.join('') + '</tbody></table></div>' +
     '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Inicial</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo de Apertura</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:15px;font-weight:800;color:var(--accent-red);">' + formatCurrency(sumGastos, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(sumIngresos, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(saldoFinal, moneda) + '</div></div>' +
     '</div>';
 
   contenedor.innerHTML = html;
+}
+
+/* -- Helper: build EDC data for export (reuses filterEstadoCuenta logic) -- */
+function _buildEdoCuentaData() {
+  var cuentaId = _estadoCuentaId;
+  if (!cuentaId) return null;
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var instituciones = loadData(STORAGE_KEYS.instituciones) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return null;
+  var moneda = cuenta.moneda || 'MXN';
+  var instMap = {};
+  instituciones.forEach(function(i) { instMap[i.id] = i.nombre; });
+  var instNombre = instMap[cuenta.institucion_id] || '';
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var movsCuenta = movimientos.filter(function(m) { return m.cuenta_id === cuentaId; });
+
+  var eventos = [];
+  var historial = cuenta.historial_saldos || [];
+
+  movsCuenta.forEach(function(m) {
+    var origen = 'Manual';
+    if (m.transferencia_id) origen = 'Transferencia';
+    else if (m.notas && m.notas.indexOf('Prestamo ID:') !== -1) origen = 'Prestamo';
+    else if (m.notas && m.notas.indexOf('Importado desde PDF') !== -1) origen = 'PDF';
+    else if (m.notas && m.notas.indexOf('Generado desde plantilla') !== -1) origen = 'Recurrente';
+    eventos.push({ fecha: m.fecha || '', descripcion: m.descripcion || '', tipo: m.tipo, monto: m.monto || 0, notas: m.notas || '', origen: origen, esCierre: false });
+  });
+
+  historial.forEach(function(h) {
+    var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
+    var rendPctAnual = h.rendimiento_pct_anual || 0;
+    var dias = h.dias || 0;
+    var rendLabel = rendPctAnual !== 0 ? (rendPctAnual >= 0 ? '+' : '') + rendPctAnual.toFixed(2) + '% anual' : '';
+    var diasLabel = dias > 0 ? dias + 'd' : '';
+    var detalle = [diasLabel, rendLabel].filter(function(x) { return x; }).join(', ');
+    eventos.push({ fecha: h.fecha || '', descripcion: 'Cierre Mensual' + (detalle ? ' (' + detalle + ')' : ''), tipo: null, monto: 0, notas: '', origen: 'Cierre', esCierre: true, cierreSaldoFinal: sFinal });
+  });
+
+  // Apply same filters as visible EDC
+  var fDesde = document.getElementById('edoCtaDesde') ? document.getElementById('edoCtaDesde').value : '';
+  var fHasta = document.getElementById('edoCtaHasta') ? document.getElementById('edoCtaHasta').value : '';
+  var fTipo = document.getElementById('edoCtaTipo') ? document.getElementById('edoCtaTipo').value : '';
+  var fSearch = document.getElementById('edoCtaSearch') ? document.getElementById('edoCtaSearch').value.toLowerCase().trim() : '';
+
+  var filtered = eventos.filter(function(e) {
+    if (fDesde && e.fecha < fDesde) return false;
+    if (fHasta && e.fecha > fHasta) return false;
+    if (fTipo && !e.esCierre && e.tipo !== fTipo) return false;
+    if (fSearch && !e.esCierre) {
+      var text = (e.descripcion + ' ' + e.notas + ' ' + e.origen).toLowerCase();
+      if (text.indexOf(fSearch) === -1) return false;
+    }
+    return true;
+  });
+
+  filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+
+  var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  var saldoRunning = saldoInicial;
+  var sumIngresos = 0, sumGastos = 0;
+
+  // Build rows array with running balance
+  var rows = [];
+  // First row: Saldo de Apertura
+  rows.push({ fecha: cuenta.fecha_saldo_inicial || '', descripcion: 'Saldo de Apertura', cargo: '', abono: '', saldo: saldoInicial, esCierre: false, esApertura: true });
+
+  filtered.forEach(function(e) {
+    if (e.esCierre) {
+      saldoRunning = e.cierreSaldoFinal;
+      rows.push({ fecha: e.fecha, descripcion: e.descripcion, cargo: '', abono: '', saldo: saldoRunning, esCierre: true });
+    } else {
+      var cargo = '', abono = '';
+      if (e.tipo === 'gasto') { cargo = e.monto; saldoRunning -= e.monto; sumGastos += e.monto; }
+      else if (e.tipo === 'ingreso') { abono = e.monto; saldoRunning += e.monto; sumIngresos += e.monto; }
+      rows.push({ fecha: e.fecha, descripcion: e.descripcion + (e.origen !== 'Manual' ? ' [' + e.origen + ']' : ''), cargo: cargo, abono: abono, saldo: saldoRunning, esCierre: false });
+    }
+  });
+
+  return {
+    cuenta: cuenta, moneda: moneda, instNombre: instNombre,
+    rows: rows, saldoInicial: saldoInicial, saldoFinal: saldoRunning,
+    sumIngresos: sumIngresos, sumGastos: sumGastos
+  };
+}
+
+/* -- Export Estado de Cuenta to PDF -- */
+function exportarEdoCuentaPDF() {
+  var data = _buildEdoCuentaData();
+  if (!data || data.rows.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+
+  if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+    showToast('jsPDF no esta cargada. Verifica tu conexion.', 'error');
+    return;
+  }
+  var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jspdf.jsPDF;
+  var doc = new jsPDF('p', 'mm', 'letter');
+
+  // Header
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Panel Financiero MMG', 14, 15);
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+  doc.text('Estado de Cuenta: ' + data.cuenta.nombre, 14, 22);
+  doc.setFontSize(10);
+  doc.text('Institucion: ' + data.instNombre + '  |  Moneda: ' + data.moneda + '  |  ' + new Date().toLocaleDateString('es-MX'), 14, 28);
+
+  // Table data
+  var tableData = data.rows.map(function(r) {
+    return [
+      r.fecha || '',
+      r.descripcion || '',
+      r.cargo !== '' ? '-' + formatCurrency(r.cargo, data.moneda) : '',
+      r.abono !== '' ? '+' + formatCurrency(r.abono, data.moneda) : '',
+      formatCurrency(r.saldo, data.moneda)
+    ];
+  });
+
+  doc.autoTable({
+    startY: 34,
+    head: [['Fecha', 'Descripcion', 'Cargo', 'Abono', 'Saldo']],
+    body: tableData,
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      2: { halign: 'right', cellWidth: 28, textColor: [220, 38, 38] },
+      3: { halign: 'right', cellWidth: 28, textColor: [16, 185, 129] },
+      4: { halign: 'right', cellWidth: 28, fontStyle: 'bold' }
+    },
+    didParseCell: function(hookData) {
+      if (hookData.section === 'body') {
+        var row = data.rows[hookData.row.index];
+        if (row && row.esCierre) {
+          hookData.cell.styles.fillColor = [219, 234, 254];
+          hookData.cell.styles.fontStyle = 'bold';
+          hookData.cell.styles.textColor = [37, 99, 235];
+        }
+        if (row && row.esApertura) {
+          hookData.cell.styles.fillColor = [209, 250, 229];
+          hookData.cell.styles.fontStyle = 'bold';
+        }
+      }
+    }
+  });
+
+  // Summary footer
+  var finalY = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('Saldo de Apertura: ' + formatCurrency(data.saldoInicial, data.moneda), 14, finalY);
+  doc.text('Total Cargos: ' + formatCurrency(data.sumGastos, data.moneda), 14, finalY + 6);
+  doc.text('Total Abonos: ' + formatCurrency(data.sumIngresos, data.moneda), 14, finalY + 12);
+  doc.text('Saldo Final: ' + formatCurrency(data.saldoFinal, data.moneda), 14, finalY + 18);
+
+  var filename = 'EDC_' + data.cuenta.nombre.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
+  doc.save(filename);
+  showToast('PDF del Estado de Cuenta exportado.', 'success');
+}
+
+/* -- Export Estado de Cuenta to Excel -- */
+function exportarEdoCuentaExcel() {
+  var data = _buildEdoCuentaData();
+  if (!data || data.rows.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+
+  if (typeof XLSX === 'undefined') { showToast('SheetJS no esta cargada.', 'error'); return; }
+
+  var wsData = [
+    ['Estado de Cuenta: ' + data.cuenta.nombre],
+    ['Institucion: ' + data.instNombre, 'Moneda: ' + data.moneda, 'Fecha: ' + new Date().toLocaleDateString('es-MX')],
+    [],
+    ['Fecha', 'Descripcion', 'Cargo', 'Abono', 'Saldo']
+  ];
+
+  data.rows.forEach(function(r) {
+    wsData.push([
+      r.fecha || '',
+      r.descripcion || '',
+      r.cargo !== '' ? r.cargo : '',
+      r.abono !== '' ? r.abono : '',
+      r.saldo
+    ]);
+  });
+
+  // Summary
+  wsData.push([]);
+  wsData.push(['', 'Saldo de Apertura', '', '', data.saldoInicial]);
+  wsData.push(['', 'Total Cargos', data.sumGastos, '', '']);
+  wsData.push(['', 'Total Abonos', '', data.sumIngresos, '']);
+  wsData.push(['', 'Saldo Final', '', '', data.saldoFinal]);
+
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Set column widths
+  ws['!cols'] = [{ wch: 12 }, { wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Estado de Cuenta');
+
+  var filename = 'EDC_' + data.cuenta.nombre.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+  XLSX.writeFile(wb, filename);
+  showToast('Excel del Estado de Cuenta exportado.', 'success');
 }
