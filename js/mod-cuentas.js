@@ -1167,29 +1167,21 @@ function filterEstadoCuenta() {
 
   // Build unified events array
   var eventos = [];
-
-  // Build cierre date ranges to identify which movements are covered by cierres
   var historial = cuenta.historial_saldos || [];
+
+  // Build cierre date ranges to calculate organic rendimiento (diff not explained by movements)
   var cierreRanges = [];
   var fechaSaldoInicialCta = cuenta.fecha_saldo_inicial || cuenta.created || '';
-  historial.forEach(function(h, i) {
-    var desde = i === 0 ? fechaSaldoInicialCta : (historial[i - 1].fecha || '');
+  // Sort historial chronologically for correct range building
+  var historialSorted = historial.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+  historialSorted.forEach(function(h, i) {
+    var desde = i === 0 ? fechaSaldoInicialCta : (historialSorted[i - 1].fecha || '');
     var hasta = h.fecha || '';
-    cierreRanges.push({ desde: desde, hasta: hasta });
+    cierreRanges.push({ desde: desde, hasta: hasta, cierre: h });
   });
 
-  // Determine if a movement falls within a cierre period
-  function movCubiertoPorCierre(fechaMov) {
-    for (var i = 0; i < cierreRanges.length; i++) {
-      var r = cierreRanges[i];
-      if (fechaMov > r.desde && fechaMov <= r.hasta) return true;
-    }
-    return false;
-  }
-
-  // Only show movements NOT covered by a cierre (movements after last cierre)
+  // All movements are shown (no filtering by cierre)
   movsCuenta.forEach(function(m) {
-    var cubierto = movCubiertoPorCierre(m.fecha || '');
     var origen = 'Manual';
     if (m.transferencia_id) origen = 'Transferencia';
     else if (m.notas && m.notas.indexOf('Prestamo ID:') !== -1) origen = 'Prestamo';
@@ -1202,27 +1194,37 @@ function filterEstadoCuenta() {
       tipo: m.tipo,
       monto: m.monto || 0,
       notas: m.notas || '',
-      origen: cubierto ? origen + ' (en cierre)' : origen,
+      origen: origen,
       esCierre: false,
-      cubiertoPorCierre: cubierto
+      cubiertoPorCierre: false
     });
   });
 
-  // Add cierres mensuales como abonos/cargos (diferencia total: saldo nuevo - saldo anterior)
-  historial.forEach(function(h) {
+  // For each cierre, calculate organic rendimiento (diff not explained by movements)
+  // Rendimiento organico = (saldoFinal - saldoInicio) - movNeto del periodo
+  cierreRanges.forEach(function(r) {
+    var h = r.cierre;
     var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
     var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
     var diff = sFinal - sInicio;
-    var rend = h.rendimiento != null ? h.rendimiento : diff;
-    // Solo agregar si hay diferencia
-    if (rend === 0) return;
+    // Calculate net movements in this period
+    var movNetoPeriodo = 0;
+    movsCuenta.forEach(function(m) {
+      if (m.fecha > r.desde && m.fecha <= r.hasta) {
+        if (m.tipo === 'ingreso') movNetoPeriodo += m.monto;
+        else if (m.tipo === 'gasto') movNetoPeriodo -= m.monto;
+      }
+    });
+    var rendOrganico = diff - movNetoPeriodo;
+    // Solo agregar si hay rendimiento organico significativo (> 0.01)
+    if (Math.abs(rendOrganico) < 0.01) return;
     var diasLabel = h.dias ? ' (' + h.dias + 'd' + (h.rendimiento_pct_anual ? ', ' + (h.rendimiento_pct_anual >= 0 ? '+' : '') + h.rendimiento_pct_anual.toFixed(2) + '% anual' : '') + ')' : '';
     eventos.push({
       fecha: h.fecha || '',
-      descripcion: 'Cierre Mensual' + diasLabel,
-      tipo: rend >= 0 ? 'ingreso' : 'gasto',
-      monto: Math.abs(rend),
-      notas: 'Diferencia: ' + formatCurrency(diff, moneda),
+      descripcion: 'Rendimiento / Ajuste de Cierre' + diasLabel,
+      tipo: rendOrganico >= 0 ? 'ingreso' : 'gasto',
+      monto: Math.abs(rendOrganico),
+      notas: 'Rendimiento organico del periodo',
       origen: 'Cierre',
       esCierre: false,
       cubiertoPorCierre: false
@@ -1253,10 +1255,9 @@ function filterEstadoCuenta() {
   var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
   var fechaSaldoInicial = cuenta.fecha_saldo_inicial || '';
 
-  // Calculate totals from filtered movements (excluding those covered by cierres)
+  // Calculate totals from filtered movements
   var sumIngresos = 0, sumGastos = 0;
   filtered.forEach(function(e) {
-    if (e.cubiertoPorCierre) return; // Don't count movements already covered by cierre
     if (e.tipo === 'ingreso') sumIngresos += e.monto;
     else if (e.tipo === 'gasto') sumGastos += e.monto;
   });
@@ -1277,11 +1278,6 @@ function filterEstadoCuenta() {
 
   // Build table rows for movements and cierres
   var rows = filtered.map(function(e) {
-    // Skip movements covered by cierres (cierre already includes the full diff)
-    if (e.cubiertoPorCierre) {
-      return ''; // hidden row - movement is part of cierre
-    }
-
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
       cargo = formatCurrency(e.monto, moneda);
@@ -1299,7 +1295,9 @@ function filterEstadoCuenta() {
     else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:9px;margin-left:6px;">PDF</span>';
     else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:9px;margin-left:6px;">Recurrente</span>';
 
-    return '<tr>' +
+    var rowStyle = e.origen === 'Cierre' ? ' style="background:rgba(59,130,246,0.06);"' : '';
+
+    return '<tr' + rowStyle + '>' +
       '<td style="white-space:nowrap;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
       '<td style="font-size:12px;">' + e.descripcion + origenBadge + '</td>' +
       '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +

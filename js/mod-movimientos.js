@@ -505,10 +505,24 @@ function deleteMovimiento(id) {
   const mov = movimientos.find(m => m.id === id);
   if (!mov) return;
 
-  const confirmar = confirm('\u00BFEstas seguro de eliminar este movimiento?\n"' + (mov.descripcion || 'Sin descripcion') + '" por ' + formatCurrency(mov.monto, mov.moneda || 'MXN') + '\n\nEsta accion revertira el efecto en el saldo de la cuenta.');
+  // Check if this movement is part of a transfer
+  var contraparte = null;
+  if (mov.transferencia_id) {
+    contraparte = movimientos.find(function(m) {
+      return m.transferencia_id === mov.transferencia_id && m.id !== id;
+    });
+  }
+
+  var msgConfirm = '\u00BFEstas seguro de eliminar este movimiento?\n"' + (mov.descripcion || 'Sin descripcion') + '" por ' + formatCurrency(mov.monto, mov.moneda || 'MXN');
+  if (contraparte) {
+    msgConfirm += '\n\nEste movimiento es parte de una transferencia. Tambien se eliminara la contraparte:\n"' + (contraparte.descripcion || 'Sin descripcion') + '" por ' + formatCurrency(contraparte.monto, contraparte.moneda || 'MXN');
+  }
+  msgConfirm += '\n\nEsta accion revertira el efecto en el saldo de la(s) cuenta(s).';
+
+  const confirmar = confirm(msgConfirm);
   if (!confirmar) return;
 
-  // Reverse saldo effect on cuenta
+  // Reverse saldo effect on cuenta for the main movement
   const cuentaIdx = cuentas.findIndex(c => c.id === mov.cuenta_id);
   if (cuentaIdx !== -1) {
     if (mov.tipo === 'ingreso') {
@@ -516,14 +530,36 @@ function deleteMovimiento(id) {
     } else {
       cuentas[cuentaIdx].saldo += mov.monto;
     }
-    saveData(STORAGE_KEYS.cuentas, cuentas);
   }
 
-  // Remove movimiento from array
-  const newMovimientos = movimientos.filter(m => m.id !== id);
+  // Reverse saldo effect for contraparte
+  if (contraparte) {
+    var cpCuentaIdx = cuentas.findIndex(function(c) { return c.id === contraparte.cuenta_id; });
+    if (cpCuentaIdx !== -1) {
+      if (contraparte.tipo === 'ingreso') {
+        cuentas[cpCuentaIdx].saldo -= contraparte.monto;
+      } else {
+        cuentas[cpCuentaIdx].saldo += contraparte.monto;
+      }
+    }
+  }
+
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+
+  // Remove movimiento(s) from array
+  var idsToRemove = [id];
+  if (contraparte) idsToRemove.push(contraparte.id);
+  var newMovimientos = movimientos.filter(function(m) { return idsToRemove.indexOf(m.id) === -1; });
   saveData(STORAGE_KEYS.movimientos, newMovimientos);
 
-  showToast('Movimiento eliminado exitosamente.', 'info');
+  // Also remove the transfer record if it exists
+  if (mov.transferencia_id) {
+    var transferencias = loadData(STORAGE_KEYS.transferencias) || [];
+    var newTransferencias = transferencias.filter(function(t) { return t.id !== mov.transferencia_id; });
+    saveData(STORAGE_KEYS.transferencias, newTransferencias);
+  }
+
+  showToast('Movimiento eliminado exitosamente.' + (contraparte ? ' Contraparte de transferencia tambien eliminada.' : ''), 'info');
   renderMovimientos();
   updateHeaderPatrimonio();
 }
