@@ -154,6 +154,7 @@ function renderCuentas() {
               <th style="text-align:right;">Saldo</th>
               <th style="text-align:right;">Rendimiento %</th>
               <th>Subtipo</th>
+              <th>Cierre</th>
               <th style="text-align:center;">Acciones</th>
             </tr>
           </thead>
@@ -202,7 +203,7 @@ function filterCuentas() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+        <td colspan="9" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
           <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No se encontraron cuentas con los filtros aplicados.
         </td>
@@ -241,6 +242,15 @@ function filterCuentas() {
       subtipoHTML = '<span class="badge badge-amber">Accion/Membresia</span>';
     }
 
+    // Ultimo cierre
+    let ultCierreHTML = '<span style="color:var(--text-muted);">\u2014</span>';
+    if (histCta.length > 0) {
+      const ultCierreEntry = [...histCta].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
+      if (ultCierreEntry.fecha) {
+        ultCierreHTML = formatDate(ultCierreEntry.fecha);
+      }
+    }
+
     // Zebra striping
     const zebraStyle = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
 
@@ -252,6 +262,7 @@ function filterCuentas() {
       <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(c.saldo, c.moneda)}</td>
       <td style="text-align:right;color:${rendColor};font-weight:${rendAnualCalc !== 0 ? '600' : 'normal'};">${rendimiento}</td>
       <td>${subtipoHTML}</td>
+      <td style="font-size:12px;white-space:nowrap;">${ultCierreHTML}</td>
       <td style="text-align:center;">
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
           <i class="fas fa-pen"></i>
