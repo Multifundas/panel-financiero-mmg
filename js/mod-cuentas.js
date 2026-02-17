@@ -681,6 +681,13 @@ function _getUltimoCierre(cuenta) {
   return sorted[0].fecha || '';
 }
 
+function _getSaldoInicioCierre(cuenta) {
+  var h = cuenta.historial_saldos || [];
+  if (h.length === 0) return cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  var sorted = h.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+  return sorted[0].saldo_final != null ? sorted[0].saldo_final : sorted[0].saldo;
+}
+
 function _calcMovimientosNetos(cuentaId, desdeExcl) {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var ingresos = 0, gastos = 0;
@@ -703,6 +710,7 @@ function cierreMensual() {
 
   var filas = activas.map(function(c) {
     var ultimoCierre = _getUltimoCierre(c);
+    var saldoInicioPeriodo = _getSaldoInicioCierre(c);
     var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
     var esDebito = c.tipo === 'debito';
     var rendCell = esDebito
@@ -711,9 +719,9 @@ function cierreMensual() {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span>' +
       (esDebito ? '<br><span class="badge badge-blue" style="font-size:9px;">Debito</span>' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(saldoInicioPeriodo, c.moneda) + '</td>' +
       '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
-      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + c.saldo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
+      '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + saldoInicioPeriodo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
       rendCell +
       '</tr>';
   }).join('');
