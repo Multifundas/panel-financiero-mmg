@@ -392,11 +392,6 @@ function editCuenta(id) {
 
       <!-- Campos Renta Variable -->
       <div id="rentaVarFields" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Saldo de Apertura (al momento de invertir)</label>
-          <input type="number" id="cuentaRentaVarSaldoInicial" class="form-input" step="0.01" min="0"
-                 value="${isEdit && cuenta.renta_var_saldo_inicial != null ? cuenta.renta_var_saldo_inicial : ''}" placeholder="0.00">
-        </div>
         <div style="margin-bottom:12px;">
           <label class="form-label">Historial de Saldos</label>
           <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
@@ -569,8 +564,6 @@ function saveCuenta(event) {
     ? (parseFloat(document.getElementById('cuentaPagareTasa').value) || 0) : 0;
 
   // Renta variable fields
-  const renta_var_saldo_inicial = subtipo === 'renta_variable' && document.getElementById('cuentaRentaVarSaldoInicial')
-    ? (parseFloat(document.getElementById('cuentaRentaVarSaldoInicial').value) || 0) : 0;
   let historial_saldos = [];
   if (subtipo === 'renta_variable') {
     const rvRows = document.querySelectorAll('#tablaRentaVarHistorial tbody tr');
@@ -611,7 +604,6 @@ function saveCuenta(event) {
       cuentas[idx].pagare_fecha_inicio = pagare_fecha_inicio;
       cuentas[idx].pagare_fecha_termino = pagare_fecha_termino;
       cuentas[idx].pagare_tasa = pagare_tasa;
-      cuentas[idx].renta_var_saldo_inicial = renta_var_saldo_inicial;
       cuentas[idx].historial_saldos = historial_saldos;
       cuentas[idx].notas = notas;
       cuentas[idx].updated = new Date().toISOString();
@@ -634,7 +626,6 @@ function saveCuenta(event) {
       pagare_fecha_inicio: pagare_fecha_inicio,
       pagare_fecha_termino: pagare_fecha_termino,
       pagare_tasa: pagare_tasa,
-      renta_var_saldo_inicial: renta_var_saldo_inicial,
       historial_saldos: historial_saldos,
       notas: notas,
       activa: true,
