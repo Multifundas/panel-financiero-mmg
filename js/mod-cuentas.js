@@ -1165,9 +1165,11 @@ function filterEstadoCuenta() {
   // Filter movements for this account
   var movsCuenta = movimientos.filter(function(m) { return m.cuenta_id === cuentaId; });
 
-  // Build unified events array — only real movements, no cierre artifacts
+  // Build unified events array
   var eventos = [];
+  var historial = cuenta.historial_saldos || [];
 
+  // Add real movements
   movsCuenta.forEach(function(m) {
     var origen = 'Manual';
     if (m.transferencia_id) origen = 'Transferencia';
@@ -1181,7 +1183,30 @@ function filterEstadoCuenta() {
       tipo: m.tipo,
       monto: m.monto || 0,
       notas: m.notas || '',
-      origen: origen
+      origen: origen,
+      esCierre: false
+    });
+  });
+
+  // Add cierres as informational markers (no cargo/abono, just saldo snapshot)
+  historial.forEach(function(h) {
+    var sInicio = h.saldo_inicio != null ? h.saldo_inicio : 0;
+    var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
+    var rendPctAnual = h.rendimiento_pct_anual || 0;
+    var dias = h.dias || 0;
+    var rendLabel = rendPctAnual !== 0 ? (rendPctAnual >= 0 ? '+' : '') + rendPctAnual.toFixed(2) + '% anual' : '';
+    var diasLabel = dias > 0 ? dias + 'd' : '';
+    var detalle = [diasLabel, rendLabel].filter(function(x) { return x; }).join(', ');
+
+    eventos.push({
+      fecha: h.fecha || '',
+      descripcion: 'Cierre Mensual' + (detalle ? ' (' + detalle + ')' : ''),
+      tipo: null,
+      monto: 0,
+      notas: '',
+      origen: 'Cierre',
+      esCierre: true,
+      cierreSaldoFinal: sFinal
     });
   });
 
@@ -1194,8 +1219,8 @@ function filterEstadoCuenta() {
   var filtered = eventos.filter(function(e) {
     if (fDesde && e.fecha < fDesde) return false;
     if (fHasta && e.fecha > fHasta) return false;
-    if (fTipo && e.tipo !== fTipo) return false;
-    if (fSearch) {
+    if (fTipo && !e.esCierre && e.tipo !== fTipo) return false;
+    if (fSearch && !e.esCierre) {
       var text = (e.descripcion + ' ' + e.notas + ' ' + e.origen).toLowerCase();
       if (text.indexOf(fSearch) === -1) return false;
     }
@@ -1209,9 +1234,10 @@ function filterEstadoCuenta() {
   var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
   var fechaSaldoInicial = cuenta.fecha_saldo_inicial || '';
 
-  // Calculate totals from filtered movements
+  // Calculate totals from filtered movements (exclude cierres)
   var sumIngresos = 0, sumGastos = 0;
   filtered.forEach(function(e) {
+    if (e.esCierre) return;
     if (e.tipo === 'ingreso') sumIngresos += e.monto;
     else if (e.tipo === 'gasto') sumGastos += e.monto;
   });
@@ -1230,8 +1256,20 @@ function filterEstadoCuenta() {
     '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</td>' +
     '</tr>';
 
-  // Build table rows for movements
+  // Build table rows for movements and cierre markers
   var rows = filtered.map(function(e) {
+    // Cierre rows: informational marker, resets running balance to cierre saldo
+    if (e.esCierre) {
+      saldoRunning = e.cierreSaldoFinal;
+      return '<tr style="background:rgba(59,130,246,0.08);border-top:2px solid rgba(59,130,246,0.3);border-bottom:2px solid rgba(59,130,246,0.3);">' +
+        '<td style="white-space:nowrap;font-weight:700;color:var(--accent-blue);">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
+        '<td style="font-size:12px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
+        '<td></td>' +
+        '<td></td>' +
+        '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrency(saldoRunning, moneda) + '</td>' +
+        '</tr>';
+    }
+
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
       cargo = formatCurrency(e.monto, moneda);
