@@ -104,12 +104,48 @@ function _restoreAllFormatted(container) {
 }
 
 function _setupNumericFormatting() {
-  // Blur: switch to text with commas
+  /**
+   * Real-time comma formatting: number inputs show a live formatted
+   * preview below the input while typing. On blur, switch to text
+   * with full comma format. On focus, restore raw number.
+   */
+
+  // Input: show live preview below the input
+  document.addEventListener('input', function(e) {
+    var input = e.target;
+    if (input.tagName !== 'INPUT') return;
+    if (input.getAttribute('data-no-commas') === 'true') return;
+    if (input.type !== 'number') return;
+    var val = input.value;
+    if (val !== '' && val != null) {
+      input.setAttribute('data-raw-value', val);
+    }
+    // Update or create live preview
+    var preview = input.nextElementSibling;
+    if (!preview || !preview.classList.contains('live-comma-preview')) {
+      preview = document.createElement('div');
+      preview.className = 'live-comma-preview';
+      preview.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;font-weight:600;letter-spacing:0.3px;';
+      input.parentNode.insertBefore(preview, input.nextSibling);
+    }
+    if (val === '' || val == null || isNaN(val)) {
+      preview.textContent = '';
+    } else {
+      preview.textContent = _formatWithCommas(val);
+    }
+  }, true);
+
+  // Blur: switch to text with commas, remove preview
   document.addEventListener('blur', function(e) {
     var input = e.target;
     if (input.tagName !== 'INPUT') return;
     if (input.getAttribute('data-no-commas') === 'true') return;
     if (input.type !== 'number') return;
+    // Remove live preview
+    var preview = input.nextElementSibling;
+    if (preview && preview.classList.contains('live-comma-preview')) {
+      preview.remove();
+    }
     var val = input.value;
     if (val === '' || val == null) return;
     input.setAttribute('data-raw-value', val);
@@ -139,8 +175,6 @@ function _setupNumericFormatting() {
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('button[type="submit"], button.btn-primary, button.btn-danger');
     if (!btn) return;
-    // Restore all formatted inputs in the whole document
-    // (buttons may use onclick handlers outside of forms)
     _restoreAllFormatted(document);
   }, true);
 }
@@ -153,4 +187,39 @@ function getInputNumericValue(inputOrId) {
     return parseFloat(input.getAttribute('data-raw-value')) || 0;
   }
   return parseFloat(input.value) || 0;
+}
+
+/** Return inline style color for a number (red if negative, green if positive, muted if zero) */
+function colorNum(val) {
+  if (val < 0) return 'color:var(--accent-red);';
+  if (val > 0) return 'color:var(--accent-green);';
+  return 'color:var(--text-muted);';
+}
+
+/** Wrap formatCurrency with automatic red color for negative amounts (returns HTML) */
+function formatCurrencyColor(amount, currency) {
+  var formatted = formatCurrency(amount, currency);
+  if (Number(amount) < 0) {
+    return '<span style="color:var(--accent-red);">' + formatted + '</span>';
+  }
+  return formatted;
+}
+
+/**
+ * Global auto-color for negative numbers in data tables.
+ * Scans cells after module renders and applies red color to any cell
+ * whose text content starts with -$ or contains a negative currency value.
+ */
+function _autoColorNegativeNumbers(root) {
+  if (!root) root = document;
+  var cells = root.querySelectorAll('.data-table td, .kpi-value, [data-auto-color]');
+  cells.forEach(function(cell) {
+    var text = cell.textContent.trim();
+    // Match patterns like -$1,234.56 or -€1,234.56 or -US$1,234.56
+    if (/^-[\$€]/.test(text) || /^-US\$/.test(text)) {
+      if (!cell.style.color && !cell.classList.contains('text-green') && !cell.classList.contains('text-red')) {
+        cell.style.color = 'var(--accent-red)';
+      }
+    }
+  });
 }

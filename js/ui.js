@@ -53,6 +53,14 @@ function navigateTo(moduleId) {
   };
   if (renderFns[moduleId]) renderFns[moduleId]();
 
+  // Auto-color negative numbers in rendered content
+  setTimeout(function() {
+    if (typeof _autoColorNegativeNumbers === 'function') {
+      var target = document.getElementById('module-' + moduleId);
+      _autoColorNegativeNumbers(target);
+    }
+  }, 50);
+
   // Close sidebar on mobile
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('mobile-open');
@@ -114,20 +122,48 @@ function toggleSidebar() {
 /* ============================================================
    UPDATE HEADER PATRIMONIO
    ============================================================ */
-function updateHeaderPatrimonio() {
+function calcPatrimonioTotal() {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
-  let total = 0;
+
+  let totalCuentas = 0;
+  let totalPropiedades = 0;
+  let totalPrestamosOtorgados = 0;
+  let totalPrestamosRecibidos = 0;
+
   cuentas.forEach(c => {
     if (c.activa !== false) {
-      total += toMXN(c.saldo, c.moneda, tiposCambio);
+      totalCuentas += toMXN(c.saldo, c.moneda, tiposCambio);
     }
   });
   propiedades.forEach(p => {
-    total += toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
+    totalPropiedades += toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
   });
-  document.getElementById('headerPatrimonio').textContent = formatCurrency(total, 'MXN');
+  prestamos.forEach(p => {
+    if (p.estado === 'pagado') return;
+    if (p.tipo === 'otorgado') {
+      totalPrestamosOtorgados += toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
+    } else if (p.tipo === 'recibido') {
+      totalPrestamosRecibidos += toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
+    }
+  });
+
+  var total = totalCuentas + totalPropiedades + totalPrestamosOtorgados - totalPrestamosRecibidos;
+  return {
+    total: total,
+    cuentas: totalCuentas,
+    propiedades: totalPropiedades,
+    prestamosOtorgados: totalPrestamosOtorgados,
+    prestamosRecibidos: totalPrestamosRecibidos
+  };
+}
+
+function updateHeaderPatrimonio() {
+  const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var pat = calcPatrimonioTotal();
+  document.getElementById('headerPatrimonio').textContent = formatCurrency(pat.total, 'MXN');
 
   // Show current exchange rate in header
   const tcEl = document.getElementById('headerTipoCambio');
@@ -135,6 +171,75 @@ function updateHeaderPatrimonio() {
     const usdMxn = tiposCambio.USD_MXN || 17.50;
     tcEl.textContent = 'TC: US$1 = $' + Number(usdMxn).toFixed(2) + ' MXN';
   }
+}
+
+function mostrarDesglosePatrimonio() {
+  var pat = calcPatrimonioTotal();
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+
+  var html = '';
+
+  // Cuentas breakdown
+  html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
+  html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+  cuentas.filter(function(c) { return c.activa !== false; }).forEach(function(c) {
+    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(c.saldo, c.moneda) + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+  });
+  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
+
+  // Propiedades breakdown
+  if (propiedades.length > 0) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-building" style="margin-right:6px;"></i>Propiedades</div>';
+    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Propiedad</th><th>Tipo</th><th style="text-align:right;">Valor Actual</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    propiedades.forEach(function(p) {
+      var valMXN = toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
+      var tipoBadge = p.tipo === 'preventa' ? 'badge-amber' : 'badge-purple';
+      html += '<tr><td style="font-weight:600;">' + p.nombre + '</td><td><span class="badge ' + tipoBadge + '" style="font-size:10px;">' + (p.tipo === 'preventa' ? 'Preventa' : 'Terminada') + '</span></td><td style="text-align:right;">' + formatCurrency(p.valor_actual || 0, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    });
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Propiedades</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrency(pat.propiedades, 'MXN') + '</td></tr></tfoot></table></div>';
+  }
+
+  // Prestamos otorgados (activos)
+  var otorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; });
+  if (otorgados.length > 0) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:8px;"><i class="fas fa-hand-holding-usd" style="margin-right:6px;"></i>Prestamos Otorgados (a favor)</div>';
+    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    otorgados.forEach(function(p) {
+      var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
+      html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    });
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Otorgados</td><td style="text-align:right;color:var(--accent-amber);">' + formatCurrency(pat.prestamosOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
+  }
+
+  // Prestamos recibidos (deuda)
+  var recibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; });
+  if (recibidos.length > 0) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Prestamos Recibidos (deuda)</div>';
+    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    recibidos.forEach(function(p) {
+      var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
+      html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    });
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Deuda</td><td style="text-align:right;color:var(--accent-red);">-' + formatCurrency(pat.prestamosRecibidos, 'MXN') + '</td></tr></tfoot></table></div>';
+  }
+
+  // Total
+  html += '<div style="padding:16px;border-radius:10px;background:var(--bg-base);margin-top:16px;">';
+  html += '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:13px;">';
+  html += '<div style="color:var(--text-muted);">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.cuentas, 'MXN') + '</div>';
+  if (pat.propiedades > 0) html += '<div style="color:var(--text-muted);">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.propiedades, 'MXN') + '</div>';
+  if (pat.prestamosOtorgados > 0) html += '<div style="color:var(--text-muted);">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.prestamosOtorgados, 'MXN') + '</div>';
+  if (pat.prestamosRecibidos > 0) html += '<div style="color:var(--text-muted);">- Prestamos recibidos</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(pat.prestamosRecibidos, 'MXN') + '</div>';
+  html += '</div>';
+  html += '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:18px;font-weight:800;">';
+  html += '<span>Patrimonio Total</span><span style="color:var(--accent-blue);">' + formatCurrency(pat.total, 'MXN') + '</span>';
+  html += '</div></div>';
+
+  openModal('Desglose del Patrimonio Total', html);
 }
 
 /* ============================================================

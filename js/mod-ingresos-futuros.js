@@ -100,12 +100,24 @@ function renderIngresosFuturos() {
       </div>
     </div>
 
+    <!-- Cronograma de proximos ingresos -->
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:700;color:var(--text-primary);"><i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Cronograma de Proximos Ingresos</div>
+        <button class="btn btn-secondary" onclick="openPatrimonioFuturo()" style="padding:6px 12px;font-size:11px;">
+          <i class="fas fa-chart-area" style="margin-right:4px;"></i>Patrimonio Futuro
+        </button>
+      </div>
+      <div id="cronogramaIngresosFuturos"></div>
+    </div>
+
     <div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);font-size:12px;color:var(--text-muted);">
       <i class="fas fa-info-circle" style="margin-right:6px;color:var(--accent-blue);"></i>
       Los ingresos futuros <strong>confirmados</strong> se contemplan en las proyecciones del simulador. Se muestran separados del patrimonio actual.
     </div>`;
 
   filterIngresosFuturos();
+  renderCronogramaIngresos();
 }
 
 function filterIngresosFuturos() {
@@ -117,7 +129,7 @@ function filterIngresosFuturos() {
     if (fTipo && i.tipo !== fTipo) return false;
     if (fCerteza && i.certeza !== fCerteza) return false;
     return true;
-  }).sort(function(a, b) { return (b.created || '').localeCompare(a.created || ''); });
+  }).sort(function(a, b) { return (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''); });
 
   var tbody = document.getElementById('tbodyIngresosFuturos');
   if (!tbody) return;
@@ -270,4 +282,163 @@ function deleteIngresoFuturo(id) {
   saveData(STORAGE_KEYS.ingresos_futuros, ingresos.filter(function(i) { return i.id !== id; }));
   showToast('Ingreso futuro eliminado.', 'info');
   renderIngresosFuturos();
+}
+
+/* -- Cronograma: show upcoming income events sorted by date -- */
+function renderCronogramaIngresos() {
+  var el = document.getElementById('cronogramaIngresosFuturos');
+  if (!el) return;
+  var ingresos = loadData(STORAGE_KEYS.ingresos_futuros) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var hoy = new Date();
+  var hoyStr = hoy.toISOString().slice(0, 10);
+
+  // Generate upcoming events for the next 12 months
+  var eventos = [];
+  var limite = new Date(hoy);
+  limite.setFullYear(limite.getFullYear() + 1);
+  var limiteStr = limite.toISOString().slice(0, 10);
+
+  ingresos.forEach(function(i) {
+    if (!i.activa) return;
+    if (!i.fecha_inicio) return;
+
+    if (i.frecuencia === 'unico') {
+      if (i.fecha_inicio >= hoyStr && i.fecha_inicio <= limiteStr) {
+        eventos.push({ fecha: i.fecha_inicio, concepto: i.concepto, monto: i.monto, moneda: i.moneda || 'MXN', certeza: i.certeza, tipo: i.tipo });
+      }
+    } else if (i.frecuencia === 'mensual') {
+      var d = new Date(i.fecha_inicio + 'T00:00:00');
+      if (d < hoy) { d.setMonth(hoy.getMonth()); d.setFullYear(hoy.getFullYear()); if (d < hoy) d.setMonth(d.getMonth() + 1); }
+      for (var j = 0; j < 12 && d <= limite; j++) {
+        var fEnd = i.fecha_fin ? new Date(i.fecha_fin + 'T00:00:00') : null;
+        if (fEnd && d > fEnd) break;
+        var ds = d.toISOString().slice(0, 10);
+        eventos.push({ fecha: ds, concepto: i.concepto, monto: i.monto, moneda: i.moneda || 'MXN', certeza: i.certeza, tipo: i.tipo });
+        d.setMonth(d.getMonth() + 1);
+      }
+    } else if (i.frecuencia === 'anual') {
+      var da = new Date(i.fecha_inicio + 'T00:00:00');
+      if (da < hoy) { da.setFullYear(hoy.getFullYear()); if (da < hoy) da.setFullYear(da.getFullYear() + 1); }
+      if (da <= limite) {
+        var fEnd2 = i.fecha_fin ? new Date(i.fecha_fin + 'T00:00:00') : null;
+        if (!fEnd2 || da <= fEnd2) {
+          eventos.push({ fecha: da.toISOString().slice(0, 10), concepto: i.concepto, monto: i.monto, moneda: i.moneda || 'MXN', certeza: i.certeza, tipo: i.tipo });
+        }
+      }
+    }
+  });
+
+  eventos.sort(function(a, b) { return a.fecha.localeCompare(b.fecha); });
+
+  if (eventos.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;"><i class="fas fa-calendar-times" style="font-size:20px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay ingresos programados para los proximos 12 meses.</div>';
+    return;
+  }
+
+  var certezaBadges = { confirmado: 'badge-green', probable: 'badge-amber', posible: 'badge-blue' };
+  var certezaLabels = { confirmado: 'Conf.', probable: 'Prob.', posible: 'Pos.' };
+
+  var html = '<div style="max-height:300px;overflow-y:auto;">';
+  eventos.forEach(function(e) {
+    var valMXN = toMXN(e.monto, e.moneda, tiposCambio);
+    var diasHasta = Math.round((new Date(e.fecha + 'T00:00:00') - hoy) / (1000 * 60 * 60 * 24));
+    var diasLabel = diasHasta === 0 ? 'Hoy' : (diasHasta === 1 ? 'Manana' : 'en ' + diasHasta + ' dias');
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-subtle);gap:12px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div style="min-width:80px;font-size:12px;color:var(--text-muted);font-weight:600;">' + formatDate(e.fecha) + '</div>' +
+      '<div><div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + e.concepto + '</div>' +
+      '<div style="font-size:10px;color:var(--text-muted);">' + diasLabel + '</div></div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<span class="badge ' + (certezaBadges[e.certeza] || 'badge-blue') + '" style="font-size:9px;">' + (certezaLabels[e.certeza] || '') + '</span>' +
+      '<div style="font-size:14px;font-weight:700;color:var(--accent-green);white-space:nowrap;">+' + formatCurrency(e.monto, e.moneda) + '</div>' +
+      '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* -- Patrimonio Futuro Projection Tool -- */
+function openPatrimonioFuturo() {
+  var pat = typeof calcPatrimonioTotal === 'function' ? calcPatrimonioTotal() : { total: 0 };
+  var patrimonioActual = pat.total;
+  var ingresos = loadData(STORAGE_KEYS.ingresos_futuros) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var hoy = new Date();
+
+  // Project patrimonio for the next 12 months
+  var meses = [];
+  for (var m = 0; m < 12; m++) {
+    var d = new Date(hoy);
+    d.setMonth(d.getMonth() + m + 1);
+    var mesStr = d.toISOString().slice(0, 7);
+    var mesNom = typeof mesNombre === 'function' ? mesNombre(d.getMonth()) : mesStr;
+    meses.push({ mes: mesStr, label: mesNom + ' ' + d.getFullYear(), ingresosConf: 0, ingresosProb: 0, ingresosPosible: 0, patrimonioAcum: 0 });
+  }
+
+  // Calculate income per month
+  ingresos.forEach(function(i) {
+    if (!i.activa || !i.fecha_inicio) return;
+    var montoMXN = toMXN(i.monto, i.moneda || 'MXN', tiposCambio);
+
+    meses.forEach(function(mes) {
+      var mesDate = new Date(mes.mes + '-15T00:00:00');
+      var inicio = new Date(i.fecha_inicio + 'T00:00:00');
+      var fin = i.fecha_fin ? new Date(i.fecha_fin + 'T00:00:00') : null;
+
+      if (mesDate < inicio) return;
+      if (fin && mesDate > fin) return;
+
+      var aplica = false;
+      if (i.frecuencia === 'mensual') aplica = true;
+      else if (i.frecuencia === 'anual') aplica = (mesDate.getMonth() === inicio.getMonth());
+      else if (i.frecuencia === 'unico') aplica = (mes.mes === i.fecha_inicio.slice(0, 7));
+
+      if (aplica) {
+        if (i.certeza === 'confirmado') mes.ingresosConf += montoMXN;
+        else if (i.certeza === 'probable') mes.ingresosProb += montoMXN;
+        else mes.ingresosPosible += montoMXN;
+      }
+    });
+  });
+
+  // Calculate cumulative patrimonio (only confirmed + current patrimonio)
+  var acum = patrimonioActual;
+  meses.forEach(function(mes) {
+    acum += mes.ingresosConf;
+    mes.patrimonioAcum = acum;
+  });
+
+  // Build modal HTML
+  var html = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Patrimonio Actual</div>' +
+    '<div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(patrimonioActual, 'MXN') + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Patrimonio en 12 Meses</div>' +
+    '<div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrency(meses[meses.length - 1].patrimonioAcum, 'MXN') + '</div></div>' +
+    '</div></div>';
+
+  html += '<div style="overflow-x:auto;"><table class="data-table" style="font-size:12px;"><thead><tr>' +
+    '<th>Mes</th><th style="text-align:right;">Confirmado</th><th style="text-align:right;">Probable</th><th style="text-align:right;">Posible</th><th style="text-align:right;font-weight:800;">Patrimonio Proyectado</th>' +
+    '</tr></thead><tbody>';
+
+  meses.forEach(function(mes) {
+    html += '<tr>' +
+      '<td style="font-weight:600;white-space:nowrap;">' + mes.label + '</td>' +
+      '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + (mes.ingresosConf > 0 ? '+' + formatCurrency(mes.ingresosConf, 'MXN') : '\u2014') + '</td>' +
+      '<td style="text-align:right;color:var(--accent-amber);">' + (mes.ingresosProb > 0 ? '+' + formatCurrency(mes.ingresosProb, 'MXN') : '\u2014') + '</td>' +
+      '<td style="text-align:right;color:var(--text-muted);">' + (mes.ingresosPosible > 0 ? '+' + formatCurrency(mes.ingresosPosible, 'MXN') : '\u2014') + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrency(mes.patrimonioAcum, 'MXN') + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+
+  html += '<div style="margin-top:12px;padding:10px;border-radius:8px;background:var(--bg-base);font-size:11px;color:var(--text-muted);">' +
+    '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>' +
+    'Patrimonio proyectado solo incluye ingresos <strong>confirmados</strong>. Los ingresos probables y posibles se muestran como referencia. ' +
+    'No incluye rendimientos de inversiones ni gastos futuros.</div>';
+
+  openModal('Patrimonio Futuro — Proyeccion a 12 Meses', html);
+  document.querySelector('.modal-content').classList.add('modal-wide');
 }

@@ -385,7 +385,7 @@ function buildTerminadaCard(p, moneda) {
     /* KPI row */
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor Actual</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor de Mercado Estimado</div>' +
         '<div style="font-size:16px;font-weight:700;color:var(--accent-blue);">' + formatCurrency(p.valor_actual, moneda) + '</div>' +
       '</div>' +
       '<div>' +
@@ -438,7 +438,7 @@ function editPropiedad(id) {
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
         '<div class="form-group"><label class="form-label">Valor de Compra *</label>' +
           '<input type="number" id="propiedadValorCompra" class="form-input" required step="0.01" min="0" value="' + (isEdit ? prop.valor_compra : '') + '" placeholder="0.00"></div>' +
-        '<div class="form-group"><label class="form-label">Valor Actual *</label>' +
+        '<div class="form-group"><label class="form-label">Valor de Mercado Estimado *</label><div style="font-size:10px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Precio estimado de venta hoy en el mercado</div>' +
           '<input type="number" id="propiedadValorActual" class="form-input" required step="0.01" min="0" value="' + (isEdit ? prop.valor_actual : '') + '" placeholder="0.00"></div>' +
         '<div class="form-group"><label class="form-label">Moneda *</label>' +
           '<select id="propiedadMoneda" class="form-select" required>' +
@@ -645,7 +645,7 @@ function actualizarValor(propiedadId) {
     '<form id="formActualizarValor" onsubmit="saveActualizarValor(event, \'' + propiedadId + '\')">' +
       '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
         '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Propiedad: <strong style="color:var(--text-primary);">' + prop.nombre + '</strong></div>' +
-        '<div style="font-size:12px;color:var(--text-muted);">Valor actual: <strong style="color:var(--accent-blue);">' + formatCurrency(prop.valor_actual, prop.moneda || 'MXN') + '</strong></div>' +
+        '<div style="font-size:12px;color:var(--text-muted);">Valor de mercado actual: <strong style="color:var(--accent-blue);">' + formatCurrency(prop.valor_actual, prop.moneda || 'MXN') + '</strong></div>' +
       '</div>' +
       '<div class="form-group"><label class="form-label">Nuevo Valor *</label>' +
         '<input type="number" id="nuevoValor" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>' +

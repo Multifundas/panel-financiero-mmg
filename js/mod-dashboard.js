@@ -78,13 +78,9 @@ function renderDashboard() {
   };
   const periodoLabel = periodoLabels[periodo] || 'del Mes';
 
-  // -- KPI 1: Patrimonio Total (all active accounts in MXN) --
-  let patrimonioTotal = 0;
-  cuentas.forEach(c => {
-    if (c.activa !== false) {
-      patrimonioTotal += toMXN(c.saldo, c.moneda, tiposCambio);
-    }
-  });
+  // -- KPI 1: Patrimonio Total (cuentas + propiedades + prestamos otorgados - prestamos recibidos) --
+  const _patCalc = typeof calcPatrimonioTotal === 'function' ? calcPatrimonioTotal() : { total: 0, cuentas: 0, propiedades: 0, prestamosOtorgados: 0, prestamosRecibidos: 0 };
+  let patrimonioTotal = _patCalc.total;
 
   // -- Filter movimientos for selected period --
   const movsFiltrados = movimientos.filter(mv => {
@@ -617,7 +613,7 @@ function renderDashboard() {
 
     <!-- KPI Cards Row 1 -->
     <div class="grid-4" style="margin-bottom:16px;">
-      <div class="card" style="border-left:3px solid var(--accent-blue);">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePatrimonio()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:16px;"></i>
@@ -625,6 +621,7 @@ function renderDashboard() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Total</span>
         </div>
         <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;"><i class="fas fa-chevron-right" style="margin-right:4px;"></i>Click para ver desglose</div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-green);">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">

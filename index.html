@@ -110,30 +110,16 @@
           <i class="fas fa-chart-pie"></i>
           <span>Dashboard</span>
         </a>
-        <a class="nav-item" data-module="cuentas" onclick="navigateTo('cuentas')">
-          <i class="fas fa-wallet"></i>
-          <span>Cuentas</span>
-        </a>
         <a class="nav-item" data-module="movimientos" onclick="navigateTo('movimientos')">
           <i class="fas fa-exchange-alt"></i>
           <span>Movimientos</span>
         </a>
 
-        <div class="nav-section-label">Analisis</div>
-        <a class="nav-item" data-module="rendimientos" onclick="navigateTo('rendimientos')">
-          <i class="fas fa-chart-line"></i>
-          <span>Rendimientos</span>
-        </a>
-        <a class="nav-item" data-module="gastos" onclick="navigateTo('gastos')">
-          <i class="fas fa-receipt"></i>
-          <span>Gastos</span>
-        </a>
-        <a class="nav-item" data-module="metas" onclick="navigateTo('metas')">
-          <i class="fas fa-bullseye"></i>
-          <span>Metas</span>
-        </a>
-
         <div class="nav-section-label">Activos</div>
+        <a class="nav-item" data-module="cuentas" onclick="navigateTo('cuentas')">
+          <i class="fas fa-wallet"></i>
+          <span>Cuentas</span>
+        </a>
         <a class="nav-item" data-module="prestamos" onclick="navigateTo('prestamos')">
           <i class="fas fa-handshake"></i>
           <span>Prestamos</span>
@@ -147,10 +133,22 @@
           <span>Ingresos Futuros</span>
         </a>
 
-        <div class="nav-section-label">Herramientas</div>
+        <div class="nav-section-label">Analisis</div>
+        <a class="nav-item" data-module="rendimientos" onclick="navigateTo('rendimientos')">
+          <i class="fas fa-chart-line"></i>
+          <span>Rendimientos</span>
+        </a>
+        <a class="nav-item" data-module="gastos" onclick="navigateTo('gastos')">
+          <i class="fas fa-receipt"></i>
+          <span>Gastos</span>
+        </a>
         <a class="nav-item" data-module="simulador" onclick="navigateTo('simulador')">
           <i class="fas fa-calculator"></i>
           <span>Simulador</span>
+        </a>
+        <a class="nav-item" data-module="metas" onclick="navigateTo('metas')">
+          <i class="fas fa-bullseye"></i>
+          <span>Metas</span>
         </a>
       </nav>
 
@@ -192,7 +190,7 @@
           <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
             <i id="themeIcon" class="fas fa-moon"></i>
           </button>
-          <div class="patrimonio-badge">
+          <div class="patrimonio-badge" onclick="mostrarDesglosePatrimonio()" style="cursor:pointer;" title="Click para ver desglose">
             <div>
               <div class="label">Patrimonio Total</div>
               <div class="value" id="headerPatrimonio">$0.00</div>

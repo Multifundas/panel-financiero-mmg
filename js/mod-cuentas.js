@@ -330,8 +330,8 @@ function editCuenta(id) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">${isEdit ? 'Saldo Inicial (no editable)' : 'Saldo Inicial *'}</label>
-          <input type="number" id="cuentaSaldo" class="form-input" ${isEdit ? 'readonly style="background:var(--bg-base);opacity:0.7;"' : 'required'} step="0.01" min="0"
+          <label class="form-label">Saldo Inicial *</label>
+          <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
                  value="${isEdit ? (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo) : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
@@ -587,7 +587,13 @@ function saveCuenta(event) {
       cuentas[idx].tipo = tipo;
       cuentas[idx].moneda = moneda;
       cuentas[idx].institucion_id = institucion_id;
-      // saldo_inicial y saldo NO se sobrescriben al editar
+      // Allow editing saldo_inicial; recalculate saldo if needed
+      var oldSaldoInicial = cuentas[idx].saldo_inicial != null ? cuentas[idx].saldo_inicial : cuentas[idx].saldo;
+      if (saldo !== oldSaldoInicial) {
+        var diff = saldo - oldSaldoInicial;
+        cuentas[idx].saldo_inicial = saldo;
+        cuentas[idx].saldo = (cuentas[idx].saldo || 0) + diff;
+      }
       if (fecha_saldo_inicial) cuentas[idx].fecha_saldo_inicial = fecha_saldo_inicial;
       cuentas[idx].rendimiento_anual = rendimiento_anual;
       cuentas[idx].subtipo = subtipo;
@@ -755,7 +761,8 @@ function recalcCierreRendimiento(inputEl) {
   var fechaCierre = fechaInput ? fechaInput.value : '';
   var dias = _calcDiasEntreFechas(fechaUltimoCierre, fechaCierre);
 
-  var rend = (saldoFinal - saldoInicio) - movNeto;
+  // Rendimiento = saldo nuevo - saldo anterior (diferencia simple)
+  var rend = saldoFinal - saldoInicio;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
   var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
@@ -808,8 +815,11 @@ function saveCierreMensual(event) {
     var dias = _calcDiasEntreFechas(fechaUltimoCierre, fecha);
 
     // Las cuentas de debito no generan rendimiento
+    // Rendimiento = diferencia total (saldoFinal - saldoInicio)
+    // movNeto se guarda para referencia pero NO se descuenta del rendimiento
     var esDebito = tipoCuenta === 'debito';
-    var rend = esDebito ? 0 : (saldoFinal - saldoInicio) - movNeto;
+    var diff = saldoFinal - saldoInicio;
+    var rend = esDebito ? 0 : diff;
     var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
     var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
@@ -985,7 +995,7 @@ function editCierreHistorial(cuentaId, idx) {
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
     '<div class="form-group"><label class="form-label">Saldo Final</label>' +
     '<input type="number" id="editCierreSaldoFinal" class="form-input" step="0.01" required value="' + (h.saldo_final != null ? h.saldo_final : h.saldo || 0) + '"></div>' +
-    '<div class="form-group"><label class="form-label">Rendimiento' + (esDebito ? ' (N/A debito)' : '') + '</label>' +
+    '<div class="form-group"><label class="form-label">Rendimiento (Saldo Final - Inicio)' + (esDebito ? ' (N/A debito)' : '') + '</label>' +
     '<input type="number" id="editCierreRendimiento" class="form-input" step="0.01" value="' + (h.rendimiento || 0) + '"' + (esDebito ? ' readonly style="opacity:0.5;"' : '') + '></div>' +
     '<div class="form-group"><label class="form-label">Rend. % Anual</label>' +
     '<input type="number" id="editCierreRendPctAnual" class="form-input" step="0.01" value="' + (h.rendimiento_pct_anual || 0).toFixed(2) + '" readonly style="opacity:0.7;"></div>' +
@@ -1158,7 +1168,28 @@ function filterEstadoCuenta() {
   // Build unified events array
   var eventos = [];
 
+  // Build cierre date ranges to identify which movements are covered by cierres
+  var historial = cuenta.historial_saldos || [];
+  var cierreRanges = [];
+  var fechaSaldoInicialCta = cuenta.fecha_saldo_inicial || cuenta.created || '';
+  historial.forEach(function(h, i) {
+    var desde = i === 0 ? fechaSaldoInicialCta : (historial[i - 1].fecha || '');
+    var hasta = h.fecha || '';
+    cierreRanges.push({ desde: desde, hasta: hasta });
+  });
+
+  // Determine if a movement falls within a cierre period
+  function movCubiertoPorCierre(fechaMov) {
+    for (var i = 0; i < cierreRanges.length; i++) {
+      var r = cierreRanges[i];
+      if (fechaMov > r.desde && fechaMov <= r.hasta) return true;
+    }
+    return false;
+  }
+
+  // Only show movements NOT covered by a cierre (movements after last cierre)
   movsCuenta.forEach(function(m) {
+    var cubierto = movCubiertoPorCierre(m.fecha || '');
     var origen = 'Manual';
     if (m.transferencia_id) origen = 'Transferencia';
     else if (m.notas && m.notas.indexOf('Prestamo ID:') !== -1) origen = 'Prestamo';
@@ -1171,31 +1202,30 @@ function filterEstadoCuenta() {
       tipo: m.tipo,
       monto: m.monto || 0,
       notas: m.notas || '',
-      origen: origen,
-      esCierre: false
+      origen: cubierto ? origen + ' (en cierre)' : origen,
+      esCierre: false,
+      cubiertoPorCierre: cubierto
     });
   });
 
-  // Add cierres mensuales como abonos/cargos por el RENDIMIENTO (no la diferencia bruta)
-  // La diferencia bruta ya está cubierta por los movimientos individuales listados arriba.
-  // El cierre solo representa la parte orgánica (rendimiento) que no tiene movimiento propio.
-  var historial = cuenta.historial_saldos || [];
+  // Add cierres mensuales como abonos/cargos (diferencia total: saldo nuevo - saldo anterior)
   historial.forEach(function(h) {
     var sInicio = h.saldo_inicio != null ? h.saldo_inicio : h.saldo;
     var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
     var diff = sFinal - sInicio;
     var rend = h.rendimiento != null ? h.rendimiento : diff;
-    // Solo agregar si el rendimiento es distinto de cero
+    // Solo agregar si hay diferencia
     if (rend === 0) return;
     var diasLabel = h.dias ? ' (' + h.dias + 'd' + (h.rendimiento_pct_anual ? ', ' + (h.rendimiento_pct_anual >= 0 ? '+' : '') + h.rendimiento_pct_anual.toFixed(2) + '% anual' : '') + ')' : '';
     eventos.push({
       fecha: h.fecha || '',
-      descripcion: 'Rendimiento' + diasLabel,
+      descripcion: 'Cierre Mensual' + diasLabel,
       tipo: rend >= 0 ? 'ingreso' : 'gasto',
       monto: Math.abs(rend),
-      notas: '',
+      notas: 'Diferencia: ' + formatCurrency(diff, moneda),
       origen: 'Cierre',
-      esCierre: false
+      esCierre: false,
+      cubiertoPorCierre: false
     });
   });
 
@@ -1223,9 +1253,10 @@ function filterEstadoCuenta() {
   var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
   var fechaSaldoInicial = cuenta.fecha_saldo_inicial || '';
 
-  // Calculate totals from filtered movements
+  // Calculate totals from filtered movements (excluding those covered by cierres)
   var sumIngresos = 0, sumGastos = 0;
   filtered.forEach(function(e) {
+    if (e.cubiertoPorCierre) return; // Don't count movements already covered by cierre
     if (e.tipo === 'ingreso') sumIngresos += e.monto;
     else if (e.tipo === 'gasto') sumGastos += e.monto;
   });
@@ -1246,6 +1277,11 @@ function filterEstadoCuenta() {
 
   // Build table rows for movements and cierres
   var rows = filtered.map(function(e) {
+    // Skip movements covered by cierres (cierre already includes the full diff)
+    if (e.cubiertoPorCierre) {
+      return ''; // hidden row - movement is part of cierre
+    }
+
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
       cargo = formatCurrency(e.monto, moneda);

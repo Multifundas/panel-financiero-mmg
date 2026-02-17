@@ -33,94 +33,76 @@ function renderMovimientos() {
 
   // -- Render HTML --
   el.innerHTML = `
-    <!-- Resumen de Movimientos -->
-    <div class="grid-3" style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:16px;"></i>
-          </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Ingresos</span>
+    <!-- Resumen de Movimientos (compacto) -->
+    <div class="grid-3" style="margin-bottom:12px;">
+      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:14px;"></i>
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
         </div>
-        <div id="movSumIngresos" style="font-size:20px;font-weight:800;color:var(--accent-green);">${formatCurrency(totalIngresos, 'MXN')}</div>
+        <div id="movSumIngresos" style="font-size:18px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrency(totalIngresos, 'MXN')}</div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-red);">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:16px;"></i>
-          </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Gastos</span>
+      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:14px;"></i>
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
         </div>
-        <div id="movSumGastos" style="font-size:20px;font-weight:800;color:var(--accent-red);">${formatCurrency(totalGastos, 'MXN')}</div>
+        <div id="movSumGastos" style="font-size:18px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrency(totalGastos, 'MXN')}</div>
       </div>
-      <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:${balance >= 0 ? 'var(--accent-blue-soft)' : 'var(--accent-amber-soft)'};display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:16px;"></i>
-          </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Balance del Periodo</span>
+      <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:14px;"></i>
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
         </div>
-        <div id="movSumBalance" style="font-size:20px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${(balance >= 0 ? '+' : '') + formatCurrency(balance, 'MXN')}</div>
+        <div id="movSumBalance" style="font-size:18px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:4px;">${(balance >= 0 ? '+' : '') + formatCurrency(balance, 'MXN')}</div>
       </div>
     </div>
 
     <!-- Barra de Filtros y Boton Nuevo Movimiento -->
-    <div class="card" style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div class="form-group" style="margin-bottom:0;min-width:130px;">
-            <input type="date" id="filterMovDesde" class="form-input" onchange="filterMovimientos()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:130px;">
-            <input type="date" id="filterMovHasta" class="form-input" onchange="filterMovimientos()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:120px;">
-            <select id="filterMovTipo" class="form-select" onchange="filterMovimientos()">
-              <option value="">Todos los tipos</option>
-              <option value="ingreso">Ingreso</option>
-              <option value="gasto">Gasto</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:160px;">
-            <select id="filterMovCuenta" class="form-select" onchange="filterMovimientos()">
-              <option value="">Todas las cuentas</option>
-              ${cuentaFilterOpts}
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:180px;">
-            <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar movimiento..." oninput="filterMovimientos()">
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" title="Exportar a Excel">
-            <i class="fas fa-download" style="margin-right:4px;"></i>Exportar
-          </button>
-          <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()">
-            <i class="fas fa-sync-alt" style="margin-right:4px;"></i>Plantillas Recurrentes
-          </button>
-          <button class="btn btn-secondary" onclick="openCargaMasiva()">
-            <i class="fas fa-file-excel" style="margin-right:4px;"></i>Carga Masiva
-          </button>
-          <button class="btn btn-secondary" onclick="openPdfImport()" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
-            <i class="fas fa-file-pdf" style="margin-right:4px;"></i>Cargar PDF
-          </button>
-          <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="border-color:var(--accent-purple);color:var(--accent-purple);">
-            <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Transferencia
-          </button>
-          <button class="btn btn-secondary" onclick="cierreMensual()" style="border-color:var(--accent-green);color:var(--accent-green);">
-            <i class="fas fa-calendar-check" style="margin-right:4px;"></i>Cierre Mensual
-          </button>
-          <button class="btn btn-primary" onclick="editMovimiento(null)">
-            <i class="fas fa-plus"></i> Nuevo Movimiento
-          </button>
-        </div>
+    <div class="card" style="margin-bottom:12px;padding:10px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <input type="date" id="filterMovDesde" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
+        <input type="date" id="filterMovHasta" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
+        <select id="filterMovTipo" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:120px;" onchange="filterMovimientos()">
+          <option value="">Todos</option>
+          <option value="ingreso">Ingreso</option>
+          <option value="gasto">Gasto</option>
+        </select>
+        <select id="filterMovCuenta" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" onchange="filterMovimientos()">
+          <option value="">Todas las cuentas</option>
+          ${cuentaFilterOpts}
+        </select>
+        <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" oninput="filterMovimientos()">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;">
+          <i class="fas fa-download" style="margin-right:3px;"></i>Exportar
+        </button>
+        <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:11px;">
+          <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
+        </button>
+        <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:11px;">
+          <i class="fas fa-file-excel" style="margin-right:3px;"></i>Carga Masiva
+        </button>
+        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:11px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
+          <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
+        </button>
+        <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:11px;border-color:var(--accent-purple);color:var(--accent-purple);">
+          <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Transferencia
+        </button>
+        <button class="btn btn-secondary" onclick="cierreMensual()" style="padding:5px 10px;font-size:11px;border-color:var(--accent-green);color:var(--accent-green);">
+          <i class="fas fa-calendar-check" style="margin-right:3px;"></i>Cierre
+        </button>
+        <button class="btn btn-primary" onclick="editMovimiento(null)" style="padding:5px 10px;font-size:11px;">
+          <i class="fas fa-plus" style="margin-right:3px;"></i>Nuevo
+        </button>
       </div>
     </div>
 
     <!-- Tabla de Movimientos -->
-    <div class="card">
+    <div class="card" style="padding:8px 12px;">
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaMovimientos">
+        <table class="data-table" id="tablaMovimientos" style="font-size:12px;">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -232,10 +214,13 @@ function filterMovimientos() {
     const signo = m.tipo === 'ingreso' ? '+' : '-';
     const montoColor = m.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)';
 
+    // Property link badge
+    const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
+
     return `
       <tr>
         <td>${formatDate(m.fecha)}</td>
-        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}</td>
+        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}</td>
         <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
         <td>${cuentaNombre}</td>
         <td>${catNombre}</td>
@@ -285,6 +270,13 @@ function editMovimiento(id) {
   const hoy = new Date().toISOString().split('T')[0];
   const tipoActual = isEdit ? mov.tipo : 'gasto';
 
+  // Build propiedad options for linking gastos to properties
+  const propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  const propOpciones = propiedades.map(p => {
+    const selected = mov && mov.propiedad_id === p.id ? 'selected' : '';
+    return `<option value="${p.id}" ${selected}>${p.nombre}</option>`;
+  }).join('');
+
   const formHTML = `
     <form id="formMovimiento" onsubmit="saveMovimiento(event)">
       <input type="hidden" id="movId" value="${isEdit ? mov.id : ''}">
@@ -333,6 +325,15 @@ function editMovimiento(id) {
         </select>
       </div>
 
+      <div class="form-group" id="movPropiedadGroup" style="display:${tipoActual === 'gasto' && propiedades.length > 0 ? 'block' : 'none'};">
+        <label class="form-label"><i class="fas fa-building" style="margin-right:4px;color:var(--accent-amber);"></i>Asociar a Propiedad/Activo</label>
+        <select id="movPropiedadId" class="form-select">
+          <option value="">No asociar</option>
+          ${propOpciones}
+        </select>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Notas</label>
         <textarea id="movNotas" class="form-input" rows="3" style="resize:vertical;"
@@ -358,8 +359,12 @@ function editMovimiento(id) {
 function toggleCategoriaField() {
   const tipoSelect = document.getElementById('movTipo');
   const catGroup = document.getElementById('movCategoriaGroup');
+  const propGroup = document.getElementById('movPropiedadGroup');
   if (tipoSelect && catGroup) {
     catGroup.style.display = tipoSelect.value === 'gasto' ? 'block' : 'none';
+  }
+  if (tipoSelect && propGroup) {
+    propGroup.style.display = tipoSelect.value === 'gasto' ? 'block' : 'none';
   }
 }
 
@@ -377,6 +382,7 @@ function saveMovimiento(event) {
   const fecha = document.getElementById('movFecha').value;
   const descripcion = document.getElementById('movDescripcion').value.trim();
   const categoria_id = tipo === 'gasto' ? (document.getElementById('movCategoriaId').value || null) : null;
+  const propiedad_id = tipo === 'gasto' && document.getElementById('movPropiedadId') ? (document.getElementById('movPropiedadId').value || null) : null;
   const notas = document.getElementById('movNotas').value.trim();
 
   if (!cuenta_id || !descripcion || !fecha || monto <= 0) {
@@ -431,6 +437,7 @@ function saveMovimiento(event) {
       fecha: fecha,
       descripcion: descripcion,
       categoria_id: categoria_id,
+      propiedad_id: propiedad_id,
       notas: notas,
       updated: new Date().toISOString(),
     };
@@ -447,6 +454,7 @@ function saveMovimiento(event) {
       monto: monto,
       moneda: moneda,
       categoria_id: categoria_id,
+      propiedad_id: propiedad_id,
       descripcion: descripcion,
       fecha: fecha,
       notas: notas,
@@ -461,9 +469,27 @@ function saveMovimiento(event) {
     }
 
     movimientos.push(nuevoMov);
+
+    // If linked to a property, record the payment on the property
+    if (propiedad_id) {
+      var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+      var propIdx = propiedades.findIndex(function(p) { return p.id === propiedad_id; });
+      if (propIdx !== -1) {
+        if (!propiedades[propIdx].pagos) propiedades[propIdx].pagos = [];
+        propiedades[propIdx].pagos.push({
+          movimiento_id: nuevoMov.id,
+          fecha: fecha,
+          monto: monto,
+          descripcion: descripcion,
+          moneda: moneda
+        });
+        saveData(STORAGE_KEYS.propiedades, propiedades);
+      }
+    }
+
     saveData(STORAGE_KEYS.movimientos, movimientos);
     saveData(STORAGE_KEYS.cuentas, cuentas);
-    showToast('Movimiento creado exitosamente.', 'success');
+    showToast('Movimiento creado exitosamente.' + (propiedad_id ? ' Pago registrado en propiedad.' : ''), 'success');
   }
 
   closeModal();
