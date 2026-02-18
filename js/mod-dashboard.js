@@ -101,15 +101,24 @@ function renderDashboard() {
     .filter(r => periodosList.includes(r.periodo))
     .reduce((sum, r) => sum + toMXN(r.rendimiento_monto, 'MXN', tiposCambio), 0);
 
-  // -- KPI 3: Gastos del periodo --
-  const gastosPeriodo = movsFiltrados
-    .filter(mv => mv.tipo === 'gasto')
-    .reduce((sum, mv) => sum + toMXN(mv.monto, mv.moneda, tiposCambio), 0);
+  // -- Helper: get moneda for a movimiento (fallback to cuenta moneda) --
+  const _cuentaMapKpi = {};
+  cuentas.forEach(c => { _cuentaMapKpi[c.id] = c; });
+  function _getMovMoneda(mv) {
+    if (mv.moneda) return mv.moneda;
+    var cta = _cuentaMapKpi[mv.cuenta_id];
+    return cta ? cta.moneda : 'MXN';
+  }
 
-  // -- KPI 4: Balance Neto --
+  // -- KPI 3: Gastos del periodo (excluding transfers) --
+  const gastosPeriodo = movsFiltrados
+    .filter(mv => mv.tipo === 'gasto' && !mv.transferencia_id)
+    .reduce((sum, mv) => sum + toMXN(mv.monto, _getMovMoneda(mv), tiposCambio), 0);
+
+  // -- KPI 4: Balance Neto (excluding transfers) --
   const ingresosPeriodo = movsFiltrados
-    .filter(mv => mv.tipo === 'ingreso')
-    .reduce((sum, mv) => sum + toMXN(mv.monto, mv.moneda, tiposCambio), 0);
+    .filter(mv => mv.tipo === 'ingreso' && !mv.transferencia_id)
+    .reduce((sum, mv) => sum + toMXN(mv.monto, _getMovMoneda(mv), tiposCambio), 0);
   const balanceNeto = rendPeriodo + ingresosPeriodo - gastosPeriodo;
 
   // -- KPI 5: Rendimiento Promedio Ponderado (usa tasa anualizada del ultimo cierre) --
@@ -763,15 +772,17 @@ function renderDashboard() {
           </thead>
           <tbody>
             ${ultimosMovs.map(mv => {
+              const esTransf = !!mv.transferencia_id;
               const esGasto = mv.tipo === 'gasto';
-              const tipoBadge = esGasto ? 'badge-red' : 'badge-green';
-              const tipoLabel = esGasto ? 'Gasto' : 'Ingreso';
+              const tipoBadge = esTransf ? 'badge-purple' : (esGasto ? 'badge-red' : 'badge-green');
+              const tipoLabel = esTransf ? 'Transferencia' : (esGasto ? 'Gasto' : 'Ingreso');
               const signo = esGasto ? '-' : '+';
+              const montoClass = esTransf ? '' : (esGasto ? 'text-red' : 'text-green');
               return `<tr>
                 <td>${formatDate(mv.fecha)}</td>
                 <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mv.descripcion}">${mv.descripcion}</td>
                 <td><span class="badge ${tipoBadge}">${tipoLabel}</span></td>
-                <td style="text-align:right;font-weight:600;" class="${esGasto ? 'text-red' : 'text-green'}">${signo}${formatCurrency(mv.monto, mv.moneda)}</td>
+                <td style="text-align:right;font-weight:600;${esTransf ? 'color:var(--accent-purple);' : ''}" class="${montoClass}">${signo}${formatCurrency(mv.monto, mv.moneda)}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -945,14 +956,14 @@ function renderDashboard() {
       .reduce((s, r) => s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio), 0);
     rendData.push(rMes);
 
-    // Gastos for this period
+    // Gastos for this period (excluding transfers)
     const gMes = movimientos
       .filter(mv => {
-        if (mv.tipo !== 'gasto') return false;
+        if (mv.tipo !== 'gasto' || mv.transferencia_id) return false;
         const f = new Date(mv.fecha);
         return f.getMonth() === mIdx && f.getFullYear() === aIdx;
       })
-      .reduce((s, mv) => s + toMXN(mv.monto, mv.moneda, tiposCambio), 0);
+      .reduce((s, mv) => s + toMXN(mv.monto, _getMovMoneda(mv), tiposCambio), 0);
     gastosData.push(gMes);
   }
 
@@ -1272,20 +1283,20 @@ function compararAnios() {
   });
 
   // -- Calculate annual aggregates --
-  // Ingresos
+  // Ingresos (excluding transfers)
   var ingresos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && new Date(mv.fecha).getFullYear() === anio1; })
+    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio1; })
     .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
   var ingresos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && new Date(mv.fecha).getFullYear() === anio2; })
+    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio2; })
     .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
 
-  // Gastos
+  // Gastos (excluding transfers)
   var gastos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && new Date(mv.fecha).getFullYear() === anio1; })
+    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio1; })
     .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
   var gastos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && new Date(mv.fecha).getFullYear() === anio2; })
+    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio2; })
     .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
 
   // Rendimientos totales
@@ -1575,6 +1586,7 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
   (movimientos || []).forEach(function(mv) {
+    if (mv.transferencia_id) return; // Exclude transfers
     var f = new Date(mv.fecha);
     var montoMXN = mv.monto;
     if (mv.moneda === 'USD') montoMXN = mv.monto * (tiposCambio.USD_MXN || 17);

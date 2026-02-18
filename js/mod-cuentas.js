@@ -715,12 +715,15 @@ function cierreMensual() {
     var saldoInicioPeriodo = _getSaldoInicioCierre(c);
     var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
     var esDebito = c.tipo === 'debito';
+    var histCta = c.historial_saldos || [];
+    var ultCierreLabel = histCta.length > 0 ? '<span style="font-size:10px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:3px;"></i>Ult. cierre: ' + formatDate(ultimoCierre) + '</span>' : '<span style="font-size:10px;color:var(--text-muted);font-style:italic;">Sin cierres previos</span>';
     var rendCell = esDebito
       ? '<td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:11px;">N/A</td>'
       : '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">\u2014</span></td>';
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge badge-blue" style="font-size:10px;">' + c.moneda + '</span>' +
-      (esDebito ? '<br><span class="badge badge-blue" style="font-size:9px;">Debito</span>' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
+      '<br>' + ultCierreLabel +
+      (esDebito ? '' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(saldoInicioPeriodo, c.moneda) + '</td>' +
       '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
       '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + saldoInicioPeriodo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +

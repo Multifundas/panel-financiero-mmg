@@ -10,6 +10,24 @@ function uuid() {
 }
 
 /* ============================================================
+   HIDE SALDOS (PRIVACY MODE)
+   ============================================================ */
+var _saldosHidden = false;
+
+function toggleHideSaldos() {
+  _saldosHidden = !_saldosHidden;
+  document.body.classList.toggle('saldos-hidden', _saldosHidden);
+  var icon = document.getElementById('hideSaldosIcon');
+  if (icon) icon.className = _saldosHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+  // Re-render current module to apply masking
+  if (typeof currentModule !== 'undefined' && typeof navigateTo === 'function') {
+    navigateTo(currentModule);
+  }
+  // Update header patrimonio
+  if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
+}
+
+/* ============================================================
    CURRENCY FORMATTING
    ============================================================ */
 const currencyFormatters = {
@@ -19,6 +37,10 @@ const currencyFormatters = {
 };
 
 function formatCurrency(amount, currency) {
+  if (_saldosHidden) {
+    var prefix = (currency || 'MXN').toUpperCase() === 'USD' ? 'US$' : (currency || 'MXN').toUpperCase() === 'EUR' ? '\u20AC' : '$';
+    return prefix + '••••••';
+  }
   currency = (currency || 'MXN').toUpperCase();
   const formatter = currencyFormatters[currency];
   if (!formatter) return `${currency} ${Number(amount).toFixed(2)}`;

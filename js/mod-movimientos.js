@@ -13,10 +13,11 @@ function renderMovimientos() {
   const catMap = {};
   categorias.forEach(cat => { catMap[cat.id] = cat.nombre; });
 
-  // -- Summary totals (all movimientos, converted to MXN) --
+  // -- Summary totals (all movimientos, converted to MXN, excluding transfers) --
   let totalIngresos = 0;
   let totalGastos = 0;
   movimientos.forEach(m => {
+    if (m.transferencia_id) return; // Exclude transfers from totals
     const cuenta = cuentaMap[m.cuenta_id];
     const moneda = cuenta ? cuenta.moneda : 'MXN';
     const montoMXN = toMXN(m.monto, moneda, tiposCambio);
@@ -67,6 +68,7 @@ function renderMovimientos() {
           <option value="">Todos</option>
           <option value="ingreso">Ingreso</option>
           <option value="gasto">Gasto</option>
+          <option value="transferencia">Transferencia</option>
         </select>
         <select id="filterMovCuenta" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" onchange="filterMovimientos()">
           <option value="">Todas las cuentas</option>
@@ -152,7 +154,10 @@ function filterMovimientos() {
   const filtered = movimientos.filter(m => {
     if (fDesde && m.fecha < fDesde) return false;
     if (fHasta && m.fecha > fHasta) return false;
-    if (fTipo && m.tipo !== fTipo) return false;
+    if (fTipo) {
+      if (fTipo === 'transferencia') { if (!m.transferencia_id) return false; }
+      else { if (m.tipo !== fTipo || m.transferencia_id) return false; }
+    }
     if (fCuenta && m.cuenta_id !== fCuenta) return false;
     if (fSearch) {
       const desc = (m.descripcion || '').toLowerCase();
@@ -167,10 +172,11 @@ function filterMovimientos() {
   // Sort by date descending
   filtered.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
-  // Update summary cards with filtered totals
+  // Update summary cards with filtered totals (excluding transfers)
   let sumIngresos = 0;
   let sumGastos = 0;
   filtered.forEach(m => {
+    if (m.transferencia_id) return; // Exclude transfers from totals
     const cuenta = cuentaMap[m.cuenta_id];
     const moneda = cuenta ? cuenta.moneda : 'MXN';
     const montoMXN = toMXN(m.monto, moneda, tiposCambio);
@@ -211,12 +217,13 @@ function filterMovimientos() {
     const catNombre = m.tipo === 'gasto' && m.categoria_id ? (catMap[m.categoria_id] || '\u2014') : '\u2014';
 
     // Badge for tipo
-    const tipoBadgeClass = m.tipo === 'ingreso' ? 'badge-green' : 'badge-red';
-    const tipoLabel = m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto';
+    const esTransferencia = !!m.transferencia_id;
+    const tipoBadgeClass = esTransferencia ? 'badge-purple' : (m.tipo === 'ingreso' ? 'badge-green' : 'badge-red');
+    const tipoLabel = esTransferencia ? 'Transferencia' : (m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto');
 
     // Monto formatting with sign and color
     const signo = m.tipo === 'ingreso' ? '+' : '-';
-    const montoColor = m.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)';
+    const montoColor = esTransferencia ? 'var(--accent-purple)' : (m.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)');
 
     // Property link badge
     const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
