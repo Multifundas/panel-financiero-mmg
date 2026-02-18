@@ -82,10 +82,11 @@ function renderDashboard() {
   const _patCalc = typeof calcPatrimonioTotal === 'function' ? calcPatrimonioTotal() : { total: 0, cuentas: 0, propiedades: 0, prestamosOtorgados: 0, prestamosRecibidos: 0 };
   let patrimonioTotal = _patCalc.total;
 
-  // -- Filter movimientos for selected period --
+  // -- Filter movimientos for selected period (string comparison to avoid timezone issues) --
+  const fechaInicioStr = fechaInicio.getFullYear() + '-' + String(fechaInicio.getMonth() + 1).padStart(2, '0') + '-' + String(fechaInicio.getDate()).padStart(2, '0');
+  const fechaFinStr = fechaFin.getFullYear() + '-' + String(fechaFin.getMonth() + 1).padStart(2, '0') + '-' + String(fechaFin.getDate()).padStart(2, '0');
   const movsFiltrados = movimientos.filter(mv => {
-    const f = new Date(mv.fecha);
-    return f >= fechaInicio && f <= fechaFin;
+    return mv.fecha >= fechaInicioStr && mv.fecha <= fechaFinStr;
   });
 
   // -- Generate list of relevant periodos for rendimientos --
@@ -501,7 +502,7 @@ function renderDashboard() {
       divByTipo[c.tipo] += toMXN(c.saldo, c.moneda, tiposCambio);
     }
   });
-  const tipoLabelsMap = { debito: 'Debito', inversion: 'Inversion', inmueble: 'Inmueble', activo_fijo: 'Activo Fijo' };
+  const tipoLabelsMap = { debito: 'DEBITO', inversion: 'INVERSION', inmueble: 'INMUEBLE', activo_fijo: 'ACTIVO FIJO' };
   const tipoColorsMap = { debito: '#3b82f6', inversion: '#10b981', inmueble: '#f59e0b', activo_fijo: '#8b5cf6' };
 
   const divByMoneda = {};
@@ -550,11 +551,37 @@ function renderDashboard() {
   const divMonedaBars = buildDivBreakdownBars(divByMoneda, null, monedaColors, instColors, patrimonioDiversificacion);
   const divInstBars = buildDivBreakdownBars(divByInst, null, null, instColors, patrimonioDiversificacion);
 
+  // -- Explanation text based on score --
+  let divExplain = '';
+  if (diversificationScore > 70) {
+    divExplain = 'Tu dinero esta bien repartido entre varias cuentas, tipos de activos y monedas. Si alguna inversion baja de valor, las demas amortiguan el golpe.';
+  } else if (diversificationScore >= 40) {
+    divExplain = 'Tu dinero esta razonablemente repartido, pero podrias mejorar distribuyendo en mas tipos de activos, instituciones o monedas para reducir el riesgo.';
+  } else {
+    divExplain = 'La mayor parte de tu dinero esta concentrada en pocos activos. Si uno de ellos tiene problemas, tu patrimonio se veria muy afectado. Considera diversificar.';
+  }
+
   const diversificacionHTML = `
     <div class="card" style="margin-bottom:24px;">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
         <span class="badge ${divBadge}">${divRecommendation}</span>
+      </div>
+      <!-- Explicacion del indicador -->
+      <div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;margin-bottom:20px;border-left:3px solid ${divColor};">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+          <i class="fas fa-question-circle" style="margin-right:6px;color:${divColor};"></i>Como se calcula este indicador?
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+          Se utiliza el <strong>Indice Herfindahl-Hirschman (HHI)</strong>, un metodo reconocido internacionalmente
+          (usado por la SEC, bancos centrales y reguladores financieros) para medir que tan concentrado o diversificado
+          esta un portafolio. Se calcula sumando el cuadrado del porcentaje que cada activo representa del total.<br>
+          <strong>Puntaje: ${diversificationScore.toFixed(0)} de 100</strong> &mdash; mientras mas alto, mejor diversificado.<br>
+          <span style="color:var(--text-muted);font-size:11px;">0-40: Muy concentrado &nbsp;|&nbsp; 40-70: Moderado &nbsp;|&nbsp; 70-100: Buena diversificacion</span>
+        </div>
+        <div style="font-size:12px;color:${divColor};font-weight:600;margin-top:8px;">
+          <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
+        </div>
       </div>
       <div class="grid-2" style="gap:24px;">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
@@ -570,7 +597,6 @@ function renderDashboard() {
               <i class="fas ${divIcon}" style="color:${divColor};"></i>
               <span style="font-size:14px;font-weight:700;color:${divColor};">${divRecommendation}</span>
             </div>
-            <div style="font-size:12px;color:var(--text-muted);">HHI: ${hhi.toFixed(4)} | Score: ${diversificationScore.toFixed(1)}%</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${cuentasActivas.length} activos en portafolio</div>
           </div>
         </div>
@@ -745,9 +771,9 @@ function renderDashboard() {
               const tipoBadge = c.tipo === 'inversion' ? 'badge-green'
                 : c.tipo === 'inmueble' ? 'badge-amber'
                 : c.tipo === 'activo_fijo' ? 'badge-purple' : 'badge-blue';
-              const tipoLabel = c.tipo === 'inversion' ? 'Inversion'
-                : c.tipo === 'inmueble' ? 'Inmueble'
-                : c.tipo === 'activo_fijo' ? 'Activo Fijo' : 'Debito';
+              const tipoLabel = c.tipo === 'inversion' ? 'INVERSION'
+                : c.tipo === 'inmueble' ? 'INMUEBLE'
+                : c.tipo === 'activo_fijo' ? 'ACTIVO FIJO' : 'DEBITO';
               return `<tr>
                 <td style="font-weight:600;color:var(--text-primary);">${c.nombre}</td>
                 <td><span class="badge ${tipoBadge}">${tipoLabel}</span></td>
@@ -860,7 +886,7 @@ function renderDashboard() {
   window._charts.dashDonut = new Chart(donutCtx, {
     type: 'doughnut',
     data: {
-      labels: ['Debito', 'Inversion', 'Inmueble', 'Activo Fijo'],
+      labels: ['DEBITO', 'INVERSION', 'INMUEBLE', 'ACTIVO FIJO'],
       datasets: [{
         data: [distTipo.debito, distTipo.inversion, distTipo.inmueble, distTipo.activo_fijo],
         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
@@ -956,12 +982,11 @@ function renderDashboard() {
       .reduce((s, r) => s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio), 0);
     rendData.push(rMes);
 
-    // Gastos for this period (excluding transfers)
+    // Gastos for this period (excluding transfers) — use string prefix to avoid timezone issues
     const gMes = movimientos
       .filter(mv => {
         if (mv.tipo !== 'gasto' || mv.transferencia_id) return false;
-        const f = new Date(mv.fecha);
-        return f.getMonth() === mIdx && f.getFullYear() === aIdx;
+        return mv.fecha && mv.fecha.startsWith(per);
       })
       .reduce((s, mv) => s + toMXN(mv.monto, _getMovMoneda(mv), tiposCambio), 0);
     gastosData.push(gMes);
@@ -1283,21 +1308,23 @@ function compararAnios() {
   });
 
   // -- Calculate annual aggregates --
-  // Ingresos (excluding transfers)
+  // Ingresos (excluding transfers) — use string prefix to avoid timezone issues
+  var anio1Str = String(anio1);
+  var anio2Str = String(anio2);
   var ingresos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio1; })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
+    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio1Str); })
+    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
   var ingresos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio2; })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
+    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio2Str); })
+    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
 
   // Gastos (excluding transfers)
   var gastos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio1; })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
+    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio1Str); })
+    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
   var gastos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && new Date(mv.fecha).getFullYear() === anio2; })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda, tiposCambio); }, 0);
+    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio2Str); })
+    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
 
   // Rendimientos totales
   var rendTotal1 = rendMensual1.reduce(function(a, b) { return a + b; }, 0);

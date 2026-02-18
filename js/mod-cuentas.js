@@ -216,9 +216,9 @@ function filterCuentas() {
     const tipoBadgeClass = c.tipo === 'inversion' ? 'badge-green'
       : c.tipo === 'inmueble' ? 'badge-amber'
       : c.tipo === 'activo_fijo' ? 'badge-purple' : 'badge-blue';
-    const tipoLabel = c.tipo === 'inversion' ? 'Inversion'
-      : c.tipo === 'inmueble' ? 'Inmueble'
-      : c.tipo === 'activo_fijo' ? 'Activo Fijo' : 'Debito';
+    const tipoLabel = c.tipo === 'inversion' ? 'INVERSION'
+      : c.tipo === 'inmueble' ? 'INMUEBLE'
+      : c.tipo === 'activo_fijo' ? 'ACTIVO FIJO' : 'DEBITO';
 
     // Rendimiento display (usar tasa anualizada del ultimo cierre, o fallback al campo estatico)
     let rendAnualCalc = c.rendimiento_anual || 0;
@@ -235,11 +235,11 @@ function filterCuentas() {
     // Subtipo display
     let subtipoHTML = '\u2014';
     if (c.subtipo === 'pagare') {
-      subtipoHTML = '<span class="badge badge-blue">Pagare</span>';
+      subtipoHTML = '<span class="badge badge-blue">PAGARE</span>';
     } else if (c.subtipo === 'renta_variable') {
-      subtipoHTML = '<span class="badge badge-purple">Renta Variable</span>';
+      subtipoHTML = '<span class="badge badge-purple">RENTA VARIABLE</span>';
     } else if (c.subtipo === 'accion_club') {
-      subtipoHTML = '<span class="badge badge-amber">Accion/Membresia</span>';
+      subtipoHTML = '<span class="badge badge-amber">ACCION/MEMBRESIA</span>';
     }
 
     // Ultimo cierre
