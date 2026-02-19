@@ -167,6 +167,29 @@ function renderDashboard() {
     }
   });
 
+  // -- KPI summary cards: Bancarias, Inversiones, Propiedades, Prestamos --
+  let kpiBancarias = 0, kpiBancariasCount = 0;
+  let kpiInversiones = 0, kpiInversionesCount = 0;
+  cuentas.forEach(c => {
+    if (c.activa === false) return;
+    const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    if (c.tipo === 'debito') { kpiBancarias += valMXN; kpiBancariasCount++; }
+    else if (c.tipo === 'inversion') { kpiInversiones += valMXN; kpiInversionesCount++; }
+  });
+  let kpiPropiedades = 0, kpiPropiedadesCount = 0;
+  propiedades.forEach(pr => {
+    kpiPropiedades += toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
+    kpiPropiedadesCount++;
+  });
+  let kpiPrestamosNeto = 0, kpiPrestamosCount = 0;
+  prestamos.forEach(p => {
+    if (p.estado === 'pagado') return;
+    const val = toMXN(p.saldo_pendiente, p.moneda, tiposCambio);
+    if (p.tipo === 'otorgado') { kpiPrestamosNeto += val; }
+    else { kpiPrestamosNeto -= val; }
+    kpiPrestamosCount++;
+  });
+
   // -- Helper: color for KPI --
   function kpiColor(val) { return val >= 0 ? 'text-green' : 'text-red'; }
 
@@ -344,8 +367,10 @@ function renderDashboard() {
 
   let deudaPreventa = 0;
   preventaPendientes.forEach(pr => {
-    const restantes = pr.mensualidades_total - pr.mensualidades_pagadas;
-    deudaPreventa += toMXN(restantes * pr.monto_mensualidad, pr.moneda || 'MXN', tiposCambio);
+    const enganche = pr.enganche || 0;
+    const pagado = enganche + (pr.mensualidades_pagadas * pr.monto_mensualidad);
+    const pendiente = Math.max(0, pr.valor_compra - pagado);
+    deudaPreventa += toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
   });
 
   const totalDeuda = deudaPrestamos + deudaPreventa;
@@ -378,13 +403,16 @@ function renderDashboard() {
   });
   preventaPendientes.forEach(pr => {
     const restantes = pr.mensualidades_total - pr.mensualidades_pagadas;
-    const montoPendiente = toMXN(restantes * pr.monto_mensualidad, pr.moneda || 'MXN', tiposCambio);
+    const enganche = pr.enganche || 0;
+    const pagado = enganche + (pr.mensualidades_pagadas * pr.monto_mensualidad);
+    const pendiente = Math.max(0, pr.valor_compra - pagado);
+    const montoPendiente = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
     deudaBreakdownRows.push({
       nombre: pr.nombre,
       tipoLabel: 'Preventa',
       tipoBadge: 'badge-amber',
       monto: montoPendiente,
-      detalle: restantes + ' mensualidades restantes',
+      detalle: restantes + ' mensualidades restantes | Pagado: ' + formatCurrency(pagado, pr.moneda || 'MXN') + ' de ' + formatCurrency(pr.valor_compra, pr.moneda || 'MXN'),
     });
   });
 
@@ -511,7 +539,7 @@ function renderDashboard() {
     if (!divByMoneda[mon]) divByMoneda[mon] = 0;
     divByMoneda[mon] += toMXN(c.saldo, c.moneda, tiposCambio);
   });
-  const monedaColors = { MXN: '#3b82f6', USD: '#10b981', EUR: '#f59e0b' };
+  const monedaColors = { MXN: '#3b82f6', USD: '#10b981', EUR: '#f59e0b', GBP: '#8b5cf6' };
 
   const dashInstituciones = loadData(STORAGE_KEYS.instituciones) || [];
   const instMapId = {};
@@ -565,41 +593,40 @@ function renderDashboard() {
     <div class="card" style="margin-bottom:24px;">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
-        <span class="badge ${divBadge}">${divRecommendation}</span>
-      </div>
-      <!-- Explicacion del indicador -->
-      <div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;margin-bottom:20px;border-left:3px solid ${divColor};">
-        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
-          <i class="fas fa-question-circle" style="margin-right:6px;color:${divColor};"></i>Como se calcula este indicador?
-        </div>
-        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
-          Se utiliza el <strong>Indice Herfindahl-Hirschman (HHI)</strong>, un metodo reconocido internacionalmente
-          (usado por la SEC, bancos centrales y reguladores financieros) para medir que tan concentrado o diversificado
-          esta un portafolio. Se calcula sumando el cuadrado del porcentaje que cada activo representa del total.<br>
-          <strong>Puntaje: ${diversificationScore.toFixed(0)} de 100</strong> &mdash; mientras mas alto, mejor diversificado.<br>
-          <span style="color:var(--text-muted);font-size:11px;">0-40: Muy concentrado &nbsp;|&nbsp; 40-70: Moderado &nbsp;|&nbsp; 70-100: Buena diversificacion</span>
-        </div>
-        <div style="font-size:12px;color:${divColor};font-weight:600;margin-top:8px;">
-          <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
-        </div>
       </div>
       <div class="grid-2" style="gap:24px;">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-          <div style="position:relative;width:180px;height:180px;">
-            <canvas id="dashDiversificacionGauge"></canvas>
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-              <div style="font-size:36px;font-weight:800;color:${divColor};">${diversificationScore.toFixed(0)}</div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Puntos</div>
+        <!-- Left: explanation + gauge + badge -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;border-left:3px solid ${divColor};">
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+              <i class="fas fa-question-circle" style="margin-right:6px;color:${divColor};"></i>Como se calcula este indicador?
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+              Se utiliza el <strong>Indice Herfindahl-Hirschman (HHI)</strong>, un metodo reconocido internacionalmente
+              (usado por la SEC, bancos centrales y reguladores financieros) para medir que tan concentrado o diversificado
+              esta un portafolio. Se calcula sumando el cuadrado del porcentaje que cada activo representa del total.<br>
+              <strong>Puntaje: ${diversificationScore.toFixed(0)} de 100</strong> &mdash; mientras mas alto, mejor diversificado.<br>
+              <span style="color:var(--text-muted);font-size:11px;">0-40: Muy concentrado &nbsp;|&nbsp; 40-70: Moderado &nbsp;|&nbsp; 70-100: Buena diversificacion</span>
+            </div>
+            <div style="font-size:12px;color:${divColor};font-weight:600;margin-top:8px;">
+              <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
             </div>
           </div>
-          <div style="text-align:center;">
-            <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:6px;">
-              <i class="fas ${divIcon}" style="color:${divColor};"></i>
-              <span style="font-size:14px;font-weight:700;color:${divColor};">${divRecommendation}</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div style="position:relative;width:180px;height:180px;">
+              <canvas id="dashDiversificacionGauge"></canvas>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                <div style="font-size:36px;font-weight:800;color:${divColor};">${diversificationScore.toFixed(0)}</div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Puntos</div>
+              </div>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${cuentasActivas.length} activos en portafolio</div>
+            <span class="badge ${divBadge}" style="font-size:12px;padding:4px 14px;">
+              <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divRecommendation}
+            </span>
+            <div style="font-size:11px;color:var(--text-muted);">${cuentasActivas.length} activos en portafolio</div>
           </div>
         </div>
+        <!-- Right: breakdown bars -->
         <div>
           <div style="margin-bottom:16px;">
             <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
@@ -646,7 +673,51 @@ function renderDashboard() {
       </div>
     </div>
 
-    <!-- KPI Cards Row 1 -->
+    <!-- KPI Cards Row 1: Summary by category -->
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="navigateTo('cuentas')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-university" style="color:var(--accent-blue);font-size:16px;"></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiBancarias, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiBancariasCount} cuenta${kpiBancariasCount !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="navigateTo('cuentas')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiInversiones, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiInversionesCount} producto${kpiInversionesCount !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="navigateTo('propiedades')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-building" style="color:var(--accent-amber);font-size:16px;"></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Propiedades</span>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiPropiedadesCount} propiedad${kpiPropiedadesCount !== 1 ? 'es' : ''}</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="navigateTo('prestamos')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-handshake" style="color:var(--accent-purple);font-size:16px;"></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Prestamos</span>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPrestamosNeto, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiPrestamosCount} prestamo${kpiPrestamosCount !== 1 ? 's' : ''} activo${kpiPrestamosCount !== 1 ? 's' : ''}</div>
+      </div>
+    </div>
+
+    <!-- KPI Cards Row 2: Financial metrics -->
     <div class="grid-4" style="margin-bottom:16px;">
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePatrimonio()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
@@ -697,7 +768,10 @@ function renderDashboard() {
             </div>
             <div>
               <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento Promedio Ponderado</span>
-              <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${rendPromedio.toFixed(2)}%</div>
+              <div style="display:flex;align-items:baseline;gap:10px;">
+                <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${rendPromedio.toFixed(2)}%</div>
+                <div style="font-size:15px;font-weight:700;color:var(--accent-green);">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} /mes</div>
+              </div>
               <div style="font-size:11px;color:var(--text-muted);">Basado en ${invCuentas.length} producto${invCuentas.length !== 1 ? 's' : ''} de inversion | ${formatCurrency(sumPesos, 'MXN')} invertidos</div>
             </div>
           </div>
@@ -1038,9 +1112,11 @@ function renderDashboard() {
           ticks: {
             color: chartFontColor,
             font: { size: 10, family: "'Plus Jakarta Sans'" },
+            stepSize: 150000,
             callback: function(val) { return '$' + (val / 1000).toFixed(0) + 'k'; },
           },
           grid: { color: gridColor },
+          beginAtZero: true,
         },
       },
       plugins: {
@@ -1462,7 +1538,7 @@ function mostrarDesgloseRendimiento() {
           const rendColor = r.rendimiento >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
           return `<tr>
             <td style="font-weight:600;color:var(--text-primary);">${r.nombre}<br><span style="font-size:10px;color:var(--text-muted);">${r.fuente}</span></td>
-            <td><span class="badge badge-blue">${r.moneda}</span></td>
+            <td><span class="badge ${monedaBadgeClass(r.moneda)}">${r.moneda}</span></td>
             <td style="text-align:right;">${formatCurrency(r.saldo, r.moneda)}</td>
             <td style="text-align:right;">${formatCurrency(r.valMXN, 'MXN')}</td>
             <td style="text-align:right;color:${rendColor};font-weight:600;">${r.rendimiento >= 0 ? '+' : ''}${r.rendimiento.toFixed(2)}%</td>

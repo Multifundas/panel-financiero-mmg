@@ -276,7 +276,7 @@ function filterPropiedades() {
           '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin:0 0 4px 0;">' + (p.nombre || '') + '</h3>' +
           '<div style="font-size:12px;color:var(--text-muted);">' +
             '<i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>' + (p.ubicacion || 'Sin ubicacion') +
-            ' ' + tipoBadge + ' <span class="badge badge-blue">' + moneda + '</span>' +
+            ' ' + tipoBadge + ' <span class="badge ' + monedaBadgeClass(moneda) + '">' + moneda + '</span>' +
           '</div>' +
         '</div>' +
         '<div>' + actions + '</div>' +

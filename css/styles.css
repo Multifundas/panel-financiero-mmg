@@ -1681,3 +1681,60 @@
     border-bottom: none;
   }
 }
+
+/* ── Print Styles (for modal printing) ── */
+@media print {
+  /* Hide everything */
+  body > * {
+    display: none !important;
+  }
+  /* Show only the modal overlay */
+  .modal-overlay.show {
+    display: flex !important;
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+  .modal-content {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    animation: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .modal-content * {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .modal-close {
+    display: none !important;
+  }
+  .modal-content .btn {
+    display: none !important;
+  }
+  /* Manual overlay */
+  .manual-overlay.show {
+    display: flex !important;
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+  .manual-content {
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  /* Ensure tables print well */
+  .data-table {
+    min-width: 0 !important;
+  }
+}
