@@ -341,7 +341,7 @@ function renderDashboard() {
           <span class="card-title"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent-amber);"></i>Alertas de Vencimiento</span>
           <span class="badge badge-amber" style="font-size:11px;">${alertasVencimiento.length} alerta${alertasVencimiento.length !== 1 ? 's' : ''}</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:400px;padding:4px 2px 8px 0;flex:1;">
+        <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding:4px 2px 8px 0;flex:1;">
           ${alertCards}
         </div>
       </div>`;
@@ -423,12 +423,12 @@ function renderDashboard() {
     `).join('');
 
     deudaHTML = `
-      <div class="card" style="margin-bottom:0;">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="card" style="margin-bottom:0;height:100%;display:flex;flex-direction:column;">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
           <span class="card-title"><i class="fas fa-file-invoice-dollar" style="margin-right:8px;color:var(--accent-red);"></i>Resumen de Deuda</span>
           <span class="badge ${deudaBadge}">${deudaLabel}</span>
         </div>
-        <div class="grid-2" style="gap:24px;">
+        <div class="grid-2" style="gap:24px;flex:1;">
           <div>
             <div class="grid-2" style="margin-bottom:16px;">
               <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;text-align:center;">
@@ -473,7 +473,7 @@ function renderDashboard() {
       </div>`;
   } else {
     deudaHTML = `
-      <div class="card" style="margin-bottom:0;">
+      <div class="card" style="margin-bottom:0;height:100%;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-file-invoice-dollar" style="margin-right:8px;color:var(--accent-red);"></i>Resumen de Deuda</span>
         </div>
@@ -765,9 +765,9 @@ function renderDashboard() {
     </div>
 
     <!-- Alertas + Deuda side by side -->
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px;align-items:start;" id="seccionDeuda">
-      <div>${alertasHTML}</div>
-      <div>${deudaHTML}</div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px;align-items:stretch;" id="seccionDeuda">
+      <div style="display:flex;flex-direction:column;">${alertasHTML}</div>
+      <div style="display:flex;flex-direction:column;">${deudaHTML}</div>
     </div>
 
     <!-- Indicador de Diversificacion -->
