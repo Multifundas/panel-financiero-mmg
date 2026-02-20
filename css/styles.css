@@ -705,6 +705,9 @@
         grid-template-columns: 1fr;
         gap: 12px;
       }
+      #seccionDeuda {
+        grid-template-columns: 1fr !important;
+      }
 
       /* Cards: compact padding */
       .card {

@@ -306,7 +306,7 @@ function renderDashboard() {
   let alertasHTML = '';
   if (alertasVencimiento.length === 0) {
     alertasHTML = `
-      <div class="card" style="margin-bottom:0;">
+      <div class="card" style="margin-bottom:0;height:100%;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent-amber);"></i>Alertas de Vencimiento</span>
         </div>
@@ -317,39 +317,31 @@ function renderDashboard() {
       </div>`;
   } else {
     const alertCards = alertasVencimiento.map(a => `
-      <div style="min-width:260px;max-width:300px;flex:0 0 auto;background:var(--card-bg);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:36px;height:36px;border-radius:8px;background:${a.colorSoft};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fas ${a.icon}" style="color:${a.color};font-size:14px;"></i>
-          </div>
-          <div style="min-width:0;">
-            <div style="font-size:14px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${a.nombre}">${a.nombre}</div>
+      <div style="background:var(--bg-base);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:36px;height:36px;border-radius:8px;background:${a.colorSoft};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas ${a.icon}" style="color:${a.color};font-size:14px;"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${a.nombre}">${a.nombre}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
             <span class="badge ${a.badgeClass}" style="font-size:10px;padding:2px 6px;">${a.tipoLabel}</span>
+            <span style="font-size:11px;color:var(--text-muted);"><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>${formatDate(a.fecha.toISOString())}</span>
           </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;">
-          <div>
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">Vence en</div>
-            <div style="font-size:20px;font-weight:800;color:${a.color};">${a.dias} <span style="font-size:12px;font-weight:600;">dias</span></div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">Monto</div>
-            <div style="font-size:14px;font-weight:700;color:var(--text-primary);">${a.monto}</div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:8px;">
-          <i class="fas fa-calendar-alt" style="margin-right:4px;"></i>${formatDate(a.fecha.toISOString())}
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:18px;font-weight:800;color:${a.color};">${a.dias} <span style="font-size:11px;font-weight:600;">dias</span></div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${a.monto}</div>
         </div>
       </div>
     `).join('');
 
     alertasHTML = `
-      <div class="card" style="margin-bottom:24px;">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="card" style="margin-bottom:0;height:100%;display:flex;flex-direction:column;">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
           <span class="card-title"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent-amber);"></i>Alertas de Vencimiento</span>
           <span class="badge badge-amber" style="font-size:11px;">${alertasVencimiento.length} alerta${alertasVencimiento.length !== 1 ? 's' : ''}</span>
         </div>
-        <div style="display:flex;gap:14px;overflow-x:auto;padding:4px 0 8px 0;">
+        <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:400px;padding:4px 2px 8px 0;flex:1;">
           ${alertCards}
         </div>
       </div>`;
@@ -773,7 +765,7 @@ function renderDashboard() {
     </div>
 
     <!-- Alertas + Deuda side by side -->
-    <div class="grid-2" style="margin-bottom:24px;align-items:start;" id="seccionDeuda">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px;align-items:start;" id="seccionDeuda">
       <div>${alertasHTML}</div>
       <div>${deudaHTML}</div>
     </div>
