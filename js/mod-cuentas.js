@@ -1307,10 +1307,12 @@ function filterEstadoCuenta() {
     rendFuente = ultCierre.fecha ? formatDate(ultCierre.fecha) : '';
   }
   var esInversion = cuenta.tipo === 'inversion';
+  var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (cuenta.saldo * rendAnualPct / 100 / 12) : 0;
   var rendHTML = esInversion
-    ? '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento</div>' +
-      '<div style="font-size:15px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
-      (rendMonto ? '<div style="font-size:11px;color:var(--accent-green);font-weight:600;">' + formatCurrency(rendMonto, moneda) + '</div>' : '') +
+    ? '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
+      '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
+      (rendMonto ? '<div style="font-size:12px;color:var(--accent-green);font-weight:700;">Ultimo cierre: ' + formatCurrency(rendMonto, moneda) + '</div>' : '') +
+      (rendEstimadoMensual > 0 ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrency(rendEstimadoMensual, moneda) + '/mes</div>' : '') +
       (rendFuente ? '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Cierre: ' + rendFuente + '</div>' : '') +
       '</div>'
     : '';

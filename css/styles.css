@@ -7,8 +7,8 @@
       --border-color: #475569;
       --border-subtle: #334155;
       --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-secondary: #b0bec5;
+      --text-muted: #8a9bb0;
       --accent-green: #10b981;
       --accent-green-soft: rgba(16, 185, 129, 0.15);
       --accent-red: #ef4444;
@@ -491,7 +491,7 @@
     }
 
     .modal-content.modal-wide {
-      max-width: 780px;
+      max-width: 900px;
     }
 
     @keyframes modalIn {
@@ -583,6 +583,8 @@
     }
 
     .badge-green { background: var(--accent-green-soft); color: var(--accent-green); }
+    .badge-mxn { background: rgba(59,130,246,0.25); color: #60a5fa; font-weight: 700; }
+    .badge-usd { background: rgba(16,185,129,0.30); color: #34d399; font-weight: 700; border: 1px solid rgba(16,185,129,0.4); }
     .badge-red { background: var(--accent-red-soft); color: var(--accent-red); }
     .badge-blue { background: var(--accent-blue-soft); color: var(--accent-blue); }
     .badge-amber { background: var(--accent-amber-soft); color: var(--accent-amber); }

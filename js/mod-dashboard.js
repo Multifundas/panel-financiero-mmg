@@ -137,9 +137,8 @@ function renderDashboard() {
         tasaAnual = ultimoCierre.rendimiento_pct_anual;
       }
     }
-    if (tasaAnual === 0) return;
-    sumPonderado += valMXN * tasaAnual;
     sumPesos += valMXN;
+    sumPonderado += valMXN * tasaAnual;
   });
   const rendPromedio = sumPesos > 0 ? (sumPonderado / sumPesos) : 0;
 
@@ -307,7 +306,7 @@ function renderDashboard() {
   let alertasHTML = '';
   if (alertasVencimiento.length === 0) {
     alertasHTML = `
-      <div class="card" style="margin-bottom:24px;">
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent-amber);"></i>Alertas de Vencimiento</span>
         </div>
@@ -432,7 +431,7 @@ function renderDashboard() {
     `).join('');
 
     deudaHTML = `
-      <div class="card" style="margin-bottom:24px;">
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
           <span class="card-title"><i class="fas fa-file-invoice-dollar" style="margin-right:8px;color:var(--accent-red);"></i>Resumen de Deuda</span>
           <span class="badge ${deudaBadge}">${deudaLabel}</span>
@@ -482,7 +481,7 @@ function renderDashboard() {
       </div>`;
   } else {
     deudaHTML = `
-      <div class="card" style="margin-bottom:24px;">
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-file-invoice-dollar" style="margin-right:8px;color:var(--accent-red);"></i>Resumen de Deuda</span>
         </div>
@@ -655,138 +654,129 @@ function renderDashboard() {
 
   // -- Render HTML --
   el.innerHTML = resumenPanelHTML + `
-    <!-- Filtros -->
-    <div class="card" style="margin-bottom:16px;padding:12px 16px;">
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;"><i class="fas fa-filter" style="margin-right:4px;"></i>Filtros:</span>
-        <select id="dashFilterPeriodo" class="form-select" style="min-width:140px;padding:6px 10px;font-size:13px;" onchange="applyDashboardFilters()">
-          <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
-          <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
-          <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
-          <option value="trimestral" ${periodo === 'trimestral' ? 'selected' : ''}>Trimestral</option>
-          <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
-          <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
-        </select>
-        <select id="dashFilterAnio" class="form-select" style="min-width:100px;padding:6px 10px;font-size:13px;" onchange="applyDashboardFilters()">
-          ${yearOptions}
-        </select>
+    <!-- Filtros + Patrimonio (misma fila, compactos) -->
+    <div style="display:flex;gap:16px;margin-bottom:16px;align-items:stretch;flex-wrap:wrap;">
+      <div class="card" style="padding:8px 16px;flex:0 0 auto;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;"><i class="fas fa-filter" style="margin-right:4px;"></i>Filtros:</span>
+          <select id="dashFilterPeriodo" class="form-select" style="min-width:120px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
+            <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
+            <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
+            <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
+            <option value="trimestral" ${periodo === 'trimestral' ? 'selected' : ''}>Trimestral</option>
+            <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
+            <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
+          </select>
+          <select id="dashFilterAnio" class="form-select" style="min-width:80px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
+            ${yearOptions}
+          </select>
+        </div>
+      </div>
+      <div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--accent-blue);cursor:pointer;padding:8px 16px;display:flex;align-items:center;gap:12px;" onclick="mostrarDesglosePatrimonio()">
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:14px;"></i>
+        </div>
+        <div>
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Total</span>
+          <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text-secondary);font-size:12px;"><i class="fas fa-chevron-right"></i></div>
       </div>
     </div>
 
-    <!-- KPI Cards Row 1: Summary by category -->
+    <!-- KPI Cards Row 1: Summary by category (4 clickable cards) -->
     <div class="grid-4" style="margin-bottom:16px;">
-      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="navigateTo('cuentas')">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesgloseCuentas('debito')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-university" style="color:var(--accent-blue);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
         </div>
         <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiBancarias, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiBancariasCount} cuenta${kpiBancariasCount !== 1 ? 's' : ''}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${kpiBancariasCount} cuenta${kpiBancariasCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="navigateTo('cuentas')">
+      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseCuentas('inversion')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
         </div>
         <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiInversiones, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiInversionesCount} producto${kpiInversionesCount !== 1 ? 's' : ''}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${kpiInversionesCount} producto${kpiInversionesCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="navigateTo('propiedades')">
+      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesglosePropiedades()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-building" style="color:var(--accent-amber);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Propiedades</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Propiedades</span>
         </div>
         <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiPropiedadesCount} propiedad${kpiPropiedadesCount !== 1 ? 'es' : ''}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${kpiPropiedadesCount} propiedad${kpiPropiedadesCount !== 1 ? 'es' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="navigateTo('prestamos')">
+      <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesglosePrestamos()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-handshake" style="color:var(--accent-purple);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Prestamos</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Prestamos</span>
         </div>
         <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPrestamosNeto, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${kpiPrestamosCount} prestamo${kpiPrestamosCount !== 1 ? 's' : ''} activo${kpiPrestamosCount !== 1 ? 's' : ''}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${kpiPrestamosCount} prestamo${kpiPrestamosCount !== 1 ? 's' : ''} activo${kpiPrestamosCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
     </div>
 
-    <!-- KPI Cards Row 2: Financial metrics -->
+    <!-- KPI Cards Row 2: Deuda, Rendimiento Ponderado, Gastos, Balance -->
     <div class="grid-4" style="margin-bottom:16px;">
-      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePatrimonio()">
+      <div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="document.getElementById('seccionDeuda') && document.getElementById('seccionDeuda').scrollIntoView({behavior:'smooth'})">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:16px;"></i>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Total</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;"><i class="fas fa-chevron-right" style="margin-right:4px;"></i>Click para ver desglose</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${formatCurrency(totalDeuda, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${ratioDeudaPatrimonio.toFixed(1)}% del patrimonio</div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-green);">
+      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesgloseRendimiento()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimientos ${periodoLabel}</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Rend. Ponderado</span>
         </div>
-        <div class="${kpiColor(rendPeriodo)}" style="font-size:22px;font-weight:800;">${formatCurrency(rendPeriodo, 'MXN')}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${rendPromedio.toFixed(2)}%</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} /mes <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-red);">
+      <div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesgloseGastos()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-receipt" style="color:var(--accent-red);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Gastos ${periodoLabel}</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Gastos ${periodoLabel}</span>
         </div>
         <div class="text-red" style="font-size:22px;font-weight:800;">${formatCurrency(gastosPeriodo, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Rendimientos: <span class="text-green">${formatCurrency(rendPeriodo, 'MXN')}</span></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-purple);">
+      <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesgloseBalance()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-balance-scale" style="color:var(--accent-purple);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
         </div>
         <div class="${kpiColor(balanceNeto)}" style="font-size:22px;font-weight:800;">${formatCurrency(balanceNeto, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Rend + Ing - Gastos <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
     </div>
 
-    <!-- KPI Row 2: Rendimiento promedio (clickable) -->
-    <div style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesgloseRendimiento()">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
-              <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:16px;"></i>
-            </div>
-            <div>
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento Promedio Ponderado</span>
-              <div style="display:flex;align-items:baseline;gap:10px;">
-                <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${rendPromedio.toFixed(2)}%</div>
-                <div style="font-size:15px;font-weight:700;color:var(--accent-green);">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} /mes</div>
-              </div>
-              <div style="font-size:11px;color:var(--text-muted);">Basado en ${invCuentas.length} producto${invCuentas.length !== 1 ? 's' : ''} de inversion | ${formatCurrency(sumPesos, 'MXN')} invertidos</div>
-            </div>
-          </div>
-          <div style="color:var(--text-muted);font-size:13px;">
-            <i class="fas fa-chevron-right" style="margin-left:8px;"></i> Click para ver desglose
-          </div>
-        </div>
-      </div>
+    <!-- Alertas + Deuda side by side -->
+    <div class="grid-2" style="margin-bottom:24px;align-items:start;" id="seccionDeuda">
+      <div>${alertasHTML}</div>
+      <div>${deudaHTML}</div>
     </div>
-
-    <!-- Alertas de Vencimiento -->
-    ${alertasHTML}
-
-    <!-- Dashboard de Deuda Total -->
-    ${deudaHTML}
 
     <!-- Indicador de Diversificacion -->
     ${diversificacionHTML}
@@ -1511,9 +1501,9 @@ function mostrarDesgloseRendimiento() {
         fuente = 'Cierre ' + (ultimoCierre.fecha || '').substring(0, 7);
       }
     }
-    if (tasaAnual !== 0) sumPesos += valMXN;
+    sumPesos += valMXN;
     return { nombre: c.nombre, moneda: c.moneda, saldo: c.saldo, valMXN: valMXN, rendimiento: tasaAnual, dias: dias, fuente: fuente };
-  }).filter(r => r.rendimiento !== 0);
+  });
 
   let sumPonderado = 0;
   rows.forEach(r => { sumPonderado += r.valMXN * r.rendimiento; });
@@ -1566,6 +1556,9 @@ function mostrarDesgloseRendimiento() {
   `;
 
   openModal('Desglose de Rendimiento por Producto', html);
+  // Make modal wider for this table
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
 }
 
 /* ============================================================
@@ -1879,4 +1872,175 @@ function dismissResumenPanel() {
   sessionStorage.setItem('pf_resumen_hidden', '1');
   var panel = document.getElementById('resumenPanel');
   if (panel) panel.style.display = 'none';
+}
+
+/* ============================================================
+   DASHBOARD: Desglose por tipo de cuenta (click en KPI cards)
+   ============================================================ */
+function mostrarDesgloseCuentas(tipo) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var instituciones = loadData(STORAGE_KEYS.instituciones) || [];
+  var instMap = {};
+  instituciones.forEach(function(i) { instMap[i.id] = i.nombre; });
+
+  var filtered = cuentas.filter(function(c) { return c.activa !== false && c.tipo === tipo; });
+  var total = 0;
+  var rows = filtered.map(function(c) {
+    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    total += valMXN;
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
+      '<td>' + (instMap[c.institucion_id] || '\u2014') + '</td>' +
+      '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
+      '<td style="text-align:right;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var tipoLabel = tipo === 'debito' ? 'Cuentas Bancarias' : tipo === 'inversion' ? 'Inversiones' : tipo;
+  var html = '<table class="data-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="4">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+
+  openModal('Desglose: ' + tipoLabel, html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function mostrarDesglosePropiedades() {
+  var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var total = 0;
+  var rows = propiedades.map(function(pr) {
+    var valMXN = toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
+    total += valMXN;
+    var tipoBadge = pr.tipo === 'preventa' ? 'badge-amber' : 'badge-green';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + pr.nombre + '</td>' +
+      '<td><span class="badge ' + tipoBadge + '">' + (pr.tipo || 'escriturado') + '</span></td>' +
+      '<td style="text-align:right;">' + formatCurrency(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var html = '<table class="data-table"><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+
+  openModal('Desglose: Propiedades', html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function mostrarDesglosePrestamos() {
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var totalOtorgados = 0, totalRecibidos = 0;
+  var rows = prestamos.filter(function(p) { return p.estado !== 'pagado'; }).map(function(p) {
+    var valMXN = toMXN(p.saldo_pendiente, p.moneda, tiposCambio);
+    if (p.tipo === 'otorgado') totalOtorgados += valMXN;
+    else totalRecibidos += valMXN;
+    var tipoBadge = p.tipo === 'otorgado' ? 'badge-green' : 'badge-red';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + p.persona + '</td>' +
+      '<td><span class="badge ' + tipoBadge + '">' + p.tipo + '</span></td>' +
+      '<td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var html = '<table class="data-table"><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Otorgados</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrency(totalOtorgados, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td colspan="3">Recibidos</td><td style="text-align:right;color:var(--accent-red);">' + formatCurrency(totalRecibidos, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td colspan="3">Neto</td><td style="text-align:right;">' + formatCurrency(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
+
+  openModal('Desglose: Prestamos', html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function mostrarDesgloseGastos() {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var periodo = _dashboardFilters.periodo;
+  var anioFiltro = _dashboardFilters.anio;
+  var now = new Date();
+  var fechaFin = anioFiltro === now.getFullYear() ? now : new Date(anioFiltro, 11, 31);
+  var fechaInicio;
+  switch(periodo) {
+    case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate()-7); break;
+    case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-2); fechaInicio.setDate(1); break;
+    case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-3); fechaInicio.setDate(1); break;
+    case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-6); fechaInicio.setDate(1); break;
+    case 'anual': fechaInicio = new Date(anioFiltro,0,1); break;
+    default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
+  }
+  var fi = fechaInicio.getFullYear()+'-'+String(fechaInicio.getMonth()+1).padStart(2,'0')+'-'+String(fechaInicio.getDate()).padStart(2,'0');
+  var ff = fechaFin.getFullYear()+'-'+String(fechaFin.getMonth()+1).padStart(2,'0')+'-'+String(fechaFin.getDate()).padStart(2,'0');
+
+  var gastos = movimientos.filter(function(mv) { return mv.tipo==='gasto' && !mv.transferencia_id && mv.fecha>=fi && mv.fecha<=ff; });
+  gastos.sort(function(a,b) { return (b.fecha||'').localeCompare(a.fecha||''); });
+  var total = 0;
+  var rows = gastos.slice(0,20).map(function(mv) {
+    var cta = cuentaMap[mv.cuenta_id];
+    var mon = mv.moneda || (cta ? cta.moneda : 'MXN');
+    var valMXN = toMXN(mv.monto, mon, tiposCambio);
+    total += valMXN;
+    return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrency(mv.monto, mon) + '</td></tr>';
+  }).join('');
+
+  var html = '<table class="data-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    (gastos.length > 20 ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">Mostrando 20 de ' + gastos.length + ' gastos</div>' : '');
+
+  openModal('Desglose: Gastos del Periodo', html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function mostrarDesgloseBalance() {
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var periodo = _dashboardFilters.periodo;
+  var anioFiltro = _dashboardFilters.anio;
+  var now = new Date();
+  var fechaFin = anioFiltro === now.getFullYear() ? now : new Date(anioFiltro, 11, 31);
+  var fechaInicio;
+  switch(periodo) {
+    case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate()-7); break;
+    case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-2); fechaInicio.setDate(1); break;
+    case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-3); fechaInicio.setDate(1); break;
+    case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-6); fechaInicio.setDate(1); break;
+    case 'anual': fechaInicio = new Date(anioFiltro,0,1); break;
+    default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
+  }
+  var fi = fechaInicio.getFullYear()+'-'+String(fechaInicio.getMonth()+1).padStart(2,'0')+'-'+String(fechaInicio.getDate()).padStart(2,'0');
+  var ff = fechaFin.getFullYear()+'-'+String(fechaFin.getMonth()+1).padStart(2,'0')+'-'+String(fechaFin.getDate()).padStart(2,'0');
+
+  var periodosList = [];
+  var tmp = new Date(fechaInicio);
+  while(tmp <= fechaFin) { periodosList.push(tmp.getFullYear()+'-'+String(tmp.getMonth()+1).padStart(2,'0')); tmp.setMonth(tmp.getMonth()+1); }
+
+  var rendPeriodo = rendimientos.filter(function(r) { return periodosList.includes(r.periodo); }).reduce(function(s,r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+  var movsFilt = movimientos.filter(function(mv) { return mv.fecha>=fi && mv.fecha<=ff; });
+  var ingresos = movsFilt.filter(function(mv) { return mv.tipo==='ingreso' && !mv.transferencia_id; }).reduce(function(s,mv) { var m=mv.moneda||(cuentaMap[mv.cuenta_id]?cuentaMap[mv.cuenta_id].moneda:'MXN'); return s+toMXN(mv.monto,m,tiposCambio); }, 0);
+  var gastos = movsFilt.filter(function(mv) { return mv.tipo==='gasto' && !mv.transferencia_id; }).reduce(function(s,mv) { var m=mv.moneda||(cuentaMap[mv.cuenta_id]?cuentaMap[mv.cuenta_id].moneda:'MXN'); return s+toMXN(mv.monto,m,tiposCambio); }, 0);
+  var balance = rendPeriodo + ingresos - gastos;
+
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;">Rendimientos</div><div style="font-size:18px;font-weight:800;color:var(--accent-green);">+' + formatCurrency(rendPeriodo, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;">Ingresos</div><div style="font-size:18px;font-weight:800;color:var(--accent-green);">+' + formatCurrency(ingresos, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;">Gastos</div><div style="font-size:18px;font-weight:800;color:var(--accent-red);">-' + formatCurrency(gastos, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;">Balance Neto</div><div style="font-size:18px;font-weight:800;color:' + (balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + formatCurrency(balance, 'MXN') + '</div></div>' +
+  '</div>' +
+  '<div style="font-size:12px;color:var(--text-secondary);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Balance = Rendimientos + Ingresos - Gastos</div>';
+
+  openModal('Desglose: Balance Neto', html);
 }

@@ -73,12 +73,12 @@ function toMXN(amount, currency, tiposCambio) {
   return amount;
 }
 
-/** Return CSS badge class for a currency code: MXN=blue, USD=green, EUR=amber */
+/** Return CSS badge class for a currency code: MXN=blue, USD=green-strong, EUR=amber */
 function monedaBadgeClass(moneda) {
   var m = (moneda || 'MXN').toUpperCase();
-  if (m === 'USD') return 'badge-green';
+  if (m === 'USD') return 'badge-usd';
   if (m === 'EUR') return 'badge-amber';
-  return 'badge-blue';
+  return 'badge-mxn';
 }
 
 /** Format a number as percentage */
