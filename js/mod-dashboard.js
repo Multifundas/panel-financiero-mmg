@@ -646,12 +646,12 @@ function renderDashboard() {
 
   // -- Render HTML --
   el.innerHTML = resumenPanelHTML + `
-    <!-- Filtros + Patrimonio (misma fila, compactos) -->
-    <div style="display:flex;gap:16px;margin-bottom:16px;align-items:stretch;flex-wrap:wrap;">
-      <div class="card" style="padding:8px 16px;flex:0 0 auto;">
+    <!-- Filtros + Patrimonio (misma fila, grid 1+3) -->
+    <div style="display:grid;grid-template-columns:1fr 3fr;gap:16px;margin-bottom:16px;">
+      <div class="card" style="padding:10px 16px;display:flex;align-items:center;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;"><i class="fas fa-filter" style="margin-right:4px;"></i>Filtros:</span>
-          <select id="dashFilterPeriodo" class="form-select" style="min-width:120px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
+          <select id="dashFilterPeriodo" class="form-select" style="min-width:110px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
             <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
             <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
             <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
@@ -659,18 +659,18 @@ function renderDashboard() {
             <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
             <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
           </select>
-          <select id="dashFilterAnio" class="form-select" style="min-width:80px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
+          <select id="dashFilterAnio" class="form-select" style="min-width:75px;padding:4px 8px;font-size:12px;" onchange="applyDashboardFilters()">
             ${yearOptions}
           </select>
         </div>
       </div>
-      <div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--accent-blue);cursor:pointer;padding:8px 16px;display:flex;align-items:center;gap:12px;" onclick="mostrarDesglosePatrimonio()">
-        <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:14px;"></i>
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 20px;display:flex;align-items:center;gap:16px;" onclick="mostrarDesglosePatrimonio()">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:16px;"></i>
         </div>
         <div>
-          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Total</span>
-          <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
+          <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
         </div>
         <div style="margin-left:auto;color:var(--text-secondary);font-size:12px;"><i class="fas fa-chevron-right"></i></div>
       </div>
@@ -737,10 +737,10 @@ function renderDashboard() {
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Rend. Ponderado</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento Ponderado</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${rendPromedio.toFixed(2)}%</div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} /mes <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} <span style="font-size:12px;font-weight:600;">/mes</span></div>
+        <div style="font-size:13px;color:var(--accent-amber);margin-top:4px;font-weight:600;">${rendPromedio.toFixed(2)}% anual <i class="fas fa-chevron-right" style="font-size:9px;margin-left:4px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesgloseGastos()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
@@ -1502,7 +1502,7 @@ function mostrarDesgloseRendimiento() {
   const promedio = sumPesos > 0 ? (sumPonderado / sumPesos) : 0;
 
   const html = `
-    <table class="data-table" style="margin-bottom:16px;">
+    <table class="data-table sortable-table" style="margin-bottom:16px;">
       <thead>
         <tr>
           <th>Producto</th>
@@ -1548,9 +1548,9 @@ function mostrarDesgloseRendimiento() {
   `;
 
   openModal('Desglose de Rendimiento por Producto', html);
-  // Make modal wider for this table
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 /* ============================================================
@@ -1891,12 +1891,13 @@ function mostrarDesgloseCuentas(tipo) {
   }).join('');
 
   var tipoLabel = tipo === 'debito' ? 'Cuentas Bancarias' : tipo === 'inversion' ? 'Inversiones' : tipo;
-  var html = '<table class="data-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
     rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="4">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: ' + tipoLabel, html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 function mostrarDesglosePropiedades() {
@@ -1915,12 +1916,13 @@ function mostrarDesglosePropiedades() {
     '</tr>';
   }).join('');
 
-  var html = '<table class="data-table"><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
     rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: Propiedades', html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 function mostrarDesglosePrestamos() {
@@ -1940,7 +1942,7 @@ function mostrarDesglosePrestamos() {
     '</tr>';
   }).join('');
 
-  var html = '<table class="data-table"><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
     '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Otorgados</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrency(totalOtorgados, 'MXN') + '</td></tr>' +
     '<tr style="font-weight:700;"><td colspan="3">Recibidos</td><td style="text-align:right;color:var(--accent-red);">' + formatCurrency(totalRecibidos, 'MXN') + '</td></tr>' +
     '<tr style="font-weight:700;"><td colspan="3">Neto</td><td style="text-align:right;">' + formatCurrency(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
@@ -1948,6 +1950,7 @@ function mostrarDesglosePrestamos() {
   openModal('Desglose: Prestamos', html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 function mostrarDesgloseGastos() {
@@ -1984,12 +1987,13 @@ function mostrarDesgloseGastos() {
     return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrency(mv.monto, mon) + '</td></tr>';
   }).join('');
 
-  var html = '<table class="data-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + '</tbody></table>' +
     (gastos.length > 20 ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">Mostrando 20 de ' + gastos.length + ' gastos</div>' : '');
 
   openModal('Desglose: Gastos del Periodo', html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 function mostrarDesgloseBalance() {

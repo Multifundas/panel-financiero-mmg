@@ -132,6 +132,7 @@ function calcPatrimonioTotal() {
   let totalPropiedades = 0;
   let totalPrestamosOtorgados = 0;
   let totalPrestamosRecibidos = 0;
+  let totalDeudaPreventa = 0;
 
   cuentas.forEach(c => {
     if (c.activa !== false) {
@@ -140,6 +141,13 @@ function calcPatrimonioTotal() {
   });
   propiedades.forEach(p => {
     totalPropiedades += toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
+    // Deuda de preventa pendiente
+    if (p.tipo === 'preventa' && (p.mensualidades_total - p.mensualidades_pagadas) > 0) {
+      var enganche = p.enganche || 0;
+      var pagado = enganche + (p.mensualidades_pagadas * p.monto_mensualidad);
+      var pendiente = Math.max(0, p.valor_compra - pagado);
+      totalDeudaPreventa += toMXN(pendiente, p.moneda || 'MXN', tiposCambio);
+    }
   });
   prestamos.forEach(p => {
     if (p.estado === 'pagado') return;
@@ -150,13 +158,16 @@ function calcPatrimonioTotal() {
     }
   });
 
-  var total = totalCuentas + totalPropiedades + totalPrestamosOtorgados - totalPrestamosRecibidos;
+  var totalDeuda = totalPrestamosRecibidos + totalDeudaPreventa;
+  var total = totalCuentas + totalPropiedades + totalPrestamosOtorgados - totalDeuda;
   return {
     total: total,
     cuentas: totalCuentas,
     propiedades: totalPropiedades,
     prestamosOtorgados: totalPrestamosOtorgados,
-    prestamosRecibidos: totalPrestamosRecibidos
+    prestamosRecibidos: totalPrestamosRecibidos,
+    deudaPreventa: totalDeudaPreventa,
+    totalDeuda: totalDeuda
   };
 }
 
@@ -169,7 +180,7 @@ function updateHeaderPatrimonio() {
   const tcEl = document.getElementById('headerTipoCambio');
   if (tcEl) {
     const usdMxn = tiposCambio.USD_MXN || 17.50;
-    tcEl.textContent = 'TC: US$1 = $' + Number(usdMxn).toFixed(2) + ' MXN';
+    tcEl.textContent = 'US$1 = $' + Number(usdMxn).toFixed(2);
   }
 }
 
@@ -184,7 +195,7 @@ function mostrarDesglosePatrimonio() {
 
   // Cuentas breakdown
   html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
-  html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+  html += '<table class="data-table sortable-table" style="font-size:12px;"><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
   cuentas.filter(function(c) { return c.activa !== false; }).forEach(function(c) {
     var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
     html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(c.saldo, c.moneda) + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
@@ -194,7 +205,7 @@ function mostrarDesglosePatrimonio() {
   // Propiedades breakdown
   if (propiedades.length > 0) {
     html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-building" style="margin-right:6px;"></i>Propiedades</div>';
-    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Propiedad</th><th>Tipo</th><th style="text-align:right;">Valor Actual</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    html += '<table class="data-table sortable-table" style="font-size:12px;"><thead><tr><th>Propiedad</th><th>Tipo</th><th style="text-align:right;">Valor Actual</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     propiedades.forEach(function(p) {
       var valMXN = toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
       var tipoBadge = p.tipo === 'preventa' ? 'badge-amber' : 'badge-purple';
@@ -207,7 +218,7 @@ function mostrarDesglosePatrimonio() {
   var otorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; });
   if (otorgados.length > 0) {
     html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:8px;"><i class="fas fa-hand-holding-usd" style="margin-right:6px;"></i>Prestamos Otorgados (a favor)</div>';
-    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    html += '<table class="data-table sortable-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     otorgados.forEach(function(p) {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
       html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
@@ -219,7 +230,7 @@ function mostrarDesglosePatrimonio() {
   var recibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; });
   if (recibidos.length > 0) {
     html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Prestamos Recibidos (deuda)</div>';
-    html += '<table class="data-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+    html += '<table class="data-table sortable-table" style="font-size:12px;"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     recibidos.forEach(function(p) {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
       html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
@@ -234,12 +245,16 @@ function mostrarDesglosePatrimonio() {
   if (pat.propiedades > 0) html += '<div style="color:var(--text-muted);">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.propiedades, 'MXN') + '</div>';
   if (pat.prestamosOtorgados > 0) html += '<div style="color:var(--text-muted);">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.prestamosOtorgados, 'MXN') + '</div>';
   if (pat.prestamosRecibidos > 0) html += '<div style="color:var(--text-muted);">- Prestamos recibidos</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(pat.prestamosRecibidos, 'MXN') + '</div>';
+  if (pat.deudaPreventa > 0) html += '<div style="color:var(--text-muted);">- Deuda preventa</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(pat.deudaPreventa, 'MXN') + '</div>';
   html += '</div>';
   html += '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:18px;font-weight:800;">';
-  html += '<span>Patrimonio Total</span><span style="color:var(--accent-blue);">' + formatCurrency(pat.total, 'MXN') + '</span>';
+  html += '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrency(pat.total, 'MXN') + '</span>';
   html += '</div></div>';
 
   openModal('Desglose del Patrimonio Total', html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
 /* ============================================================

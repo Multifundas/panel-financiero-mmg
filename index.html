@@ -198,10 +198,15 @@
             <i id="themeIcon" class="fas fa-moon"></i>
           </button>
           <div class="patrimonio-badge" onclick="mostrarDesglosePatrimonio()" style="cursor:pointer;" title="Click para ver desglose">
-            <div>
-              <div class="label">Patrimonio Total</div>
-              <div class="value" id="headerPatrimonio">$0.00</div>
-              <div id="headerTipoCambio" style="font-size:10px;color:var(--text-muted);margin-top:2px;letter-spacing:0.3px;"></div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div>
+                <div class="label">Patrimonio Neto</div>
+                <div class="value" id="headerPatrimonio">$0.00</div>
+              </div>
+              <div style="border-left:1px solid var(--border-subtle);padding-left:16px;">
+                <div class="label">Tipo de Cambio</div>
+                <div class="value" id="headerTipoCambio" style="color:var(--text-primary);"></div>
+              </div>
             </div>
           </div>
         </div>

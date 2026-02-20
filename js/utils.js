@@ -240,6 +240,71 @@ function formatCurrencyColor(amount, currency) {
  * Scans cells after module renders and applies red color to any cell
  * whose text content starts with -$ or contains a negative currency value.
  */
+/* ============================================================
+   SORTABLE TABLE HEADERS
+   Add class "sortable-table" to any <table> to enable click-to-sort
+   on all <th> in <thead>. Works with text, numbers, currency, dates.
+   ============================================================ */
+function _initSortableTables(root) {
+  if (!root) root = document;
+  var tables = root.querySelectorAll('table.sortable-table');
+  tables.forEach(function(table) {
+    var headers = table.querySelectorAll('thead th');
+    headers.forEach(function(th, colIdx) {
+      if (th.getAttribute('data-no-sort') === 'true') return;
+      th.style.cursor = 'pointer';
+      th.style.userSelect = 'none';
+      th.style.whiteSpace = 'nowrap';
+      // Add sort icon
+      var arrow = document.createElement('i');
+      arrow.className = 'fas fa-sort';
+      arrow.style.cssText = 'margin-left:6px;font-size:10px;color:var(--text-muted);opacity:0.6;';
+      th.appendChild(arrow);
+
+      th.addEventListener('click', function() {
+        var tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        var currentDir = th.getAttribute('data-sort-dir') || 'none';
+        var newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+        // Reset all headers in this table
+        headers.forEach(function(h) {
+          h.setAttribute('data-sort-dir', 'none');
+          var ic = h.querySelector('i.fas');
+          if (ic) { ic.className = 'fas fa-sort'; ic.style.opacity = '0.6'; }
+        });
+
+        th.setAttribute('data-sort-dir', newDir);
+        var icon = th.querySelector('i.fas');
+        if (icon) {
+          icon.className = newDir === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+          icon.style.opacity = '1';
+        }
+
+        rows.sort(function(a, b) {
+          var cellA = a.cells[colIdx];
+          var cellB = b.cells[colIdx];
+          if (!cellA || !cellB) return 0;
+          var txtA = cellA.textContent.trim();
+          var txtB = cellB.textContent.trim();
+
+          // Try numeric comparison (strip currency symbols, commas)
+          var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
+          var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return newDir === 'asc' ? numA - numB : numB - numA;
+          }
+          // Fallback: string comparison
+          return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
+        });
+
+        rows.forEach(function(row) { tbody.appendChild(row); });
+      });
+    });
+  });
+}
+
 function _autoColorNegativeNumbers(root) {
   if (!root) root = document;
   var cells = root.querySelectorAll('.data-table td, .kpi-value, [data-auto-color]');
