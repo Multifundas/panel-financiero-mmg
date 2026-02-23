@@ -49,138 +49,126 @@ function renderConfiguracion() {
   `).join('');
 
   el.innerHTML = `
-    <!-- Moneda Base -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-coins" style="margin-right:8px;color:var(--accent-amber);"></i>Moneda Base</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <div class="form-group" style="margin-bottom:0;min-width:160px;">
-          <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:13px;">Moneda principal para mostrar totales</label>
-          <select id="cfgMonedaBase" class="form-select" onchange="saveMonedaBase()">
-            <option value="MXN" ${config.moneda_base === 'MXN' ? 'selected' : ''}>MXN - Peso Mexicano</option>
-            <option value="USD" ${config.moneda_base === 'USD' ? 'selected' : ''}>USD - Dolar Estadounidense</option>
-            <option value="EUR" ${config.moneda_base === 'EUR' ? 'selected' : ''}>EUR - Euro</option>
-          </select>
+    <!-- ROW 1: Moneda + Inflacion (left) | Tipos de Cambio (right) -->
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-bottom:24px;" id="cfgRow1">
+      <div style="display:flex;flex-direction:column;gap:24px;">
+        <!-- Moneda Base -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-coins" style="margin-right:8px;color:var(--accent-amber);"></i>Moneda Base</span>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:12px;">Moneda principal para totales</label>
+            <select id="cfgMonedaBase" class="form-select" onchange="saveMonedaBase()">
+              <option value="MXN" ${config.moneda_base === 'MXN' ? 'selected' : ''}>MXN - Peso Mexicano</option>
+              <option value="USD" ${config.moneda_base === 'USD' ? 'selected' : ''}>USD - Dolar Estadounidense</option>
+              <option value="EUR" ${config.moneda_base === 'EUR' ? 'selected' : ''}>EUR - Euro</option>
+            </select>
+          </div>
+        </div>
+        <!-- Tasa de Inflacion -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-red);"></i>Inflacion de Referencia</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:12px;">
+            <div class="form-group" style="margin-bottom:0;flex:1;">
+              <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:12px;">Inflacion anual (%)</label>
+              <input type="number" id="cfgInflacionAnual" class="form-input" value="${config.inflacion_anual != null ? config.inflacion_anual : 4.5}" step="0.1" min="0" placeholder="4.5">
+            </div>
+            <button class="btn btn-primary" onclick="saveInflacionAnual()" style="white-space:nowrap;">
+              <i class="fas fa-save" style="margin-right:4px;"></i>Guardar
+            </button>
+          </div>
+          <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">Para calcular rendimiento real en Rendimientos.</p>
         </div>
       </div>
-    </div>
-
-    <!-- Tasa de Inflacion de Referencia -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-red);"></i>Tasa de Inflacion de Referencia</span>
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-        <div class="form-group" style="margin-bottom:0;min-width:180px;">
-          <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:13px;">Inflacion anual (%)</label>
-          <input type="number" id="cfgInflacionAnual" class="form-input" style="width:160px;" value="${config.inflacion_anual != null ? config.inflacion_anual : 4.5}" step="0.1" min="0" placeholder="4.5">
+      <!-- Tipos de Cambio -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Tipos de Cambio</span>
+          ${config.ultima_actualizacion_tc ? '<span class="badge" style="background:rgba(16,185,129,0.12);color:var(--accent-green);font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Actualizado: ' + formatTCTimestamp(config.ultima_actualizacion_tc) + '</span>' : ''}
         </div>
-        <button class="btn btn-primary" onclick="saveInflacionAnual()">
-          <i class="fas fa-save" style="margin-right:6px;"></i>Guardar
-        </button>
-      </div>
-      <p style="margin-top:10px;font-size:12px;color:var(--text-muted);">Se usa para calcular rendimiento real en el modulo de Rendimientos.</p>
-    </div>
-
-    <!-- Tema -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-palette" style="margin-right:8px;color:var(--accent-purple);"></i>Tema</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:16px;">
-        <span style="color:var(--text-secondary);font-size:13px;">Modo actual: <strong id="cfgThemeLabel">${config.theme === 'light' ? 'Claro' : 'Oscuro'}</strong></span>
-        <button class="btn btn-secondary" onclick="toggleTheme()">
-          <i class="fas ${config.theme === 'light' ? 'fa-moon' : 'fa-sun'}"></i> Cambiar a ${config.theme === 'light' ? 'Oscuro' : 'Claro'}
-        </button>
-      </div>
-    </div>
-
-    <!-- Tipos de Cambio -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Tipos de Cambio</span>
-        ${config.ultima_actualizacion_tc ? '<span class="badge" style="background:rgba(16,185,129,0.12);color:var(--accent-green);font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Actualizado: ' + formatTCTimestamp(config.ultima_actualizacion_tc) + '</span>' : ''}
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Par</th>
-              <th style="text-align:right;">Tasa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="font-weight:600;color:var(--text-primary);">USD / MXN</td>
-              <td style="text-align:right;">
-                <input type="number" id="cfgUsdMxn" class="form-input" style="width:120px;text-align:right;display:inline-block;" value="${tiposCambio.USD_MXN || 17.50}" step="0.01" min="0">
-              </td>
-            </tr>
-            <tr>
-              <td style="font-weight:600;color:var(--text-primary);">EUR / MXN</td>
-              <td style="text-align:right;">
-                <input type="number" id="cfgEurMxn" class="form-input" style="width:120px;text-align:right;display:inline-block;" value="${tiposCambio.EUR_MXN || 19.20}" step="0.01" min="0">
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveTiposCambio()">
-          <i class="fas fa-save" style="margin-right:6px;"></i>Guardar Tipos de Cambio
-        </button>
-        <button class="btn btn-secondary" id="btnActualizarTC" onclick="actualizarTiposCambio()">
-          <i class="fas fa-globe" style="margin-right:6px;"></i>Actualizar desde Internet
-        </button>
-      </div>
-      <div id="tcFetchStatus" style="margin-top:8px;min-height:18px;"></div>
-      <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Puedes ingresar los valores manualmente o consultar las tasas actuales desde Internet (open.er-api.com).</p>
-    </div>
-
-    <!-- Categorias de Gasto -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-tags" style="margin-right:8px;color:var(--accent-green);"></i>Categorias de Gasto</span>
-        <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addCategoria()">
-          <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
-        </button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaCategorias">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th style="text-align:center;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${categoriasRows}
-          </tbody>
-        </table>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Par</th>
+                <th style="text-align:right;">Tasa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;color:var(--text-primary);">USD / MXN</td>
+                <td style="text-align:right;">
+                  <input type="number" id="cfgUsdMxn" class="form-input" style="width:120px;text-align:right;display:inline-block;" value="${tiposCambio.USD_MXN || 17.50}" step="0.01" min="0">
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--text-primary);">EUR / MXN</td>
+                <td style="text-align:right;">
+                  <input type="number" id="cfgEurMxn" class="form-input" style="width:120px;text-align:right;display:inline-block;" value="${tiposCambio.EUR_MXN || 19.20}" step="0.01" min="0">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="saveTiposCambio()">
+            <i class="fas fa-save" style="margin-right:6px;"></i>Guardar Tipos de Cambio
+          </button>
+          <button class="btn btn-secondary" id="btnActualizarTC" onclick="actualizarTiposCambio()">
+            <i class="fas fa-globe" style="margin-right:6px;"></i>Actualizar desde Internet
+          </button>
+        </div>
+        <div id="tcFetchStatus" style="margin-top:8px;min-height:18px;"></div>
+        <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Puedes ingresar los valores manualmente o consultar tasas desde Internet (open.er-api.com).</p>
       </div>
     </div>
 
-    <!-- Instituciones -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-university" style="margin-right:8px;color:var(--accent-purple);"></i>Instituciones</span>
-        <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addInstitucion()">
-          <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
-        </button>
+    <!-- ROW 2: Categorias (left) | Instituciones (right) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow2">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-tags" style="margin-right:8px;color:var(--accent-green);"></i>Categorias de Gasto</span>
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addCategoria()">
+            <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
+          </button>
+        </div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+          <table class="data-table" id="tablaCategorias">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${categoriasRows}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaInstituciones">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th style="text-align:center;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${institucionesRows}
-          </tbody>
-        </table>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-university" style="margin-right:8px;color:var(--accent-purple);"></i>Instituciones</span>
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addInstitucion()">
+            <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
+          </button>
+        </div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+          <table class="data-table" id="tablaInstituciones">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${institucionesRows}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 

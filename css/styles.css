@@ -424,6 +424,21 @@
       background: rgba(255,255,255,0.02);
     }
 
+    /* Consistent font sizing for desglose/modal tables */
+    .modal-content .data-table thead th {
+      font-size: 11px;
+    }
+    .modal-content .data-table tbody td {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .modal-content .data-table tfoot td,
+    .modal-content .data-table tfoot tr td {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
     /* ── Forms ── */
     .form-group {
       margin-bottom: 16px;
@@ -807,8 +822,20 @@
         grid-template-columns: 1fr !important;
       }
 
-      /* Dashboard 2-column layout: stack on mobile */
-      #dashboardMainGrid {
+      /* Dashboard grids: stack on mobile */
+      #dashboardTopRow {
+        grid-template-columns: 1fr !important;
+      }
+      #dashboardKPIGrid,
+      #dashboardKPIGrid2 {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      #dashboardAlertaDeudaRow {
+        grid-template-columns: 1fr !important;
+      }
+      /* Config grids: stack on mobile */
+      #cfgRow1,
+      #cfgRow2 {
         grid-template-columns: 1fr !important;
       }
 
@@ -1612,30 +1639,28 @@
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  margin-bottom: 16px;
+  margin-bottom: 0;
   overflow: hidden;
 }
 .resumen-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border-subtle);
   background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(245,158,11,0.05));
 }
 .resumen-body {
   display: flex;
+  flex-direction: column;
   gap: 0;
-  flex-wrap: wrap;
 }
 .resumen-section {
-  flex: 1;
-  min-width: 200px;
-  padding: 16px 20px;
-  border-right: 1px solid var(--border-subtle);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .resumen-section:last-child {
-  border-right: none;
+  border-bottom: none;
 }
 .resumen-section-title {
   font-size: 11px;
@@ -1682,15 +1707,8 @@
 }
 
 @media (max-width: 768px) {
-  .resumen-body {
-    flex-direction: column;
-  }
-  .resumen-section {
-    border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .resumen-section:last-child {
-    border-bottom: none;
+  .resumen-stat-value {
+    font-size: 14px;
   }
 }
 

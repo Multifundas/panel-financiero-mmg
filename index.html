@@ -197,13 +197,13 @@
           <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
             <i id="themeIcon" class="fas fa-moon"></i>
           </button>
-          <div class="patrimonio-badge" onclick="mostrarDesglosePatrimonio()" style="cursor:pointer;" title="Click para ver desglose">
+          <div class="patrimonio-badge" style="cursor:default;">
             <div style="display:flex;align-items:center;gap:20px;">
-              <div>
+              <div onclick="mostrarDesglosePatrimonio()" style="cursor:pointer;" title="Click para ver desglose del patrimonio">
                 <div class="label">Patrimonio Neto</div>
                 <div class="value" id="headerPatrimonio">$0.00</div>
               </div>
-              <div style="border-left:1px solid var(--border-subtle);padding-left:16px;">
+              <div style="border-left:1px solid var(--border-subtle);padding-left:16px;cursor:pointer;" onclick="mostrarHistorialTipoCambio()" title="Click para ver historico de tipo de cambio">
                 <div class="label">Tipo de Cambio</div>
                 <div class="value" id="headerTipoCambio" style="color:var(--text-primary);"></div>
               </div>

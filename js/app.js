@@ -24,6 +24,13 @@ function initApp() {
   updateHeaderDate();
   updateHeaderPatrimonio();
 
+  // Apply default privacy mode (saldos hidden on startup)
+  if (typeof _saldosHidden !== 'undefined' && _saldosHidden) {
+    document.body.classList.add('saldos-hidden');
+    var hideIcon = document.getElementById('hideSaldosIcon');
+    if (hideIcon) hideIcon.className = 'fas fa-eye-slash';
+  }
+
   // Render initial module
   navigateTo('dashboard');
 

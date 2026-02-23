@@ -12,7 +12,7 @@ function uuid() {
 /* ============================================================
    HIDE SALDOS (PRIVACY MODE)
    ============================================================ */
-var _saldosHidden = false;
+var _saldosHidden = true;
 
 function toggleHideSaldos() {
   _saldosHidden = !_saldosHidden;
