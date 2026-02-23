@@ -12,10 +12,17 @@ function renderPropiedades() {
   var ingresoMensualRentas = 0;
   var countPreventas = 0;
   var countTerminadas = 0;
+  var deudaTotalPropiedades = 0;
 
   propiedades.forEach(function (p) {
     valorPortafolio += toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
-    if (p.tipo === 'preventa') countPreventas++;
+    if (p.tipo === 'preventa') {
+      countPreventas++;
+      var enganche = p.enganche || 0;
+      var pagado = enganche + ((p.mensualidades_pagadas || 0) * (p.monto_mensualidad || 0));
+      var pendiente = Math.max(0, (p.valor_compra || 0) - pagado);
+      deudaTotalPropiedades += toMXN(pendiente, p.moneda || 'MXN', tiposCambio);
+    }
     if (p.tipo === 'terminada') {
       countTerminadas++;
       if (p.ocupada && p.renta_mensual) {
@@ -28,46 +35,59 @@ function renderPropiedades() {
 
   el.innerHTML =
     /* ---------- KPI Cards ---------- */
-    '<div class="grid-4" style="margin-bottom:24px;">' +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;">' +
 
-      '<div class="card" style="border-left:3px solid var(--accent-green);">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
-          '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-city" style="color:var(--accent-green);font-size:16px;"></i>' +
+      '<div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'valor\')">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-city" style="color:var(--accent-green);font-size:14px;"></i>' +
           '</div>' +
-          '<span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor del Portafolio</span>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor Portafolio</span>' +
         '</div>' +
-        '<div style="font-size:20px;font-weight:800;color:var(--accent-green);">' + formatCurrency(valorPortafolio, 'MXN') + '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrency(valorPortafolio, 'MXN') + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
-      '<div class="card" style="border-left:3px solid var(--accent-blue);">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
-          '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-money-check-alt" style="color:var(--accent-blue);font-size:16px;"></i>' +
+      '<div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'deuda\')">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:14px;"></i>' +
           '</div>' +
-          '<span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingreso Mensual Rentas</span>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>' +
         '</div>' +
-        '<div style="font-size:20px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(ingresoMensualRentas, 'MXN') + '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrency(deudaTotalPropiedades, 'MXN') + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+      '</div>' +
+
+      '<div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'rentas\')">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-money-check-alt" style="color:var(--accent-blue);font-size:14px;"></i>' +
+          '</div>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rentas Mensuales</span>' +
+        '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(ingresoMensualRentas, 'MXN') + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-amber);">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
-          '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-hard-hat" style="color:var(--accent-amber);font-size:16px;"></i>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-hard-hat" style="color:var(--accent-amber);font-size:14px;"></i>' +
           '</div>' +
-          '<span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Preventas en Proceso</span>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Preventas</span>' +
         '</div>' +
-        '<div style="font-size:20px;font-weight:800;color:var(--accent-amber);">' + countPreventas + '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + countPreventas + '</div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-purple);">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
-          '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-building" style="color:var(--accent-purple);font-size:16px;"></i>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+          '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-building" style="color:var(--accent-purple);font-size:14px;"></i>' +
           '</div>' +
-          '<span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Propiedades Terminadas</span>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Terminadas</span>' +
         '</div>' +
-        '<div style="font-size:20px;font-weight:800;color:var(--accent-purple);">' + countTerminadas + '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:var(--accent-purple);">' + countTerminadas + '</div>' +
       '</div>' +
 
     '</div>' +
@@ -247,7 +267,8 @@ function filterPropiedades() {
     return;
   }
 
-  container.innerHTML = filtered.map(function (p) {
+  container.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+    filtered.map(function (p) {
     var moneda = p.moneda || 'MXN';
     var cardContent = '';
 
@@ -270,11 +291,11 @@ function filterPropiedades() {
     }
     actions += '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deletePropiedad(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
 
-    return '<div class="card" style="margin-bottom:16px;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+    return '<div class="card" style="margin-bottom:0;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
         '<div>' +
-          '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin:0 0 4px 0;">' + (p.nombre || '') + '</h3>' +
-          '<div style="font-size:12px;color:var(--text-muted);">' +
+          '<h3 style="font-size:15px;font-weight:700;color:var(--text-primary);margin:0 0 4px 0;">' + (p.nombre || '') + '</h3>' +
+          '<div style="font-size:11px;color:var(--text-muted);">' +
             '<i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>' + (p.ubicacion || 'Sin ubicacion') +
             ' ' + tipoBadge + ' <span class="badge ' + monedaBadgeClass(moneda) + '">' + moneda + '</span>' +
           '</div>' +
@@ -282,7 +303,7 @@ function filterPropiedades() {
         '<div>' + actions + '</div>' +
       '</div>' + cardContent +
     '</div>';
-  }).join('');
+  }).join('') + '</div>';
 }
 
 /* ============================================================
@@ -752,7 +773,7 @@ function verCalendarioPagos() {
   }
 
   /* Collect all payment events across the 3 months */
-  /* Each event: { mes, anio, tipo: 'mensualidad'|'renta'|'mantenimiento', nombre, monto, moneda, fecha } */
+  /* Each event: { mes, anio, tipo: 'mensualidad'|'renta'|'mantenimiento'|'ultima_mensualidad'|'saldo_remanente', nombre, monto, moneda, fecha } */
   var eventos = [];
 
   /* Summary accumulators (in MXN for aggregation) */
@@ -760,6 +781,9 @@ function verCalendarioPagos() {
   var totalRentasMes = 0;
   var totalMantenimientoMes = 0;
   var proximoPago = null; /* { fecha, monto, moneda, nombre } */
+
+  /* Track info per preventa for summary section */
+  var preventaResumen = [];
 
   propiedades.forEach(function (p) {
     var moneda = p.moneda || 'MXN';
@@ -769,14 +793,35 @@ function verCalendarioPagos() {
       var pagadas = p.mensualidades_pagadas || 0;
       var totales = p.mensualidades_total || 0;
       var restantes = totales - pagadas;
-      if (restantes <= 0) return;
 
-      /* Next payment date = fecha_inicio + mensualidades_pagadas months */
+      /* Calculate saldo remanente = valor_compra - enganche - (totales * monto_mensualidad) */
+      var enganche = p.enganche || 0;
+      var totalMensualidadesFull = totales * p.monto_mensualidad;
+      var saldoRemanente = Math.max(0, (p.valor_compra || 0) - enganche - totalMensualidadesFull);
+
+      /* Track for summary */
       var inicioDate = new Date(p.fecha_inicio + 'T00:00:00');
-      var nextPayMonth = inicioDate.getMonth() + pagadas;
-      var nextPayYear = inicioDate.getFullYear() + Math.floor(nextPayMonth / 12);
-      nextPayMonth = nextPayMonth % 12;
       var nextPayDay = inicioDate.getDate();
+
+      /* Ultima mensualidad date */
+      var lastPayIdx = totales - 1;
+      var lastPayMonth = (inicioDate.getMonth() + lastPayIdx) % 12;
+      var lastPayYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + lastPayIdx) / 12);
+      var lastPayDay = Math.min(nextPayDay, 28);
+      var lastPayDate = new Date(lastPayYear, lastPayMonth, lastPayDay);
+
+      preventaResumen.push({
+        nombre: p.nombre,
+        moneda: moneda,
+        pagadas: pagadas,
+        totales: totales,
+        restantes: restantes,
+        monto_mensualidad: p.monto_mensualidad,
+        ultimaMensualidad: lastPayDate,
+        saldoRemanente: saldoRemanente
+      });
+
+      if (restantes <= 0) return;
 
       /* Generate events for each of the 3 months if payment falls in that month */
       for (var i = 0; i < restantes && i < 36; i++) {
@@ -785,12 +830,14 @@ function verCalendarioPagos() {
         var payDay = Math.min(nextPayDay, 28);
         var payDate = new Date(payYear, payMonth, payDay);
 
+        var isLastMensualidad = (pagadas + i + 1 === totales);
+
         /* Check if this falls in any of our 3 months */
         for (var k = 0; k < 3; k++) {
           if (payMonth === meses3[k].mes && payYear === meses3[k].anio) {
             eventos.push({
               mesIdx: k,
-              tipo: 'mensualidad',
+              tipo: isLastMensualidad ? 'ultima_mensualidad' : 'mensualidad',
               nombre: p.nombre,
               monto: p.monto_mensualidad,
               montoMXN: toMXN(p.monto_mensualidad, moneda, tiposCambio),
@@ -799,6 +846,20 @@ function verCalendarioPagos() {
               dia: payDay,
               restantes: restantes - i
             });
+
+            /* If last mensualidad and there's saldo remanente, add it too */
+            if (isLastMensualidad && saldoRemanente > 0) {
+              eventos.push({
+                mesIdx: k,
+                tipo: 'saldo_remanente',
+                nombre: p.nombre + ' (Saldo Remanente)',
+                monto: saldoRemanente,
+                montoMXN: toMXN(saldoRemanente, moneda, tiposCambio),
+                moneda: moneda,
+                fecha: payDate,
+                dia: payDay
+              });
+            }
 
             /* Track for summary: current month outflow */
             if (k === 0) {
@@ -983,6 +1044,18 @@ function verCalendarioPagos() {
           iconClass = 'fa-file-invoice-dollar';
           iconColor = 'var(--accent-red)';
           labelTipo = 'Mensualidad';
+        } else if (ev.tipo === 'ultima_mensualidad') {
+          bgColor = 'rgba(139,92,246,0.10)';
+          borderColor = 'var(--accent-purple)';
+          iconClass = 'fa-flag-checkered';
+          iconColor = 'var(--accent-purple)';
+          labelTipo = 'Ultima Mensualidad';
+        } else if (ev.tipo === 'saldo_remanente') {
+          bgColor = 'rgba(245,158,11,0.12)';
+          borderColor = 'var(--accent-amber)';
+          iconClass = 'fa-coins';
+          iconColor = 'var(--accent-amber)';
+          labelTipo = 'Saldo Remanente';
         } else if (ev.tipo === 'renta') {
           bgColor = 'rgba(16,185,129,0.08)';
           borderColor = 'var(--accent-green)';
@@ -997,7 +1070,7 @@ function verCalendarioPagos() {
           labelTipo = 'Mantenimiento';
         }
 
-        var montoColor = ev.tipo === 'renta' ? 'var(--accent-green)' : (ev.tipo === 'mensualidad' ? 'var(--accent-red)' : 'var(--accent-amber)');
+        var montoColor = ev.tipo === 'renta' ? 'var(--accent-green)' : (ev.tipo === 'ultima_mensualidad' ? 'var(--accent-purple)' : (ev.tipo === 'saldo_remanente' ? 'var(--accent-amber)' : (ev.tipo === 'mensualidad' ? 'var(--accent-red)' : 'var(--accent-amber)')));
         var signo = ev.tipo === 'renta' ? '+' : '-';
 
         var extraInfo = '';
@@ -1069,14 +1142,114 @@ function verCalendarioPagos() {
         '<span style="font-size:11px;color:var(--text-muted);">Mensualidad</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
+        '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-purple);"></div>' +
+        '<span style="font-size:11px;color:var(--text-muted);">Ultima Mensualidad</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-green);"></div>' +
         '<span style="font-size:11px;color:var(--text-muted);">Renta</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-amber);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Mantenimiento</span>' +
+        '<span style="font-size:11px;color:var(--text-muted);">Mantenimiento / Saldo Remanente</span>' +
       '</div>' +
     '</div>';
 
+  /* Resumen de Preventas: ultima mensualidad + saldo remanente */
+  if (preventaResumen.length > 0) {
+    html +=
+      '<div class="card" style="margin-top:16px;">' +
+        '<div class="card-header"><span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Resumen de Preventas</span></div>' +
+        '<div style="overflow-x:auto;"><table class="data-table" style="font-size:12px;"><thead><tr>' +
+          '<th>Propiedad</th><th style="text-align:center;">Pagadas / Total</th><th style="text-align:center;">Restantes</th>' +
+          '<th>Monto Mensualidad</th><th>Ultima Mensualidad</th><th>Saldo Remanente</th>' +
+        '</tr></thead><tbody>';
+    preventaResumen.forEach(function(pr) {
+      var saldoRemColor = pr.saldoRemanente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
+      html += '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + pr.nombre + '</td>' +
+        '<td style="text-align:center;">' + pr.pagadas + ' / ' + pr.totales + '</td>' +
+        '<td style="text-align:center;font-weight:600;color:var(--accent-red);">' + pr.restantes + '</td>' +
+        '<td>' + formatCurrency(pr.monto_mensualidad, pr.moneda) + '</td>' +
+        '<td>' + formatDate(pr.ultimaMensualidad) + '</td>' +
+        '<td style="font-weight:600;color:' + saldoRemColor + ';">' + formatCurrency(pr.saldoRemanente, pr.moneda) + (pr.saldoRemanente > 0 ? '' : ' <span class="badge badge-green" style="font-size:9px;">Cubierto</span>') + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+  }
+
   container.innerHTML = html;
+}
+
+/* ============================================================
+   DESGLOSE KPI PROPIEDADES
+   ============================================================ */
+function mostrarDesglosePropKPI(tipo) {
+  var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var titulo, rows = '', total = 0;
+
+  if (tipo === 'valor') {
+    titulo = 'Desglose: Valor del Portafolio';
+    rows = propiedades.map(function(p) {
+      var moneda = p.moneda || 'MXN';
+      var valMXN = toMXN(p.valor_actual || 0, moneda, tiposCambio);
+      total += valMXN;
+      var tipoBadge = p.tipo === 'preventa' ? 'badge-amber' : 'badge-purple';
+      var tipoLabel = p.tipo === 'preventa' ? 'Preventa' : 'Terminada';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
+        '<td><span class="badge ' + tipoBadge + '">' + tipoLabel + '</span></td>' +
+        '<td>' + (p.ubicacion || '-') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-green);">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+      '</tr>';
+    }).join('');
+    rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td>' +
+      '<td style="text-align:right;color:var(--accent-green);">' + formatCurrency(total, 'MXN') + '</td></tr>';
+    var html = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Tipo</th><th>Ubicacion</th><th style="text-align:right;">Valor (MXN)</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    openModal(titulo, html);
+
+  } else if (tipo === 'deuda') {
+    titulo = 'Desglose: Deuda de Propiedades';
+    var preventas = propiedades.filter(function(p) { return p.tipo === 'preventa'; });
+    rows = preventas.map(function(p) {
+      var moneda = p.moneda || 'MXN';
+      var enganche = p.enganche || 0;
+      var pagado = enganche + ((p.mensualidades_pagadas || 0) * (p.monto_mensualidad || 0));
+      var pendiente = Math.max(0, (p.valor_compra || 0) - pagado);
+      var pendMXN = toMXN(pendiente, moneda, tiposCambio);
+      total += pendMXN;
+      var restantes = (p.mensualidades_total || 0) - (p.mensualidades_pagadas || 0);
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
+        '<td>' + formatCurrency(toMXN(p.valor_compra, moneda, tiposCambio), 'MXN') + '</td>' +
+        '<td>' + formatCurrency(toMXN(pagado, moneda, tiposCambio), 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrency(pendMXN, 'MXN') + '</td>' +
+        '<td style="text-align:center;">' + restantes + '</td>' +
+      '</tr>';
+    }).join('');
+    rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total Deuda</td>' +
+      '<td style="text-align:right;color:var(--accent-red);">' + formatCurrency(total, 'MXN') + '</td><td></td></tr>';
+    var html2 = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Valor Compra</th><th>Pagado</th><th style="text-align:right;">Pendiente</th><th style="text-align:center;">Mensualidades Rest.</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    openModal(titulo, html2);
+
+  } else if (tipo === 'rentas') {
+    titulo = 'Desglose: Ingresos por Rentas';
+    var terminadas = propiedades.filter(function(p) { return p.tipo === 'terminada'; });
+    rows = terminadas.map(function(p) {
+      var moneda = p.moneda || 'MXN';
+      var rentaMXN = toMXN(p.renta_mensual || 0, moneda, tiposCambio);
+      total += (p.ocupada ? rentaMXN : 0);
+      var ocupadaBadge = p.ocupada ? '<span class="badge badge-green">Ocupada</span>' : '<span class="badge badge-red">Desocupada</span>';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
+        '<td>' + ocupadaBadge + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:' + (p.ocupada ? 'var(--accent-blue)' : 'var(--text-muted)') + ';">' + formatCurrency(rentaMXN, 'MXN') + '</td>' +
+      '</tr>';
+    }).join('');
+    rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Total Activo</td>' +
+      '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(total, 'MXN') + '</td></tr>';
+    var html3 = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Estado</th><th style="text-align:right;">Renta Mensual</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    openModal(titulo, html3);
+  }
 }

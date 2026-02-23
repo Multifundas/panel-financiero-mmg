@@ -16,6 +16,7 @@ function renderMovimientos() {
   // -- Summary totals (all movimientos, converted to MXN, excluding transfers) --
   let totalIngresos = 0;
   let totalGastos = 0;
+  let totalRendimientos = 0;
   movimientos.forEach(m => {
     if (m.transferencia_id) return; // Exclude transfers from totals
     const cuenta = cuentaMap[m.cuenta_id];
@@ -24,7 +25,12 @@ function renderMovimientos() {
     if (m.tipo === 'ingreso') totalIngresos += montoMXN;
     else if (m.tipo === 'gasto') totalGastos += montoMXN;
   });
-  const balance = totalIngresos - totalGastos;
+  // Calculate rendimientos from cierres mensuales
+  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  rendimientos.forEach(r => {
+    totalRendimientos += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+  });
+  const balance = totalIngresos + totalRendimientos - totalGastos;
 
   // -- Cuenta options for filter --
   const cuentasActivas = cuentas.filter(c => c.activa !== false);
@@ -34,21 +40,31 @@ function renderMovimientos() {
 
   // -- Render HTML --
   el.innerHTML = `
-    <!-- Resumen de Movimientos (compacto) -->
-    <div class="grid-3" style="margin-bottom:12px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;">
+    <!-- Resumen de Movimientos (4 cards: Ingresos, Rendimientos, Gastos, Balance) -->
+    <div class="grid-4" style="margin-bottom:12px;">
+      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('ingreso')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
         </div>
         <div id="movSumIngresos" style="font-size:18px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrency(totalIngresos, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;">
+      <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('rendimiento')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:14px;"></i>
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
+        </div>
+        <div id="movSumRendimientos" style="font-size:18px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrency(totalRendimientos, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('gasto')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
         </div>
         <div id="movSumGastos" style="font-size:18px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrency(totalGastos, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -56,12 +72,13 @@ function renderMovimientos() {
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
         </div>
         <div id="movSumBalance" style="font-size:18px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:4px;">${(balance >= 0 ? '+' : '') + formatCurrency(balance, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
       </div>
     </div>
 
-    <!-- Barra de Filtros y Boton Nuevo Movimiento -->
+    <!-- Barra de Filtros y Boton Nuevo Movimiento (una sola fila) -->
     <div class="card" style="margin-bottom:12px;padding:10px 16px;">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input type="date" id="filterMovDesde" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <input type="date" id="filterMovHasta" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <select id="filterMovTipo" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:120px;" onchange="filterMovimientos()">
@@ -75,8 +92,7 @@ function renderMovimientos() {
           ${cuentaFilterOpts}
         </select>
         <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" oninput="filterMovimientos()">
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="flex:1;"></div>
         <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
         </button>
@@ -183,12 +199,20 @@ function filterMovimientos() {
     if (m.tipo === 'ingreso') sumIngresos += montoMXN;
     else if (m.tipo === 'gasto') sumGastos += montoMXN;
   });
-  const sumBalance = sumIngresos - sumGastos;
+  // Rendimientos from cierres
+  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  let sumRendimientos = 0;
+  rendimientos.forEach(r => {
+    sumRendimientos += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+  });
+  const sumBalance = sumIngresos + sumRendimientos - sumGastos;
 
   const elIngresos = document.getElementById('movSumIngresos');
   const elGastos = document.getElementById('movSumGastos');
+  const elRendimientos = document.getElementById('movSumRendimientos');
   const elBalance = document.getElementById('movSumBalance');
   if (elIngresos) elIngresos.textContent = formatCurrency(sumIngresos, 'MXN');
+  if (elRendimientos) elRendimientos.textContent = formatCurrency(sumRendimientos, 'MXN');
   if (elGastos) elGastos.textContent = formatCurrency(sumGastos, 'MXN');
   if (elBalance) {
     elBalance.textContent = (sumBalance >= 0 ? '+' : '') + formatCurrency(sumBalance, 'MXN');
@@ -1383,4 +1407,132 @@ function _exportMovsToPDF(data, titulo) {
 
   doc.save(titulo.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.pdf');
   showToast('PDF exportado con ' + data.movimientos.length + ' movimientos.', 'success');
+}
+
+/* ============================================================
+   DESGLOSE DE RECUADROS (Ingresos / Rendimientos / Gastos)
+   ============================================================ */
+function mostrarDesgloseMovimientos(tipo) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
+
+  var titulo, color, icon, rows;
+
+  if (tipo === 'rendimiento') {
+    // Show rendimientos from cierres
+    var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+    titulo = 'Desglose de Rendimientos';
+    color = 'var(--accent-amber)';
+    icon = 'fa-percentage';
+
+    // Group by cuenta
+    var rendByCuenta = {};
+    rendimientos.forEach(function(r) {
+      var cta = cuentaMap[r.cuenta_id];
+      var nombre = cta ? cta.nombre : 'Desconocida';
+      if (!rendByCuenta[nombre]) rendByCuenta[nombre] = { monto: 0, count: 0 };
+      rendByCuenta[nombre].monto += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+      rendByCuenta[nombre].count++;
+    });
+
+    var totalRend = 0;
+    rows = Object.entries(rendByCuenta).sort(function(a, b) { return b[1].monto - a[1].monto; }).map(function(entry) {
+      totalRend += entry[1].monto;
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
+        '<td style="text-align:center;">' + entry[1].count + ' cierre' + (entry[1].count > 1 ? 's' : '') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-amber);">+' + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+      '<td colspan="2">Total</td>' +
+      '<td style="text-align:right;color:var(--accent-amber);">+' + formatCurrency(totalRend, 'MXN') + '</td>' +
+    '</tr>';
+
+    var html = '<table class="data-table"><thead><tr>' +
+      '<th>Cuenta</th><th style="text-align:center;">Cierres</th><th style="text-align:right;">Rendimiento</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    openModal(titulo, html);
+    return;
+  }
+
+  // Ingresos or Gastos
+  var filterTipo = tipo; // 'ingreso' or 'gasto'
+  titulo = tipo === 'ingreso' ? 'Desglose de Ingresos' : 'Desglose de Gastos';
+  color = tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)';
+  icon = tipo === 'ingreso' ? 'fa-arrow-down' : 'fa-arrow-up';
+
+  var filtered = movimientos.filter(function(m) {
+    return m.tipo === filterTipo && !m.transferencia_id;
+  }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+
+  // Group by cuenta
+  var byCuenta = {};
+  var total = 0;
+  filtered.forEach(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var nombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    if (!byCuenta[nombre]) byCuenta[nombre] = { monto: 0, count: 0 };
+    byCuenta[nombre].monto += montoMXN;
+    byCuenta[nombre].count++;
+    total += montoMXN;
+  });
+
+  rows = Object.entries(byCuenta).sort(function(a, b) { return b[1].monto - a[1].monto; }).map(function(entry) {
+    var pct = total > 0 ? (entry[1].monto / total * 100).toFixed(1) : '0.0';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
+      '<td style="text-align:center;">' + entry[1].count + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+      '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td>Total</td><td style="text-align:center;">' + filtered.length + '</td>' +
+    '<td style="text-align:right;color:' + color + ';">' + formatCurrency(total, 'MXN') + '</td>' +
+    '<td></td>' +
+  '</tr>';
+
+  // Also show top categories for gastos
+  var catSection = '';
+  if (tipo === 'gasto') {
+    var byCat = {};
+    filtered.forEach(function(m) {
+      var catNombre = m.categoria_id ? (catMap[m.categoria_id] || 'Sin categoria') : 'Sin categoria';
+      var cta = cuentaMap[m.cuenta_id];
+      var moneda = cta ? cta.moneda : 'MXN';
+      var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+      if (!byCat[catNombre]) byCat[catNombre] = 0;
+      byCat[catNombre] += montoMXN;
+    });
+    var catRows = Object.entries(byCat).sort(function(a, b) { return b[1] - a[1]; }).map(function(entry) {
+      var pct = total > 0 ? (entry[1] / total * 100).toFixed(1) : '0.0';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrency(entry[1], 'MXN') + '</td>' +
+        '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
+      '</tr>';
+    }).join('');
+    catSection = '<div style="margin-top:20px;">' +
+      '<h4 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
+      '<table class="data-table"><thead><tr><th>Categoria</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th></tr></thead>' +
+      '<tbody>' + catRows + '</tbody></table></div>';
+  }
+
+  var html = '<table class="data-table"><thead><tr>' +
+    '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>' + catSection;
+
+  openModal(titulo, html);
 }

@@ -98,6 +98,9 @@ function showToast(message, type) {
 function openModal(title, bodyHTML) {
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalBody').innerHTML = bodyHTML;
+  // Reset modal width class before opening
+  var mc = document.getElementById('modalContent');
+  if (mc) mc.classList.remove('modal-wide');
   document.getElementById('modalOverlay').classList.add('show');
 }
 

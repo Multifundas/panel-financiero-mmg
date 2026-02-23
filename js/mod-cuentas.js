@@ -923,6 +923,9 @@ function _mostrarRenovacionPagares(pagares) {
     '</div>';
 
   openModal('Renovacion de Pagares', html);
+  // Make the modal wider for pagaré renewal
+  var modalContent = document.getElementById('modalContent');
+  if (modalContent) modalContent.classList.add('modal-wide');
 }
 
 function _guardarRenovacionPagares() {

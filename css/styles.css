@@ -807,6 +807,11 @@
         grid-template-columns: 1fr !important;
       }
 
+      /* Dashboard 2-column layout: stack on mobile */
+      #dashboardMainGrid {
+        grid-template-columns: 1fr !important;
+      }
+
       /* Charts: reduce minimum height */
       canvas {
         max-height: 280px;
