@@ -861,6 +861,115 @@ function saveCierreMensual(event) {
   showToast('Cierre guardado para ' + cambios + ' cuenta' + (cambios > 1 ? 's' : '') + '.', 'success');
   renderCuentas();
   updateHeaderPatrimonio();
+
+  // Check if any cierred accounts are pagarés — offer renewal
+  var pagaresCierrados = [];
+  inputs.forEach(function(input) {
+    if (input.value === '' || input.value === null) return;
+    var cuentaId = input.getAttribute('data-cuenta-id');
+    var cta = cuentas.find(function(c) { return c.id === cuentaId; });
+    if (cta && cta.subtipo === 'pagare') {
+      var fechaInput = document.querySelector('.cierre-fecha[data-cuenta-id="' + cuentaId + '"]');
+      var fechaCierre = fechaInput ? fechaInput.value : '';
+      pagaresCierrados.push({
+        id: cta.id,
+        nombre: cta.nombre,
+        moneda: cta.moneda,
+        saldoFinal: parseFloat(input.value) || 0,
+        fechaCierre: fechaCierre,
+        tasaAnterior: cta.pagare_tasa || 0
+      });
+    }
+  });
+
+  if (pagaresCierrados.length > 0) {
+    _mostrarRenovacionPagares(pagaresCierrados);
+  }
+}
+
+/* ============================================================
+   RENOVACION DE PAGARES POST-CIERRE
+   ============================================================ */
+function _mostrarRenovacionPagares(pagares) {
+  var filas = pagares.map(function(p) {
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + p.nombre +
+        ' <span class="badge ' + monedaBadgeClass(p.moneda) + '" style="font-size:10px;">' + p.moneda + '</span>' +
+        '<br><span style="font-size:11px;color:var(--text-muted);">Saldo: ' + formatCurrency(p.saldoFinal, p.moneda) + '</span>' +
+      '</td>' +
+      '<td style="white-space:nowrap;"><input type="date" class="form-input renov-fecha-inicio" data-cuenta-id="' + p.id + '" value="' + p.fechaCierre + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
+      '<td><input type="date" class="form-input renov-fecha-termino" data-cuenta-id="' + p.id + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
+      '<td><input type="number" class="form-input renov-tasa" data-cuenta-id="' + p.id + '" step="0.01" min="0" max="100" value="' + p.tasaAnterior + '" placeholder="%" style="padding:5px 8px;font-size:13px;min-width:80px;min-height:auto;"></td>' +
+      '</tr>';
+  }).join('');
+
+  var html = '<div style="margin-bottom:16px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+      '<div style="width:36px;height:36px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
+        '<i class="fas fa-redo" style="color:var(--accent-amber);font-size:14px;"></i>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:14px;font-weight:700;color:var(--text-primary);">Renovacion de Pagares</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);">Los siguientes pagares finalizaron su plazo. Ingresa los datos del nuevo plazo.</div>' +
+      '</div>' +
+    '</div>' +
+    '</div>' +
+    '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
+    '<th>Pagare</th><th>Nueva Fecha Inicio</th><th>Nueva Fecha Termino</th><th>Nueva Tasa (%)</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Omitir</button>' +
+    '<button type="button" class="btn btn-primary" onclick="_guardarRenovacionPagares()"><i class="fas fa-save"></i> Renovar Pagares</button>' +
+    '</div>';
+
+  openModal('Renovacion de Pagares', html);
+}
+
+function _guardarRenovacionPagares() {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var inputs = document.querySelectorAll('.renov-fecha-termino');
+  var renovados = 0;
+
+  inputs.forEach(function(input) {
+    var cuentaId = input.getAttribute('data-cuenta-id');
+    var fechaTermino = input.value;
+    if (!fechaTermino) return;
+
+    var fechaInicioInput = document.querySelector('.renov-fecha-inicio[data-cuenta-id="' + cuentaId + '"]');
+    var tasaInput = document.querySelector('.renov-tasa[data-cuenta-id="' + cuentaId + '"]');
+    var fechaInicio = fechaInicioInput ? fechaInicioInput.value : '';
+    var tasa = tasaInput ? (parseFloat(tasaInput.value) || 0) : 0;
+
+    var idx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+    if (idx === -1) return;
+
+    // Update pagaré fields with the new plazo
+    cuentas[idx].pagare_fecha_inicio = fechaInicio;
+    cuentas[idx].pagare_fecha_termino = fechaTermino;
+    cuentas[idx].pagare_tasa = tasa;
+    cuentas[idx].rendimiento_anual = tasa;
+
+    // The cierre date becomes the new apertura date
+    cuentas[idx].fecha_saldo_inicial = fechaInicio;
+    cuentas[idx].saldo_inicial = cuentas[idx].saldo;
+
+    // Also update fecha_vencimiento for dashboard alerts
+    cuentas[idx].fecha_vencimiento = fechaTermino;
+
+    cuentas[idx].updated = new Date().toISOString();
+    renovados++;
+  });
+
+  if (renovados === 0) {
+    closeModal();
+    return;
+  }
+
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+  closeModal();
+  showToast(renovados + ' pagare' + (renovados > 1 ? 's' : '') + ' renovado' + (renovados > 1 ? 's' : '') + ' con nuevo plazo.', 'success');
+  renderCuentas();
+  updateHeaderPatrimonio();
 }
 
 /* ============================================================
