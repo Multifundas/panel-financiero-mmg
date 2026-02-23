@@ -265,22 +265,6 @@ function renderDashboard() {
     return { dias, urgencia, badgeClass, color, colorSoft, icon, fecha };
   }
 
-  // Check inversiones with fecha_vencimiento
-  cuentas.forEach(c => {
-    if (c.activa !== false && c.tipo === 'inversion' && c.fecha_vencimiento) {
-      const alerta = calcularAlerta(c.fecha_vencimiento);
-      if (alerta) {
-        alertasVencimiento.push({
-          nombre: c.nombre,
-          tipoLabel: 'Inversion',
-          tipoIcon: 'fa-chart-line',
-          monto: formatCurrency(c.saldo, c.moneda),
-          ...alerta,
-        });
-      }
-    }
-  });
-
   // Check prestamos activos
   prestamos.forEach(p => {
     if (p.estado === 'activo' && p.fecha_vencimiento) {
@@ -302,12 +286,19 @@ function renderDashboard() {
     if (pr.tipo === 'preventa' && pr.fecha_entrega) {
       const alerta = calcularAlerta(pr.fecha_entrega);
       if (alerta) {
-        // Show mensualidades adeudadas and saldo pendiente instead of property value
+        // Desglosar: mensualidades pendientes + remanente al final del acuerdo
         var prEnganche = pr.enganche || 0;
-        var prPagado = prEnganche + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
-        var prPendiente = Math.max(0, (pr.valor_compra || 0) - prPagado);
         var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
-        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrency(pr.monto_mensualidad || 0, pr.moneda) + ' | Saldo: ' + formatCurrency(prPendiente, pr.moneda);
+        var prMontoMens = pr.monto_mensualidad || 0;
+        var prTotalMensualidades = prRestantes * prMontoMens;
+        // Remanente = valor_compra - enganche - (total_mensualidades * monto_mensualidad)
+        var prRemanente = Math.max(0, (pr.valor_compra || 0) - prEnganche - ((pr.mensualidades_total || 0) * prMontoMens));
+        var prSaldoTotal = prTotalMensualidades + prRemanente;
+        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrency(prMontoMens, pr.moneda);
+        if (prRemanente > 0) {
+          prMontoInfo += '<br>Remanente al termino: ' + formatCurrency(prRemanente, pr.moneda);
+        }
+        prMontoInfo += '<br><span style="font-weight:700;">Saldo total: ' + formatCurrency(prSaldoTotal, pr.moneda) + '</span>';
         alertasVencimiento.push({
           nombre: pr.nombre,
           tipoLabel: 'Preventa',
@@ -662,12 +653,12 @@ function renderDashboard() {
   // -- Render HTML --
   el.innerHTML = `
     <!-- ROW 1: Filtros + Patrimonio + Greeting -->
-    <div style="display:grid;grid-template-columns:auto 1fr auto;gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
+    <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
       <!-- Filtros -->
-      <div class="card" style="padding:10px 16px;margin-bottom:0;">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;"><i class="fas fa-filter" style="margin-right:4px;"></i>Filtros:</span>
-          <select id="dashFilterPeriodo" class="form-select" style="padding:4px 8px;font-size:12px;min-height:auto;width:110px;" onchange="applyDashboardFilters()">
+      <div class="card" style="padding:8px 12px;margin-bottom:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;"><i class="fas fa-filter" style="margin-right:3px;"></i>Filtros:</span>
+          <select id="dashFilterPeriodo" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="applyDashboardFilters()">
             <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
             <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
             <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
@@ -675,7 +666,7 @@ function renderDashboard() {
             <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
             <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
           </select>
-          <select id="dashFilterMes" class="form-select" style="padding:4px 8px;font-size:12px;min-height:auto;width:110px;" onchange="applyDashboardFilters()">
+          <select id="dashFilterMes" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="applyDashboardFilters()">
             <option value="" ${!_dashboardFilters.mes ? 'selected' : ''}>Todos</option>
             <option value="0" ${_dashboardFilters.mes === 0 ? 'selected' : ''}>Enero</option>
             <option value="1" ${_dashboardFilters.mes === 1 ? 'selected' : ''}>Febrero</option>
@@ -690,7 +681,7 @@ function renderDashboard() {
             <option value="10" ${_dashboardFilters.mes === 10 ? 'selected' : ''}>Noviembre</option>
             <option value="11" ${_dashboardFilters.mes === 11 ? 'selected' : ''}>Diciembre</option>
           </select>
-          <select id="dashFilterAnio" class="form-select" style="padding:4px 8px;font-size:12px;min-height:auto;width:80px;" onchange="applyDashboardFilters()">
+          <select id="dashFilterAnio" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="applyDashboardFilters()">
             ${yearOptions}
           </select>
         </div>
@@ -1510,12 +1501,15 @@ function mostrarDesgloseRendimiento() {
   const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion');
 
   let sumPesos = 0;
+  let sumRendMonto = 0;
   const rows = invCuentas.map(c => {
     const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
-    // Obtener tasa anualizada del ultimo cierre, o fallback al campo estatico
     let tasaAnual = c.rendimiento_anual || 0;
     let dias = 0;
     let fuente = 'Manual';
+    let saldoInicial = c.saldo;
+    let saldoFinal = c.saldo;
+    let rendMonto = 0;
     const hist = c.historial_saldos || [];
     if (hist.length > 0) {
       const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
@@ -1524,9 +1518,18 @@ function mostrarDesgloseRendimiento() {
         dias = ultimoCierre.dias || 0;
         fuente = 'Cierre ' + (ultimoCierre.fecha || '').substring(0, 7);
       }
+      if (ultimoCierre.saldo_inicio != null) saldoInicial = ultimoCierre.saldo_inicio;
+      if (ultimoCierre.saldo_final != null) saldoFinal = ultimoCierre.saldo_final;
+      if (ultimoCierre.rendimiento_monto != null) {
+        rendMonto = ultimoCierre.rendimiento_monto;
+      } else {
+        rendMonto = saldoFinal - saldoInicial;
+      }
     }
+    var rendMontoMXN = toMXN(rendMonto, c.moneda, tiposCambio);
     sumPesos += valMXN;
-    return { nombre: c.nombre, moneda: c.moneda, saldo: c.saldo, valMXN: valMXN, rendimiento: tasaAnual, dias: dias, fuente: fuente };
+    sumRendMonto += rendMontoMXN;
+    return { nombre: c.nombre, moneda: c.moneda, saldoInicial: saldoInicial, saldoFinal: saldoFinal, rendMonto: rendMonto, rendMontoMXN: rendMontoMXN, valMXN: valMXN, rendimiento: tasaAnual, dias: dias, fuente: fuente };
   });
 
   let sumPonderado = 0;
@@ -1538,9 +1541,9 @@ function mostrarDesgloseRendimiento() {
       <thead>
         <tr>
           <th>Producto</th>
-          <th>Moneda</th>
-          <th style="text-align:right;">Saldo</th>
-          <th style="text-align:right;">Valor (MXN)</th>
+          <th style="text-align:right;">Saldo Inicial</th>
+          <th style="text-align:right;">Saldo Final</th>
+          <th style="text-align:right;">Rendimiento</th>
           <th style="text-align:right;">Rend. Anual %</th>
           <th style="text-align:center;">Dias</th>
           <th style="text-align:right;">Peso</th>
@@ -1550,11 +1553,13 @@ function mostrarDesgloseRendimiento() {
         ${rows.map(r => {
           const peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : 0;
           const rendColor = r.rendimiento >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          const rendMontoColor = r.rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          const rendMontoSign = r.rendMonto >= 0 ? '+' : '';
           return `<tr>
             <td style="font-weight:600;color:var(--text-primary);">${r.nombre}<br><span style="font-size:10px;color:var(--text-muted);">${r.fuente}</span></td>
-            <td><span class="badge ${monedaBadgeClass(r.moneda)}">${r.moneda}</span></td>
-            <td style="text-align:right;">${formatCurrency(r.saldo, r.moneda)}</td>
-            <td style="text-align:right;">${formatCurrency(r.valMXN, 'MXN')}</td>
+            <td style="text-align:right;">${formatCurrency(r.saldoInicial, r.moneda)}</td>
+            <td style="text-align:right;">${formatCurrency(r.saldoFinal, r.moneda)}</td>
+            <td style="text-align:right;color:${rendMontoColor};font-weight:600;">${rendMontoSign}${formatCurrency(r.rendMonto, r.moneda)}</td>
             <td style="text-align:right;color:${rendColor};font-weight:600;">${r.rendimiento >= 0 ? '+' : ''}${r.rendimiento.toFixed(2)}%</td>
             <td style="text-align:center;">${r.dias > 0 ? r.dias + 'd' : '\u2014'}</td>
             <td style="text-align:right;color:var(--text-muted);">${peso}%</td>
@@ -1565,8 +1570,8 @@ function mostrarDesgloseRendimiento() {
         <tr style="font-weight:700;border-top:2px solid var(--border-color);">
           <td>Promedio Ponderado</td>
           <td></td>
-          <td></td>
           <td style="text-align:right;">${formatCurrency(sumPesos, 'MXN')}</td>
+          <td style="text-align:right;color:var(--accent-amber);">${sumRendMonto >= 0 ? '+' : ''}${formatCurrency(sumRendMonto, 'MXN')}</td>
           <td style="text-align:right;color:var(--accent-amber);font-size:16px;">${promedio.toFixed(2)}%</td>
           <td></td>
           <td style="text-align:right;color:var(--text-muted);">100%</td>
@@ -1575,7 +1580,7 @@ function mostrarDesgloseRendimiento() {
     </table>
     <div style="font-size:12px;color:var(--text-muted);">
       <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-      Tasa anualizada calculada del ultimo cierre mensual. Formula: (rendimiento / capital) * (365 / dias) * 100.
+      Datos del ultimo cierre mensual. Tasa anualizada: (rendimiento / capital) * (365 / dias) * 100.
     </div>
   `;
 
@@ -1762,8 +1767,8 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     pendingItems.push({
       icon: 'fa-exclamation-triangle',
       color: 'var(--accent-red)',
-      text: vencimientoCount + ' inversion(es) o prestamo(s) vencen en los proximos 30 dias',
-      action: ''
+      text: vencimientoCount + ' vencimiento(s) en los proximos 30 dias',
+      action: 'onclick="var el=document.getElementById(\'dashboardAlertaDeudaRow\'); if(el) el.scrollIntoView({behavior:\'smooth\'});"'
     });
   }
 
@@ -1780,14 +1785,16 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
       reminderItems.push({
         icon: 'fa-database',
         color: 'var(--accent-amber)',
-        text: 'Ultimo respaldo hace ' + daysSinceBackup + ' dias. Considera exportar un respaldo.'
+        text: 'Ultimo respaldo hace ' + daysSinceBackup + ' dias. Considera exportar un respaldo.',
+        action: 'onclick="navigateTo(\'configuracion\');"'
       });
     }
   } else {
     reminderItems.push({
       icon: 'fa-database',
       color: 'var(--accent-amber)',
-      text: 'Nunca has hecho un respaldo. Ve a Configuracion para exportar uno.'
+      text: 'Nunca has hecho un respaldo. Ve a Configuracion para exportar uno.',
+      action: 'onclick="navigateTo(\'configuracion\');"'
     });
   }
 
@@ -1810,7 +1817,8 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     reminderItems.push({
       icon: 'fa-clock',
       color: 'var(--text-muted)',
-      text: 'Sin movimientos en 30+ dias: ' + inactiveCuentas.join(', ')
+      text: 'Sin movimientos en 30+ dias: ' + inactiveCuentas.join(', '),
+      action: 'onclick="navigateTo(\'cuentas\');"'
     });
   }
 
@@ -1880,7 +1888,7 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     html += '<div class="resumen-section resumen-reminders">';
     html += '<div class="resumen-section-title"><i class="fas fa-info-circle"></i> Recordatorios</div>';
     reminderItems.forEach(function(item) {
-      html += '<div class="resumen-item">';
+      html += '<div class="resumen-item" ' + (item.action || '') + ' style="' + (item.action ? 'cursor:pointer;' : '') + '">';
       html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
       html += '<span>' + item.text + '</span>';
       html += '</div>';

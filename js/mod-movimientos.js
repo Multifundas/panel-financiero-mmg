@@ -1447,16 +1447,20 @@ function mostrarDesgloseMovimientos(tipo) {
     var totalRend = 0;
     rows = Object.entries(rendByCuenta).sort(function(a, b) { return b[1].monto - a[1].monto; }).map(function(entry) {
       totalRend += entry[1].monto;
+      var rendSign = entry[1].monto >= 0 ? '+' : '';
+      var rendColor = entry[1].monto >= 0 ? 'var(--accent-amber)' : 'var(--accent-red)';
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
         '<td style="text-align:center;">' + entry[1].count + ' cierre' + (entry[1].count > 1 ? 's' : '') + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:var(--accent-amber);">+' + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
       '</tr>';
     }).join('');
 
+    var totalRendSign = totalRend >= 0 ? '+' : '';
+    var totalRendColor = totalRend >= 0 ? 'var(--accent-amber)' : 'var(--accent-red)';
     rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
       '<td colspan="2">Total</td>' +
-      '<td style="text-align:right;color:var(--accent-amber);">+' + formatCurrency(totalRend, 'MXN') + '</td>' +
+      '<td style="text-align:right;color:' + totalRendColor + ';">' + totalRendSign + formatCurrency(totalRend, 'MXN') + '</td>' +
     '</tr>';
 
     var html = '<table class="data-table"><thead><tr>' +

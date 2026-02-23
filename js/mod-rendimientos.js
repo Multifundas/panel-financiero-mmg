@@ -63,7 +63,7 @@ function renderRendimientos() {
   el.innerHTML = `
     <!-- KPI Cards -->
     <div class="grid-3" style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);">
+      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseRendMes()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
@@ -71,8 +71,9 @@ function renderRendimientos() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento del Mes</span>
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--accent-green);">${formatCurrency(rendMes, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-blue);">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesgloseRendAnio()">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-calendar-check" style="color:var(--accent-blue);font-size:16px;"></i>
@@ -80,6 +81,7 @@ function renderRendimientos() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento del Ano</span>
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--accent-blue);">${formatCurrency(rendAnio, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
@@ -673,4 +675,84 @@ function deleteRendimiento(id) {
   showToast('Rendimiento eliminado exitosamente.', 'info');
   renderRendimientos();
   updateHeaderPatrimonio();
+}
+
+/* ============================================================
+   DESGLOSE: Rendimiento del Mes / Rendimiento del Ano
+   ============================================================ */
+function _mostrarDesgloseRendPeriodo(filtroFn, titulo, color) {
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var filtered = rendimientos.filter(filtroFn);
+  var byCuenta = {};
+  var total = 0;
+
+  filtered.forEach(function(r) {
+    var cta = cuentaMap[r.cuenta_id];
+    var nombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoMXN = toMXN(r.rendimiento_monto || 0, moneda, tiposCambio);
+    if (!byCuenta[nombre]) byCuenta[nombre] = { monto: 0, montoOrig: 0, moneda: moneda, count: 0 };
+    byCuenta[nombre].monto += montoMXN;
+    byCuenta[nombre].montoOrig += (r.rendimiento_monto || 0);
+    byCuenta[nombre].count++;
+    total += montoMXN;
+  });
+
+  var rows = Object.entries(byCuenta).sort(function(a, b) { return b[1].monto - a[1].monto; }).map(function(entry) {
+    var pct = total > 0 ? (entry[1].monto / total * 100).toFixed(1) : '0.0';
+    var rendColor = entry[1].monto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var sign = entry[1].monto >= 0 ? '+' : '';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
+      '<td style="text-align:center;">' + entry[1].count + ' cierre' + (entry[1].count > 1 ? 's' : '') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + sign + formatCurrency(entry[1].montoOrig, entry[1].moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + sign + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+      '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
+    '</tr>';
+  }).join('');
+
+  var totalSign = total >= 0 ? '+' : '';
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td>Total</td>' +
+    '<td style="text-align:center;">' + filtered.length + '</td>' +
+    '<td></td>' +
+    '<td style="text-align:right;color:' + color + ';">' + totalSign + formatCurrency(total, 'MXN') + '</td>' +
+    '<td></td>' +
+  '</tr>';
+
+  var html = '<table class="data-table"><thead><tr>' +
+    '<th>Cuenta</th><th style="text-align:center;">Cierres</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Monto (MXN)</th><th style="text-align:right;">%</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  if (filtered.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay rendimientos registrados para este periodo.</div>';
+  }
+
+  openModal(titulo, html);
+}
+
+function mostrarDesgloseRendMes() {
+  var now = new Date();
+  var periodoActual = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  var mesLabel = typeof mesNombre === 'function' ? mesNombre(now.getMonth()) : (now.getMonth() + 1);
+  _mostrarDesgloseRendPeriodo(
+    function(r) { return r.periodo === periodoActual; },
+    'Desglose Rendimiento: ' + mesLabel + ' ' + now.getFullYear(),
+    'var(--accent-green)'
+  );
+}
+
+function mostrarDesgloseRendAnio() {
+  var now = new Date();
+  var anioActual = String(now.getFullYear());
+  _mostrarDesgloseRendPeriodo(
+    function(r) { return r.periodo && r.periodo.startsWith(anioActual); },
+    'Desglose Rendimiento: Ano ' + anioActual,
+    'var(--accent-blue)'
+  );
 }
