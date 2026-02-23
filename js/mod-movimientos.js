@@ -28,7 +28,8 @@ function renderMovimientos() {
   // Calculate rendimientos from cierres mensuales
   const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   rendimientos.forEach(r => {
-    totalRendimientos += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+    const rc = cuentaMap[r.cuenta_id];
+    totalRendimientos += toMXN(r.rendimiento_monto || 0, rc ? rc.moneda : 'MXN', tiposCambio);
   });
   const balance = totalIngresos + totalRendimientos - totalGastos;
 
@@ -203,7 +204,8 @@ function filterMovimientos() {
   const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   let sumRendimientos = 0;
   rendimientos.forEach(r => {
-    sumRendimientos += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+    const frc = cuentaMap[r.cuenta_id];
+    sumRendimientos += toMXN(r.rendimiento_monto || 0, frc ? frc.moneda : 'MXN', tiposCambio);
   });
   const sumBalance = sumIngresos + sumRendimientos - sumGastos;
 
@@ -1437,7 +1439,8 @@ function mostrarDesgloseMovimientos(tipo) {
       var cta = cuentaMap[r.cuenta_id];
       var nombre = cta ? cta.nombre : 'Desconocida';
       if (!rendByCuenta[nombre]) rendByCuenta[nombre] = { monto: 0, count: 0 };
-      rendByCuenta[nombre].monto += toMXN(r.rendimiento_monto || 0, 'MXN', tiposCambio);
+      var monRend = cta ? cta.moneda : 'MXN';
+      rendByCuenta[nombre].monto += toMXN(r.rendimiento_monto || 0, monRend, tiposCambio);
       rendByCuenta[nombre].count++;
     });
 
