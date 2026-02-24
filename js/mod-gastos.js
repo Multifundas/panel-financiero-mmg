@@ -328,7 +328,7 @@ function renderGastos() {
     <div class="card">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Gastos del Mes</h3>
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaGastos">
+        <table class="data-table sortable-table" id="tablaGastos">
           <thead>
             <tr>
               <th>Categoria</th>
@@ -556,4 +556,5 @@ function renderGastos() {
   </tr>`;
 
   tbody.innerHTML = rowsHTML;
+  setTimeout(function() { _initSortableTables(document.getElementById('module-gastos')); }, 100);
 }

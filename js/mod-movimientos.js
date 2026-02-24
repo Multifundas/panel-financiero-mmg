@@ -51,19 +51,20 @@ function renderMovimientos() {
     <!-- Filtros rapidos + KPI Cards en misma fila -->
     <div style="display:flex;align-items:stretch;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
       <!-- Filtros rapidos a la izquierda -->
-      <div class="card" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:120px;">
-        <select id="movFiltroPeriodo" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+      <div class="card" style="padding:8px 12px;display:flex;align-items:center;gap:6px;min-width:auto;margin-bottom:0;">
+        <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;"><i class="fas fa-filter" style="margin-right:3px;"></i></span>
+        <select id="movFiltroPeriodo" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="onMovFiltroRapido()">
           <option value="">Todo</option>
           <option value="mensual" selected>Mensual</option>
           <option value="trimestral">Trimestral</option>
           <option value="semestral">Semestral</option>
           <option value="anual">Anual</option>
         </select>
-        <select id="movFiltroAnio" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+        <select id="movFiltroAnio" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="onMovFiltroRapido()">
           <option value="">Todos</option>
           ${yearOpts}
         </select>
-        <select id="movFiltroMoneda" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+        <select id="movFiltroMoneda" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="onMovFiltroRapido()">
           <option value="">Todas</option>
           <option value="MXN">MXN</option>
           <option value="USD">USD</option>

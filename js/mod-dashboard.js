@@ -901,16 +901,16 @@ function renderDashboard() {
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-purple);"></i>Analisis Ano vs Ano</span>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
-              <select id="yoyAnio1" class="form-select" style="width:72px;padding:4px 6px;font-size:12px;"></select>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
+              <select id="yoyAnio1" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
-              <select id="yoyAnio2" class="form-select" style="width:72px;padding:4px 6px;font-size:12px;"></select>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
+              <select id="yoyAnio2" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
             </div>
-            <button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" onclick="compararAnios()">
-              <i class="fas fa-chart-bar" style="margin-right:4px;"></i>Comparar
+            <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;" onclick="compararAnios()">
+              <i class="fas fa-chart-bar" style="margin-right:3px;"></i>Comparar
             </button>
           </div>
         </div>
@@ -1824,12 +1824,18 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     }
   });
   if (pagosPreventa.length > 0) {
-    var pagosTexts = pagosPreventa.map(function(pp) { return pp.nombre + ': ' + formatCurrency(pp.monto, pp.moneda) + ' en ' + pp.dias + ' dia' + (pp.dias !== 1 ? 's' : ''); });
+    var pagosDetail = pagosPreventa.map(function(pp) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border-color);">' +
+        '<span style="font-weight:600;color:var(--text-primary);">' + pp.nombre + '</span>' +
+        '<span style="font-weight:700;color:var(--accent-red);">' + formatCurrency(pp.monto, pp.moneda) + ' <span style="font-size:10px;color:var(--text-muted);">en ' + pp.dias + ' dia' + (pp.dias !== 1 ? 's' : '') + '</span></span>' +
+      '</div>';
+    }).join('');
     pendingItems.push({
       icon: 'fa-file-invoice-dollar',
       color: 'var(--accent-red)',
-      text: pagosPreventa.length + ' pago(s) de preventa proximo(s): ' + pagosTexts.join(' | '),
-      action: 'onclick="navigateTo(\'propiedades\'); setTimeout(function(){ var cal=document.getElementById(\'calendarioPagosContainer\'); if(cal) cal.scrollIntoView({behavior:\'smooth\'}); },400);"'
+      text: pagosPreventa.length + ' pago(s) de preventa proximo(s)',
+      detail: pagosDetail,
+      action: ''
     });
   }
 
@@ -1909,11 +1915,19 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
   if (hasPending) {
     html += '<div class="resumen-section resumen-pending">';
     html += '<div class="resumen-section-title"><i class="fas fa-bell"></i> Acciones Pendientes</div>';
-    pendingItems.forEach(function(item) {
-      html += '<div class="resumen-item" ' + item.action + ' style="' + (item.action ? 'cursor:pointer;' : '') + '">';
+    pendingItems.forEach(function(item, idx) {
+      var hasDetail = item.detail ? true : false;
+      var itemAction = item.action || '';
+      if (hasDetail) {
+        itemAction = 'onclick="var d=document.getElementById(\'greetDetail' + idx + '\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\';"';
+      }
+      html += '<div class="resumen-item" ' + itemAction + ' style="cursor:pointer;">';
       html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
-      html += '<span>' + item.text + '</span>';
+      html += '<span>' + item.text + (hasDetail ? ' <i class="fas fa-chevron-down" style="font-size:9px;margin-left:4px;color:var(--text-muted);"></i>' : '') + '</span>';
       html += '</div>';
+      if (hasDetail) {
+        html += '<div id="greetDetail' + idx + '" style="display:none;padding:6px 0 6px 24px;">' + item.detail + '</div>';
+      }
     });
     html += '</div>';
   }

@@ -78,13 +78,14 @@ function renderPrestamos() {
     </div>
     <div class="card">
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaPrestamos">
-          <thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Tasa</th><th>Vencimiento</th><th>Estado</th><th style="text-align:center;">Acciones</th></tr></thead>
+        <table class="data-table sortable-table" id="tablaPrestamos">
+          <thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Tasa</th><th>Vencimiento</th><th>Estado</th><th style="text-align:center;" data-no-sort="true">Acciones</th></tr></thead>
           <tbody id="tbodyPrestamos"></tbody>
         </table>
       </div>
     </div>`;
   filterPrestamos();
+  setTimeout(function() { _initSortableTables(el); }, 100);
 }
 
 function filterPrestamos() {
@@ -428,7 +429,7 @@ function verHistorialPagos(prestamoId) {
     // Reverse to show newest first
     rows.reverse();
 
-    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table sortable-table"><thead><tr>' +
       '<th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Saldo</th><th>Notas</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
 
@@ -452,6 +453,7 @@ function verHistorialPagos(prestamoId) {
     ${tablaPagos}
     <div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>`;
   openModal('Historial de Movimientos', bodyHTML);
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 
 function checkVencimientos() {

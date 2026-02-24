@@ -82,7 +82,7 @@ function renderTransferencias() {
     <div class="card">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Historial de Transferencias</h3>
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaTransferencias">
+        <table class="data-table sortable-table" id="tablaTransferencias">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -91,7 +91,7 @@ function renderTransferencias() {
               <th style="text-align:right;">Monto Origen</th>
               <th style="text-align:right;">Monto Destino</th>
               <th>Motivo</th>
-              <th style="text-align:center;">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyTransferencias"></tbody>
@@ -128,6 +128,7 @@ function renderTransferencias() {
       </tr>`;
     }).join('');
   }
+  setTimeout(function() { _initSortableTables(document.getElementById('module-transferencias')); }, 100);
 }
 
 /* -- Handle cuenta selection change for transfer form -- */

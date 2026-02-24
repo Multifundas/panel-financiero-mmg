@@ -331,6 +331,8 @@ function mostrarDesgloseCuentas(tipoCuenta) {
     '</tr></thead><tbody>' + rows + '</tbody></table>';
 
   openModal(titulo, html);
+  var mc = document.getElementById('modalContent');
+  if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 

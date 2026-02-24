@@ -138,7 +138,7 @@ function renderRendimientos() {
     <div class="card">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Rendimientos</h3>
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaRendimientos">
+        <table class="data-table sortable-table" id="tablaRendimientos">
           <thead>
             <tr>
               <th>Cuenta</th>
@@ -150,7 +150,7 @@ function renderRendimientos() {
               <th style="text-align:right;">Rendimiento Acumulado</th>
               <th>Fecha</th>
               <th>Tipo</th>
-              <th style="text-align:center;">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyRendimientos"></tbody>
@@ -393,6 +393,7 @@ function renderRendimientos() {
 
   // Populate table
   filterRendimientos();
+  setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 100);
 }
 
 /* -- Filter and render rendimientos table rows -- */
@@ -725,7 +726,7 @@ function _mostrarDesgloseRendPeriodo(filtroFn, titulo, color) {
     '<td></td>' +
   '</tr>';
 
-  var html = '<table class="data-table"><thead><tr>' +
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:center;">Cierres</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Monto (MXN)</th><th style="text-align:right;">%</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table>';
 
@@ -734,6 +735,7 @@ function _mostrarDesgloseRendPeriodo(filtroFn, titulo, color) {
   }
 
   openModal(titulo, html);
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 
 function mostrarDesgloseRendMes() {

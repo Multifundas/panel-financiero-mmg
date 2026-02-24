@@ -83,7 +83,7 @@ function renderIngresosFuturos() {
 
     <div class="card">
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaIngresosFuturos">
+        <table class="data-table sortable-table" id="tablaIngresosFuturos">
           <thead>
             <tr>
               <th>Concepto</th>
@@ -92,7 +92,7 @@ function renderIngresosFuturos() {
               <th>Frecuencia</th>
               <th>Fecha Inicio</th>
               <th>Certeza</th>
-              <th style="text-align:center;">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyIngresosFuturos"></tbody>
@@ -118,6 +118,7 @@ function renderIngresosFuturos() {
 
   filterIngresosFuturos();
   renderCronogramaIngresos();
+  setTimeout(function() { _initSortableTables(document.getElementById('module-ingresos_futuros')); }, 100);
 }
 
 function filterIngresosFuturos() {
@@ -418,7 +419,7 @@ function openPatrimonioFuturo() {
     '<div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrency(meses[meses.length - 1].patrimonioAcum, 'MXN') + '</div></div>' +
     '</div></div>';
 
-  html += '<div style="overflow-x:auto;"><table class="data-table" style="font-size:12px;"><thead><tr>' +
+  html += '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="font-size:12px;"><thead><tr>' +
     '<th>Mes</th><th style="text-align:right;">Confirmado</th><th style="text-align:right;">Probable</th><th style="text-align:right;">Posible</th><th style="text-align:right;font-weight:800;">Patrimonio Proyectado</th>' +
     '</tr></thead><tbody>';
 
@@ -441,4 +442,5 @@ function openPatrimonioFuturo() {
 
   openModal('Patrimonio Futuro — Proyeccion a 12 Meses', html);
   document.querySelector('.modal-content').classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
