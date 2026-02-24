@@ -797,16 +797,18 @@ function verCalendarioPagos() {
 
   propiedades.forEach(function (p) {
     var moneda = p.moneda || 'MXN';
+    console.log('[Calendario] Propiedad: "' + p.nombre + '", tipo=' + p.tipo + ', monto_mensualidad=' + p.monto_mensualidad + ', pagadas=' + p.mensualidades_pagadas + '/' + p.mensualidades_total + ', fecha_inicio=' + p.fecha_inicio);
 
     /* ---- Preventa: upcoming mensualidad payments ---- */
-    if (p.tipo === 'preventa' && p.monto_mensualidad > 0) {
+    if (p.tipo === 'preventa') {
+      var montoMens = p.monto_mensualidad || 0;
       var pagadas = p.mensualidades_pagadas || 0;
       var totales = p.mensualidades_total || 0;
       var restantes = totales - pagadas;
 
       /* Calculate saldo remanente = valor_compra - enganche - (totales * monto_mensualidad) */
       var enganche = p.enganche || 0;
-      var totalMensualidadesFull = totales * p.monto_mensualidad;
+      var totalMensualidadesFull = totales * montoMens;
       var saldoRemanente = Math.max(0, (p.valor_compra || 0) - enganche - totalMensualidadesFull);
 
       /* Track for summary */
@@ -814,7 +816,7 @@ function verCalendarioPagos() {
       var nextPayDay = inicioDate.getDate() || 1;
 
       /* Ultima mensualidad date */
-      var lastPayIdx = totales - 1;
+      var lastPayIdx = Math.max(0, totales - 1);
       var lastPayMonth = (inicioDate.getMonth() + lastPayIdx) % 12;
       var lastPayYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + lastPayIdx) / 12);
       var lastPayDay = Math.min(nextPayDay, 28);
@@ -826,7 +828,7 @@ function verCalendarioPagos() {
         pagadas: pagadas,
         totales: totales,
         restantes: restantes,
-        monto_mensualidad: p.monto_mensualidad,
+        monto_mensualidad: montoMens,
         ultimaMensualidad: lastPayDate,
         saldoRemanente: saldoRemanente
       });
@@ -854,10 +856,13 @@ function verCalendarioPagos() {
         }
       }
 
-      if (restantes <= 0) return;
+      if (restantes <= 0 || montoMens <= 0) {
+        console.log('[Calendario] Preventa "' + p.nombre + '" sin eventos: restantes=' + restantes + ', monto_mensualidad=' + montoMens + ', pagadas=' + pagadas + '/' + totales);
+        return;
+      }
 
-      /* Generate events for each of the 3 months if payment falls in that month */
-      for (var i = 0; i < restantes && i < 36; i++) {
+      /* Generate events for each of the 4 months if payment falls in that month */
+      for (var i = 0; i < restantes && i < 48; i++) {
         var payMonth = (inicioDate.getMonth() + pagadas + i) % 12;
         var payYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + pagadas + i) / 12);
         var payDay = Math.min(nextPayDay, 28);
@@ -865,15 +870,15 @@ function verCalendarioPagos() {
 
         var isLastMensualidad = (pagadas + i + 1 === totales);
 
-        /* Check if this falls in any of our 3 months */
+        /* Check if this falls in any of our 4 months */
         for (var k = 0; k < 4; k++) {
           if (payMonth === meses3[k].mes && payYear === meses3[k].anio) {
             eventos.push({
               mesIdx: k,
               tipo: isLastMensualidad ? 'ultima_mensualidad' : 'mensualidad',
               nombre: p.nombre,
-              monto: p.monto_mensualidad,
-              montoMXN: toMXN(p.monto_mensualidad, moneda, tiposCambio),
+              monto: montoMens,
+              montoMXN: toMXN(montoMens, moneda, tiposCambio),
               moneda: moneda,
               fecha: payDate,
               dia: payDay,
@@ -896,7 +901,7 @@ function verCalendarioPagos() {
 
             /* Track for summary: current month outflow */
             if (k === 0) {
-              totalMensualidadesMes += toMXN(p.monto_mensualidad, moneda, tiposCambio);
+              totalMensualidadesMes += toMXN(montoMens, moneda, tiposCambio);
             }
 
             /* Track next upcoming payment */
@@ -904,7 +909,7 @@ function verCalendarioPagos() {
               if (payDate >= hoy) {
                 proximoPago = {
                   fecha: payDate,
-                  monto: p.monto_mensualidad,
+                  monto: montoMens,
                   moneda: moneda,
                   nombre: p.nombre
                 };

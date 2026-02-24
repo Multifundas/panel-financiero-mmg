@@ -1497,8 +1497,16 @@ function compararAnios() {
 function mostrarDesgloseRendimiento() {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  const rendimientosData = loadData(STORAGE_KEYS.rendimientos) || [];
 
   const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion');
+
+  /* Build map: cuenta_id → array of rendimiento records */
+  var rendByCuenta = {};
+  rendimientosData.forEach(function(r) {
+    if (!rendByCuenta[r.cuenta_id]) rendByCuenta[r.cuenta_id] = [];
+    rendByCuenta[r.cuenta_id].push(r);
+  });
 
   let sumPesos = 0;
   let sumRendMonto = 0;
@@ -1520,8 +1528,29 @@ function mostrarDesgloseRendimiento() {
       }
       if (ultimoCierre.saldo_inicio != null) saldoInicial = ultimoCierre.saldo_inicio;
       if (ultimoCierre.saldo_final != null) saldoFinal = ultimoCierre.saldo_final;
+      /* Try rendimiento_monto from cierre first */
       if (ultimoCierre.rendimiento_monto != null) {
         rendMonto = ultimoCierre.rendimiento_monto;
+      }
+      /* If cierre has no rendimiento_monto, look in rendimientos records for same period */
+      if (rendMonto === 0 && ultimoCierre.fecha) {
+        var cierrePeriodo = (ultimoCierre.fecha || '').substring(0, 7);
+        var cuentaRends = rendByCuenta[c.id] || [];
+        var rendRecord = cuentaRends.find(function(r) { return r.periodo === cierrePeriodo; });
+        if (rendRecord && rendRecord.rendimiento_monto) {
+          rendMonto = rendRecord.rendimiento_monto;
+        }
+      }
+    }
+    /* Final fallback: check rendimientos records for most recent period */
+    if (rendMonto === 0) {
+      var cuentaRends = rendByCuenta[c.id] || [];
+      if (cuentaRends.length > 0) {
+        var sorted = cuentaRends.slice().sort(function(a, b) { return (b.periodo || '').localeCompare(a.periodo || ''); });
+        if (sorted[0].rendimiento_monto) {
+          rendMonto = sorted[0].rendimiento_monto;
+          if (!fuente || fuente === 'Manual') fuente = 'Rend. ' + (sorted[0].periodo || '');
+        }
       }
     }
     var rendMontoMXN = toMXN(rendMonto, c.moneda, tiposCambio);
