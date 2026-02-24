@@ -864,10 +864,13 @@ function verCalendarioPagos() {
 
       if (restantes <= 0 || montoMens <= 0) return;
 
+      console.log('[Cal] "' + p.nombre + '": inicio=' + p.fecha_inicio + ' inicioMonth=' + inicioDate.getMonth() + ' pagadas=' + pagadas + ' restantes=' + restantes + ' totales=' + totales);
+
       /* Generate events for each of the 4 months if payment falls in that month */
       for (var i = 0; i < restantes && i < 48; i++) {
         var payMonth = (inicioDate.getMonth() + pagadas + i) % 12;
         var payYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + pagadas + i) / 12);
+        if (i < 6) console.log('[Cal]   i=' + i + ' payMonth=' + payMonth + ' payYear=' + payYear + ' meses3=[' + meses3.map(function(x){return x.mes+'/'+x.anio;}).join(',') + ']');
         var payDay = Math.min(nextPayDay, 28);
         var payDate = new Date(payYear, payMonth, payDay);
 
