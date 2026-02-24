@@ -835,7 +835,11 @@
       }
       /* Config grids: stack on mobile */
       #cfgRow1,
-      #cfgRow2 {
+      #cfgRow2,
+      #cfgRow3,
+      #cfgRow5,
+      #cfgRow6,
+      #cfgRespaldos {
         grid-template-columns: 1fr !important;
       }
 

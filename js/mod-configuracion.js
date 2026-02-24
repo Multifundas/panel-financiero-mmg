@@ -172,120 +172,123 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- Supabase Auth Status -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Autenticacion</span>
+    <!-- ROW 3: Exportar/Importar Datos (left) | Exportar Reportes (right) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow3">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-file-export" style="margin-right:8px;color:var(--accent-amber);"></i>Exportar / Importar Datos</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="exportData()">
+            <i class="fas fa-download" style="margin-right:6px;"></i>Exportar JSON
+          </button>
+          <label class="btn btn-secondary" style="cursor:pointer;">
+            <i class="fas fa-upload" style="margin-right:6px;"></i>Importar JSON
+            <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
+          </label>
+        </div>
+        <p style="margin-top:10px;font-size:12px;color:var(--text-muted);">Exporta todos tus datos en formato JSON para respaldo, o importa un archivo previamente exportado.</p>
       </div>
-      ${typeof isSupabaseConfigured === 'function' && isSupabaseConfigured() ?
-        '<p style="font-size:13px;color:var(--accent-green);"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Supabase conectado</p>' :
-        '<p style="font-size:13px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Autenticacion no configurada. Edita <code>js/supabase-config.js</code> con tu URL y clave de Supabase.</p>'
-      }
-    </div>
-
-    <!-- Exportar / Importar Datos -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-file-export" style="margin-right:8px;color:var(--accent-amber);"></i>Exportar / Importar Datos</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="exportData()">
-          <i class="fas fa-download" style="margin-right:6px;"></i>Exportar JSON
-        </button>
-        <label class="btn btn-secondary" style="cursor:pointer;">
-          <i class="fas fa-upload" style="margin-right:6px;"></i>Importar JSON
-          <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
-        </label>
-      </div>
-      <p style="margin-top:10px;font-size:12px;color:var(--text-muted);">Exporta todos tus datos en formato JSON para respaldo, o importa un archivo previamente exportado.</p>
-    </div>
-
-    <!-- Exportar Reportes -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-file-excel" style="margin-right:8px;color:var(--accent-green);"></i>Exportar Reportes</span>
-      </div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Genera reportes en Excel (.xlsx) o PDF para analizar y compartir tu informacion financiera.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">
-        <button class="btn btn-secondary" onclick="exportarExcel('cuentas')">
-          <i class="fas fa-university" style="margin-right:6px;"></i>Exportar Cuentas (Excel)
-        </button>
-        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')">
-          <i class="fas fa-exchange-alt" style="margin-right:6px;"></i>Exportar Movimientos (Excel)
-        </button>
-        <button class="btn btn-secondary" onclick="exportarExcel('rendimientos')">
-          <i class="fas fa-chart-line" style="margin-right:6px;"></i>Exportar Rendimientos (Excel)
-        </button>
-        <button class="btn btn-primary" onclick="exportarExcel('completo')">
-          <i class="fas fa-file-excel" style="margin-right:6px;"></i>Exportar Reporte Completo (Excel)
-        </button>
-        <button class="btn btn-primary" onclick="exportarPDF()" style="background:var(--accent-red);border-color:var(--accent-red);">
-          <i class="fas fa-file-pdf" style="margin-right:6px;"></i>Exportar Reporte PDF
-        </button>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-file-excel" style="margin-right:8px;color:var(--accent-green);"></i>Exportar Reportes</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Genera reportes en Excel o PDF.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('cuentas')">
+            <i class="fas fa-university" style="margin-right:4px;"></i>Cuentas
+          </button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('movimientos')">
+            <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Movimientos
+          </button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('rendimientos')">
+            <i class="fas fa-chart-line" style="margin-right:4px;"></i>Rendimientos
+          </button>
+          <button class="btn btn-primary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('completo')">
+            <i class="fas fa-file-excel" style="margin-right:4px;"></i>Completo
+          </button>
+          <button class="btn btn-primary" style="font-size:12px;padding:6px 10px;background:var(--accent-red);border-color:var(--accent-red);" onclick="exportarPDF()">
+            <i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Respaldo de Datos -->
+    <!-- ROW 4: Respaldos - 3 columnas (info | exportar | importar) -->
     <div class="card" style="margin-bottom:24px;">
       <div class="card-header">
         <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-green);"></i>Respaldo de Datos</span>
       </div>
-      ${getRespaldoIndicadorHTML()}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="cfgRespaldos">
+        <!-- Info -->
+        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
+          ${getRespaldoIndicadorHTML()}
+          <div style="margin-top:10px;padding:8px 10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;">
+            <p style="margin:0;font-size:11px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Al importar se reemplazan todos los datos.</p>
+          </div>
+        </div>
         <!-- Exportar -->
-        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
-          <h4 style="margin:0 0 8px 0;font-size:14px;color:var(--text-primary);"><i class="fas fa-download" style="margin-right:6px;color:var(--accent-blue);"></i>Exportar Respaldo</h4>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Descarga una copia completa de todos tus datos en formato JSON.</p>
-          <button class="btn btn-primary" onclick="exportarRespaldo()">
-            <i class="fas fa-download" style="margin-right:6px;"></i>Exportar Respaldo JSON
+        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
+          <h4 style="margin:0 0 8px 0;font-size:13px;color:var(--text-primary);"><i class="fas fa-download" style="margin-right:6px;color:var(--accent-blue);"></i>Exportar Respaldo</h4>
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Descarga una copia completa de todos tus datos.</p>
+          <button class="btn btn-primary" style="font-size:12px;" onclick="exportarRespaldo()">
+            <i class="fas fa-download" style="margin-right:6px;"></i>Exportar JSON
           </button>
         </div>
         <!-- Importar -->
-        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
-          <h4 style="margin:0 0 8px 0;font-size:14px;color:var(--text-primary);"><i class="fas fa-upload" style="margin-right:6px;color:var(--accent-amber);"></i>Importar Respaldo</h4>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Restaura tus datos desde un archivo de respaldo previamente exportado.</p>
-          <label class="btn btn-secondary" style="cursor:pointer;">
-            <i class="fas fa-file-import" style="margin-right:6px;"></i>Seleccionar Archivo JSON
+        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
+          <h4 style="margin:0 0 8px 0;font-size:13px;color:var(--text-primary);"><i class="fas fa-upload" style="margin-right:6px;color:var(--accent-amber);"></i>Importar Respaldo</h4>
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Restaura tus datos desde un archivo de respaldo.</p>
+          <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;">
+            <i class="fas fa-file-import" style="margin-right:6px;"></i>Seleccionar Archivo
             <input type="file" accept=".json" onchange="importarRespaldo(event)" style="display:none;">
           </label>
         </div>
       </div>
-      <div style="margin-top:14px;padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;">
-        <p style="margin:0;font-size:12px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><strong>Advertencia:</strong> Al importar un respaldo se reemplazaran todos los datos actuales. Asegurate de exportar un respaldo antes de importar.</p>
+    </div>
+
+    <!-- ROW 5: Datos de Ejemplo (left) | Borrar Todo (right) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow5">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-database" style="margin-right:8px;color:var(--accent-blue);"></i>Datos de Ejemplo</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Reinicia todos los datos a los valores de ejemplo predeterminados.</p>
+        <button class="btn btn-secondary" onclick="if(confirm('Se creara un respaldo antes de restaurar. Continuar?')){exportarRespaldo();resetSampleData();}">
+          <i class="fas fa-undo" style="margin-right:6px;"></i>Restaurar Datos de Ejemplo
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-exclamation-triangle" style="margin-right:8px;color:var(--accent-red);"></i>Borrar Todo</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Elimina permanentemente todos los datos almacenados.</p>
+        <button class="btn btn-danger" onclick="if(confirm('Se creara un respaldo antes de borrar. Continuar?')){exportarRespaldo();clearAllData();}">
+          <i class="fas fa-trash" style="margin-right:6px;"></i>Borrar Todos los Datos
+        </button>
       </div>
     </div>
 
-    <!-- Datos de Ejemplo -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-database" style="margin-right:8px;color:var(--accent-blue);"></i>Datos de Ejemplo</span>
+    <!-- ROW 6: Acerca de (left) | Autenticacion (right) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow6">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Acerca de</span>
+        </div>
+        <div style="padding:10px 0;">
+          <h3 style="color:var(--text-primary);margin-bottom:4px;font-size:16px;">Panel Financiero</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:0;">Version 1.0</p>
+          <p style="color:var(--text-secondary);font-size:12px;margin-top:6px;">Herramienta de gestion financiera personal para administrar cuentas, inversiones, gastos y rendimientos en multiples monedas.</p>
+        </div>
       </div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reinicia todos los datos a los valores de ejemplo predeterminados. Util para pruebas o para empezar de nuevo con datos de muestra.</p>
-      <button class="btn btn-secondary" onclick="resetSampleData()">
-        <i class="fas fa-undo" style="margin-right:6px;"></i>Restaurar Datos de Ejemplo
-      </button>
-    </div>
-
-    <!-- Borrar Todo -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-exclamation-triangle" style="margin-right:8px;color:var(--accent-red);"></i>Borrar Todo</span>
-      </div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Elimina permanentemente todos los datos almacenados. Esta accion no se puede deshacer.</p>
-      <button class="btn btn-danger" onclick="clearAllData()">
-        <i class="fas fa-trash" style="margin-right:6px;"></i>Borrar Todos los Datos
-      </button>
-    </div>
-
-    <!-- Acerca de -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Acerca de</span>
-      </div>
-      <div style="text-align:center;padding:20px 0;">
-        <h2 style="color:var(--text-primary);margin-bottom:8px;font-size:22px;">Panel Financiero</h2>
-        <p style="color:var(--text-muted);font-size:14px;margin-bottom:4px;">Version 1.0</p>
-        <p style="color:var(--text-secondary);font-size:13px;max-width:400px;margin:12px auto 0;">Herramienta de gestion financiera personal para administrar cuentas, inversiones, gastos y rendimientos en multiples monedas.</p>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Autenticacion</span>
+        </div>
+        ${typeof isSupabaseConfigured === 'function' && isSupabaseConfigured() ?
+          '<p style="font-size:12px;color:var(--accent-green);"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Supabase conectado</p>' :
+          '<p style="font-size:12px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Autenticacion no configurada. Edita <code>js/supabase-config.js</code> con tu URL y clave de Supabase.</p>'
+        }
       </div>
     </div>
   `;

@@ -1522,8 +1522,6 @@ function mostrarDesgloseRendimiento() {
       if (ultimoCierre.saldo_final != null) saldoFinal = ultimoCierre.saldo_final;
       if (ultimoCierre.rendimiento_monto != null) {
         rendMonto = ultimoCierre.rendimiento_monto;
-      } else {
-        rendMonto = saldoFinal - saldoInicial;
       }
     }
     var rendMontoMXN = toMXN(rendMonto, c.moneda, tiposCambio);

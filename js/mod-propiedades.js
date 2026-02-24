@@ -70,7 +70,7 @@ function renderPropiedades() {
         '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
-      '<div class="card" style="border-left:3px solid var(--accent-amber);">' +
+      '<div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'preventas\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
             '<i class="fas fa-hard-hat" style="color:var(--accent-amber);font-size:14px;"></i>' +
@@ -78,9 +78,10 @@ function renderPropiedades() {
           '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Preventas</span>' +
         '</div>' +
         '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + countPreventas + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
-      '<div class="card" style="border-left:3px solid var(--accent-purple);">' +
+      '<div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'terminadas\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">' +
             '<i class="fas fa-building" style="color:var(--accent-purple);font-size:14px;"></i>' +
@@ -88,6 +89,7 @@ function renderPropiedades() {
           '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Terminadas</span>' +
         '</div>' +
         '<div style="font-size:18px;font-weight:800;color:var(--accent-purple);">' + countTerminadas + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
     '</div>' +
@@ -491,8 +493,14 @@ function editPropiedad(id) {
             '<div class="form-group"><label class="form-label">Fecha Entrega</label>' +
               '<input type="date" id="propiedadFechaEntrega" class="form-input" value="' + (isEdit && prop.fecha_entrega ? prop.fecha_entrega : '') + '"></div>' +
           '</div>' +
-          '<div class="form-group"><label class="form-label">Valor Venta Estimado</label>' +
-            '<input type="number" id="propiedadValorVentaEstimadoP" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.valor_venta_estimado || '') : '') + '" placeholder="0.00"></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
+            '<div class="form-group"><label class="form-label">Valor Venta Estimado</label>' +
+              '<input type="number" id="propiedadValorVentaEstimadoP" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.valor_venta_estimado || '') : '') + '" placeholder="0.00"></div>' +
+            '<div class="form-group"><label class="form-label">Monto Pago Final</label><div style="font-size:10px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Pago al termino del acuerdo</div>' +
+              '<input type="number" id="propiedadMontoPagoFinal" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.monto_pago_final || '') : '') + '" placeholder="0.00"></div>' +
+            '<div class="form-group"><label class="form-label">Fecha Pago Final</label>' +
+              '<input type="date" id="propiedadFechaPagoFinal" class="form-input" value="' + (isEdit && prop.fecha_pago_final ? prop.fecha_pago_final : '') + '"></div>' +
+          '</div>' +
         '</div>' +
       '</div>' +
 
@@ -580,6 +588,8 @@ function savePropiedad(event) {
     data.fecha_inicio = document.getElementById('propiedadFechaInicio').value;
     data.fecha_entrega = document.getElementById('propiedadFechaEntrega').value;
     data.valor_venta_estimado = parseFloat(document.getElementById('propiedadValorVentaEstimadoP').value) || 0;
+    data.monto_pago_final = parseFloat(document.getElementById('propiedadMontoPagoFinal').value) || 0;
+    data.fecha_pago_final = document.getElementById('propiedadFechaPagoFinal').value;
     data.renta_mensual = 0;
     data.ocupada = false;
     data.gastos_mantenimiento = 0;
@@ -764,9 +774,9 @@ function verCalendarioPagos() {
   var mesActual = hoy.getMonth();
   var anioActual = hoy.getFullYear();
 
-  /* Build array of 3 months: current + next 2 */
+  /* Build array of 4 months: current + next 3 */
   var meses3 = [];
-  for (var m = 0; m < 3; m++) {
+  for (var m = 0; m < 4; m++) {
     var mes = (mesActual + m) % 12;
     var anio = anioActual + Math.floor((mesActual + m) / 12);
     meses3.push({ mes: mes, anio: anio, label: mesNombre(mes) + ' ' + anio });
@@ -789,7 +799,7 @@ function verCalendarioPagos() {
     var moneda = p.moneda || 'MXN';
 
     /* ---- Preventa: upcoming mensualidad payments ---- */
-    if (p.tipo === 'preventa' && p.monto_mensualidad > 0 && p.fecha_inicio) {
+    if (p.tipo === 'preventa' && p.monto_mensualidad > 0) {
       var pagadas = p.mensualidades_pagadas || 0;
       var totales = p.mensualidades_total || 0;
       var restantes = totales - pagadas;
@@ -800,8 +810,8 @@ function verCalendarioPagos() {
       var saldoRemanente = Math.max(0, (p.valor_compra || 0) - enganche - totalMensualidadesFull);
 
       /* Track for summary */
-      var inicioDate = new Date(p.fecha_inicio + 'T00:00:00');
-      var nextPayDay = inicioDate.getDate();
+      var inicioDate = p.fecha_inicio ? new Date(p.fecha_inicio + 'T00:00:00') : new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      var nextPayDay = inicioDate.getDate() || 1;
 
       /* Ultima mensualidad date */
       var lastPayIdx = totales - 1;
@@ -821,6 +831,29 @@ function verCalendarioPagos() {
         saldoRemanente: saldoRemanente
       });
 
+      /* Pago final event */
+      if (p.monto_pago_final > 0 && p.fecha_pago_final) {
+        var pfDate = new Date(p.fecha_pago_final + 'T00:00:00');
+        var pfMonth = pfDate.getMonth();
+        var pfYear = pfDate.getFullYear();
+        var pfDay = pfDate.getDate();
+        for (var pf = 0; pf < 4; pf++) {
+          if (pfMonth === meses3[pf].mes && pfYear === meses3[pf].anio) {
+            eventos.push({
+              mesIdx: pf,
+              tipo: 'pago_final',
+              nombre: p.nombre + ' (Pago Final)',
+              monto: p.monto_pago_final,
+              montoMXN: toMXN(p.monto_pago_final, moneda, tiposCambio),
+              moneda: moneda,
+              fecha: pfDate,
+              dia: pfDay
+            });
+            break;
+          }
+        }
+      }
+
       if (restantes <= 0) return;
 
       /* Generate events for each of the 3 months if payment falls in that month */
@@ -833,7 +866,7 @@ function verCalendarioPagos() {
         var isLastMensualidad = (pagadas + i + 1 === totales);
 
         /* Check if this falls in any of our 3 months */
-        for (var k = 0; k < 3; k++) {
+        for (var k = 0; k < 4; k++) {
           if (payMonth === meses3[k].mes && payYear === meses3[k].anio) {
             eventos.push({
               mesIdx: k,
@@ -885,7 +918,7 @@ function verCalendarioPagos() {
 
     /* ---- Terminada: rent income (1st of each month) ---- */
     if (p.tipo === 'terminada' && p.renta_mensual > 0 && p.ocupada) {
-      for (var j = 0; j < 3; j++) {
+      for (var j = 0; j < 4; j++) {
         var rentDate = new Date(meses3[j].anio, meses3[j].mes, 1);
         eventos.push({
           mesIdx: j,
@@ -906,7 +939,7 @@ function verCalendarioPagos() {
     /* ---- Maintenance costs (distributed monthly) ---- */
     if (p.gastos_mantenimiento > 0) {
       var gastoMensual = p.gastos_mantenimiento / 12;
-      for (var n = 0; n < 3; n++) {
+      for (var n = 0; n < 4; n++) {
         /* Show maintenance on the 15th of each month */
         var maintDate = new Date(meses3[n].anio, meses3[n].mes, 15);
         eventos.push({
@@ -1015,9 +1048,9 @@ function verCalendarioPagos() {
   /* ---- Visual Timeline: 3 month columns ---- */
   html +=
     '<div class="card">' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">';
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;">';
 
-  for (var mi = 0; mi < 3; mi++) {
+  for (var mi = 0; mi < 4; mi++) {
     var mesEventos = eventos.filter(function (e) { return e.mesIdx === mi; });
     var isCurrent = mi === 0;
 
@@ -1038,7 +1071,13 @@ function verCalendarioPagos() {
     } else {
       mesEventos.forEach(function (ev) {
         var bgColor, borderColor, iconClass, iconColor, labelTipo;
-        if (ev.tipo === 'mensualidad') {
+        if (ev.tipo === 'pago_final') {
+          bgColor = 'rgba(139,92,246,0.12)';
+          borderColor = 'var(--accent-purple)';
+          iconClass = 'fa-landmark';
+          iconColor = 'var(--accent-purple)';
+          labelTipo = 'Pago Final';
+        } else if (ev.tipo === 'mensualidad') {
           bgColor = 'rgba(239,68,68,0.08)';
           borderColor = 'var(--accent-red)';
           iconClass = 'fa-file-invoice-dollar';
@@ -1070,7 +1109,7 @@ function verCalendarioPagos() {
           labelTipo = 'Mantenimiento';
         }
 
-        var montoColor = ev.tipo === 'renta' ? 'var(--accent-green)' : (ev.tipo === 'ultima_mensualidad' ? 'var(--accent-purple)' : (ev.tipo === 'saldo_remanente' ? 'var(--accent-amber)' : (ev.tipo === 'mensualidad' ? 'var(--accent-red)' : 'var(--accent-amber)')));
+        var montoColor = ev.tipo === 'renta' ? 'var(--accent-green)' : (ev.tipo === 'pago_final' ? 'var(--accent-purple)' : (ev.tipo === 'ultima_mensualidad' ? 'var(--accent-purple)' : (ev.tipo === 'saldo_remanente' ? 'var(--accent-amber)' : (ev.tipo === 'mensualidad' ? 'var(--accent-red)' : 'var(--accent-amber)'))));
         var signo = ev.tipo === 'renta' ? '+' : '-';
 
         var extraInfo = '';
@@ -1153,6 +1192,10 @@ function verCalendarioPagos() {
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-amber);"></div>' +
         '<span style="font-size:11px;color:var(--text-muted);">Mantenimiento / Saldo Remanente</span>' +
       '</div>' +
+      '<div style="display:flex;align-items:center;gap:5px;">' +
+        '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-purple);"></div>' +
+        '<span style="font-size:11px;color:var(--text-muted);">Pago Final</span>' +
+      '</div>' +
     '</div>';
 
   /* Resumen de Preventas: ultima mensualidad + saldo remanente */
@@ -1208,6 +1251,8 @@ function mostrarDesglosePropKPI(tipo) {
       '<td style="text-align:right;color:var(--accent-green);">' + formatCurrency(total, 'MXN') + '</td></tr>';
     var html = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Tipo</th><th>Ubicacion</th><th style="text-align:right;">Valor (MXN)</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html);
+    var mc = document.querySelector('.modal-content');
+    if (mc) mc.classList.add('modal-wide');
 
   } else if (tipo === 'deuda') {
     titulo = 'Desglose: Deuda de Propiedades';
@@ -1232,6 +1277,8 @@ function mostrarDesglosePropKPI(tipo) {
       '<td style="text-align:right;color:var(--accent-red);">' + formatCurrency(total, 'MXN') + '</td><td></td></tr>';
     var html2 = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Valor Compra</th><th>Pagado</th><th style="text-align:right;">Pendiente</th><th style="text-align:center;">Mensualidades Rest.</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html2);
+    var mc = document.querySelector('.modal-content');
+    if (mc) mc.classList.add('modal-wide');
 
   } else if (tipo === 'rentas') {
     titulo = 'Desglose: Ingresos por Rentas';
@@ -1251,5 +1298,59 @@ function mostrarDesglosePropKPI(tipo) {
       '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(total, 'MXN') + '</td></tr>';
     var html3 = '<table class="data-table"><thead><tr><th>Propiedad</th><th>Estado</th><th style="text-align:right;">Renta Mensual</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html3);
+    var mc3 = document.querySelector('.modal-content');
+    if (mc3) mc3.classList.add('modal-wide');
+
+  } else if (tipo === 'preventas') {
+    titulo = 'Detalle: Propiedades en Preventa';
+    var preventasP = propiedades.filter(function(p) { return p.tipo === 'preventa'; });
+    if (preventasP.length === 0) { openModal(titulo, '<p style="text-align:center;padding:20px;color:var(--text-muted);">No hay propiedades en preventa.</p>'); return; }
+    rows = preventasP.map(function(p) {
+      var moneda = p.moneda || 'MXN';
+      var res = calcularResumenPreventa(p);
+      var pagadas = p.mensualidades_pagadas || 0;
+      var totales = p.mensualidades_total || 0;
+      var restantes = totales - pagadas;
+      var remanente = Math.max(0, (p.valor_compra || 0) - (p.enganche || 0) - (totales * (p.monto_mensualidad || 0)));
+      var pagoFinalHTML = p.monto_pago_final ? formatCurrency(p.monto_pago_final, moneda) + (p.fecha_pago_final ? '<br><span style="font-size:10px;color:var(--text-muted);">' + formatDate(p.fecha_pago_final) + '</span>' : '') : '-';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:10px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
+        '<td style="text-align:right;">' + formatCurrency(p.valor_compra, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-green);">' + formatCurrency(res.total_pagado, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-red);">' + formatCurrency(res.saldo_pendiente, moneda) + '</td>' +
+        '<td style="text-align:center;">' + pagadas + '/' + totales + ' (' + restantes + ' rest.)</td>' +
+        '<td style="text-align:right;">' + formatCurrency(p.monto_mensualidad || 0, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-amber);">' + (remanente > 0 ? formatCurrency(remanente, moneda) : '-') + '</td>' +
+        '<td style="text-align:right;">' + pagoFinalHTML + '</td>' +
+        '<td style="text-align:center;">' + (p.fecha_entrega ? formatDate(p.fecha_entrega) : '-') + '</td>' +
+      '</tr>';
+    }).join('');
+    var htmlP = '<table class="data-table"><thead><tr><th>Propiedad</th><th style="text-align:right;">V. Compra</th><th style="text-align:right;">Pagado</th><th style="text-align:right;">Pendiente</th><th style="text-align:center;">Mensualidades</th><th style="text-align:right;">Monto Mens.</th><th style="text-align:right;">Remanente</th><th style="text-align:right;">Pago Final</th><th style="text-align:center;">Entrega</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    openModal(titulo, htmlP);
+    var mcP = document.querySelector('.modal-content');
+    if (mcP) mcP.classList.add('modal-wide');
+
+  } else if (tipo === 'terminadas') {
+    titulo = 'Detalle: Propiedades Terminadas';
+    var terminadasT = propiedades.filter(function(p) { return p.tipo === 'terminada'; });
+    if (terminadasT.length === 0) { openModal(titulo, '<p style="text-align:center;padding:20px;color:var(--text-muted);">No hay propiedades terminadas.</p>'); return; }
+    rows = terminadasT.map(function(p) {
+      var moneda = p.moneda || 'MXN';
+      var res = calcularResumenTerminada(p);
+      var ocupadaBadge = p.ocupada ? '<span class="badge badge-green">Si</span>' : '<span class="badge badge-red">No</span>';
+      var plusColor = res.plusvalia >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:10px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
+        '<td style="text-align:right;">' + formatCurrency(p.valor_actual, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + plusColor + ';">' + formatCurrency(res.plusvalia, moneda) + ' (' + formatPct(res.plusvalia_pct) + ')</td>' +
+        '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(p.renta_mensual || 0, moneda) + '</td>' +
+        '<td style="text-align:center;">' + ocupadaBadge + '</td>' +
+        '<td style="text-align:right;">' + formatPct(res.rendimiento_anual) + '</td>' +
+      '</tr>';
+    }).join('');
+    var htmlT = '<table class="data-table"><thead><tr><th>Propiedad</th><th style="text-align:right;">Valor Mercado</th><th style="text-align:right;">Plusvalia</th><th style="text-align:right;">Renta Mensual</th><th style="text-align:center;">Ocupada</th><th style="text-align:right;">Rend. Anual</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    openModal(titulo, htmlT);
+    var mcT = document.querySelector('.modal-content');
+    if (mcT) mcT.classList.add('modal-wide');
   }
 }
