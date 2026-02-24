@@ -797,8 +797,6 @@ function verCalendarioPagos() {
 
   propiedades.forEach(function (p) {
     var moneda = p.moneda || 'MXN';
-    console.log('[Calendario] Propiedad: "' + p.nombre + '", tipo=' + p.tipo + ', monto_mensualidad=' + p.monto_mensualidad + ', pagadas=' + p.mensualidades_pagadas + '/' + p.mensualidades_total + ', fecha_inicio=' + p.fecha_inicio);
-
     /* ---- Preventa: upcoming mensualidad payments ---- */
     if (p.tipo === 'preventa') {
       var montoMens = p.monto_mensualidad || 0;
@@ -822,6 +820,11 @@ function verCalendarioPagos() {
       var lastPayDay = Math.min(nextPayDay, 28);
       var lastPayDate = new Date(lastPayYear, lastPayMonth, lastPayDay);
 
+      /* Use monto_pago_final (captured) if available, otherwise calculated saldoRemanente */
+      var pagoFinalMonto = p.monto_pago_final > 0 ? p.monto_pago_final : saldoRemanente;
+      var pagoFinalFecha = p.fecha_pago_final || null;
+      var tienePagoFinal = p.monto_pago_final > 0;
+
       preventaResumen.push({
         nombre: p.nombre,
         moneda: moneda,
@@ -830,7 +833,10 @@ function verCalendarioPagos() {
         restantes: restantes,
         monto_mensualidad: montoMens,
         ultimaMensualidad: lastPayDate,
-        saldoRemanente: saldoRemanente
+        saldoRemanente: saldoRemanente,
+        pagoFinalMonto: pagoFinalMonto,
+        pagoFinalFecha: pagoFinalFecha,
+        tienePagoFinal: tienePagoFinal
       });
 
       /* Pago final event */
@@ -856,10 +862,7 @@ function verCalendarioPagos() {
         }
       }
 
-      if (restantes <= 0 || montoMens <= 0) {
-        console.log('[Calendario] Preventa "' + p.nombre + '" sin eventos: restantes=' + restantes + ', monto_mensualidad=' + montoMens + ', pagadas=' + pagadas + '/' + totales);
-        return;
-      }
+      if (restantes <= 0 || montoMens <= 0) return;
 
       /* Generate events for each of the 4 months if payment falls in that month */
       for (var i = 0; i < restantes && i < 48; i++) {
@@ -885,8 +888,8 @@ function verCalendarioPagos() {
               restantes: restantes - i
             });
 
-            /* If last mensualidad and there's saldo remanente, add it too */
-            if (isLastMensualidad && saldoRemanente > 0) {
+            /* If last mensualidad and there's saldo remanente, add it (only if no monto_pago_final defined) */
+            if (isLastMensualidad && saldoRemanente > 0 && !tienePagoFinal) {
               eventos.push({
                 mesIdx: k,
                 tipo: 'saldo_remanente',
@@ -1203,24 +1206,29 @@ function verCalendarioPagos() {
       '</div>' +
     '</div>';
 
-  /* Resumen de Preventas: ultima mensualidad + saldo remanente */
+  /* Resumen de Preventas: ultima mensualidad + pago final */
   if (preventaResumen.length > 0) {
     html +=
       '<div class="card" style="margin-top:16px;">' +
         '<div class="card-header"><span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Resumen de Preventas</span></div>' +
         '<div style="overflow-x:auto;"><table class="data-table" style="font-size:12px;"><thead><tr>' +
           '<th>Propiedad</th><th style="text-align:center;">Pagadas / Total</th><th style="text-align:center;">Restantes</th>' +
-          '<th>Monto Mensualidad</th><th>Ultima Mensualidad</th><th>Saldo Remanente</th>' +
+          '<th>Monto Mensualidad</th><th>Ultima Mensualidad</th><th>Pago Final</th><th>Fecha Pago Final</th>' +
         '</tr></thead><tbody>';
     preventaResumen.forEach(function(pr) {
-      var saldoRemColor = pr.saldoRemanente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
+      var pfColor = pr.pagoFinalMonto > 0 ? 'var(--accent-purple)' : 'var(--accent-green)';
+      var pfLabel = pr.tienePagoFinal
+        ? formatCurrency(pr.pagoFinalMonto, pr.moneda)
+        : (pr.saldoRemanente > 0 ? formatCurrency(pr.saldoRemanente, pr.moneda) + ' <span class="badge badge-amber" style="font-size:9px;">Estimado</span>' : formatCurrency(0, pr.moneda) + ' <span class="badge badge-green" style="font-size:9px;">Cubierto</span>');
+      var pfFechaLabel = pr.pagoFinalFecha ? formatDate(new Date(pr.pagoFinalFecha + 'T00:00:00')) : '\u2014';
       html += '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + pr.nombre + '</td>' +
         '<td style="text-align:center;">' + pr.pagadas + ' / ' + pr.totales + '</td>' +
         '<td style="text-align:center;font-weight:600;color:var(--accent-red);">' + pr.restantes + '</td>' +
         '<td>' + formatCurrency(pr.monto_mensualidad, pr.moneda) + '</td>' +
         '<td>' + formatDate(pr.ultimaMensualidad) + '</td>' +
-        '<td style="font-weight:600;color:' + saldoRemColor + ';">' + formatCurrency(pr.saldoRemanente, pr.moneda) + (pr.saldoRemanente > 0 ? '' : ' <span class="badge badge-green" style="font-size:9px;">Cubierto</span>') + '</td>' +
+        '<td style="font-weight:600;color:' + pfColor + ';">' + pfLabel + '</td>' +
+        '<td>' + pfFechaLabel + '</td>' +
       '</tr>';
     });
     html += '</tbody></table></div></div>';
