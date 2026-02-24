@@ -810,13 +810,16 @@ function verCalendarioPagos() {
       var saldoRemanente = Math.max(0, (p.valor_compra || 0) - enganche - totalMensualidadesFull);
 
       /* Track for summary */
+      /* fecha_inicio = fecha del enganche; las mensualidades empiezan 1 mes después */
       var inicioDate = p.fecha_inicio ? new Date(p.fecha_inicio + 'T00:00:00') : new Date(hoy.getFullYear(), hoy.getMonth(), 1);
       var nextPayDay = inicioDate.getDate() || 1;
+      var mesBaseMens = inicioDate.getMonth() + 1; /* +1: primera mensualidad es el mes siguiente al enganche */
+      var anioBaseMens = inicioDate.getFullYear();
 
       /* Ultima mensualidad date */
       var lastPayIdx = Math.max(0, totales - 1);
-      var lastPayMonth = (inicioDate.getMonth() + lastPayIdx) % 12;
-      var lastPayYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + lastPayIdx) / 12);
+      var lastPayMonth = (mesBaseMens + lastPayIdx) % 12;
+      var lastPayYear = anioBaseMens + Math.floor((mesBaseMens + lastPayIdx) / 12);
       var lastPayDay = Math.min(nextPayDay, 28);
       var lastPayDate = new Date(lastPayYear, lastPayMonth, lastPayDay);
 
@@ -866,8 +869,8 @@ function verCalendarioPagos() {
 
       /* Generate events for each of the 4 months if payment falls in that month */
       for (var i = 0; i < restantes && i < 48; i++) {
-        var payMonth = (inicioDate.getMonth() + pagadas + i) % 12;
-        var payYear = inicioDate.getFullYear() + Math.floor((inicioDate.getMonth() + pagadas + i) / 12);
+        var payMonth = (mesBaseMens + pagadas + i) % 12;
+        var payYear = anioBaseMens + Math.floor((mesBaseMens + pagadas + i) / 12);
         var payDay = Math.min(nextPayDay, 28);
         var payDate = new Date(payYear, payMonth, payDay);
 
