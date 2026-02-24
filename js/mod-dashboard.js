@@ -281,69 +281,30 @@ function renderDashboard() {
     }
   });
 
-  // Check propiedades preventa — alert based on next payment date
+  // Check propiedades preventa with fecha_entrega
   propiedades.forEach(pr => {
-    if (pr.tipo !== 'preventa') return;
-    var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
-    var prMontoMens = pr.monto_mensualidad || 0;
-    if (prRestantes <= 0 && !(pr.monto_pago_final > 0)) return;
-
-    /* Calculate next payment date: fecha_inicio + 1 month (enganche month) + pagadas months */
-    var nextPayDate = null;
-    if (prRestantes > 0 && prMontoMens > 0 && pr.fecha_inicio) {
-      var inicioD = new Date(pr.fecha_inicio + 'T00:00:00');
-      var mesBase = inicioD.getMonth() + 1; /* +1: mensualidades start month after enganche */
-      var anioBase = inicioD.getFullYear();
-      var pagadas = pr.mensualidades_pagadas || 0;
-      var nextM = (mesBase + pagadas) % 12;
-      var nextY = anioBase + Math.floor((mesBase + pagadas) / 12);
-      var nextDay = Math.min(inicioD.getDate(), 28);
-      nextPayDate = new Date(nextY, nextM, nextDay);
-    }
-
-    /* Check next mensualidad */
-    if (nextPayDate) {
-      var npStr = nextPayDate.getFullYear() + '-' + String(nextPayDate.getMonth() + 1).padStart(2, '0') + '-' + String(nextPayDate.getDate()).padStart(2, '0');
-      var alerta = calcularAlerta(npStr);
+    if (pr.tipo === 'preventa' && pr.fecha_entrega) {
+      const alerta = calcularAlerta(pr.fecha_entrega);
       if (alerta) {
-        var prMontoInfo = formatCurrency(prMontoMens, pr.moneda) + ' <span style="font-size:10px;color:var(--text-muted);">(' + prRestantes + ' restante' + (prRestantes !== 1 ? 's' : '') + ')</span>';
+        // Desglosar: mensualidades pendientes + remanente al final del acuerdo
+        var prEnganche = pr.enganche || 0;
+        var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
+        var prMontoMens = pr.monto_mensualidad || 0;
+        var prTotalMensualidades = prRestantes * prMontoMens;
+        // Remanente = valor_compra - enganche - (total_mensualidades * monto_mensualidad)
+        var prRemanente = Math.max(0, (pr.valor_compra || 0) - prEnganche - ((pr.mensualidades_total || 0) * prMontoMens));
+        var prSaldoTotal = prTotalMensualidades + prRemanente;
+        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrency(prMontoMens, pr.moneda);
+        if (prRemanente > 0) {
+          prMontoInfo += '<br>Remanente al termino: ' + formatCurrency(prRemanente, pr.moneda);
+        }
+        prMontoInfo += '<br><span style="font-weight:700;">Saldo total: ' + formatCurrency(prSaldoTotal, pr.moneda) + '</span>';
         alertasVencimiento.push({
           nombre: pr.nombre,
-          tipoLabel: 'Mensualidad',
-          tipoIcon: 'fa-file-invoice-dollar',
+          tipoLabel: 'Preventa',
+          tipoIcon: 'fa-building',
           monto: prMontoInfo,
-          esPreventa: true,
           ...alerta,
-        });
-      }
-    }
-
-    /* Check pago final */
-    if (pr.monto_pago_final > 0 && pr.fecha_pago_final) {
-      var alertaPF = calcularAlerta(pr.fecha_pago_final);
-      if (alertaPF) {
-        alertasVencimiento.push({
-          nombre: pr.nombre + ' (Pago Final)',
-          tipoLabel: 'Pago Final',
-          tipoIcon: 'fa-landmark',
-          monto: formatCurrency(pr.monto_pago_final, pr.moneda),
-          esPreventa: true,
-          ...alertaPF,
-        });
-      }
-    }
-
-    /* Check fecha_entrega if present */
-    if (pr.fecha_entrega) {
-      var alertaEnt = calcularAlerta(pr.fecha_entrega);
-      if (alertaEnt) {
-        alertasVencimiento.push({
-          nombre: pr.nombre + ' (Entrega)',
-          tipoLabel: 'Entrega',
-          tipoIcon: 'fa-key',
-          monto: '',
-          esPreventa: true,
-          ...alertaEnt,
         });
       }
     }
@@ -367,7 +328,7 @@ function renderDashboard() {
       </div>`;
   } else {
     const alertCards = alertasVencimiento.map(a => `
-      <div style="background:var(--bg-base);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:12px 14px;cursor:pointer;transition:background 0.15s;" onclick="${a.esPreventa ? "navigateTo(\'propiedades\'); setTimeout(function(){ var cal=document.getElementById(\'calendarioPagosContainer\'); if(cal) cal.scrollIntoView({behavior:\'smooth\'}); },400);" : ''}" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='var(--bg-base)'">
+      <div style="background:var(--bg-base);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:12px 14px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:32px;height:32px;border-radius:8px;background:${a.colorSoft};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <i class="fas ${a.icon}" style="color:${a.color};font-size:13px;"></i>
