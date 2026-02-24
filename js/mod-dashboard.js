@@ -281,30 +281,69 @@ function renderDashboard() {
     }
   });
 
-  // Check propiedades preventa with fecha_entrega
+  // Check propiedades preventa — alert based on next payment date
   propiedades.forEach(pr => {
-    if (pr.tipo === 'preventa' && pr.fecha_entrega) {
-      const alerta = calcularAlerta(pr.fecha_entrega);
+    if (pr.tipo !== 'preventa') return;
+    var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
+    var prMontoMens = pr.monto_mensualidad || 0;
+    if (prRestantes <= 0 && !(pr.monto_pago_final > 0)) return;
+
+    /* Calculate next payment date: fecha_inicio + 1 month (enganche month) + pagadas months */
+    var nextPayDate = null;
+    if (prRestantes > 0 && prMontoMens > 0 && pr.fecha_inicio) {
+      var inicioD = new Date(pr.fecha_inicio + 'T00:00:00');
+      var mesBase = inicioD.getMonth() + 1; /* +1: mensualidades start month after enganche */
+      var anioBase = inicioD.getFullYear();
+      var pagadas = pr.mensualidades_pagadas || 0;
+      var nextM = (mesBase + pagadas) % 12;
+      var nextY = anioBase + Math.floor((mesBase + pagadas) / 12);
+      var nextDay = Math.min(inicioD.getDate(), 28);
+      nextPayDate = new Date(nextY, nextM, nextDay);
+    }
+
+    /* Check next mensualidad */
+    if (nextPayDate) {
+      var npStr = nextPayDate.getFullYear() + '-' + String(nextPayDate.getMonth() + 1).padStart(2, '0') + '-' + String(nextPayDate.getDate()).padStart(2, '0');
+      var alerta = calcularAlerta(npStr);
       if (alerta) {
-        // Desglosar: mensualidades pendientes + remanente al final del acuerdo
-        var prEnganche = pr.enganche || 0;
-        var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
-        var prMontoMens = pr.monto_mensualidad || 0;
-        var prTotalMensualidades = prRestantes * prMontoMens;
-        // Remanente = valor_compra - enganche - (total_mensualidades * monto_mensualidad)
-        var prRemanente = Math.max(0, (pr.valor_compra || 0) - prEnganche - ((pr.mensualidades_total || 0) * prMontoMens));
-        var prSaldoTotal = prTotalMensualidades + prRemanente;
-        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrency(prMontoMens, pr.moneda);
-        if (prRemanente > 0) {
-          prMontoInfo += '<br>Remanente al termino: ' + formatCurrency(prRemanente, pr.moneda);
-        }
-        prMontoInfo += '<br><span style="font-weight:700;">Saldo total: ' + formatCurrency(prSaldoTotal, pr.moneda) + '</span>';
+        var prMontoInfo = formatCurrency(prMontoMens, pr.moneda) + ' <span style="font-size:10px;color:var(--text-muted);">(' + prRestantes + ' restante' + (prRestantes !== 1 ? 's' : '') + ')</span>';
         alertasVencimiento.push({
           nombre: pr.nombre,
-          tipoLabel: 'Preventa',
-          tipoIcon: 'fa-building',
+          tipoLabel: 'Mensualidad',
+          tipoIcon: 'fa-file-invoice-dollar',
           monto: prMontoInfo,
+          esPreventa: true,
           ...alerta,
+        });
+      }
+    }
+
+    /* Check pago final */
+    if (pr.monto_pago_final > 0 && pr.fecha_pago_final) {
+      var alertaPF = calcularAlerta(pr.fecha_pago_final);
+      if (alertaPF) {
+        alertasVencimiento.push({
+          nombre: pr.nombre + ' (Pago Final)',
+          tipoLabel: 'Pago Final',
+          tipoIcon: 'fa-landmark',
+          monto: formatCurrency(pr.monto_pago_final, pr.moneda),
+          esPreventa: true,
+          ...alertaPF,
+        });
+      }
+    }
+
+    /* Check fecha_entrega if present */
+    if (pr.fecha_entrega) {
+      var alertaEnt = calcularAlerta(pr.fecha_entrega);
+      if (alertaEnt) {
+        alertasVencimiento.push({
+          nombre: pr.nombre + ' (Entrega)',
+          tipoLabel: 'Entrega',
+          tipoIcon: 'fa-key',
+          monto: '',
+          esPreventa: true,
+          ...alertaEnt,
         });
       }
     }
@@ -328,7 +367,7 @@ function renderDashboard() {
       </div>`;
   } else {
     const alertCards = alertasVencimiento.map(a => `
-      <div style="background:var(--bg-base);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:12px 14px;">
+      <div style="background:var(--bg-base);border:1px solid var(--border-color);border-left:4px solid ${a.color};border-radius:10px;padding:12px 14px;cursor:pointer;transition:background 0.15s;" onclick="${a.esPreventa ? "navigateTo(\'propiedades\'); setTimeout(function(){ var cal=document.getElementById(\'calendarioPagosContainer\'); if(cal) cal.scrollIntoView({behavior:\'smooth\'}); },400);" : ''}" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='var(--bg-base)'">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:32px;height:32px;border-radius:8px;background:${a.colorSoft};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <i class="fas ${a.icon}" style="color:${a.color};font-size:13px;"></i>
@@ -760,10 +799,10 @@ function renderDashboard() {
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:12px;"></i>
           </div>
-          <span style="font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento ${periodoLabel}</span>
         </div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent-amber);">~ ${formatCurrency(sumPesos * rendPromedio / 100 / 12, 'MXN')} <span style="font-size:11px;font-weight:600;">/mes</span></div>
-        <div style="font-size:10px;color:var(--accent-amber);margin-top:2px;font-weight:600;">${rendPromedio.toFixed(2)}% anual <i class="fas fa-chevron-right" style="font-size:8px;margin-left:3px;"></i></div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent-amber);">${formatCurrency(rendPeriodo, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--accent-amber);margin-top:2px;font-weight:600;">${rendPromedio.toFixed(2)}% anual prom. <i class="fas fa-chevron-right" style="font-size:8px;margin-left:3px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesgloseGastos()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -837,7 +876,7 @@ function renderDashboard() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-trophy" style="margin-right:8px;color:var(--accent-amber);"></i>Top 5 Activos</span>
         </div>
-        <table class="data-table">
+        <table class="data-table sortable-table">
           <thead>
             <tr>
               <th>Cuenta</th>
@@ -866,7 +905,7 @@ function renderDashboard() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-clock" style="margin-right:8px;color:var(--accent-blue);"></i>Ultimos 5 Movimientos</span>
         </div>
-        <table class="data-table">
+        <table class="data-table sortable-table">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -900,16 +939,16 @@ function renderDashboard() {
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-purple);"></i>Analisis Ano vs Ano</span>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
-              <select id="yoyAnio1" class="form-select" style="min-width:90px;padding:6px 10px;font-size:13px;"></select>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
+              <select id="yoyAnio1" class="form-select" style="width:72px;padding:4px 6px;font-size:12px;"></select>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
-              <select id="yoyAnio2" class="form-select" style="min-width:90px;padding:6px 10px;font-size:13px;"></select>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
+              <select id="yoyAnio2" class="form-select" style="width:72px;padding:4px 6px;font-size:12px;"></select>
             </div>
-            <button class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="compararAnios()">
+            <button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" onclick="compararAnios()">
               <i class="fas fa-chart-bar" style="margin-right:4px;"></i>Comparar
             </button>
           </div>
@@ -1231,6 +1270,9 @@ function renderDashboard() {
 
   // -- Render Analisis Ano vs Ano section --
   renderAnalisisAnual();
+
+  // -- Init sortable tables for dashboard --
+  setTimeout(function() { _initSortableTables(document.getElementById('module-dashboard')); }, 100);
 }
 
 /* ============================================================
@@ -1495,123 +1537,123 @@ function compararAnios() {
    DASHBOARD: Desglose de Rendimiento (modal)
    ============================================================ */
 function mostrarDesgloseRendimiento() {
-  const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
-  const rendimientosData = loadData(STORAGE_KEYS.rendimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var rendimientosData = loadData(STORAGE_KEYS.rendimientos) || [];
 
-  const invCuentas = cuentas.filter(c => c.activa !== false && c.tipo === 'inversion');
+  /* Recalculate same period filter as the KPI */
+  var periodo = _dashboardFilters.periodo;
+  var anioFiltro = _dashboardFilters.anio;
+  var mesFiltro = _dashboardFilters.mes;
+  var now = new Date();
+  var mesActual = now.getMonth();
+  var anioActual = now.getFullYear();
+  var fechaInicio, fechaFin;
+  if (mesFiltro !== null && mesFiltro !== undefined) {
+    fechaInicio = new Date(anioFiltro, mesFiltro, 1);
+    fechaFin = new Date(anioFiltro, mesFiltro + 1, 0, 23, 59, 59);
+    if (anioFiltro === anioActual && mesFiltro === mesActual) fechaFin = now;
+  } else {
+    fechaFin = new Date(anioFiltro, 11, 31, 23, 59, 59);
+    if (anioFiltro === anioActual) fechaFin = now;
+    switch (periodo) {
+      case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate() - 7); break;
+      case 'mensual': fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1); break;
+      case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 2); fechaInicio.setDate(1); break;
+      case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 3); fechaInicio.setDate(1); break;
+      case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 6); fechaInicio.setDate(1); break;
+      case 'anual': fechaInicio = new Date(anioFiltro, 0, 1); break;
+      default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
+    }
+  }
+  var periodosList = [];
+  var tmpDate = new Date(fechaInicio);
+  while (tmpDate <= fechaFin) {
+    periodosList.push(tmpDate.getFullYear() + '-' + String(tmpDate.getMonth() + 1).padStart(2, '0'));
+    tmpDate.setMonth(tmpDate.getMonth() + 1);
+  }
+  var periodoLabels = { semanal: 'Semanal', mensual: 'del Mes', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' };
+  var periodoLabel = periodoLabels[periodo] || 'del Mes';
 
-  /* Build map: cuenta_id → array of rendimiento records */
-  var rendByCuenta = {};
-  rendimientosData.forEach(function(r) {
-    if (!rendByCuenta[r.cuenta_id]) rendByCuenta[r.cuenta_id] = [];
-    rendByCuenta[r.cuenta_id].push(r);
+  /* Filter rendimientos by period */
+  var filteredRend = rendimientosData.filter(function(r) { return periodosList.includes(r.periodo); });
+
+  /* Build by cuenta */
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var byCuenta = {};
+  var total = 0;
+  filteredRend.forEach(function(r) {
+    var cta = cuentaMap[r.cuenta_id];
+    if (!cta || cta.activa === false || cta.tipo !== 'inversion') return;
+    var nombre = cta.nombre;
+    var moneda = cta.moneda || 'MXN';
+    var montoMXN = toMXN(r.rendimiento_monto || 0, moneda, tiposCambio);
+    if (!byCuenta[cta.id]) byCuenta[cta.id] = { nombre: nombre, monto: 0, montoOrig: 0, moneda: moneda, count: 0, valMXN: toMXN(cta.saldo, moneda, tiposCambio), tasaAnual: 0 };
+    byCuenta[cta.id].monto += montoMXN;
+    byCuenta[cta.id].montoOrig += (r.rendimiento_monto || 0);
+    byCuenta[cta.id].count++;
+    total += montoMXN;
   });
 
-  let sumPesos = 0;
-  let sumRendMonto = 0;
-  const rows = invCuentas.map(c => {
-    const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
-    let tasaAnual = c.rendimiento_anual || 0;
-    let dias = 0;
-    let fuente = 'Manual';
-    let saldoInicial = c.saldo;
-    let saldoFinal = c.saldo;
-    let rendMonto = 0;
-    const hist = c.historial_saldos || [];
-    if (hist.length > 0) {
-      const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
-      if (ultimoCierre.rendimiento_pct_anual != null) {
-        tasaAnual = ultimoCierre.rendimiento_pct_anual;
-        dias = ultimoCierre.dias || 0;
-        fuente = 'Cierre ' + (ultimoCierre.fecha || '').substring(0, 7);
-      }
-      if (ultimoCierre.saldo_inicio != null) saldoInicial = ultimoCierre.saldo_inicio;
-      if (ultimoCierre.saldo_final != null) saldoFinal = ultimoCierre.saldo_final;
-      /* Try rendimiento_monto from cierre first */
-      if (ultimoCierre.rendimiento_monto != null) {
-        rendMonto = ultimoCierre.rendimiento_monto;
-      }
-      /* If cierre has no rendimiento_monto, look in rendimientos records for same period */
-      if (rendMonto === 0 && ultimoCierre.fecha) {
-        var cierrePeriodo = (ultimoCierre.fecha || '').substring(0, 7);
-        var cuentaRends = rendByCuenta[c.id] || [];
-        var rendRecord = cuentaRends.find(function(r) { return r.periodo === cierrePeriodo; });
-        if (rendRecord && rendRecord.rendimiento_monto) {
-          rendMonto = rendRecord.rendimiento_monto;
-        }
-      }
-    }
-    /* Final fallback: check rendimientos records for most recent period */
-    if (rendMonto === 0) {
-      var cuentaRends = rendByCuenta[c.id] || [];
-      if (cuentaRends.length > 0) {
-        var sorted = cuentaRends.slice().sort(function(a, b) { return (b.periodo || '').localeCompare(a.periodo || ''); });
-        if (sorted[0].rendimiento_monto) {
-          rendMonto = sorted[0].rendimiento_monto;
-          if (!fuente || fuente === 'Manual') fuente = 'Rend. ' + (sorted[0].periodo || '');
-        }
-      }
-    }
-    var rendMontoMXN = toMXN(rendMonto, c.moneda, tiposCambio);
+  /* Also get tasa anual from ultimo cierre */
+  var invCuentas = cuentas.filter(function(c) { return c.activa !== false && c.tipo === 'inversion'; });
+  var sumPesos = 0;
+  invCuentas.forEach(function(c) {
+    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
     sumPesos += valMXN;
-    sumRendMonto += rendMontoMXN;
-    return { nombre: c.nombre, moneda: c.moneda, saldoInicial: saldoInicial, saldoFinal: saldoFinal, rendMonto: rendMonto, rendMontoMXN: rendMontoMXN, valMXN: valMXN, rendimiento: tasaAnual, dias: dias, fuente: fuente };
+    var tasaAnual = c.rendimiento_anual || 0;
+    var hist = c.historial_saldos || [];
+    if (hist.length > 0) {
+      var ultimoCierre = hist.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
+      if (ultimoCierre.rendimiento_pct_anual != null) tasaAnual = ultimoCierre.rendimiento_pct_anual;
+    }
+    if (byCuenta[c.id]) byCuenta[c.id].tasaAnual = tasaAnual;
+    else {
+      /* Account with no rendimientos in period — still show in table */
+      byCuenta[c.id] = { nombre: c.nombre, monto: 0, montoOrig: 0, moneda: c.moneda || 'MXN', count: 0, valMXN: valMXN, tasaAnual: tasaAnual };
+    }
   });
 
-  let sumPonderado = 0;
-  rows.forEach(r => { sumPonderado += r.valMXN * r.rendimiento; });
-  const promedio = sumPesos > 0 ? (sumPonderado / sumPesos) : 0;
+  var entries = Object.values(byCuenta).sort(function(a, b) { return b.monto - a.monto; });
 
-  const html = `
-    <table class="data-table sortable-table" style="margin-bottom:16px;">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th style="text-align:right;">Saldo Inicial</th>
-          <th style="text-align:right;">Saldo Final</th>
-          <th style="text-align:right;">Rendimiento</th>
-          <th style="text-align:right;">Rend. Anual %</th>
-          <th style="text-align:center;">Dias</th>
-          <th style="text-align:right;">Peso</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map(r => {
-          const peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : 0;
-          const rendColor = r.rendimiento >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-          const rendMontoColor = r.rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-          const rendMontoSign = r.rendMonto >= 0 ? '+' : '';
-          return `<tr>
-            <td style="font-weight:600;color:var(--text-primary);">${r.nombre}<br><span style="font-size:10px;color:var(--text-muted);">${r.fuente}</span></td>
-            <td style="text-align:right;">${formatCurrency(r.saldoInicial, r.moneda)}</td>
-            <td style="text-align:right;">${formatCurrency(r.saldoFinal, r.moneda)}</td>
-            <td style="text-align:right;color:${rendMontoColor};font-weight:600;">${rendMontoSign}${formatCurrency(r.rendMonto, r.moneda)}</td>
-            <td style="text-align:right;color:${rendColor};font-weight:600;">${r.rendimiento >= 0 ? '+' : ''}${r.rendimiento.toFixed(2)}%</td>
-            <td style="text-align:center;">${r.dias > 0 ? r.dias + 'd' : '\u2014'}</td>
-            <td style="text-align:right;color:var(--text-muted);">${peso}%</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-      <tfoot>
-        <tr style="font-weight:700;border-top:2px solid var(--border-color);">
-          <td>Promedio Ponderado</td>
-          <td></td>
-          <td style="text-align:right;">${formatCurrency(sumPesos, 'MXN')}</td>
-          <td style="text-align:right;color:var(--accent-amber);">${sumRendMonto >= 0 ? '+' : ''}${formatCurrency(sumRendMonto, 'MXN')}</td>
-          <td style="text-align:right;color:var(--accent-amber);font-size:16px;">${promedio.toFixed(2)}%</td>
-          <td></td>
-          <td style="text-align:right;color:var(--text-muted);">100%</td>
-        </tr>
-      </tfoot>
-    </table>
-    <div style="font-size:12px;color:var(--text-muted);">
-      <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-      Datos del ultimo cierre mensual. Tasa anualizada: (rendimiento / capital) * (365 / dias) * 100.
-    </div>
-  `;
+  var rowsHTML = entries.map(function(r) {
+    var peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : '0.0';
+    var rendColor = r.monto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var rendSign = r.montoOrig >= 0 ? '+' : '';
+    var tasaColor = r.tasaAnual >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + r.nombre + (r.count > 0 ? '<br><span style="font-size:10px;color:var(--text-muted);">' + r.count + ' cierre' + (r.count > 1 ? 's' : '') + '</span>' : '') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.montoOrig, r.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.monto, 'MXN') + '</td>' +
+      '<td style="text-align:right;color:' + tasaColor + ';font-weight:600;">' + (r.tasaAnual >= 0 ? '+' : '') + r.tasaAnual.toFixed(2) + '%</td>' +
+      '<td style="text-align:right;color:var(--text-muted);">' + peso + '%</td>' +
+    '</tr>';
+  }).join('');
 
-  openModal('Desglose de Rendimiento por Producto', html);
+  var totalSign = total >= 0 ? '+' : '';
+  rowsHTML += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td>Total</td>' +
+    '<td></td>' +
+    '<td style="text-align:right;color:var(--accent-amber);">' + totalSign + formatCurrency(total, 'MXN') + '</td>' +
+    '<td></td>' +
+    '<td style="text-align:right;color:var(--text-muted);">100%</td>' +
+  '</tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Producto</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Monto (MXN)</th><th style="text-align:right;">Tasa Anual</th><th style="text-align:right;">Peso</th>' +
+    '</tr></thead><tbody>' + rowsHTML + '</tbody></table>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">' +
+      '<i class="fas fa-info-circle" style="margin-right:4px;"></i>' +
+      'Rendimientos del periodo filtrado (' + periodoLabel + ' ' + anioFiltro + '). Tasa anual del ultimo cierre.' +
+    '</div>';
+
+  if (filteredRend.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay rendimientos registrados para este periodo.</div>';
+  }
+
+  openModal('Desglose de Rendimiento ' + periodoLabel + ' ' + anioFiltro, html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -1796,6 +1838,37 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
       color: 'var(--accent-red)',
       text: vencimientoCount + ' vencimiento(s) en los proximos 30 dias',
       action: 'onclick="var el=document.getElementById(\'dashboardAlertaDeudaRow\'); if(el) el.scrollIntoView({behavior:\'smooth\'});"'
+    });
+  }
+
+  // Pagos de preventa proximos
+  var pagosPreventa = [];
+  (propiedades || []).forEach(function(pr) {
+    if (pr.tipo !== 'preventa') return;
+    var prRestantes = (pr.mensualidades_total || 0) - (pr.mensualidades_pagadas || 0);
+    var prMontoMens = pr.monto_mensualidad || 0;
+    if (prRestantes > 0 && prMontoMens > 0 && pr.fecha_inicio) {
+      var inicioD = new Date(pr.fecha_inicio + 'T00:00:00');
+      var mesBase = inicioD.getMonth() + 1;
+      var anioBase = inicioD.getFullYear();
+      var pagadas = pr.mensualidades_pagadas || 0;
+      var nextM = (mesBase + pagadas) % 12;
+      var nextY = anioBase + Math.floor((mesBase + pagadas) / 12);
+      var nextDay = Math.min(inicioD.getDate(), 28);
+      var nextPay = new Date(nextY, nextM, nextDay);
+      var diffDias = Math.ceil((nextPay - hoy) / 86400000);
+      if (diffDias >= 0 && diffDias <= 30) {
+        pagosPreventa.push({ nombre: pr.nombre, dias: diffDias, monto: prMontoMens, moneda: pr.moneda || 'MXN' });
+      }
+    }
+  });
+  if (pagosPreventa.length > 0) {
+    var pagosTexts = pagosPreventa.map(function(pp) { return pp.nombre + ': ' + formatCurrency(pp.monto, pp.moneda) + ' en ' + pp.dias + ' dia' + (pp.dias !== 1 ? 's' : ''); });
+    pendingItems.push({
+      icon: 'fa-file-invoice-dollar',
+      color: 'var(--accent-red)',
+      text: pagosPreventa.length + ' pago(s) de preventa proximo(s): ' + pagosTexts.join(' | '),
+      action: 'onclick="navigateTo(\'propiedades\'); setTimeout(function(){ var cal=document.getElementById(\'calendarioPagosContainer\'); if(cal) cal.scrollIntoView({behavior:\'smooth\'}); },400);"'
     });
   }
 

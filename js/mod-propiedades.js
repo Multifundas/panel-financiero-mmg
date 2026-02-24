@@ -790,7 +790,7 @@ function verCalendarioPagos() {
   var totalMensualidadesMes = 0;
   var totalRentasMes = 0;
   var totalMantenimientoMes = 0;
-  var proximoPago = null; /* { fecha, monto, moneda, nombre } */
+  var proximosPagos = []; /* [{ fecha, monto, moneda, nombre }] */
 
   /* Track info per preventa for summary section */
   var preventaResumen = [];
@@ -910,16 +910,14 @@ function verCalendarioPagos() {
               totalMensualidadesMes += toMXN(montoMens, moneda, tiposCambio);
             }
 
-            /* Track next upcoming payment */
-            if (!proximoPago || payDate < proximoPago.fecha) {
-              if (payDate >= hoy) {
-                proximoPago = {
-                  fecha: payDate,
-                  monto: montoMens,
-                  moneda: moneda,
-                  nombre: p.nombre
-                };
-              }
+            /* Track upcoming payments (only first per property) */
+            if (payDate >= hoy && !proximosPagos.some(function(pp) { return pp.nombre === p.nombre; })) {
+              proximosPagos.push({
+                fecha: payDate,
+                monto: montoMens,
+                moneda: moneda,
+                nombre: p.nombre
+              });
             }
             break;
           }
@@ -981,13 +979,16 @@ function verCalendarioPagos() {
   var flujoNetoColor = flujoNeto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   var flujoNetoIcon = flujoNeto >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
 
-  /* Proximo pago info */
+  /* Proximo pago info — show all upcoming (sorted by date) */
+  proximosPagos.sort(function(a, b) { return a.fecha - b.fecha; });
   var proximoPagoHTML = '';
-  if (proximoPago) {
-    proximoPagoHTML =
-      '<div style="font-size:13px;font-weight:700;color:var(--accent-red);">' + formatCurrency(proximoPago.monto, proximoPago.moneda) + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + proximoPago.nombre + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);">' + formatDate(proximoPago.fecha) + '</div>';
+  if (proximosPagos.length > 0) {
+    proximoPagoHTML = proximosPagos.map(function(pp) {
+      return '<div style="margin-bottom:4px;">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--accent-red);">' + formatCurrency(pp.monto, pp.moneda) + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);">' + pp.nombre + ' - ' + formatDate(pp.fecha) + '</div>' +
+      '</div>';
+    }).join('');
   } else {
     proximoPagoHTML = '<div style="font-size:12px;color:var(--text-muted);">Sin pagos pendientes</div>';
   }
@@ -1066,7 +1067,7 @@ function verCalendarioPagos() {
     var isCurrent = mi === 0;
 
     html +=
-      '<div>' +
+      '<div style="display:flex;flex-direction:column;">' +
         /* Month header */
         '<div style="padding:10px 12px;border-radius:8px;background:' + (isCurrent ? 'var(--accent-blue)' : 'var(--bg-base)') + ';margin-bottom:12px;text-align:center;">' +
           '<div style="font-size:13px;font-weight:700;color:' + (isCurrent ? '#fff' : 'var(--text-primary)') + ';">' + meses3[mi].label + '</div>' +
@@ -1161,7 +1162,7 @@ function verCalendarioPagos() {
 
     if (mesEventos.length > 0) {
       html +=
-        '<div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:var(--bg-base);">' +
+        '<div style="margin-top:auto;padding:8px 10px;border-radius:6px;background:var(--bg-base);">' +
           '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px;">' +
             '<span>Ingresos</span>' +
             '<span style="color:var(--accent-green);font-weight:600;">+' + formatCurrency(mesInflow, 'MXN') + '</span>' +

@@ -39,11 +39,39 @@ function renderMovimientos() {
     .map(c => `<option value="${c.id}">${c.nombre}</option>`)
     .join('');
 
+  // -- Determine available years from movimientos --
+  var movYears = {};
+  movimientos.forEach(function(m) { if (m.fecha) movYears[m.fecha.substring(0, 4)] = true; });
+  var yearOpts = Object.keys(movYears).sort().reverse().map(function(y) {
+    return '<option value="' + y + '">' + y + '</option>';
+  }).join('');
+
   // -- Render HTML --
   el.innerHTML = `
-    <!-- Resumen de Movimientos (4 cards: Ingresos, Rendimientos, Gastos, Balance) -->
-    <div class="grid-4" style="margin-bottom:12px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('ingreso')">
+    <!-- Filtros rapidos + KPI Cards en misma fila -->
+    <div style="display:flex;align-items:stretch;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <!-- Filtros rapidos a la izquierda -->
+      <div class="card" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:120px;">
+        <select id="movFiltroPeriodo" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+          <option value="">Todo</option>
+          <option value="mensual" selected>Mensual</option>
+          <option value="trimestral">Trimestral</option>
+          <option value="semestral">Semestral</option>
+          <option value="anual">Anual</option>
+        </select>
+        <select id="movFiltroAnio" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+          <option value="">Todos</option>
+          ${yearOpts}
+        </select>
+        <select id="movFiltroMoneda" class="form-select" style="padding:4px 8px;font-size:11px;min-height:auto;width:110px;" onchange="onMovFiltroRapido()">
+          <option value="">Todas</option>
+          <option value="MXN">MXN</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <!-- 4 KPI cards -->
+      <div class="card" style="flex:1;border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('ingreso')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
@@ -51,7 +79,7 @@ function renderMovimientos() {
         <div id="movSumIngresos" style="font-size:18px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrency(totalIngresos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('rendimiento')">
+      <div class="card" style="flex:1;border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('rendimiento')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
@@ -59,7 +87,7 @@ function renderMovimientos() {
         <div id="movSumRendimientos" style="font-size:18px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrency(totalRendimientos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('gasto')">
+      <div class="card" style="flex:1;border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('gasto')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
@@ -67,7 +95,7 @@ function renderMovimientos() {
         <div id="movSumGastos" style="font-size:18px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrency(totalGastos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;">
+      <div class="card" style="flex:1;border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
@@ -77,9 +105,9 @@ function renderMovimientos() {
       </div>
     </div>
 
-    <!-- Barra de Filtros y Boton Nuevo Movimiento (una sola fila) -->
+    <!-- Barra de Filtros -->
     <div class="card" style="margin-bottom:12px;padding:10px 16px;">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
         <input type="date" id="filterMovDesde" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <input type="date" id="filterMovHasta" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <select id="filterMovTipo" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:120px;" onchange="filterMovimientos()">
@@ -92,30 +120,31 @@ function renderMovimientos() {
           <option value="">Todas las cuentas</option>
           ${cuentaFilterOpts}
         </select>
-        <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" oninput="filterMovimientos()">
-        <div style="flex:1;"></div>
-        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;">
+        <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;flex:1;min-width:120px;" oninput="filterMovimientos()">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;flex:1;min-width:70px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
         </button>
-        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:11px;">
+        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:11px;flex:1;min-width:60px;">
           <i class="fas fa-file-pdf" style="margin-right:3px;color:#ef4444;"></i>PDF
         </button>
-        <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:11px;">
+        <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:11px;flex:1;min-width:90px;">
           <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
         </button>
-        <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:11px;">
+        <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:11px;flex:1;min-width:100px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Carga Masiva
         </button>
-        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:11px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
+        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:11px;flex:1;min-width:60px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
           <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
         </button>
-        <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:11px;border-color:var(--accent-purple);color:var(--accent-purple);">
+        <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:11px;flex:1;min-width:110px;border-color:var(--accent-purple);color:var(--accent-purple);">
           <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Transferencia
         </button>
-        <button class="btn btn-secondary" onclick="cierreMensual()" style="padding:5px 10px;font-size:11px;border-color:var(--accent-green);color:var(--accent-green);">
+        <button class="btn btn-secondary" onclick="cierreMensual()" style="padding:5px 10px;font-size:11px;flex:1;min-width:80px;border-color:var(--accent-green);color:var(--accent-green);">
           <i class="fas fa-calendar-check" style="margin-right:3px;"></i>Cierre
         </button>
-        <button class="btn btn-primary" onclick="editMovimiento(null)" style="padding:5px 10px;font-size:11px;">
+        <button class="btn btn-primary" onclick="editMovimiento(null)" style="padding:5px 10px;font-size:11px;flex:1;min-width:80px;">
           <i class="fas fa-plus" style="margin-right:3px;"></i>Nuevo
         </button>
       </div>
@@ -124,17 +153,17 @@ function renderMovimientos() {
     <!-- Tabla de Movimientos -->
     <div class="card" style="padding:8px 12px;">
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaMovimientos" style="font-size:12px;">
+        <table class="data-table sortable-table" id="tablaMovimientos" style="font-size:12px;">
           <thead>
             <tr>
-              <th style="width:30px;"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
+              <th style="width:30px;" data-no-sort="true"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
               <th>Fecha</th>
               <th>Descripcion</th>
               <th>Tipo</th>
               <th>Cuenta</th>
               <th>Categoria</th>
               <th style="text-align:right;">Monto</th>
-              <th style="text-align:center;">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyMovimientos">
@@ -144,7 +173,70 @@ function renderMovimientos() {
     </div>
   `;
 
-  // Populate table with initial (unfiltered) data
+  // Set default quick filter to current month/year
+  var nowMov = new Date();
+  var elAnio = document.getElementById('movFiltroAnio');
+  if (elAnio) elAnio.value = String(nowMov.getFullYear());
+
+  // Apply quick filters then populate table
+  onMovFiltroRapido();
+
+  // Enable sortable headers
+  setTimeout(function() { _initSortableTables(el); }, 100);
+}
+
+/* -- Quick period/year/currency filter for Movimientos KPIs -- */
+function onMovFiltroRapido() {
+  var periodo = document.getElementById('movFiltroPeriodo') ? document.getElementById('movFiltroPeriodo').value : '';
+  var anio = document.getElementById('movFiltroAnio') ? document.getElementById('movFiltroAnio').value : '';
+  var moneda = document.getElementById('movFiltroMoneda') ? document.getElementById('movFiltroMoneda').value : '';
+
+  var desdeEl = document.getElementById('filterMovDesde');
+  var hastaEl = document.getElementById('filterMovHasta');
+  if (!desdeEl || !hastaEl) return;
+
+  // Calculate date range from periodo + anio
+  var now = new Date();
+  var y = anio ? parseInt(anio) : now.getFullYear();
+  var m = now.getMonth(); // 0-indexed
+  var desde = '', hasta = '';
+
+  if (periodo === 'mensual') {
+    // If selected year is current year, use current month; otherwise use December
+    var mes = (y === now.getFullYear()) ? m : 11;
+    desde = y + '-' + String(mes + 1).padStart(2, '0') + '-01';
+    var lastDay = new Date(y, mes + 1, 0).getDate();
+    hasta = y + '-' + String(mes + 1).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
+  } else if (periodo === 'trimestral') {
+    var qMonth = (y === now.getFullYear()) ? Math.floor(m / 3) * 3 : 9;
+    desde = y + '-' + String(qMonth + 1).padStart(2, '0') + '-01';
+    var lastDayQ = new Date(y, qMonth + 3, 0).getDate();
+    hasta = y + '-' + String(qMonth + 3).padStart(2, '0') + '-' + String(lastDayQ).padStart(2, '0');
+  } else if (periodo === 'semestral') {
+    var sMonth = (y === now.getFullYear()) ? (m < 6 ? 0 : 6) : 6;
+    desde = y + '-' + String(sMonth + 1).padStart(2, '0') + '-01';
+    var lastDayS = new Date(y, sMonth + 6, 0).getDate();
+    hasta = y + '-' + String(sMonth + 6).padStart(2, '0') + '-' + String(lastDayS).padStart(2, '0');
+  } else if (periodo === 'anual') {
+    desde = y + '-01-01';
+    hasta = y + '-12-31';
+  } else {
+    // "Todo" — clear date range, optionally still filter by year
+    if (anio) {
+      desde = y + '-01-01';
+      hasta = y + '-12-31';
+    } else {
+      desde = '';
+      hasta = '';
+    }
+  }
+
+  desdeEl.value = desde;
+  hastaEl.value = hasta;
+
+  // Store moneda filter for use in filterMovimientos
+  window._movFiltroMoneda = moneda;
+
   filterMovimientos();
 }
 
@@ -167,6 +259,9 @@ function filterMovimientos() {
   const fCuenta = document.getElementById('filterMovCuenta') ? document.getElementById('filterMovCuenta').value : '';
   const fSearch = document.getElementById('filterMovSearch') ? document.getElementById('filterMovSearch').value.toLowerCase().trim() : '';
 
+  // Read quick filter moneda
+  const fMoneda = window._movFiltroMoneda || '';
+
   // Apply filters
   const filtered = movimientos.filter(m => {
     if (fDesde && m.fecha < fDesde) return false;
@@ -176,6 +271,10 @@ function filterMovimientos() {
       else { if (m.tipo !== fTipo || m.transferencia_id) return false; }
     }
     if (fCuenta && m.cuenta_id !== fCuenta) return false;
+    if (fMoneda) {
+      const ctaMon = cuentaMap[m.cuenta_id];
+      if (ctaMon && ctaMon.moneda !== fMoneda) return false;
+    }
     if (fSearch) {
       const desc = (m.descripcion || '').toLowerCase();
       const notas = (m.notas || '').toLowerCase();
@@ -1463,11 +1562,12 @@ function mostrarDesgloseMovimientos(tipo) {
       '<td style="text-align:right;color:' + totalRendColor + ';">' + totalRendSign + formatCurrency(totalRend, 'MXN') + '</td>' +
     '</tr>';
 
-    var html = '<table class="data-table"><thead><tr>' +
+    var html = '<table class="data-table sortable-table"><thead><tr>' +
       '<th>Cuenta</th><th style="text-align:center;">Cierres</th><th style="text-align:right;">Rendimiento</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
 
     openModal(titulo, html);
+    setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
     return;
   }
 
@@ -1489,9 +1589,13 @@ function mostrarDesgloseMovimientos(tipo) {
     var nombre = cta ? cta.nombre : 'Desconocida';
     var moneda = cta ? cta.moneda : 'MXN';
     var montoMXN = toMXN(m.monto, moneda, tiposCambio);
-    if (!byCuenta[nombre]) byCuenta[nombre] = { monto: 0, count: 0 };
+    if (!byCuenta[nombre]) byCuenta[nombre] = { monto: 0, count: 0, saldo: 0, monedaSaldo: 'MXN' };
     byCuenta[nombre].monto += montoMXN;
     byCuenta[nombre].count++;
+    if (cta) {
+      byCuenta[nombre].saldo = cta.saldo;
+      byCuenta[nombre].monedaSaldo = cta.moneda;
+    }
     total += montoMXN;
   });
 
@@ -1502,13 +1606,14 @@ function mostrarDesgloseMovimientos(tipo) {
       '<td style="text-align:center;">' + entry[1].count + '</td>' +
       '<td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
       '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(entry[1].saldo, entry[1].monedaSaldo) + '</td>' +
     '</tr>';
   }).join('');
 
   rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td>Total</td><td style="text-align:center;">' + filtered.length + '</td>' +
     '<td style="text-align:right;color:' + color + ';">' + formatCurrency(total, 'MXN') + '</td>' +
-    '<td></td>' +
+    '<td></td><td></td>' +
   '</tr>';
 
   // Also show top categories for gastos
@@ -1533,13 +1638,14 @@ function mostrarDesgloseMovimientos(tipo) {
     }).join('');
     catSection = '<div style="margin-top:20px;">' +
       '<h4 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
-      '<table class="data-table"><thead><tr><th>Categoria</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th></tr></thead>' +
+      '<table class="data-table sortable-table"><thead><tr><th>Categoria</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th></tr></thead>' +
       '<tbody>' + catRows + '</tbody></table></div>';
   }
 
-  var html = '<table class="data-table"><thead><tr>' +
-    '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th>' +
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th style="text-align:right;">Saldo Actual</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table>' + catSection;
 
   openModal(titulo, html);
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }

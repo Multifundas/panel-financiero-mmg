@@ -44,7 +44,7 @@ function renderCuentas() {
   el.innerHTML = `
     <!-- Resumen de Cuentas -->
     <div class="grid-3" style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-blue);">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesgloseCuentas('debito')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-university" style="color:var(--accent-blue);font-size:16px;"></i>
@@ -53,8 +53,9 @@ function renderCuentas() {
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalBancarias, 'MXN')}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countBancarias} cuenta${countBancarias !== 1 ? 's' : ''}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-green);">
+      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseCuentas('inversion')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
@@ -63,8 +64,9 @@ function renderCuentas() {
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalInversiones, 'MXN')}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countInversiones} cuenta${countInversiones !== 1 ? 's' : ''}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--text-secondary);">
+      <div class="card" style="border-left:3px solid var(--text-secondary);cursor:pointer;" onclick="mostrarDesgloseCuentas('')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:rgba(148,163,184,0.1);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-wallet" style="color:var(--text-secondary);font-size:16px;"></i>
@@ -73,6 +75,7 @@ function renderCuentas() {
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalGeneral, 'MXN')}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countGeneral} cuenta${countGeneral !== 1 ? 's' : ''} activa${countGeneral !== 1 ? 's' : ''}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
     </div>
 
@@ -122,7 +125,7 @@ function renderCuentas() {
     <!-- Tabla de Cuentas -->
     <div class="card">
       <div style="overflow-x:auto;">
-        <table class="data-table" id="tablaCuentas">
+        <table class="data-table sortable-table" id="tablaCuentas">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -133,7 +136,7 @@ function renderCuentas() {
               <th style="text-align:right;">Rendimiento %</th>
               <th>Subtipo</th>
               <th>Cierre</th>
-              <th style="text-align:center;">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyCuentas">
@@ -145,6 +148,9 @@ function renderCuentas() {
 
   // Populate table with initial (unfiltered) data
   filterCuentas();
+
+  // Enable sortable headers
+  setTimeout(function() { _initSortableTables(el); }, 100);
 }
 
 /* -- Filter and render the cuentas table rows -- */
@@ -257,6 +263,75 @@ function filterCuentas() {
       </td>
     </tr>`;
   }).join('');
+}
+
+/* -- Desglose modal for KPI cards (Bancarias / Inversiones / Total) -- */
+function mostrarDesgloseCuentas(tipoCuenta) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var instituciones = loadData(STORAGE_KEYS.instituciones) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var instMap = {};
+  instituciones.forEach(function(i) { instMap[i.id] = i.nombre; });
+
+  var titulo, color;
+  if (tipoCuenta === 'debito') {
+    titulo = 'Desglose Cuentas Bancarias';
+    color = 'var(--accent-blue)';
+  } else if (tipoCuenta === 'inversion') {
+    titulo = 'Desglose Inversiones';
+    color = 'var(--accent-green)';
+  } else {
+    titulo = 'Desglose Total General';
+    color = 'var(--text-secondary)';
+  }
+
+  var filtered = cuentas.filter(function(c) {
+    if (c.activa === false) return false;
+    if (tipoCuenta && c.tipo !== tipoCuenta) return false;
+    return true;
+  });
+
+  var totalMXN = 0;
+  var rows = filtered.sort(function(a, b) {
+    return toMXN(b.saldo, b.moneda, tiposCambio) - toMXN(a.saldo, a.moneda, tiposCambio);
+  }).map(function(c) {
+    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    totalMXN += valMXN;
+    var instNombre = instMap[c.institucion_id] || '\u2014';
+
+    // Rendimiento
+    var rendAnual = c.rendimiento_anual || 0;
+    var histCta = c.historial_saldos || [];
+    if (histCta.length > 0) {
+      var ultCierre = histCta.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
+      if (ultCierre.rendimiento_pct_anual != null) rendAnual = ultCierre.rendimiento_pct_anual;
+    }
+    var rendHTML = rendAnual !== 0
+      ? '<span style="color:' + (rendAnual > 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';font-weight:600;">' + (rendAnual >= 0 ? '+' : '') + Number(rendAnual).toFixed(2) + '%</span>'
+      : '<span style="color:var(--text-muted);">\u2014</span>';
+
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
+      '<td>' + instNombre + '</td>' +
+      '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      (c.moneda !== 'MXN' ? '<td style="text-align:right;color:var(--text-muted);">' + formatCurrency(valMXN, 'MXN') + '</td>' : '<td style="text-align:right;color:var(--text-muted);">\u2014</td>') +
+      '<td style="text-align:right;">' + rendHTML + '</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td colspan="3">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td>' +
+    '<td style="text-align:right;color:' + color + ';">' + formatCurrency(totalMXN, 'MXN') + '</td>' +
+    '<td></td><td></td>' +
+  '</tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:right;">Rend. %</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  openModal(titulo, html);
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 
 /* -- Open modal to create or edit a cuenta -- */
