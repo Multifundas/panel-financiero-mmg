@@ -611,7 +611,7 @@ function saveMovimiento(event) {
 
     movimientos.push(nuevoMov);
 
-    // If linked to a property, record the payment on the property
+    // If linked to a property, record the payment and update mensualidades
     if (propiedad_id) {
       var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
       var propIdx = propiedades.findIndex(function(p) { return p.id === propiedad_id; });
@@ -624,6 +624,16 @@ function saveMovimiento(event) {
           descripcion: descripcion,
           moneda: moneda
         });
+
+        // If preventa, increment mensualidades_pagadas
+        if (propiedades[propIdx].tipo === 'preventa') {
+          var pagadas = propiedades[propIdx].mensualidades_pagadas || 0;
+          var totales = propiedades[propIdx].mensualidades_total || 0;
+          if (pagadas < totales) {
+            propiedades[propIdx].mensualidades_pagadas = pagadas + 1;
+          }
+        }
+
         saveData(STORAGE_KEYS.propiedades, propiedades);
       }
     }
