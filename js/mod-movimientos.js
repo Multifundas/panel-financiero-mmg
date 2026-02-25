@@ -548,21 +548,23 @@ function saveMovimiento(event) {
 
     const oldMov = movimientos[movIdx];
 
-    // Reverse old effect on old cuenta
+    // Reverse old effect on old cuenta (ensure numeric)
     const oldCuentaIdx = cuentas.findIndex(c => c.id === oldMov.cuenta_id);
     if (oldCuentaIdx !== -1) {
+      var oldSaldo = parseFloat(cuentas[oldCuentaIdx].saldo) || 0;
       if (oldMov.tipo === 'ingreso') {
-        cuentas[oldCuentaIdx].saldo -= oldMov.monto;
+        cuentas[oldCuentaIdx].saldo = oldSaldo - oldMov.monto;
       } else {
-        cuentas[oldCuentaIdx].saldo += oldMov.monto;
+        cuentas[oldCuentaIdx].saldo = oldSaldo + oldMov.monto;
       }
     }
 
-    // Apply new effect on new cuenta
+    // Apply new effect on new cuenta (ensure numeric)
+    var newSaldo = parseFloat(cuentas[cuentaIdx].saldo) || 0;
     if (tipo === 'ingreso') {
-      cuentas[cuentaIdx].saldo += monto;
+      cuentas[cuentaIdx].saldo = newSaldo + monto;
     } else {
-      cuentas[cuentaIdx].saldo -= monto;
+      cuentas[cuentaIdx].saldo = newSaldo - monto;
     }
 
     // Update movimiento data
@@ -599,11 +601,12 @@ function saveMovimiento(event) {
       created: new Date().toISOString(),
     };
 
-    // Apply saldo effect
+    // Apply saldo effect (ensure saldo is numeric)
+    var saldoAnterior = parseFloat(cuentas[cuentaIdx].saldo) || 0;
     if (tipo === 'ingreso') {
-      cuentas[cuentaIdx].saldo += monto;
+      cuentas[cuentaIdx].saldo = saldoAnterior + monto;
     } else {
-      cuentas[cuentaIdx].saldo -= monto;
+      cuentas[cuentaIdx].saldo = saldoAnterior - monto;
     }
 
     movimientos.push(nuevoMov);
@@ -660,24 +663,26 @@ function deleteMovimiento(id) {
   const confirmar = confirm(msgConfirm);
   if (!confirmar) return;
 
-  // Reverse saldo effect on cuenta for the main movement
+  // Reverse saldo effect on cuenta for the main movement (ensure numeric)
   const cuentaIdx = cuentas.findIndex(c => c.id === mov.cuenta_id);
   if (cuentaIdx !== -1) {
+    var saldoActual = parseFloat(cuentas[cuentaIdx].saldo) || 0;
     if (mov.tipo === 'ingreso') {
-      cuentas[cuentaIdx].saldo -= mov.monto;
+      cuentas[cuentaIdx].saldo = saldoActual - mov.monto;
     } else {
-      cuentas[cuentaIdx].saldo += mov.monto;
+      cuentas[cuentaIdx].saldo = saldoActual + mov.monto;
     }
   }
 
-  // Reverse saldo effect for contraparte
+  // Reverse saldo effect for contraparte (ensure numeric)
   if (contraparte) {
     var cpCuentaIdx = cuentas.findIndex(function(c) { return c.id === contraparte.cuenta_id; });
     if (cpCuentaIdx !== -1) {
+      var cpSaldo = parseFloat(cuentas[cpCuentaIdx].saldo) || 0;
       if (contraparte.tipo === 'ingreso') {
-        cuentas[cpCuentaIdx].saldo -= contraparte.monto;
+        cuentas[cpCuentaIdx].saldo = cpSaldo - contraparte.monto;
       } else {
-        cuentas[cpCuentaIdx].saldo += contraparte.monto;
+        cuentas[cpCuentaIdx].saldo = cpSaldo + contraparte.monto;
       }
     }
   }
