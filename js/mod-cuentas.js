@@ -112,6 +112,9 @@ function renderCuentas() {
           <button class="btn btn-secondary" onclick="exportarExcel('cuentas')" title="Exportar a Excel">
             <i class="fas fa-download" style="margin-right:4px;"></i>Exportar
           </button>
+          <button class="btn btn-secondary" onclick="capturaHistorica()" style="border-color:var(--accent-amber);color:var(--accent-amber);">
+            <i class="fas fa-calendar-plus"></i> Captura Historica
+          </button>
           <button class="btn btn-secondary" onclick="cierreMensual()" style="border-color:var(--accent-green);color:var(--accent-green);">
             <i class="fas fa-calendar-check"></i> Cierre Mensual
           </button>
@@ -1722,4 +1725,406 @@ function exportarEdoCuentaExcel() {
   var filename = 'EDC_' + data.cuenta.nombre.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
   XLSX.writeFile(wb, filename);
   showToast('Excel del Estado de Cuenta exportado.', 'success');
+}
+
+/* ============================================================
+   CAPTURA HISTORICA DE CIERRES
+   ============================================================ */
+
+function capturaHistorica() {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var activas = cuentas.filter(function(c) { return c.activa !== false; });
+  if (activas.length === 0) { showToast('No hay cuentas activas.', 'warning'); return; }
+
+  var ahora = new Date();
+  var anioActual = ahora.getFullYear();
+  var anioDefault = anioActual - 1;
+
+  var cuentaOpts = activas.map(function(c) {
+    return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ' - ' + (c.tipo === 'debito' ? 'Debito' : 'Inversion') + ')</option>';
+  }).join('');
+
+  var anioOpts = '';
+  for (var y = anioActual; y >= anioActual - 5; y--) {
+    anioOpts += '<option value="' + y + '"' + (y === anioDefault ? ' selected' : '') + '>' + y + '</option>';
+  }
+
+  var formHTML =
+    '<form id="formCapturaHistorica" onsubmit="saveCapturaHistorica(event)">' +
+      '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);border-left:3px solid var(--accent-amber);">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:14px;"></i>' +
+          '<span style="font-size:12px;color:var(--text-secondary);">Captura los cierres mensuales historicos de una cuenta. El saldo final de un mes se usa como saldo inicial del siguiente. El rendimiento se calcula automaticamente.</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
+        '<div class="form-group" style="margin-bottom:0;">' +
+          '<label class="form-label"><i class="fas fa-wallet" style="margin-right:4px;color:var(--accent-blue);"></i>Cuenta</label>' +
+          '<select id="captHistCuenta" class="form-select" onchange="generarFilasCapturaHistorica()">' +
+            '<option value="">Seleccionar cuenta...</option>' +
+            cuentaOpts +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group" style="margin-bottom:0;">' +
+          '<label class="form-label"><i class="fas fa-calendar" style="margin-right:4px;color:var(--accent-amber);"></i>Ano</label>' +
+          '<select id="captHistAnio" class="form-select" onchange="generarFilasCapturaHistorica()">' +
+            anioOpts +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div id="capturaHistoricaTabla" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
+        '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">' +
+          '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:18px;opacity:0.4;"></i>' +
+          'Selecciona una cuenta para comenzar.' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
+        '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+        '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Captura Historica</button>' +
+      '</div>' +
+    '</form>';
+
+  openModal('Captura Historica de Cierres', formHTML);
+  var mc = document.getElementById('modalContent');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function generarFilasCapturaHistorica() {
+  var contenedor = document.getElementById('capturaHistoricaTabla');
+  if (!contenedor) return;
+
+  var cuentaId = document.getElementById('captHistCuenta').value;
+  var anio = parseInt(document.getElementById('captHistAnio').value);
+  if (!cuentaId) {
+    contenedor.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">' +
+      '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:18px;opacity:0.4;"></i>' +
+      'Selecciona una cuenta para comenzar.</div>';
+    return;
+  }
+
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return;
+
+  var esDebito = cuenta.tipo === 'debito';
+  var moneda = cuenta.moneda || 'MXN';
+  var historial = cuenta.historial_saldos || [];
+  var ahora = new Date();
+  var mesMax = (anio === ahora.getFullYear()) ? ahora.getMonth() : 11;
+
+  // Find saldo_inicio for first month: last cierre before selected year
+  var cierresAntes = historial.filter(function(h) {
+    return h.fecha && h.fecha < anio + '-01-01';
+  }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+
+  var saldoInicialPrimerMes = cierresAntes.length > 0
+    ? (cierresAntes[0].saldo_final != null ? cierresAntes[0].saldo_final : 0)
+    : (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : 0);
+
+  // Check existing cierres for each month
+  var existentes = {};
+  historial.forEach(function(h) {
+    if (h.fecha) {
+      var periodo = h.fecha.slice(0, 7);
+      existentes[periodo] = h;
+    }
+  });
+
+  var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  var filas = '';
+  for (var m = 0; m <= mesMax; m++) {
+    var periodo = anio + '-' + String(m + 1).padStart(2, '0');
+    var ultimoDia = new Date(anio, m + 1, 0).getDate();
+    var fechaDefault = anio + '-' + String(m + 1).padStart(2, '0') + '-' + String(ultimoDia).padStart(2, '0');
+    var existente = existentes[periodo];
+    var tieneExistente = !!existente;
+
+    var saldoInicioVal = '';
+    var saldoFinalVal = '';
+    var fechaVal = fechaDefault;
+    if (tieneExistente) {
+      saldoInicioVal = existente.saldo_inicio != null ? existente.saldo_inicio : '';
+      saldoFinalVal = existente.saldo_final != null ? existente.saldo_final : '';
+      fechaVal = existente.fecha || fechaDefault;
+    } else if (m === 0) {
+      saldoInicioVal = saldoInicialPrimerMes;
+    }
+
+    var indicadorExistente = tieneExistente
+      ? ' <i class="fas fa-circle" style="color:var(--accent-amber);font-size:7px;vertical-align:middle;" title="Ya existe cierre para este periodo"></i>'
+      : '';
+
+    var inicioReadonly = (m > 0 && !tieneExistente) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
+
+    var rendCell = esDebito
+      ? '<td style="text-align:center;color:var(--text-muted);font-size:11px;">N/A</td>'
+      : '<td style="text-align:right;font-size:11px;" id="captHistRend_' + m + '"><span style="color:var(--text-muted);">--</span></td>';
+
+    filas += '<tr>' +
+      '<td style="font-weight:600;white-space:nowrap;font-size:12px;">' + mesesNombres[m] + indicadorExistente + '</td>' +
+      '<td><input type="date" class="form-input capt-hist-fecha" data-mes="' + m + '" value="' + fechaVal + '" style="padding:4px 6px;font-size:12px;min-height:auto;width:130px;"></td>' +
+      '<td><input type="number" class="form-input capt-hist-inicio" data-mes="' + m + '" step="0.01" min="0" value="' + saldoInicioVal + '"' + inicioReadonly + ' oninput="recalcCapturaHistorica(' + m + ')"></td>' +
+      '<td><input type="number" class="form-input capt-hist-final" data-mes="' + m + '" step="0.01" min="0" value="' + saldoFinalVal + '" style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;" oninput="onCaptHistFinalChange(' + m + ',' + mesMax + ')"></td>' +
+      rendCell +
+    '</tr>';
+  }
+
+  // Account info header
+  var infoHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+      '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
+        '<i class="fas fa-university" style="color:var(--accent-blue);font-size:13px;"></i>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);">' + moneda + ' | ' + (esDebito ? 'Debito' : 'Inversion') + ' | Ano ' + anio + '</div>' +
+      '</div>' +
+    '</div>';
+
+  contenedor.innerHTML = infoHTML +
+    '<table class="data-table" style="font-size:13px;">' +
+      '<thead><tr>' +
+        '<th style="min-width:80px;">Mes</th>' +
+        '<th>Fecha Cierre</th>' +
+        '<th style="text-align:right;">Saldo Inicial</th>' +
+        '<th style="text-align:right;">Saldo Final</th>' +
+        '<th style="text-align:right;">Rendimiento</th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody>' +
+    '</table>';
+
+  // Recalculate any pre-filled rows
+  for (var i = 0; i <= mesMax; i++) {
+    var finalInput = document.querySelector('.capt-hist-final[data-mes="' + i + '"]');
+    if (finalInput && finalInput.value) {
+      recalcCapturaHistorica(i);
+    }
+  }
+}
+
+function onCaptHistFinalChange(mes, mesMax) {
+  var saldoFinalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
+  var saldoFinal = saldoFinalInput ? (parseFloat(saldoFinalInput.value) || 0) : 0;
+
+  // Cascade to next month's saldo_inicio
+  if (mes < mesMax) {
+    var nextInicio = document.querySelector('.capt-hist-inicio[data-mes="' + (mes + 1) + '"]');
+    if (nextInicio && nextInicio.hasAttribute('readonly')) {
+      nextInicio.value = saldoFinal || '';
+      // If next month has saldo_final, recalc it too
+      var nextFinal = document.querySelector('.capt-hist-final[data-mes="' + (mes + 1) + '"]');
+      if (nextFinal && nextFinal.value) {
+        recalcCapturaHistorica(mes + 1);
+        // Continue cascade
+        onCaptHistFinalChange(mes + 1, mesMax);
+      }
+    }
+  }
+
+  // Recalc this month's rendimiento
+  recalcCapturaHistorica(mes);
+}
+
+function recalcCapturaHistorica(mes) {
+  var cuentaId = document.getElementById('captHistCuenta') ? document.getElementById('captHistCuenta').value : '';
+  if (!cuentaId) return;
+
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta || cuenta.tipo === 'debito') return;
+
+  var inicioInput = document.querySelector('.capt-hist-inicio[data-mes="' + mes + '"]');
+  var finalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
+  var cell = document.getElementById('captHistRend_' + mes);
+  if (!inicioInput || !finalInput || !cell) return;
+
+  if (!finalInput.value) {
+    cell.innerHTML = '<span style="color:var(--text-muted);">--</span>';
+    return;
+  }
+
+  var saldoInicio = parseFloat(inicioInput.value) || 0;
+  var saldoFinal = parseFloat(finalInput.value) || 0;
+
+  // Calculate days
+  var fechaActual = document.querySelector('.capt-hist-fecha[data-mes="' + mes + '"]');
+  var fechaActualVal = fechaActual ? fechaActual.value : '';
+  var fechaAnterior = '';
+  if (mes > 0) {
+    var prevFecha = document.querySelector('.capt-hist-fecha[data-mes="' + (mes - 1) + '"]');
+    fechaAnterior = prevFecha ? prevFecha.value : '';
+  } else {
+    var anio = parseInt(document.getElementById('captHistAnio').value);
+    var historial = cuenta.historial_saldos || [];
+    var cierresAntes = historial.filter(function(h) {
+      return h.fecha && h.fecha < anio + '-01-01';
+    }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+    fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (cuenta.fecha_saldo_inicial || '');
+  }
+
+  var dias = _calcDiasEntreFechas(fechaAnterior, fechaActualVal);
+  if (dias <= 0) dias = 30;
+
+  var rend = saldoFinal - saldoInicio;
+  var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
+  var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
+
+  var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var sign = rend >= 0 ? '+' : '';
+  cell.innerHTML =
+    '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, cuenta.moneda) + '</span>' +
+    '<br><span style="font-size:10px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% (' + dias + 'd)</span>' +
+    '<br><span style="font-size:10px;color:' + color + ';opacity:0.7;">' + sign + rendPctAnual.toFixed(2) + '% anual</span>';
+}
+
+function saveCapturaHistorica(event) {
+  event.preventDefault();
+
+  var cuentaId = document.getElementById('captHistCuenta').value;
+  if (!cuentaId) { showToast('Selecciona una cuenta.', 'warning'); return; }
+
+  var anio = parseInt(document.getElementById('captHistAnio').value);
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+  if (ctaIdx === -1) { showToast('Cuenta no encontrada.', 'error'); return; }
+
+  var cuenta = cuentas[ctaIdx];
+  var esDebito = cuenta.tipo === 'debito';
+
+  // Gather all filled rows
+  var filasValidas = [];
+  var fechaInputs = document.querySelectorAll('.capt-hist-fecha');
+  fechaInputs.forEach(function(fechaEl) {
+    var mes = parseInt(fechaEl.getAttribute('data-mes'));
+    var finalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
+    if (!finalInput || !finalInput.value) return;
+
+    var inicioInput = document.querySelector('.capt-hist-inicio[data-mes="' + mes + '"]');
+    var fecha = fechaEl.value;
+    var saldoInicio = parseFloat(inicioInput.value) || 0;
+    var saldoFinal = parseFloat(finalInput.value) || 0;
+    var periodo = fecha.slice(0, 7);
+
+    // Calc days
+    var fechaAnterior = '';
+    if (mes > 0) {
+      var prevFecha = document.querySelector('.capt-hist-fecha[data-mes="' + (mes - 1) + '"]');
+      fechaAnterior = prevFecha ? prevFecha.value : '';
+    } else {
+      var historial = cuenta.historial_saldos || [];
+      var cierresAntes = historial.filter(function(h) {
+        return h.fecha && h.fecha < anio + '-01-01';
+      }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+      fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (cuenta.fecha_saldo_inicial || '');
+    }
+
+    var dias = _calcDiasEntreFechas(fechaAnterior, fecha);
+    if (dias <= 0) dias = 30;
+
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio);
+    var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
+    var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
+
+    filasValidas.push({
+      mes: mes, fecha: fecha, periodo: periodo, dias: dias,
+      saldoInicio: saldoInicio, saldoFinal: saldoFinal,
+      rend: rend, rendPct: rendPct, rendPctAnual: rendPctAnual
+    });
+  });
+
+  if (filasValidas.length === 0) {
+    showToast('No se capturo ningun saldo final.', 'warning');
+    return;
+  }
+
+  // Detect conflicts
+  var historial = cuenta.historial_saldos || [];
+  var existentes = {};
+  historial.forEach(function(h, i) {
+    if (h.fecha) existentes[h.fecha.slice(0, 7)] = i;
+  });
+
+  var conflictos = filasValidas.filter(function(f) {
+    return existentes[f.periodo] !== undefined;
+  });
+
+  if (conflictos.length > 0) {
+    var mesesConflicto = conflictos.map(function(f) { return f.periodo; }).join(', ');
+    var opcion = confirm('Ya existen cierres para: ' + mesesConflicto +
+      '.\n\nPresiona OK para SOBREESCRIBIR los existentes, o Cancelar para omitirlos.');
+
+    if (!opcion) {
+      filasValidas = filasValidas.filter(function(f) {
+        return existentes[f.periodo] === undefined;
+      });
+      if (filasValidas.length === 0) {
+        showToast('No hay periodos nuevos para guardar.', 'info');
+        return;
+      }
+    } else {
+      // Remove old entries that will be overwritten
+      var periodosConflicto = {};
+      conflictos.forEach(function(f) { periodosConflicto[f.periodo] = true; });
+
+      historial = historial.filter(function(h) {
+        return !h.fecha || !periodosConflicto[h.fecha.slice(0, 7)];
+      });
+      cuenta.historial_saldos = historial;
+
+      rendimientos = rendimientos.filter(function(r) {
+        return !(r.cuenta_id === cuentaId && periodosConflicto[r.periodo]);
+      });
+    }
+  }
+
+  // Insert new entries
+  if (!cuenta.historial_saldos) cuenta.historial_saldos = [];
+  filasValidas.forEach(function(f) {
+    cuenta.historial_saldos.push({
+      fecha: f.fecha,
+      saldo_inicio: f.saldoInicio,
+      saldo_final: f.saldoFinal,
+      rendimiento: f.rend,
+      dias: f.dias,
+      rendimiento_pct: f.rendPct,
+      rendimiento_pct_anual: f.rendPctAnual
+    });
+
+    if (!esDebito) {
+      rendimientos.push({
+        id: uuid(),
+        cuenta_id: cuentaId,
+        periodo: f.periodo,
+        saldo_inicial: f.saldoInicio,
+        saldo_final: f.saldoFinal,
+        movimientos_neto: 0,
+        rendimiento_monto: f.rend,
+        rendimiento_pct: f.rendPct,
+        rendimiento_pct_anual: f.rendPctAnual,
+        dias: f.dias,
+        fecha: f.fecha,
+        created: new Date().toISOString()
+      });
+    }
+  });
+
+  // Update account saldo if most recent captured cierre is more recent than current latest
+  var allCierres = (cuenta.historial_saldos || []).slice().sort(function(a, b) {
+    return (b.fecha || '').localeCompare(a.fecha || '');
+  });
+  if (allCierres.length > 0 && allCierres[0].saldo_final != null) {
+    cuenta.saldo = allCierres[0].saldo_final;
+  }
+
+  cuentas[ctaIdx] = cuenta;
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+  saveData(STORAGE_KEYS.rendimientos, rendimientos);
+
+  closeModal();
+  showToast('Captura historica guardada: ' + filasValidas.length + ' mes' + (filasValidas.length > 1 ? 'es' : '') + ' registrado' + (filasValidas.length > 1 ? 's' : '') + '.', 'success');
+  renderCuentas();
+  updateHeaderPatrimonio();
 }
