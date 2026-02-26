@@ -1812,18 +1812,28 @@ function generarFilasCapturaHistorica() {
   var ahora = new Date();
   var mesMax = (anio === ahora.getFullYear()) ? ahora.getMonth() : 11;
 
-  // Find saldo_inicio for first month: primer valor > 0 del historial previo
-  var cierresAntes = historial.filter(function(h) {
-    return h.fecha && h.fecha < anio + '-01-01';
-  }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+  // Find saldo_inicio: el registro mas antiguo con valor > 0
+  var historialOrdenado = historial.slice().sort(function(a, b) {
+    return (a.fecha || '').localeCompare(b.fecha || '');
+  });
 
   var saldoInicialPrimerMes = 0;
-  // Buscar el primer cierre previo con saldo_final > 0 (del mas reciente al mas antiguo)
-  for (var ci = 0; ci < cierresAntes.length; ci++) {
-    var sf = cierresAntes[ci].saldo_final;
-    if (sf != null && sf > 0) { saldoInicialPrimerMes = sf; break; }
+  var fechaPrimerRegistro = '';
+  // Buscar el primer registro cronologico con saldo_inicio o saldo_final > 0
+  for (var ci = 0; ci < historialOrdenado.length; ci++) {
+    var h = historialOrdenado[ci];
+    if (h.saldo_inicio != null && h.saldo_inicio > 0) {
+      saldoInicialPrimerMes = h.saldo_inicio;
+      fechaPrimerRegistro = h.fecha || '';
+      break;
+    }
+    if (h.saldo_final != null && h.saldo_final > 0) {
+      saldoInicialPrimerMes = h.saldo_final;
+      fechaPrimerRegistro = h.fecha || '';
+      break;
+    }
   }
-  // Si no se encontro en cierres, usar saldo_inicial de la cuenta si > 0
+  // Si no se encontro en historial, usar saldo_inicial de la cuenta si > 0
   if (saldoInicialPrimerMes === 0 && cuenta.saldo_inicial != null && cuenta.saldo_inicial > 0) {
     saldoInicialPrimerMes = cuenta.saldo_inicial;
   }
