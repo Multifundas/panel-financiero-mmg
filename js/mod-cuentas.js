@@ -1871,7 +1871,9 @@ function generarFilasCapturaHistorica() {
       ? ' <i class="fas fa-circle" style="color:var(--accent-amber);font-size:7px;vertical-align:middle;" title="Ya existe cierre para este periodo"></i>'
       : '';
 
-    var inicioReadonly = (m > 0) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
+    // readonly solo si hay dato del mes anterior (existente o cascadeado)
+    var tieneRefAnterior = (m === 0) ? true : (saldoInicioVal !== '');
+    var inicioReadonly = (m > 0 && tieneRefAnterior) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
 
     var rendCell = esDebito
       ? '<td style="text-align:center;color:var(--text-muted);font-size:11px;">N/A</td>'
@@ -1929,13 +1931,26 @@ function generarFilasCapturaHistorica() {
 
 function onCaptHistFinalChange(mes, mesMax) {
   var saldoFinalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
-  var saldoFinal = saldoFinalInput ? (parseFloat(saldoFinalInput.value) || 0) : 0;
+  var saldoFinalVal = saldoFinalInput ? saldoFinalInput.value : '';
+  var saldoFinal = parseFloat(saldoFinalVal) || 0;
 
   // Cascade saldo_final → saldo_inicio del siguiente mes
   if (mes < mesMax) {
     var nextInicio = document.querySelector('.capt-hist-inicio[data-mes="' + (mes + 1) + '"]');
     if (nextInicio) {
-      nextInicio.value = saldoFinal || '';
+      if (saldoFinalVal !== '') {
+        // Hay saldo_final: llenar y bloquear el saldo_inicio siguiente
+        nextInicio.value = saldoFinal;
+        nextInicio.setAttribute('readonly', true);
+        nextInicio.style.opacity = '0.6';
+        nextInicio.style.background = 'var(--bg-base)';
+      } else {
+        // Se borro el saldo_final: liberar el saldo_inicio siguiente
+        nextInicio.value = '';
+        nextInicio.removeAttribute('readonly');
+        nextInicio.style.opacity = '1';
+        nextInicio.style.background = '';
+      }
       // If next month has saldo_final, recalc and continue cascade
       var nextFinal = document.querySelector('.capt-hist-final[data-mes="' + (mes + 1) + '"]');
       if (nextFinal && nextFinal.value) {
