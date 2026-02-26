@@ -285,8 +285,11 @@ function getDefaultCategorias() {
     { id: uuid(), nombre: 'Salud',                       icono: 'fa-heartbeat',     color: '#ef4444' },
     { id: uuid(), nombre: 'Transporte',                  icono: 'fa-car',           color: '#8b5cf6' },
     { id: uuid(), nombre: 'Familia',                     icono: 'fa-users',         color: '#ec4899' },
-    { id: uuid(), nombre: 'Entretenimiento y viajes',    icono: 'fa-plane',         color: '#10b981' },
-    { id: uuid(), nombre: 'Impuestos y obligaciones',    icono: 'fa-file-invoice',  color: '#64748b' },
+    { id: uuid(), nombre: 'Viajes',                       icono: 'fa-plane',         color: '#10b981' },
+    { id: uuid(), nombre: 'Impuestos',                   icono: 'fa-file-invoice',  color: '#64748b' },
+    { id: uuid(), nombre: 'Seguros',                     icono: 'fa-shield-alt',    color: '#06b6d4' },
+    { id: uuid(), nombre: 'Educacion',                   icono: 'fa-graduation-cap',color: '#a855f7' },
+    { id: uuid(), nombre: 'Inversiones',                 icono: 'fa-chart-line',    color: '#f97316' },
     { id: uuid(), nombre: 'Otros',                       icono: 'fa-ellipsis-h',    color: '#94a3b8' },
   ];
 }

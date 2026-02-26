@@ -1754,7 +1754,7 @@ function capturaHistorica() {
       '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);border-left:3px solid var(--accent-amber);">' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
           '<i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:14px;"></i>' +
-          '<span style="font-size:12px;color:var(--text-secondary);">Captura los cierres mensuales historicos de una cuenta. El saldo final de un mes se usa como saldo inicial del siguiente. El rendimiento se calcula automaticamente.</span>' +
+          '<span style="font-size:12px;color:var(--text-secondary);">Captura los cierres mensuales historicos. Registra entradas, salidas y transferencias para calcular el rendimiento real (descontando flujos de capital).</span>' +
         '</div>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
@@ -1843,10 +1843,16 @@ function generarFilasCapturaHistorica() {
 
     var saldoInicioVal = '';
     var saldoFinalVal = '';
+    var entradasVal = '';
+    var salidasVal = '';
+    var transferenciasVal = '';
     var fechaVal = fechaDefault;
     if (tieneExistente) {
       saldoInicioVal = existente.saldo_inicio != null ? existente.saldo_inicio : '';
       saldoFinalVal = existente.saldo_final != null ? existente.saldo_final : '';
+      entradasVal = existente.entradas != null ? existente.entradas : '';
+      salidasVal = existente.salidas != null ? existente.salidas : '';
+      transferenciasVal = existente.transferencias != null ? existente.transferencias : '';
       fechaVal = existente.fecha || fechaDefault;
     } else if (m === 0) {
       saldoInicioVal = saldoInicialPrimerMes;
@@ -1862,11 +1868,16 @@ function generarFilasCapturaHistorica() {
       ? '<td style="text-align:center;color:var(--text-muted);font-size:11px;">N/A</td>'
       : '<td style="text-align:right;font-size:11px;" id="captHistRend_' + m + '"><span style="color:var(--text-muted);">--</span></td>';
 
+    var inputStyle = 'padding:4px 6px;font-size:12px;min-width:80px;min-height:auto;';
+
     filas += '<tr>' +
       '<td style="font-weight:600;white-space:nowrap;font-size:12px;">' + mesesNombres[m] + indicadorExistente + '</td>' +
       '<td><input type="date" class="form-input capt-hist-fecha" data-mes="' + m + '" value="' + fechaVal + '" style="padding:4px 6px;font-size:12px;min-height:auto;width:130px;"></td>' +
       '<td><input type="number" class="form-input capt-hist-inicio" data-mes="' + m + '" step="0.01" min="0" value="' + saldoInicioVal + '"' + inicioReadonly + ' oninput="recalcCapturaHistorica(' + m + ')"></td>' +
-      '<td><input type="number" class="form-input capt-hist-final" data-mes="' + m + '" step="0.01" min="0" value="' + saldoFinalVal + '" style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;" oninput="onCaptHistFinalChange(' + m + ',' + mesMax + ')"></td>' +
+      '<td><input type="number" class="form-input capt-hist-final" data-mes="' + m + '" step="0.01" min="0" value="' + saldoFinalVal + '" style="' + inputStyle + '" oninput="onCaptHistFinalChange(' + m + ',' + mesMax + ')"></td>' +
+      '<td><input type="number" class="form-input capt-hist-entradas" data-mes="' + m + '" step="0.01" min="0" value="' + entradasVal + '" style="' + inputStyle + '" oninput="recalcCapturaHistorica(' + m + ')" placeholder="0"></td>' +
+      '<td><input type="number" class="form-input capt-hist-salidas" data-mes="' + m + '" step="0.01" min="0" value="' + salidasVal + '" style="' + inputStyle + '" oninput="recalcCapturaHistorica(' + m + ')" placeholder="0"></td>' +
+      '<td><input type="number" class="form-input capt-hist-transferencias" data-mes="' + m + '" step="0.01" value="' + transferenciasVal + '" style="' + inputStyle + '" oninput="recalcCapturaHistorica(' + m + ')" placeholder="0" title="Positivo = entrada, Negativo = salida"></td>' +
       rendCell +
     '</tr>';
   }
@@ -1890,6 +1901,9 @@ function generarFilasCapturaHistorica() {
         '<th>Fecha Cierre</th>' +
         '<th style="text-align:right;">Saldo Inicial</th>' +
         '<th style="text-align:right;">Saldo Final</th>' +
+        '<th style="text-align:right;color:var(--accent-green);">Entradas</th>' +
+        '<th style="text-align:right;color:var(--accent-red);">Salidas</th>' +
+        '<th style="text-align:right;color:var(--accent-blue);">Transferencias</th>' +
         '<th style="text-align:right;">Rendimiento</th>' +
       '</tr></thead>' +
       '<tbody>' + filas + '</tbody>' +
@@ -1948,6 +1962,19 @@ function recalcCapturaHistorica(mes) {
   var saldoInicio = parseFloat(inicioInput.value) || 0;
   var saldoFinal = parseFloat(finalInput.value) || 0;
 
+  // Read entradas, salidas, transferencias
+  var entradasInput = document.querySelector('.capt-hist-entradas[data-mes="' + mes + '"]');
+  var salidasInput = document.querySelector('.capt-hist-salidas[data-mes="' + mes + '"]');
+  var transferenciasInput = document.querySelector('.capt-hist-transferencias[data-mes="' + mes + '"]');
+  var entradas = entradasInput ? (parseFloat(entradasInput.value) || 0) : 0;
+  var salidas = salidasInput ? (parseFloat(salidasInput.value) || 0) : 0;
+  var transferencias = transferenciasInput ? (parseFloat(transferenciasInput.value) || 0) : 0;
+
+  // movimientos_neto = capital flows that are NOT rendimiento
+  // entradas increase balance without being return, salidas decrease it
+  // transferencias: positive = money came in, negative = money went out
+  var movNeto = entradas - salidas + transferencias;
+
   // Calculate days
   var fechaActual = document.querySelector('.capt-hist-fecha[data-mes="' + mes + '"]');
   var fechaActualVal = fechaActual ? fechaActual.value : '';
@@ -1967,16 +1994,21 @@ function recalcCapturaHistorica(mes) {
   var dias = _calcDiasEntreFechas(fechaAnterior, fechaActualVal);
   if (dias <= 0) dias = 30;
 
-  var rend = saldoFinal - saldoInicio;
+  // Rendimiento real = cambio en saldo - flujos de capital
+  var rend = saldoFinal - saldoInicio - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
   var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
   var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   var sign = rend >= 0 ? '+' : '';
+  var movNetoInfo = movNeto !== 0
+    ? '<br><span style="font-size:9px;color:var(--text-muted);">Flujo neto: ' + (movNeto >= 0 ? '+' : '') + formatCurrency(movNeto, cuenta.moneda) + '</span>'
+    : '';
   cell.innerHTML =
     '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, cuenta.moneda) + '</span>' +
     '<br><span style="font-size:10px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% (' + dias + 'd)</span>' +
-    '<br><span style="font-size:10px;color:' + color + ';opacity:0.7;">' + sign + rendPctAnual.toFixed(2) + '% anual</span>';
+    '<br><span style="font-size:10px;color:' + color + ';opacity:0.7;">' + sign + rendPctAnual.toFixed(2) + '% anual</span>' +
+    movNetoInfo;
 }
 
 function saveCapturaHistorica(event) {
@@ -2003,10 +2035,18 @@ function saveCapturaHistorica(event) {
     if (!finalInput || !finalInput.value) return;
 
     var inicioInput = document.querySelector('.capt-hist-inicio[data-mes="' + mes + '"]');
+    var entradasInput = document.querySelector('.capt-hist-entradas[data-mes="' + mes + '"]');
+    var salidasInput = document.querySelector('.capt-hist-salidas[data-mes="' + mes + '"]');
+    var transferenciasInput = document.querySelector('.capt-hist-transferencias[data-mes="' + mes + '"]');
     var fecha = fechaEl.value;
     var saldoInicio = parseFloat(inicioInput.value) || 0;
     var saldoFinal = parseFloat(finalInput.value) || 0;
+    var entradas = entradasInput ? (parseFloat(entradasInput.value) || 0) : 0;
+    var salidas = salidasInput ? (parseFloat(salidasInput.value) || 0) : 0;
+    var transferencias = transferenciasInput ? (parseFloat(transferenciasInput.value) || 0) : 0;
     var periodo = fecha.slice(0, 7);
+
+    var movNeto = entradas - salidas + transferencias;
 
     // Calc days
     var fechaAnterior = '';
@@ -2024,13 +2064,16 @@ function saveCapturaHistorica(event) {
     var dias = _calcDiasEntreFechas(fechaAnterior, fecha);
     if (dias <= 0) dias = 30;
 
-    var rend = esDebito ? 0 : (saldoFinal - saldoInicio);
+    // Rendimiento real = cambio en saldo - flujos de capital
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio - movNeto);
     var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
     var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
     filasValidas.push({
       mes: mes, fecha: fecha, periodo: periodo, dias: dias,
       saldoInicio: saldoInicio, saldoFinal: saldoFinal,
+      entradas: entradas, salidas: salidas, transferencias: transferencias,
+      movNeto: movNeto,
       rend: rend, rendPct: rendPct, rendPctAnual: rendPctAnual
     });
   });
@@ -2087,6 +2130,10 @@ function saveCapturaHistorica(event) {
       fecha: f.fecha,
       saldo_inicio: f.saldoInicio,
       saldo_final: f.saldoFinal,
+      entradas: f.entradas,
+      salidas: f.salidas,
+      transferencias: f.transferencias,
+      movimientos_neto: f.movNeto,
       rendimiento: f.rend,
       dias: f.dias,
       rendimiento_pct: f.rendPct,
@@ -2100,7 +2147,10 @@ function saveCapturaHistorica(event) {
         periodo: f.periodo,
         saldo_inicial: f.saldoInicio,
         saldo_final: f.saldoFinal,
-        movimientos_neto: 0,
+        entradas: f.entradas,
+        salidas: f.salidas,
+        transferencias: f.transferencias,
+        movimientos_neto: f.movNeto,
         rendimiento_monto: f.rend,
         rendimiento_pct: f.rendPct,
         rendimiento_pct_anual: f.rendPctAnual,

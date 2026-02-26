@@ -14,6 +14,29 @@ function initApp() {
     console.log('Panel Financiero: configuracion inicial creada.');
   }
 
+  // Migrate categories: rename old names + add missing ones
+  var cats = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  if (cats.length > 0) {
+    var changed = false;
+    cats.forEach(function(c) {
+      if (c.nombre === 'Entretenimiento y viajes') { c.nombre = 'Viajes'; changed = true; }
+      if (c.nombre === 'Impuestos y obligaciones') { c.nombre = 'Impuestos'; changed = true; }
+    });
+    var existNames = cats.map(function(c) { return c.nombre; });
+    var nuevas = [
+      { nombre: 'Seguros',      icono: 'fa-shield-alt',     color: '#06b6d4' },
+      { nombre: 'Educacion',    icono: 'fa-graduation-cap', color: '#a855f7' },
+      { nombre: 'Inversiones',  icono: 'fa-chart-line',     color: '#f97316' }
+    ];
+    nuevas.forEach(function(n) {
+      if (existNames.indexOf(n.nombre) === -1) {
+        cats.push({ id: uuid(), nombre: n.nombre, icono: n.icono, color: n.color });
+        changed = true;
+      }
+    });
+    if (changed) saveData(STORAGE_KEYS.categorias_gasto, cats);
+  }
+
   // Apply theme
   var config2 = loadData(STORAGE_KEYS.config) || {};
   if (typeof applyTheme === 'function') {
