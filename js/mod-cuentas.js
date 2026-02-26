@@ -1995,7 +1995,8 @@ function recalcCapturaHistorica(mes) {
     var cierresAntes = historial.filter(function(h) {
       return h.fecha && h.fecha < anio + '-01-01';
     }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
-    fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (cuenta.fecha_saldo_inicial || '');
+    // Si hay cierre anterior usar esa fecha, si no usar 1 de enero del año (inicio del periodo)
+    fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (anio + '-01-01');
   }
 
   var dias = _calcDiasEntreFechas(fechaAnterior, fechaActualVal);
@@ -2061,7 +2062,7 @@ function saveCapturaHistorica(event) {
       var cierresAntes = historial.filter(function(h) {
         return h.fecha && h.fecha < anio + '-01-01';
       }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
-      fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (cuenta.fecha_saldo_inicial || '');
+      fechaAnterior = cierresAntes.length > 0 ? cierresAntes[0].fecha : (anio + '-01-01');
     }
 
     var dias = _calcDiasEntreFechas(fechaAnterior, fecha);
