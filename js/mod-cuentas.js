@@ -2001,9 +2001,8 @@ function recalcCapturaHistorica(mes) {
   var dias = _calcDiasEntreFechas(fechaAnterior, fechaActualVal);
   if (dias <= 0) dias = 30;
 
-  // Rendimiento = saldoFinal - saldoInicio (diferencia total)
-  // entradas/salidas/transferencias se guardan para referencia
-  var rend = saldoFinal - saldoInicio;
+  // Rendimiento real = cambio en saldo descontando flujos de capital
+  var rend = saldoFinal - saldoInicio - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
   var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
@@ -2068,9 +2067,8 @@ function saveCapturaHistorica(event) {
     var dias = _calcDiasEntreFechas(fechaAnterior, fecha);
     if (dias <= 0) dias = 30;
 
-    // Rendimiento = diferencia total (saldoFinal - saldoInicio)
-    // movNeto se guarda para referencia pero NO se descuenta del rendimiento
-    var rend = esDebito ? 0 : (saldoFinal - saldoInicio);
+    // Rendimiento real = cambio en saldo descontando flujos de capital
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio - movNeto);
     var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
     var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
