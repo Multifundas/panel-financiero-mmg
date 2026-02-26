@@ -399,12 +399,12 @@ function editCuenta(id) {
         <div class="form-group">
           <label class="form-label">Saldo de Apertura *</label>
           <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
-                 value="${isEdit ? (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo) : ''}" placeholder="0.00">
+                 value="${isEdit ? _getSaldoApertura(cuenta).saldo : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label">Fecha de Apertura</label>
           <input type="date" id="cuentaFechaSaldoInicial" class="form-input"
-                 value="${isEdit && cuenta.fecha_saldo_inicial ? cuenta.fecha_saldo_inicial : ''}">
+                 value="${isEdit ? _getSaldoApertura(cuenta).fecha : ''}">
         </div>
         <div class="form-group" id="rendimientoGroup" style="display:${(isEdit && cuenta.tipo === 'inversion') || (!isEdit) ? 'block' : 'none'};">
           <label class="form-label" id="rendimientoLabel">Rendimiento Anual (%)</label>
@@ -741,9 +741,29 @@ function _getUltimoCierre(cuenta) {
 
 function _getSaldoInicioCierre(cuenta) {
   var h = cuenta.historial_saldos || [];
-  if (h.length === 0) return cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  if (h.length === 0) return _getSaldoApertura(cuenta).saldo;
   var sorted = h.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
   return sorted[0].saldo_final != null ? sorted[0].saldo_final : sorted[0].saldo;
+}
+
+// Retorna el saldo de apertura real: primer registro historico con valor > 0
+// Busca en historial_saldos el mas antiguo, si no hay usa saldo_inicial de la cuenta
+function _getSaldoApertura(cuenta) {
+  var h = cuenta.historial_saldos || [];
+  if (h.length > 0) {
+    var sorted = h.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].saldo_inicio != null && sorted[i].saldo_inicio > 0) {
+        return { saldo: sorted[i].saldo_inicio, fecha: sorted[i].fecha || '' };
+      }
+      if (sorted[i].saldo_final != null && sorted[i].saldo_final > 0) {
+        return { saldo: sorted[i].saldo_final, fecha: sorted[i].fecha || '' };
+      }
+    }
+  }
+  // Fallback: saldo_inicial de la cuenta
+  var s = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : (cuenta.saldo || 0);
+  return { saldo: s, fecha: cuenta.fecha_saldo_inicial || cuenta.created || '' };
 }
 
 function _calcMovimientosNetos(cuentaId, desdeExcl) {
@@ -1275,8 +1295,8 @@ function deleteCierreHistorial(cuentaId, idx) {
     var sorted = [...cuenta.historial_saldos].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
     cuenta.saldo = sorted[0].saldo_final != null ? sorted[0].saldo_final : sorted[0].saldo;
   } else {
-    // No more cierres, revert to saldo_inicial
-    cuenta.saldo = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+    // No more cierres, revert to saldo de apertura
+    cuenta.saldo = _getSaldoApertura(cuenta).saldo;
   }
 
   cuentas[ctaIdx] = cuenta;
@@ -1423,9 +1443,10 @@ function filterEstadoCuenta() {
   // Sort chronologically (oldest first) to calculate running balance
   filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
-  // Saldo inicial permanente de la cuenta
-  var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
-  var fechaSaldoInicial = cuenta.fecha_saldo_inicial || '';
+  // Saldo de apertura: primer registro historico con valor > 0
+  var apertura = _getSaldoApertura(cuenta);
+  var saldoInicial = apertura.saldo;
+  var fechaSaldoInicial = apertura.fecha;
 
   // Calculate totals from filtered movements (exclude cierres)
   var sumIngresos = 0, sumGastos = 0;
@@ -1580,14 +1601,15 @@ function _buildEdoCuentaData() {
 
   filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
-  var saldoInicial = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : cuenta.saldo;
+  var aperturaExport = _getSaldoApertura(cuenta);
+  var saldoInicial = aperturaExport.saldo;
   var saldoRunning = saldoInicial;
   var sumIngresos = 0, sumGastos = 0;
 
   // Build rows array with running balance
   var rows = [];
   // First row: Saldo de Apertura
-  rows.push({ fecha: cuenta.fecha_saldo_inicial || '', descripcion: 'Saldo de Apertura', cargo: '', abono: '', saldo: saldoInicial, esCierre: false, esApertura: true });
+  rows.push({ fecha: aperturaExport.fecha, descripcion: 'Saldo de Apertura', cargo: '', abono: '', saldo: saldoInicial, esCierre: false, esApertura: true });
 
   filtered.forEach(function(e) {
     if (e.esCierre) {
@@ -1812,30 +1834,24 @@ function generarFilasCapturaHistorica() {
   var ahora = new Date();
   var mesMax = (anio === ahora.getFullYear()) ? ahora.getMonth() : 11;
 
-  // Find saldo_inicio: el registro mas antiguo con valor > 0
-  var historialOrdenado = historial.slice().sort(function(a, b) {
-    return (a.fecha || '').localeCompare(b.fecha || '');
-  });
+  // Find saldo_inicio para el primer mes del año seleccionado:
+  // 1. Buscar ultimo cierre del año anterior (saldo_final mas reciente antes del 1 de enero)
+  // 2. Si no hay, usar el saldo de apertura real (primer registro historico > 0)
+  var cierresAntes = historial.filter(function(h) {
+    return h.fecha && h.fecha < anio + '-01-01';
+  }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
 
   var saldoInicialPrimerMes = 0;
-  var fechaPrimerRegistro = '';
-  // Buscar el primer registro cronologico con saldo_inicio o saldo_final > 0
-  for (var ci = 0; ci < historialOrdenado.length; ci++) {
-    var h = historialOrdenado[ci];
-    if (h.saldo_inicio != null && h.saldo_inicio > 0) {
-      saldoInicialPrimerMes = h.saldo_inicio;
-      fechaPrimerRegistro = h.fecha || '';
-      break;
-    }
-    if (h.saldo_final != null && h.saldo_final > 0) {
-      saldoInicialPrimerMes = h.saldo_final;
-      fechaPrimerRegistro = h.fecha || '';
+  // Buscar ultimo cierre antes del año con saldo_final > 0
+  for (var ci = 0; ci < cierresAntes.length; ci++) {
+    if (cierresAntes[ci].saldo_final != null && cierresAntes[ci].saldo_final > 0) {
+      saldoInicialPrimerMes = cierresAntes[ci].saldo_final;
       break;
     }
   }
-  // Si no se encontro en historial, usar saldo_inicial de la cuenta si > 0
-  if (saldoInicialPrimerMes === 0 && cuenta.saldo_inicial != null && cuenta.saldo_inicial > 0) {
-    saldoInicialPrimerMes = cuenta.saldo_inicial;
+  // Si no hay cierres previos, usar saldo de apertura real
+  if (saldoInicialPrimerMes === 0) {
+    saldoInicialPrimerMes = _getSaldoApertura(cuenta).saldo;
   }
 
   // Check existing cierres for each month
