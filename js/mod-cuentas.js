@@ -1812,14 +1812,21 @@ function generarFilasCapturaHistorica() {
   var ahora = new Date();
   var mesMax = (anio === ahora.getFullYear()) ? ahora.getMonth() : 11;
 
-  // Find saldo_inicio for first month: last cierre before selected year
+  // Find saldo_inicio for first month: primer valor > 0 del historial previo
   var cierresAntes = historial.filter(function(h) {
     return h.fecha && h.fecha < anio + '-01-01';
   }).sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
 
-  var saldoInicialPrimerMes = cierresAntes.length > 0
-    ? (cierresAntes[0].saldo_final != null ? cierresAntes[0].saldo_final : 0)
-    : (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : 0);
+  var saldoInicialPrimerMes = 0;
+  // Buscar el primer cierre previo con saldo_final > 0 (del mas reciente al mas antiguo)
+  for (var ci = 0; ci < cierresAntes.length; ci++) {
+    var sf = cierresAntes[ci].saldo_final;
+    if (sf != null && sf > 0) { saldoInicialPrimerMes = sf; break; }
+  }
+  // Si no se encontro en cierres, usar saldo_inicial de la cuenta si > 0
+  if (saldoInicialPrimerMes === 0 && cuenta.saldo_inicial != null && cuenta.saldo_inicial > 0) {
+    saldoInicialPrimerMes = cuenta.saldo_inicial;
+  }
 
   // Check existing cierres for each month
   var existentes = {};
