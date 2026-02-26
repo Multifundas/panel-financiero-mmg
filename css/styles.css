@@ -508,7 +508,8 @@
     }
 
     .modal-content.modal-wide {
-      max-width: 900px;
+      max-width: 1200px;
+      width: 95%;
     }
 
     @keyframes modalIn {

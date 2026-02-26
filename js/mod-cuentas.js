@@ -1834,6 +1834,7 @@ function generarFilasCapturaHistorica() {
                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   var filas = '';
+  var prevSaldoFinal = saldoInicialPrimerMes;
   for (var m = 0; m <= mesMax; m++) {
     var periodo = anio + '-' + String(m + 1).padStart(2, '0');
     var ultimoDia = new Date(anio, m + 1, 0).getDate();
@@ -1854,15 +1855,23 @@ function generarFilasCapturaHistorica() {
       salidasVal = existente.salidas != null ? existente.salidas : '';
       transferenciasVal = existente.transferencias != null ? existente.transferencias : '';
       fechaVal = existente.fecha || fechaDefault;
-    } else if (m === 0) {
-      saldoInicioVal = saldoInicialPrimerMes;
+    } else {
+      // Auto-fill saldo_inicio from previous month's saldo_final
+      saldoInicioVal = prevSaldoFinal != null ? prevSaldoFinal : '';
+    }
+
+    // Track previous saldo_final for next month cascade
+    if (tieneExistente && existente.saldo_final != null) {
+      prevSaldoFinal = existente.saldo_final;
+    } else {
+      prevSaldoFinal = null;
     }
 
     var indicadorExistente = tieneExistente
       ? ' <i class="fas fa-circle" style="color:var(--accent-amber);font-size:7px;vertical-align:middle;" title="Ya existe cierre para este periodo"></i>'
       : '';
 
-    var inicioReadonly = (m > 0 && !tieneExistente) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
+    var inicioReadonly = (m > 0) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
 
     var rendCell = esDebito
       ? '<td style="text-align:center;color:var(--text-muted);font-size:11px;">N/A</td>'
