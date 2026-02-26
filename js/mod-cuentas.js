@@ -1750,7 +1750,7 @@ function capturaHistorica() {
   }
 
   var formHTML =
-    '<form id="formCapturaHistorica" onsubmit="saveCapturaHistorica(event)">' +
+    '<form id="formCapturaHistorica" onsubmit="saveCapturaHistorica(event)" onkeydown="if(event.key===\'Enter\'&&event.target.tagName!==\'BUTTON\'){event.preventDefault();}">' +
       '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);border-left:3px solid var(--accent-amber);">' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
           '<i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:14px;"></i>' +
@@ -1922,16 +1922,15 @@ function onCaptHistFinalChange(mes, mesMax) {
   var saldoFinalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
   var saldoFinal = saldoFinalInput ? (parseFloat(saldoFinalInput.value) || 0) : 0;
 
-  // Cascade to next month's saldo_inicio
+  // Cascade saldo_final → saldo_inicio del siguiente mes
   if (mes < mesMax) {
     var nextInicio = document.querySelector('.capt-hist-inicio[data-mes="' + (mes + 1) + '"]');
-    if (nextInicio && nextInicio.hasAttribute('readonly')) {
+    if (nextInicio) {
       nextInicio.value = saldoFinal || '';
-      // If next month has saldo_final, recalc it too
+      // If next month has saldo_final, recalc and continue cascade
       var nextFinal = document.querySelector('.capt-hist-final[data-mes="' + (mes + 1) + '"]');
       if (nextFinal && nextFinal.value) {
         recalcCapturaHistorica(mes + 1);
-        // Continue cascade
         onCaptHistFinalChange(mes + 1, mesMax);
       }
     }
