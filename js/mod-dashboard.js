@@ -141,7 +141,7 @@ function renderDashboard() {
   let sumPonderado = 0;
   let sumPesos = 0;
   invCuentas.forEach(c => {
-    const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    const valMXN = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     // Obtener tasa anualizada del ultimo cierre, o fallback al campo estatico
     let tasaAnual = c.rendimiento_anual || 0;
     const hist = c.historial_saldos || [];
@@ -159,7 +159,7 @@ function renderDashboard() {
   // -- Top 5 activos by value --
   const activosOrdenados = cuentas
     .filter(c => c.activa !== false)
-    .map(c => ({ ...c, valorMXN: toMXN(c.saldo, c.moneda, tiposCambio) }))
+    .map(c => ({ ...c, valorMXN: toMXN(_calcSaldoReal(c), c.moneda, tiposCambio) }))
     .sort((a, b) => b.valorMXN - a.valorMXN)
     .slice(0, 5);
 
@@ -176,7 +176,7 @@ function renderDashboard() {
   const distTipo = { debito: 0, inversion: 0, inmueble: 0, activo_fijo: 0 };
   cuentas.forEach(c => {
     if (c.activa !== false && distTipo.hasOwnProperty(c.tipo)) {
-      distTipo[c.tipo] += toMXN(c.saldo, c.moneda, tiposCambio);
+      distTipo[c.tipo] += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
   });
 
@@ -185,7 +185,7 @@ function renderDashboard() {
   let kpiInversiones = 0, kpiInversionesCount = 0;
   cuentas.forEach(c => {
     if (c.activa === false) return;
-    const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    const valMXN = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     if (c.tipo === 'debito') { kpiBancarias += valMXN; kpiBancariasCount++; }
     else if (c.tipo === 'inversion') { kpiInversiones += valMXN; kpiInversionesCount++; }
   });
@@ -492,12 +492,12 @@ function renderDashboard() {
 
   // -- Diversificacion Calculations (Herfindahl-Hirschman Index) --
   const cuentasActivas = cuentas.filter(c => c.activa !== false);
-  const patrimonioDiversificacion = cuentasActivas.reduce((sum, c) => sum + toMXN(c.saldo, c.moneda, tiposCambio), 0);
+  const patrimonioDiversificacion = cuentasActivas.reduce((sum, c) => sum + toMXN(_calcSaldoReal(c), c.moneda, tiposCambio), 0);
 
   let hhi = 0;
   if (patrimonioDiversificacion > 0) {
     cuentasActivas.forEach(c => {
-      const share = toMXN(c.saldo, c.moneda, tiposCambio) / patrimonioDiversificacion;
+      const share = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio) / patrimonioDiversificacion;
       hhi += share * share;
     });
   }
@@ -524,7 +524,7 @@ function renderDashboard() {
   const divByTipo = { debito: 0, inversion: 0, inmueble: 0, activo_fijo: 0 };
   cuentasActivas.forEach(c => {
     if (divByTipo.hasOwnProperty(c.tipo)) {
-      divByTipo[c.tipo] += toMXN(c.saldo, c.moneda, tiposCambio);
+      divByTipo[c.tipo] += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
   });
   const tipoLabelsMap = { debito: 'DEBITO', inversion: 'INVERSION', inmueble: 'INMUEBLE', activo_fijo: 'ACTIVO FIJO' };
@@ -534,7 +534,7 @@ function renderDashboard() {
   cuentasActivas.forEach(c => {
     const mon = (c.moneda || 'MXN').toUpperCase();
     if (!divByMoneda[mon]) divByMoneda[mon] = 0;
-    divByMoneda[mon] += toMXN(c.saldo, c.moneda, tiposCambio);
+    divByMoneda[mon] += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
   });
   const monedaColors = { MXN: '#3b82f6', USD: '#10b981', EUR: '#f59e0b', GBP: '#8b5cf6' };
 
@@ -546,7 +546,7 @@ function renderDashboard() {
   cuentasActivas.forEach(c => {
     const instName = instMapId[c.institucion_id] || 'Sin institucion';
     if (!divByInst[instName]) divByInst[instName] = 0;
-    divByInst[instName] += toMXN(c.saldo, c.moneda, tiposCambio);
+    divByInst[instName] += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
   });
   const instColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444', '#06b6d4', '#84cc16'];
 
@@ -1562,7 +1562,7 @@ function mostrarDesgloseRendimiento() {
   var invCuentas = cuentas.filter(function(c) { return c.activa !== false && c.tipo === 'inversion'; });
   var sumPesos = 0;
   invCuentas.forEach(function(c) {
-    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    var valMXN = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     sumPesos += valMXN;
     var tasaAnual = c.rendimiento_anual || 0;
     var hist = c.historial_saldos || [];
@@ -1994,13 +1994,14 @@ function mostrarDesgloseCuentas(tipo) {
   var filtered = cuentas.filter(function(c) { return c.activa !== false && c.tipo === tipo; });
   var total = 0;
   var rows = filtered.map(function(c) {
-    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    var saldoReal = _calcSaldoReal(c);
+    var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
     total += valMXN;
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
       '<td>' + (instMap[c.institucion_id] || '\u2014') + '</td>' +
       '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
-      '<td style="text-align:right;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
     '</tr>';
   }).join('');

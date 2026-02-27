@@ -868,7 +868,7 @@ function exportarExcel(tipo) {
         'Institucion': instMap[c.institucion_id] || '',
         'Tipo': c.tipo === 'debito' ? 'Debito' : c.tipo === 'inversion' ? 'Inversion' : c.tipo === 'inmueble' ? 'Inmueble' : c.tipo === 'activo_fijo' ? 'Activo Fijo' : c.tipo,
         'Moneda': c.moneda,
-        'Saldo': c.saldo || 0,
+        'Saldo': _calcSaldoReal(c) || 0,
         'Rendimiento Anual (%)': c.rendimiento_anual || 0,
         'Activa': c.activa !== false ? 'Si' : 'No',
       };
@@ -918,7 +918,7 @@ function exportarExcel(tipo) {
 
     cuentas.forEach(function(c) {
       if (c.activa === false) return;
-      var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+      var valMXN = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
       totalPatrimonio += valMXN;
       if (c.tipo === 'inversion') totalInversiones += valMXN;
       else if (c.tipo === 'debito') totalBancarias += valMXN;
@@ -1049,7 +1049,7 @@ function exportarPDF() {
 
   cuentas.forEach(function(c) {
     if (c.activa === false) return;
-    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    var valMXN = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     totalPatrimonio += valMXN;
     if (c.tipo === 'inversion') totalInversiones += valMXN;
     else if (c.tipo === 'debito') totalBancarias += valMXN;
@@ -1087,7 +1087,7 @@ function exportarPDF() {
       '<td>' + (instMap[c.institucion_id] || '') + '</td>' +
       '<td>' + tipoLabel + '</td>' +
       '<td>' + c.moneda + '</td>' +
-      '<td style="text-align:right;font-weight:600;">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrency(_calcSaldoReal(c), c.moneda) + '</td>' +
       '<td style="text-align:right;">' + (c.rendimiento_anual ? c.rendimiento_anual.toFixed(2) + '%' : '-') + '</td>' +
       '</tr>';
   }).join('');

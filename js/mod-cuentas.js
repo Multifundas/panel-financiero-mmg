@@ -18,7 +18,8 @@ function renderCuentas() {
 
   cuentas.forEach(c => {
     if (c.activa === false) return;
-    const valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    const saldoReal = _calcSaldoReal(c);
+    const valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
     if (c.tipo === 'debito') { totalBancarias += valMXN; countBancarias++; }
     else if (c.tipo === 'inversion') { totalInversiones += valMXN; countInversiones++; }
     else if (c.tipo === 'inmueble') { totalInmuebles += valMXN; countInmuebles++; }
@@ -246,7 +247,7 @@ function filterCuentas() {
       <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
       <td>${instMap[c.institucion_id] || '\u2014'}</td>
       <td><span class="badge ${monedaBadgeClass(c.moneda)}">${c.moneda}</span></td>
-      <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(c.saldo, c.moneda)}</td>
+      <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(_calcSaldoReal(c), c.moneda)}</td>
       <td style="text-align:right;color:${rendColor};font-weight:${rendAnualCalc !== 0 ? '600' : 'normal'};">${rendimiento}</td>
       <td>${subtipoHTML}</td>
       <td style="font-size:12px;white-space:nowrap;">${ultCierreHTML}</td>
@@ -296,9 +297,10 @@ function mostrarDesgloseCuentas(tipoCuenta) {
 
   var totalMXN = 0;
   var rows = filtered.sort(function(a, b) {
-    return toMXN(b.saldo, b.moneda, tiposCambio) - toMXN(a.saldo, a.moneda, tiposCambio);
+    return toMXN(_calcSaldoReal(b), b.moneda, tiposCambio) - toMXN(_calcSaldoReal(a), a.moneda, tiposCambio);
   }).map(function(c) {
-    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
+    var saldoReal = _calcSaldoReal(c);
+    var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
     totalMXN += valMXN;
     var instNombre = instMap[c.institucion_id] || '\u2014';
 
@@ -317,7 +319,7 @@ function mostrarDesgloseCuentas(tipoCuenta) {
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
       '<td>' + instNombre + '</td>' +
       '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.saldo, c.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(saldoReal, c.moneda) + '</td>' +
       (c.moneda !== 'MXN' ? '<td style="text-align:right;color:var(--text-muted);">' + formatCurrency(valMXN, 'MXN') + '</td>' : '<td style="text-align:right;color:var(--text-muted);">\u2014</td>') +
       '<td style="text-align:right;">' + rendHTML + '</td>' +
     '</tr>';
@@ -744,6 +746,44 @@ function _getSaldoInicioCierre(cuenta) {
   if (h.length === 0) return _getSaldoApertura(cuenta).saldo;
   var sorted = h.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
   return sorted[0].saldo_final != null ? sorted[0].saldo_final : sorted[0].saldo;
+}
+
+// Calcula el saldo real de una cuenta considerando todos los movimientos y cierres
+// Replica la logica del estado de cuenta: apertura + ingresos - gastos, reset en cierres
+function _calcSaldoReal(cuenta) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var movsCuenta = movimientos.filter(function(m) { return m.cuenta_id === cuenta.id; });
+  var historial = cuenta.historial_saldos || [];
+
+  // Build unified events
+  var eventos = [];
+  movsCuenta.forEach(function(m) {
+    eventos.push({ fecha: m.fecha || '', tipo: m.tipo, monto: m.monto || 0, esCierre: false });
+  });
+  historial.forEach(function(h) {
+    var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
+    eventos.push({ fecha: h.fecha || '', esCierre: true, cierreSaldoFinal: sFinal });
+  });
+
+  // Sort chronologically
+  eventos.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+
+  // Start from saldo de apertura
+  var apertura = _getSaldoApertura(cuenta);
+  var saldo = apertura.saldo;
+
+  // Process events
+  eventos.forEach(function(e) {
+    if (e.esCierre) {
+      saldo = e.cierreSaldoFinal;
+    } else if (e.tipo === 'ingreso') {
+      saldo += e.monto;
+    } else if (e.tipo === 'gasto') {
+      saldo -= e.monto;
+    }
+  });
+
+  return saldo;
 }
 
 // Retorna el saldo de apertura real: primer registro historico con valor > 0
@@ -1173,7 +1213,7 @@ function verHistorialCuenta(cuentaId) {
   var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
     '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
     '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Registros</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + historial.length + ' mes' + (historial.length !== 1 ? 'es' : '') + '</div></div>' +
     '</div></div>' +
     tablaHTML +
@@ -1339,7 +1379,7 @@ function verEstadoCuenta(cuentaId) {
     '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
     '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Institucion</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + instNombre + '</div></div>' +
     '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Moneda</div><div style="font-size:14px;font-weight:700;color:var(--accent-blue);">' + moneda + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(cuenta.saldo, moneda) + '</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
     '</div></div>' +
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">' +
     '<input type="date" id="edoCtaDesde" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:150px;" onchange="filterEstadoCuenta()" placeholder="Desde">' +
@@ -1520,7 +1560,7 @@ function filterEstadoCuenta() {
     rendFuente = ultCierre.fecha ? formatDate(ultCierre.fecha) : '';
   }
   var esInversion = cuenta.tipo === 'inversion';
-  var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (cuenta.saldo * rendAnualPct / 100 / 12) : 0;
+  var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (_calcSaldoReal(cuenta) * rendAnualPct / 100 / 12) : 0;
   var rendHTML = esInversion
     ? '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
       '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +

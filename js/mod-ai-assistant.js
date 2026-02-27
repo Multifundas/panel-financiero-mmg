@@ -58,7 +58,7 @@ function generateAIResponse(question) {
   var totalDeuda = 0;
   cuentas.forEach(function(c) {
     if (c.activa !== false) {
-      var val = toMXN(c.saldo, c.moneda, tiposCambio);
+      var val = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
       patrimonioTotal += val;
       if (c.tipo === 'inversion') totalInversiones += val;
     }
@@ -76,7 +76,7 @@ function generateAIResponse(question) {
   var invCuentas = cuentas.filter(function(c) { return c.activa !== false && c.tipo === 'inversion' && c.rendimiento_anual > 0; });
   var sumPond = 0, sumPeso = 0;
   invCuentas.forEach(function(c) {
-    var val = toMXN(c.saldo, c.moneda, tiposCambio);
+    var val = toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     sumPond += val * c.rendimiento_anual;
     sumPeso += val;
   });

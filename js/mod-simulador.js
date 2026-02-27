@@ -38,7 +38,7 @@ function renderSimulador() {
   let patrimonioTotal = 0;
   cuentas.forEach(c => {
     if (c.activa !== false) {
-      patrimonioTotal += toMXN(c.saldo, c.moneda, tiposCambio);
+      patrimonioTotal += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
   });
 
@@ -1227,7 +1227,7 @@ function simularImpacto() {
   let patrimonioAntes = 0;
   cuentas.forEach(c => {
     if (c.activa !== false) {
-      patrimonioAntes += toMXN(c.saldo, c.moneda, tiposCambio);
+      patrimonioAntes += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
   });
 

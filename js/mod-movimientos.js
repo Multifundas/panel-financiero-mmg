@@ -1327,8 +1327,9 @@ function executeTransferenciaModal(event) {
     monto_destino = monto_origen * tc;
   }
 
-  if (ctaOrigen.saldo < monto_origen) {
-    var confirmar = confirm('La cuenta origen tiene un saldo de ' + formatCurrency(ctaOrigen.saldo, moneda_origen) + ' que es menor al monto. \u00BFContinuar?');
+  var saldoRealOrigen = _calcSaldoReal(ctaOrigen);
+  if (saldoRealOrigen < monto_origen) {
+    var confirmar = confirm('La cuenta origen tiene un saldo de ' + formatCurrency(saldoRealOrigen, moneda_origen) + ' que es menor al monto. \u00BFContinuar?');
     if (!confirmar) return;
   }
 
@@ -1609,7 +1610,7 @@ function mostrarDesgloseMovimientos(tipo) {
     byCuenta[nombre].monto += montoMXN;
     byCuenta[nombre].count++;
     if (cta) {
-      byCuenta[nombre].saldo = cta.saldo;
+      byCuenta[nombre].saldo = _calcSaldoReal(cta);
       byCuenta[nombre].monedaSaldo = cta.moneda;
     }
     total += montoMXN;

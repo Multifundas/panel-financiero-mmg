@@ -139,7 +139,7 @@ function calcPatrimonioTotal() {
 
   cuentas.forEach(c => {
     if (c.activa !== false) {
-      totalCuentas += toMXN(c.saldo, c.moneda, tiposCambio);
+      totalCuentas += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
   });
   propiedades.forEach(p => {
@@ -200,8 +200,9 @@ function mostrarDesglosePatrimonio() {
   html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
   html += '<table class="data-table sortable-table" style=""><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
   cuentas.filter(function(c) { return c.activa !== false; }).forEach(function(c) {
-    var valMXN = toMXN(c.saldo, c.moneda, tiposCambio);
-    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(c.saldo, c.moneda) + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    var saldoReal = _calcSaldoReal(c);
+    var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
+    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
   });
   html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
