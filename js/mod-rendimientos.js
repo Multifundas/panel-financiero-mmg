@@ -62,29 +62,30 @@ function renderRendimientos() {
   ).join('');
 
   el.innerHTML = `
+    <div style="max-width:100%;overflow-x:hidden;">
     <!-- Filtros y Boton (ABOVE KPIs) -->
-    <div class="card" style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div class="form-group" style="margin-bottom:0;min-width:120px;">
-            <select id="filterRendCuenta" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="form-group" style="margin-bottom:0;">
+            <select id="filterRendCuenta" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Todas las cuentas</option>
               ${cuentaFilterOpts}
             </select>
           </div>
-          <div class="form-group" style="margin-bottom:0;min-width:100px;">
-            <select id="filterRendAnio" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+          <div class="form-group" style="margin-bottom:0;">
+            <select id="filterRendAnio" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
               ${aniosOpts}
             </select>
           </div>
-          <div class="form-group" style="margin-bottom:0;min-width:90px;">
-            <select id="filterRendMes" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+          <div class="form-group" style="margin-bottom:0;">
+            <select id="filterRendMes" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Mes</option>
               ${mesFilterOpts}
             </select>
           </div>
-          <div class="form-group" style="margin-bottom:0;min-width:130px;">
-            <select id="filterRendPeriodo" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+          <div class="form-group" style="margin-bottom:0;">
+            <select id="filterRendPeriodo" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Todos los periodos</option>
               <option value="mensual">Mensual</option>
               <option value="bimestral">Bimestral</option>
@@ -94,70 +95,70 @@ function renderRendimientos() {
             </select>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="editRendimiento(null)">
-          <i class="fas fa-plus"></i> Nuevo Rendimiento
+        <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;" onclick="editRendimiento(null)">
+          <i class="fas fa-plus"></i> Nuevo
         </button>
       </div>
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid-3" style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseRendMes()">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
+    <div class="grid-3" style="margin-bottom:16px;">
+      <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;padding:12px 14px;" onclick="mostrarDesgloseRendMes()">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:13px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento del Mes</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Mes</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--accent-green);">${formatCurrency(rendMes, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent-green);">${formatCurrency(rendMes, 'MXN')}</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:7px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesgloseRendAnio()">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-calendar-check" style="color:var(--accent-blue);font-size:16px;"></i>
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:12px 14px;" onclick="mostrarDesgloseRendAnio()">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-calendar-check" style="color:var(--accent-blue);font-size:13px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento del Ano</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Ano</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--accent-blue);">${formatCurrency(rendAnio, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent-blue);">${formatCurrency(rendAnio, 'MXN')}</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:7px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-purple);">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-percentage" style="color:var(--accent-purple);font-size:16px;"></i>
+      <div class="card" style="border-left:3px solid var(--accent-purple);padding:12px 14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-percentage" style="color:var(--accent-purple);font-size:13px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Promedio Ponderada</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Promedio</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--accent-purple);">${formatPct(tasaPromedio)}</div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent-purple);">${formatPct(tasaPromedio)}</div>
       </div>
     </div>
 
-    <!-- Grafica Rendimiento Acumulado (ancho completo) -->
-    <div class="card" style="margin-bottom:24px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">
-        <i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimiento Acumulado
+    <!-- Grafica Rendimiento Acumulado -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
+        <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
       </h3>
-      <div style="height:320px;"><canvas id="rendLineChart"></canvas></div>
+      <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
     </div>
 
     <!-- Tabla Detalle de Rendimientos -->
-    <div class="card" style="margin-bottom:24px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Rendimientos</h3>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">Detalle de Rendimientos</h3>
       <div style="overflow-x:auto;">
-        <table class="data-table sortable-table" id="tablaRendimientos">
+        <table class="data-table sortable-table" id="tablaRendimientos" style="font-size:11px;">
           <thead>
             <tr>
               <th>Cuenta</th>
               <th style="text-align:right;">Capital</th>
               <th style="text-align:center;">Dias</th>
-              <th style="text-align:right;">Tasa (%)</th>
-              <th style="text-align:right;">Tasa Anual (%)</th>
-              <th style="text-align:right;">Rendimiento Periodo</th>
-              <th style="text-align:right;">Rendimiento Acumulado</th>
+              <th style="text-align:right;">Tasa</th>
+              <th style="text-align:right;">Anual</th>
+              <th style="text-align:right;">Rend. Periodo</th>
+              <th style="text-align:right;">Acumulado</th>
               <th>Fecha</th>
               <th>Tipo</th>
-              <th style="text-align:center;" data-no-sort="true">Acciones</th>
+              <th style="text-align:center;" data-no-sort="true"></th>
             </tr>
           </thead>
           <tbody id="tbodyRendimientos"></tbody>
@@ -166,11 +167,12 @@ function renderRendimientos() {
     </div>
 
     <!-- Reporte Mensual de Rendimiento por Cuenta -->
-    <div class="card" style="margin-top:24px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">
-        <i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
+    <div class="card" style="margin-top:16px;">
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
+        <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
       </h3>
       <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
+    </div>
     </div>
   `;
 
@@ -349,18 +351,18 @@ function filterRendimientos() {
     const rendColor = rendPeriodo >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
     return `<tr>
-      <td>${ctaNombre}</td>
-      <td style="text-align:right;">${formatCurrency(capital, moneda)}</td>
+      <td style="white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="${ctaNombre}">${ctaNombre}</td>
+      <td style="text-align:right;white-space:nowrap;">${formatCurrency(capital, moneda)}</td>
       <td style="text-align:center;">${dias > 0 ? dias + 'd' : '\u2014'}</td>
       <td style="text-align:right;">${formatPct(rendPct)}</td>
       <td style="text-align:right;font-weight:600;">${formatPct(rendPctAnual)}</td>
-      <td style="text-align:right;color:${rendColor};font-weight:600;">${formatCurrency(rendPeriodo, moneda)}${reinvTag}</td>
-      <td style="text-align:right;color:var(--accent-blue);">${formatCurrency(acum, 'MXN')}</td>
-      <td>${r.fecha ? formatDate(r.fecha) : r.periodo || '-'}</td>
-      <td><span style="background:var(--accent-blue-soft);color:var(--accent-blue);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">${tipo}</span></td>
-      <td style="text-align:center;">
-        <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="editRendimiento('${r.id}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteRendimiento('${r.id}')"><i class="fas fa-trash"></i></button>
+      <td style="text-align:right;color:${rendColor};font-weight:600;white-space:nowrap;">${formatCurrency(rendPeriodo, moneda)}${reinvTag}</td>
+      <td style="text-align:right;color:var(--accent-blue);white-space:nowrap;">${formatCurrency(acum, 'MXN')}</td>
+      <td style="white-space:nowrap;">${r.fecha ? formatDate(r.fecha) : r.periodo || '-'}</td>
+      <td><span style="background:var(--accent-blue-soft);color:var(--accent-blue);padding:2px 6px;border-radius:5px;font-size:10px;font-weight:600;">${tipo}</span></td>
+      <td style="text-align:center;white-space:nowrap;">
+        <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-right:2px;" onclick="editRendimiento('${r.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="deleteRendimiento('${r.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -391,11 +393,11 @@ function renderRendMensualReport() {
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   // Build header
-  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
+  var thead = '<tr><th style="min-width:100px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
   for (var m = 0; m < 12; m++) {
-    thead += '<th style="text-align:center;min-width:90px;">' + mesesCortos[m] + '</th>';
+    thead += '<th style="text-align:center;min-width:70px;">' + mesesCortos[m] + '</th>';
   }
-  thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Total Anual</th></tr>';
+  thead += '<th style="text-align:right;min-width:80px;font-weight:800;">Total</th></tr>';
 
   // Build rows
   var totalPorMes = new Array(12).fill(0);
@@ -427,9 +429,9 @@ function renderRendMensualReport() {
 
       var color = rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var sign = rendMonto >= 0 ? '+' : '';
-      row += '<td style="text-align:right;font-size:11px;">' +
-        '<div style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:10px;opacity:0.8;">' + sign + rendPct.toFixed(2) + '%</div>' +
+      row += '<td style="text-align:right;font-size:10px;padding:4px 3px;">' +
+        '<div style="color:' + color + ';font-weight:600;white-space:nowrap;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
+        '<div style="color:' + color + ';font-size:9px;opacity:0.8;">' + sign + rendPct.toFixed(2) + '%</div>' +
       '</td>';
     }
 
@@ -462,8 +464,8 @@ function renderRendMensualReport() {
   }
 
   container.innerHTML =
-    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
-    '<table class="data-table" style="font-size:12px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
+    '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
+    '<table class="data-table" style="font-size:10px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 }
 
 /* -- Edit / Create rendimiento modal -- */
