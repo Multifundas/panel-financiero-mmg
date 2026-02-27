@@ -5,8 +5,6 @@ function renderRendimientos() {
   const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
-  const config = loadData(STORAGE_KEYS.config) || getDefaultConfig();
-  const inflacionAnual = config.inflacion_anual != null ? config.inflacion_anual : 4.5;
 
   const cuentaMap = {};
   cuentas.forEach(c => { cuentaMap[c.id] = c; });
@@ -16,19 +14,19 @@ function renderRendimientos() {
   const anioActual = now.getFullYear();
   const periodoActual = `${anioActual}-${String(mesActual + 1).padStart(2, '0')}`;
 
-  // -- KPI calculations --
+  // -- KPI calculations (usando rendimiento real) --
   const rendMes = rendimientos
     .filter(r => r.periodo === periodoActual)
     .reduce((s, r) => {
       const cta = cuentaMap[r.cuenta_id];
-      return s + toMXN(r.rendimiento_monto, cta ? cta.moneda : 'MXN', tiposCambio);
+      return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
     }, 0);
 
   const rendAnio = rendimientos
     .filter(r => r.periodo && r.periodo.startsWith(String(anioActual)))
     .reduce((s, r) => {
       const cta = cuentaMap[r.cuenta_id];
-      return s + toMXN(r.rendimiento_monto, cta ? cta.moneda : 'MXN', tiposCambio);
+      return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
     }, 0);
 
   // Tasa promedio ponderada (usa tasa anualizada)
@@ -36,7 +34,7 @@ function renderRendimientos() {
   let sumCapital = 0;
   rendimientos.filter(r => r.periodo === periodoActual).forEach(r => {
     const cta = cuentaMap[r.cuenta_id];
-    const capital = cta ? toMXN(cta.saldo, cta.moneda, tiposCambio) : 0;
+    const capital = cta ? toMXN(_calcSaldoReal(cta), cta.moneda, tiposCambio) : 0;
     const tasa = r.rendimiento_pct_anual != null ? r.rendimiento_pct_anual : (r.rendimiento_pct || 0);
     sumCapitalTasa += capital * tasa;
     sumCapital += capital;
@@ -49,10 +47,7 @@ function renderRendimientos() {
     .map(c => `<option value="${c.id}">${c.nombre}</option>`)
     .join('');
 
-  // -- Build month/year selector options --
-  const mesesOpts = Array.from({length: 12}, (_, i) =>
-    `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${mesNombre(i)}</option>`
-  ).join('');
+  // -- Build year selector options --
   const aniosSet = new Set();
   rendimientos.forEach(r => { if (r.periodo) aniosSet.add(parseInt(r.periodo.split('-')[0])); });
   aniosSet.add(anioActual);
@@ -104,15 +99,19 @@ function renderRendimientos() {
               ${cuentaFilterOpts}
             </select>
           </div>
-          <div class="form-group" style="margin-bottom:0;min-width:120px;">
-            <select id="filterRendMes" class="form-select" onchange="filterRendimientos()">
-              <option value="">Todos los meses</option>
-              ${mesesOpts}
+          <div class="form-group" style="margin-bottom:0;min-width:100px;">
+            <select id="filterRendAnio" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+              ${aniosOpts}
             </select>
           </div>
-          <div class="form-group" style="margin-bottom:0;min-width:100px;">
-            <select id="filterRendAnio" class="form-select" onchange="filterRendimientos()">
-              ${aniosOpts}
+          <div class="form-group" style="margin-bottom:0;min-width:130px;">
+            <select id="filterRendPeriodo" class="form-select" onchange="filterRendimientos()">
+              <option value="">Todos los periodos</option>
+              <option value="mensual">Mensual</option>
+              <option value="bimestral">Bimestral</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
             </select>
           </div>
         </div>
@@ -122,20 +121,16 @@ function renderRendimientos() {
       </div>
     </div>
 
-    <!-- Charts -->
-    <div class="grid-2" style="margin-bottom:24px;">
-      <div class="card">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Rendimientos Mensuales por Cuenta</h3>
-        <div style="height:280px;"><canvas id="rendBarChart"></canvas></div>
-      </div>
-      <div class="card">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Rendimiento Acumulado</h3>
-        <div style="height:280px;"><canvas id="rendLineChart"></canvas></div>
-      </div>
+    <!-- Grafica Rendimiento Acumulado (24 meses, ancho completo) -->
+    <div class="card" style="margin-bottom:24px;">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">
+        <i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimiento Acumulado (24 meses)
+      </h3>
+      <div style="height:320px;"><canvas id="rendLineChart"></canvas></div>
     </div>
 
-    <!-- Tabla Resumen por Cuenta -->
-    <div class="card">
+    <!-- Tabla Detalle de Rendimientos -->
+    <div class="card" style="margin-bottom:24px;">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Rendimientos</h3>
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaRendimientos">
@@ -158,94 +153,39 @@ function renderRendimientos() {
       </div>
     </div>
 
-    <!-- Rendimiento Real vs Inflacion -->
+    <!-- Reporte Mensual de Rendimiento por Cuenta -->
     <div class="card" style="margin-top:24px;">
-      <div class="card-header" style="margin-bottom:16px;">
-        <span class="card-title"><i class="fas fa-balance-scale" style="margin-right:8px;color:var(--accent-amber);"></i>Rendimiento Real vs Inflacion</span>
-        <span class="badge" style="background:${tasaPromedio > inflacionAnual ? 'var(--accent-green-soft)' : 'var(--accent-red-soft)'};color:${tasaPromedio > inflacionAnual ? 'var(--accent-green)' : 'var(--accent-red)'};">
-          Rend. Real Prom. Ponderado: ${formatPct(tasaPromedio - inflacionAnual)}
-        </span>
-      </div>
-      <div style="height:320px;"><canvas id="rendRealChart"></canvas></div>
-      <p style="margin-top:12px;font-size:12px;color:var(--text-muted);">
-        <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-        Tasa de inflacion configurada: ${inflacionAnual}%. Puedes cambiarla en Configuracion.
-      </p>
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">
+        <i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
+      </h3>
+      <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
     </div>
   `;
 
-  // -- Render charts --
+  // -- Render chart: cumulative rendimiento (24 months) --
   window._charts = window._charts || {};
   const _cc = typeof getChartColors === 'function' ? getChartColors() : { fontColor: '#94a3b8', gridColor: 'rgba(51,65,85,0.5)', borderColor: '#1e293b' };
   const chartFontColor = _cc.fontColor;
   const gridColor = _cc.gridColor;
-  const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-  // Build last 12 months labels and data per account
-  const last12 = [];
-  for (let i = 11; i >= 0; i--) {
+  // Build last 24 months labels
+  const last24 = [];
+  for (let i = 23; i >= 0; i--) {
     const dt = new Date(anioActual, mesActual - i, 1);
-    last12.push({
+    last24.push({
       label: mesNombre(dt.getMonth()).substring(0, 3) + ' ' + dt.getFullYear().toString().slice(-2),
       periodo: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
     });
   }
 
-  // Stacked bar: rendimientos by account
-  const barDatasets = cuentasInversion.map((cta, idx) => {
-    const data = last12.map(m => {
-      return rendimientos
-        .filter(r => r.cuenta_id === cta.id && r.periodo === m.periodo)
-        .reduce((s, r) => s + toMXN(r.rendimiento_monto, cta.moneda, tiposCambio), 0);
-    });
-    return {
-      label: cta.nombre,
-      data: data,
-      backgroundColor: palette[idx % palette.length] + 'AA',
-      borderColor: palette[idx % palette.length],
-      borderWidth: 1,
-      borderRadius: 3,
-    };
-  });
-
-  if (window._charts.rendBar) window._charts.rendBar.destroy();
-  const barCtx = document.getElementById('rendBarChart').getContext('2d');
-  window._charts.rendBar = new Chart(barCtx, {
-    type: 'bar',
-    data: { labels: last12.map(m => m.label), datasets: barDatasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { color: chartFontColor, font: { size: 10, family: "'Plus Jakarta Sans'" } },
-          grid: { display: false },
-        },
-        y: {
-          stacked: true,
-          ticks: {
-            color: chartFontColor,
-            font: { size: 10, family: "'Plus Jakarta Sans'" },
-            callback: function(val) { return '$' + (val / 1000).toFixed(0) + 'k'; },
-          },
-          grid: { color: gridColor },
-        },
-      },
-      plugins: {
-        legend: { labels: { color: chartFontColor, padding: 12, font: { size: 11, family: "'Plus Jakarta Sans'" }, usePointStyle: true } },
-        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); } } },
-      },
-    },
-  });
-
-  // Line chart: cumulative rendimiento
+  // Line chart: cumulative rendimiento real (24 months)
   let cumulative = 0;
-  const cumulativeData = last12.map(m => {
+  const cumulativeData = last24.map(m => {
     const monthTotal = rendimientos
       .filter(r => r.periodo === m.periodo)
       .reduce((s, r) => {
         const cta = cuentaMap[r.cuenta_id];
-        return s + toMXN(r.rendimiento_monto, cta ? cta.moneda : 'MXN', tiposCambio);
+        return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
       }, 0);
     cumulative += monthTotal;
     return cumulative;
@@ -256,21 +196,21 @@ function renderRendimientos() {
   window._charts.rendLine = new Chart(lineCtx, {
     type: 'line',
     data: {
-      labels: last12.map(m => m.label),
+      labels: last24.map(m => m.label),
       datasets: [{
         label: 'Acumulado (MXN)',
         data: cumulativeData,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16,185,129,0.1)',
         fill: true, tension: 0.35,
-        pointBackgroundColor: '#10b981', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+        pointBackgroundColor: '#10b981', pointRadius: 3, pointHoverRadius: 6, borderWidth: 2,
       }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
         x: {
-          ticks: { color: chartFontColor, font: { size: 10, family: "'Plus Jakarta Sans'" } },
+          ticks: { color: chartFontColor, font: { size: 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
           grid: { display: false },
         },
         y: {
@@ -289,111 +229,23 @@ function renderRendimientos() {
     },
   });
 
-  // -- Rendimiento Real vs Inflacion chart --
-  const rendRealLabels = [];
-  const dataNominal = [];
-  const dataInflacion = [];
-  const dataReal = [];
-  const bgNominal = [];
-  const bgReal = [];
-
-  cuentasInversion.forEach(cta => {
-    // Usar tasa anualizada del ultimo cierre, o fallback al campo estatico
-    let tasaNominal = cta.rendimiento_anual || 0;
-    const hist = cta.historial_saldos || [];
-    if (hist.length > 0) {
-      const ultimoCierre = [...hist].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
-      if (ultimoCierre.rendimiento_pct_anual != null) tasaNominal = ultimoCierre.rendimiento_pct_anual;
-    }
-    const tasaReal = tasaNominal - inflacionAnual;
-    rendRealLabels.push(cta.nombre);
-    dataNominal.push(tasaNominal);
-    dataInflacion.push(inflacionAnual);
-    dataReal.push(tasaReal);
-    bgNominal.push(tasaNominal >= inflacionAnual ? 'rgba(16,185,129,0.75)' : 'rgba(239,68,68,0.75)');
-    bgReal.push(tasaReal >= 0 ? 'rgba(16,185,129,0.55)' : 'rgba(239,68,68,0.55)');
-  });
-
-  if (window._charts.rendReal) window._charts.rendReal.destroy();
-  const rendRealCtx = document.getElementById('rendRealChart');
-  if (rendRealCtx) {
-    window._charts.rendReal = new Chart(rendRealCtx.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: rendRealLabels,
-        datasets: [
-          {
-            label: 'Rendimiento Nominal (%)',
-            data: dataNominal,
-            backgroundColor: bgNominal,
-            borderColor: bgNominal.map(c => c.replace(/[\d.]+\)$/, '1)')),
-            borderWidth: 1,
-            borderRadius: 4,
-            order: 2,
-          },
-          {
-            label: 'Inflacion (%)',
-            data: dataInflacion,
-            backgroundColor: 'rgba(251,191,36,0.25)',
-            borderColor: 'rgba(251,191,36,0.9)',
-            borderWidth: 2,
-            borderRadius: 4,
-            borderDash: [5, 3],
-            order: 1,
-            type: 'line',
-            fill: false,
-            pointBackgroundColor: 'rgba(251,191,36,1)',
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            tension: 0,
-          },
-          {
-            label: 'Rendimiento Real (%)',
-            data: dataReal,
-            backgroundColor: bgReal,
-            borderColor: bgReal.map(c => c.replace(/[\d.]+\)$/, '1)')),
-            borderWidth: 1,
-            borderRadius: 4,
-            order: 3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            ticks: { color: chartFontColor, font: { size: 11, family: "'Plus Jakarta Sans'" }, maxRotation: 30 },
-            grid: { display: false },
-          },
-          y: {
-            ticks: {
-              color: chartFontColor,
-              font: { size: 11, family: "'Plus Jakarta Sans'" },
-              callback: function(val) { return val.toFixed(1) + '%'; },
-            },
-            grid: { color: gridColor },
-          },
-        },
-        plugins: {
-          legend: {
-            labels: { color: chartFontColor, padding: 14, font: { size: 11, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
-          },
-          tooltip: {
-            callbacks: {
-              label: function(ctx) {
-                return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '%';
-              },
-            },
-          },
-        },
-      },
-    });
-  }
-
-  // Populate table
+  // Populate table and monthly report
   filterRendimientos();
+  renderRendMensualReport();
   setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 100);
+}
+
+/* -- Helper: calcula rendimiento real descontando flujos de capital -- */
+function _rendReal(r) {
+  var sI = r.saldo_inicial || 0;
+  var sF = r.saldo_final || 0;
+  // Si tiene entradas/salidas/transferencias (captura historica), usar esos campos
+  // Si no, usar movimientos_neto como fallback (cierre mensual regular)
+  var ent = r.entradas || 0;
+  var sal = r.salidas || 0;
+  var tra = r.transferencias || 0;
+  var movNeto = (ent || sal || tra) ? (ent - sal + tra) : (r.movimientos_neto || 0);
+  return sF - sI - movNeto;
 }
 
 /* -- Filter and render rendimientos table rows -- */
@@ -406,9 +258,16 @@ function filterRendimientos() {
   cuentas.forEach(c => { cuentaMap[c.id] = c; });
 
   const fCuenta = document.getElementById('filterRendCuenta') ? document.getElementById('filterRendCuenta').value : '';
-  const fMesEl = document.getElementById('filterRendMes');
-  const fMes = fMesEl ? fMesEl.value : '';
   const fAnio = document.getElementById('filterRendAnio') ? document.getElementById('filterRendAnio').value : '';
+  const fPeriodo = document.getElementById('filterRendPeriodo') ? document.getElementById('filterRendPeriodo').value : '';
+
+  // Build allowed months based on period filter
+  var mesesPermitidos = null;
+  if (fPeriodo === 'mensual') mesesPermitidos = null; // all months
+  else if (fPeriodo === 'bimestral') mesesPermitidos = [1, 3, 5, 7, 9, 11]; // ene, mar, may, jul, sep, nov
+  else if (fPeriodo === 'trimestral') mesesPermitidos = [3, 6, 9, 12];
+  else if (fPeriodo === 'semestral') mesesPermitidos = [6, 12];
+  else if (fPeriodo === 'anual') mesesPermitidos = [12];
 
   const filtered = rendimientos.filter(r => {
     if (fCuenta && r.cuenta_id !== fCuenta) return false;
@@ -416,20 +275,20 @@ function filterRendimientos() {
       const rAnio = r.periodo.split('-')[0];
       if (rAnio !== fAnio) return false;
     }
-    if (fMes !== '' && r.periodo) {
-      const rMes = parseInt(r.periodo.split('-')[1]) - 1;
-      if (rMes !== parseInt(fMes)) return false;
+    if (mesesPermitidos && r.periodo) {
+      var rMes = parseInt(r.periodo.split('-')[1]);
+      if (mesesPermitidos.indexOf(rMes) === -1) return false;
     }
     return true;
   }).sort((a, b) => (b.fecha || b.periodo || '').localeCompare(a.fecha || a.periodo || ''));
 
-  // Calculate acumulado per cuenta
+  // Calculate acumulado per cuenta using rendimiento real
   const acumuladoByCuenta = {};
   rendimientos.forEach(r => {
     const cta = cuentaMap[r.cuenta_id];
     const moneda = cta ? cta.moneda : 'MXN';
     if (!acumuladoByCuenta[r.cuenta_id]) acumuladoByCuenta[r.cuenta_id] = 0;
-    acumuladoByCuenta[r.cuenta_id] += toMXN(r.rendimiento_monto, moneda, tiposCambio);
+    acumuladoByCuenta[r.cuenta_id] += toMXN(_rendReal(r), moneda, tiposCambio);
   });
 
   const tbody = document.getElementById('tbodyRendimientos');
@@ -444,22 +303,24 @@ function filterRendimientos() {
     const cta = cuentaMap[r.cuenta_id];
     const ctaNombre = cta ? cta.nombre : 'Desconocida';
     const moneda = cta ? cta.moneda : 'MXN';
-    const capital = r.saldo_inicial || (cta ? cta.saldo : 0);
-    const tasa = r.rendimiento_pct || 0;
-    const tasaAnual = r.rendimiento_pct_anual != null ? r.rendimiento_pct_anual : tasa;
+    const capital = r.saldo_inicial || 0;
     const dias = r.dias || 0;
-    const rendPeriodo = r.rendimiento_monto || 0;
+    // Rendimiento real (descuenta flujos de capital)
+    const rendPeriodo = _rendReal(r);
+    const rendPct = capital > 0 ? ((rendPeriodo / capital) * 100) : 0;
+    const rendPctAnual = (capital > 0 && dias > 0) ? ((rendPeriodo / capital) * (365 / dias) * 100) : (r.rendimiento_pct_anual || 0);
     const acum = acumuladoByCuenta[r.cuenta_id] || 0;
     const tipo = r.tipo || 'Interes';
     const reinvTag = r.reinvertido ? '<span style="color:var(--accent-green);font-size:10px;margin-left:4px;"><i class="fas fa-recycle"></i></span>' : '';
+    const rendColor = rendPeriodo >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
     return `<tr>
       <td>${ctaNombre}</td>
       <td style="text-align:right;">${formatCurrency(capital, moneda)}</td>
       <td style="text-align:center;">${dias > 0 ? dias + 'd' : '\u2014'}</td>
-      <td style="text-align:right;">${formatPct(tasa)}</td>
-      <td style="text-align:right;font-weight:600;">${formatPct(tasaAnual)}</td>
-      <td style="text-align:right;color:var(--accent-green);">${formatCurrency(rendPeriodo, moneda)}${reinvTag}</td>
+      <td style="text-align:right;">${formatPct(rendPct)}</td>
+      <td style="text-align:right;font-weight:600;">${formatPct(rendPctAnual)}</td>
+      <td style="text-align:right;color:${rendColor};font-weight:600;">${formatCurrency(rendPeriodo, moneda)}${reinvTag}</td>
       <td style="text-align:right;color:var(--accent-blue);">${formatCurrency(acum, 'MXN')}</td>
       <td>${r.fecha ? formatDate(r.fecha) : r.periodo || '-'}</td>
       <td><span style="background:var(--accent-blue-soft);color:var(--accent-blue);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">${tipo}</span></td>
@@ -469,6 +330,99 @@ function filterRendimientos() {
       </td>
     </tr>`;
   }).join('');
+}
+
+/* -- Reporte Mensual de Rendimiento por Cuenta (12 meses del año seleccionado) -- */
+function renderRendMensualReport() {
+  var container = document.getElementById('rendMensualReportContainer');
+  if (!container) return;
+
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var fAnioEl = document.getElementById('filterRendAnio');
+  var anio = fAnioEl ? parseInt(fAnioEl.value) : new Date().getFullYear();
+
+  var cuentasInversion = cuentas.filter(function(c) { return c.activa !== false && c.tipo === 'inversion'; });
+  var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Build header
+  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
+  for (var m = 0; m < 12; m++) {
+    thead += '<th style="text-align:center;min-width:90px;">' + mesesCortos[m] + '</th>';
+  }
+  thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Total Anual</th></tr>';
+
+  // Build rows
+  var totalPorMes = new Array(12).fill(0);
+  var totalGeneral = 0;
+
+  var rows = cuentasInversion.map(function(cta) {
+    var moneda = cta.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;">' + cta.nombre + '</td>';
+    var totalCuenta = 0;
+
+    for (var m = 0; m < 12; m++) {
+      var periodo = anio + '-' + String(m + 1).padStart(2, '0');
+      var regs = rendimientos.filter(function(r) { return r.cuenta_id === cta.id && r.periodo === periodo; });
+
+      if (regs.length === 0) {
+        row += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+        continue;
+      }
+
+      var rendMonto = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
+      var rendPct = 0;
+      // Use first record's saldo_inicial for percentage
+      var saldoInicial = regs[0].saldo_inicial || 0;
+      if (saldoInicial > 0) rendPct = (rendMonto / saldoInicial) * 100;
+
+      var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
+      totalCuenta += rendMXN;
+      totalPorMes[m] += rendMXN;
+
+      var color = rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var sign = rendMonto >= 0 ? '+' : '';
+      row += '<td style="text-align:right;font-size:11px;">' +
+        '<div style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
+        '<div style="color:' + color + ';font-size:10px;opacity:0.8;">' + sign + rendPct.toFixed(2) + '%</div>' +
+      '</td>';
+    }
+
+    totalGeneral += totalCuenta;
+    var totalColor = totalCuenta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var totalSign = totalCuenta >= 0 ? '+' : '';
+    row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';">' + totalSign + formatCurrency(totalCuenta, 'MXN') + '</td>';
+    row += '</tr>';
+    return row;
+  }).join('');
+
+  // Total row
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;">Total</td>';
+  for (var m = 0; m < 12; m++) {
+    if (totalPorMes[m] === 0) {
+      totalRow += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+    } else {
+      var mColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var mSign = totalPorMes[m] >= 0 ? '+' : '';
+      totalRow += '<td style="text-align:right;font-size:11px;color:' + mColor + ';">' + mSign + formatCurrency(totalPorMes[m], 'MXN') + '</td>';
+    }
+  }
+  var gColor = totalGeneral >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var gSign = totalGeneral >= 0 ? '+' : '';
+  totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';">' + gSign + formatCurrency(totalGeneral, 'MXN') + '</td></tr>';
+
+  if (cuentasInversion.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay cuentas de inversion activas.</div>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
+    '<table class="data-table" style="font-size:12px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 }
 
 /* -- Edit / Create rendimiento modal -- */
@@ -658,7 +612,7 @@ function deleteRendimiento(id) {
 
   const cta = cuentas.find(c => c.id === rend.cuenta_id);
   const ctaNombre = cta ? cta.nombre : 'Desconocida';
-  const confirmar = confirm('\u00BFEstas seguro de eliminar este rendimiento?\n' + ctaNombre + ' - ' + formatCurrency(rend.rendimiento_monto, cta ? cta.moneda : 'MXN') + '\n\nEsta accion no se puede deshacer.');
+  const confirmar = confirm('\u00BFEstas seguro de eliminar este rendimiento?\n' + ctaNombre + ' - ' + formatCurrency(_rendReal(rend), cta ? cta.moneda : 'MXN') + '\n\nEsta accion no se puede deshacer.');
   if (!confirmar) return;
 
   // Reverse reinversion if applicable
@@ -696,10 +650,11 @@ function _mostrarDesgloseRendPeriodo(filtroFn, titulo, color) {
     var cta = cuentaMap[r.cuenta_id];
     var nombre = cta ? cta.nombre : 'Desconocida';
     var moneda = cta ? cta.moneda : 'MXN';
-    var montoMXN = toMXN(r.rendimiento_monto || 0, moneda, tiposCambio);
+    var rendReal = _rendReal(r);
+    var montoMXN = toMXN(rendReal, moneda, tiposCambio);
     if (!byCuenta[nombre]) byCuenta[nombre] = { monto: 0, montoOrig: 0, moneda: moneda, count: 0 };
     byCuenta[nombre].monto += montoMXN;
-    byCuenta[nombre].montoOrig += (r.rendimiento_monto || 0);
+    byCuenta[nombre].montoOrig += rendReal;
     byCuenta[nombre].count++;
     total += montoMXN;
   });
