@@ -108,9 +108,9 @@ function renderRendimientos() {
           <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:13px;"></i>
           </div>
-          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Mes</span>
+          <span id="rendKpiLabel1" style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Mes</span>
         </div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent-green);">${formatCurrency(rendMes, 'MXN')}</div>
+        <div id="rendKpiVal1" style="font-size:18px;font-weight:800;color:var(--accent-green);">${formatCurrency(rendMes, 'MXN')}</div>
         <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:7px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:12px 14px;" onclick="mostrarDesgloseRendAnio()">
@@ -118,9 +118,9 @@ function renderRendimientos() {
           <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-calendar-check" style="color:var(--accent-blue);font-size:13px;"></i>
           </div>
-          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Ano</span>
+          <span id="rendKpiLabel2" style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Ano</span>
         </div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent-blue);">${formatCurrency(rendAnio, 'MXN')}</div>
+        <div id="rendKpiVal2" style="font-size:18px;font-weight:800;color:var(--accent-blue);">${formatCurrency(rendAnio, 'MXN')}</div>
         <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:7px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);padding:12px 14px;">
@@ -130,7 +130,7 @@ function renderRendimientos() {
           </div>
           <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Promedio</span>
         </div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent-purple);">${formatPct(tasaPromedio)}</div>
+        <div id="rendKpiVal3" style="font-size:18px;font-weight:800;color:var(--accent-purple);">${formatPct(tasaPromedio)}</div>
       </div>
     </div>
 
@@ -317,6 +317,59 @@ function filterRendimientos() {
     }
     return true;
   }).sort((a, b) => (b.fecha || b.periodo || '').localeCompare(a.fecha || a.periodo || ''));
+
+  // -- Update KPI cards based on filters --
+  const mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  // KPI 1: Rendimiento filtrado (sum of filtered rendimientos)
+  const kpiRendFiltrado = filtered.reduce((s, r) => {
+    const cta = cuentaMap[r.cuenta_id];
+    return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
+  }, 0);
+
+  // KPI 2: Rendimiento del año filtrado
+  const kpiRendAnio = rendimientos.filter(r => {
+    if (fCuenta && r.cuenta_id !== fCuenta) return false;
+    if (fAnio && r.periodo) {
+      if (r.periodo.split('-')[0] !== fAnio) return false;
+    }
+    return true;
+  }).reduce((s, r) => {
+    const cta = cuentaMap[r.cuenta_id];
+    return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
+  }, 0);
+
+  // KPI 3: Tasa promedio ponderada (del periodo filtrado)
+  let kpiSumCapTasa = 0, kpiSumCap = 0;
+  filtered.forEach(r => {
+    const cta = cuentaMap[r.cuenta_id];
+    const capital = cta ? toMXN(_calcSaldoReal(cta), cta.moneda, tiposCambio) : 0;
+    const tasa = r.rendimiento_pct_anual != null ? r.rendimiento_pct_anual : (r.rendimiento_pct || 0);
+    kpiSumCapTasa += capital * tasa;
+    kpiSumCap += capital;
+  });
+  const kpiTasaProm = kpiSumCap > 0 ? kpiSumCapTasa / kpiSumCap : 0;
+
+  // Build dynamic label for KPI 1
+  var kpiLabel1 = 'Rend. Filtrado';
+  if (fMes !== '' && fMes !== null && fMes !== undefined) {
+    kpiLabel1 = 'Rend. ' + mesesNombres[parseInt(fMes)] + (fAnio ? ' ' + fAnio : '');
+  } else if (fAnio) {
+    kpiLabel1 = 'Rend. Filtrado ' + fAnio;
+  }
+
+  var kpiLabel2 = 'Rend. del Ano' + (fAnio ? ' ' + fAnio : '');
+
+  // Update DOM
+  var kpiEl1 = document.getElementById('rendKpiVal1');
+  var kpiEl2 = document.getElementById('rendKpiVal2');
+  var kpiEl3 = document.getElementById('rendKpiVal3');
+  var kpiLbl1 = document.getElementById('rendKpiLabel1');
+  var kpiLbl2 = document.getElementById('rendKpiLabel2');
+  if (kpiEl1) kpiEl1.textContent = formatCurrency(kpiRendFiltrado, 'MXN');
+  if (kpiEl2) kpiEl2.textContent = formatCurrency(kpiRendAnio, 'MXN');
+  if (kpiEl3) kpiEl3.textContent = formatPct(kpiTasaProm);
+  if (kpiLbl1) kpiLbl1.textContent = kpiLabel1;
+  if (kpiLbl2) kpiLbl2.textContent = kpiLabel2;
 
   // Calculate acumulado per cuenta using rendimiento real
   const acumuladoByCuenta = {};
