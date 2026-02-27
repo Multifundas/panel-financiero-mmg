@@ -55,7 +55,51 @@ function renderRendimientos() {
     .map(a => `<option value="${a}" ${a === anioActual ? 'selected' : ''}>${a}</option>`)
     .join('');
 
+  // -- Build month selector options --
+  const mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesFilterOpts = mesesCortos.map((m, i) =>
+    `<option value="${i}">${m}</option>`
+  ).join('');
+
   el.innerHTML = `
+    <!-- Filtros y Boton (ABOVE KPIs) -->
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="form-group" style="margin-bottom:0;min-width:120px;">
+            <select id="filterRendCuenta" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+              <option value="">Todas las cuentas</option>
+              ${cuentaFilterOpts}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;min-width:100px;">
+            <select id="filterRendAnio" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+              ${aniosOpts}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;min-width:90px;">
+            <select id="filterRendMes" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+              <option value="">Mes</option>
+              ${mesFilterOpts}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;min-width:130px;">
+            <select id="filterRendPeriodo" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
+              <option value="">Todos los periodos</option>
+              <option value="mensual">Mensual</option>
+              <option value="bimestral">Bimestral</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="editRendimiento(null)">
+          <i class="fas fa-plus"></i> Nuevo Rendimiento
+        </button>
+      </div>
+    </div>
+
     <!-- KPI Cards -->
     <div class="grid-3" style="margin-bottom:24px;">
       <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseRendMes()">
@@ -89,42 +133,10 @@ function renderRendimientos() {
       </div>
     </div>
 
-    <!-- Filtros y Boton -->
-    <div class="card" style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div class="form-group" style="margin-bottom:0;min-width:120px;">
-            <select id="filterRendCuenta" class="form-select" onchange="filterRendimientos()">
-              <option value="">Todas las cuentas</option>
-              ${cuentaFilterOpts}
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:100px;">
-            <select id="filterRendAnio" class="form-select" onchange="filterRendimientos();renderRendMensualReport()">
-              ${aniosOpts}
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0;min-width:130px;">
-            <select id="filterRendPeriodo" class="form-select" onchange="filterRendimientos()">
-              <option value="">Todos los periodos</option>
-              <option value="mensual">Mensual</option>
-              <option value="bimestral">Bimestral</option>
-              <option value="trimestral">Trimestral</option>
-              <option value="semestral">Semestral</option>
-              <option value="anual">Anual</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="editRendimiento(null)">
-          <i class="fas fa-plus"></i> Nuevo Rendimiento
-        </button>
-      </div>
-    </div>
-
-    <!-- Grafica Rendimiento Acumulado (24 meses, ancho completo) -->
+    <!-- Grafica Rendimiento Acumulado (ancho completo) -->
     <div class="card" style="margin-bottom:24px;">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">
-        <i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimiento Acumulado (24 meses)
+        <i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimiento Acumulado
       </h3>
       <div style="height:320px;"><canvas id="rendLineChart"></canvas></div>
     </div>
@@ -162,27 +174,43 @@ function renderRendimientos() {
     </div>
   `;
 
-  // -- Render chart: cumulative rendimiento (24 months) --
+  // -- Render chart: cumulative rendimiento (from first data period) --
   window._charts = window._charts || {};
   const _cc = typeof getChartColors === 'function' ? getChartColors() : { fontColor: '#94a3b8', gridColor: 'rgba(51,65,85,0.5)', borderColor: '#1e293b' };
   const chartFontColor = _cc.fontColor;
   const gridColor = _cc.gridColor;
 
-  // Build last 24 months labels
-  const last24 = [];
-  for (let i = 23; i >= 0; i--) {
-    const dt = new Date(anioActual, mesActual - i, 1);
-    last24.push({
-      label: mesNombre(dt.getMonth()).substring(0, 3) + ' ' + dt.getFullYear().toString().slice(-2),
-      periodo: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
+  // Find first period with data to start from there
+  const allPeriodos = rendimientos.map(r => r.periodo).filter(Boolean).sort();
+  let firstPeriodo = allPeriodos.length > 0 ? allPeriodos[0] : `${anioActual}-01`;
+  const firstYear = parseInt(firstPeriodo.split('-')[0]);
+  const firstMonth = parseInt(firstPeriodo.split('-')[1]) - 1; // 0-indexed
+
+  // Build months from first data period to current month
+  const chartMonths = [];
+  const startDate = new Date(firstYear, firstMonth, 1);
+  const endDate = new Date(anioActual, mesActual, 1);
+  let tmpChartDate = new Date(startDate);
+  while (tmpChartDate <= endDate) {
+    chartMonths.push({
+      label: mesNombre(tmpChartDate.getMonth()).substring(0, 3) + ' ' + tmpChartDate.getFullYear().toString().slice(-2),
+      periodo: `${tmpChartDate.getFullYear()}-${String(tmpChartDate.getMonth() + 1).padStart(2, '0')}`
     });
+    tmpChartDate.setMonth(tmpChartDate.getMonth() + 1);
   }
 
-  // Line chart: cumulative rendimiento real (24 months)
+  // Get active cuenta filter for chart too
+  const fCuentaChart = document.getElementById('filterRendCuenta') ? document.getElementById('filterRendCuenta').value : '';
+
+  // Line chart: cumulative rendimiento real
   let cumulative = 0;
-  const cumulativeData = last24.map(m => {
+  const cumulativeData = chartMonths.map(m => {
     const monthTotal = rendimientos
-      .filter(r => r.periodo === m.periodo)
+      .filter(r => {
+        if (r.periodo !== m.periodo) return false;
+        if (fCuentaChart && r.cuenta_id !== fCuentaChart) return false;
+        return true;
+      })
       .reduce((s, r) => {
         const cta = cuentaMap[r.cuenta_id];
         return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
@@ -196,7 +224,7 @@ function renderRendimientos() {
   window._charts.rendLine = new Chart(lineCtx, {
     type: 'line',
     data: {
-      labels: last24.map(m => m.label),
+      labels: chartMonths.map(m => m.label),
       datasets: [{
         label: 'Acumulado (MXN)',
         data: cumulativeData,
@@ -259,6 +287,7 @@ function filterRendimientos() {
 
   const fCuenta = document.getElementById('filterRendCuenta') ? document.getElementById('filterRendCuenta').value : '';
   const fAnio = document.getElementById('filterRendAnio') ? document.getElementById('filterRendAnio').value : '';
+  const fMes = document.getElementById('filterRendMes') ? document.getElementById('filterRendMes').value : '';
   const fPeriodo = document.getElementById('filterRendPeriodo') ? document.getElementById('filterRendPeriodo').value : '';
 
   // Build allowed months based on period filter
@@ -274,6 +303,11 @@ function filterRendimientos() {
     if (fAnio && r.periodo) {
       const rAnio = r.periodo.split('-')[0];
       if (rAnio !== fAnio) return false;
+    }
+    // Specific month filter
+    if (fMes !== '' && fMes !== null && fMes !== undefined && r.periodo) {
+      var rMes = parseInt(r.periodo.split('-')[1]);
+      if (rMes !== parseInt(fMes) + 1) return false; // fMes is 0-indexed, periodo month is 1-indexed
     }
     if (mesesPermitidos && r.periodo) {
       var rMes = parseInt(r.periodo.split('-')[1]);
@@ -346,7 +380,14 @@ function renderRendMensualReport() {
   var fAnioEl = document.getElementById('filterRendAnio');
   var anio = fAnioEl ? parseInt(fAnioEl.value) : new Date().getFullYear();
 
-  var cuentasInversion = cuentas.filter(function(c) { return c.activa !== false && c.tipo === 'inversion'; });
+  var fCuentaEl = document.getElementById('filterRendCuenta');
+  var fCuentaVal = fCuentaEl ? fCuentaEl.value : '';
+
+  var cuentasInversion = cuentas.filter(function(c) {
+    if (c.activa === false || c.tipo !== 'inversion') return false;
+    if (fCuentaVal && c.id !== fCuentaVal) return false;
+    return true;
+  });
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   // Build header

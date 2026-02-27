@@ -206,18 +206,61 @@ function renderDashboard() {
   // -- Helper: color for KPI --
   function kpiColor(val) { return val >= 0 ? 'text-green' : 'text-red'; }
 
-  // -- Build historial patrimonio chart data --
-  const historialSorted = [...historial].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  const barLabels = historialSorted.map(h => {
-    const d = new Date(h.fecha);
-    return mesNombre(d.getMonth()).substring(0, 3) + ' ' + d.getFullYear();
-  });
-  const barData = historialSorted.map(h => h.valor);
+  // -- Build historial patrimonio chart data (24 months, combinando historial manual + cierres) --
+  const barLabels = [];
+  const barData = [];
+  for (let i = 23; i >= 0; i--) {
+    const dt = new Date(anioActual, mesActual - i, 1);
+    const mLabel = mesNombre(dt.getMonth()).substring(0, 3) + ' ' + dt.getFullYear().toString().slice(-2);
+    const per = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+    barLabels.push(mLabel);
 
-  // If no history, use current patrimonio as single point
-  if (barLabels.length === 0) {
-    barLabels.push(mesNombre(mesActual).substring(0, 3) + ' ' + anioActual);
-    barData.push(patrimonioTotal);
+    // 1. Check historial_patrimonio for this month
+    const hMatch = historial.find(h => {
+      const hd = new Date(h.fecha);
+      return hd.getFullYear() === dt.getFullYear() && hd.getMonth() === dt.getMonth();
+    });
+    if (hMatch) {
+      barData.push(hMatch.valor);
+      continue;
+    }
+
+    // 2. Reconstruct from account cierres: sum saldo_final of all active accounts for this period
+    let totalMes = 0;
+    let hasCierreData = false;
+    cuentas.forEach(c => {
+      if (c.activa === false) return;
+      const hist = c.historial_saldos || [];
+      // Find cierre matching this period (by periodo field, or by fecha matching year-month)
+      const cierre = hist.find(h => {
+        if (h.periodo === per) return true;
+        if (h.fecha) {
+          const hd = new Date(h.fecha);
+          return hd.getFullYear() === dt.getFullYear() && hd.getMonth() === dt.getMonth();
+        }
+        return false;
+      });
+      if (cierre) {
+        hasCierreData = true;
+        const sFinal = cierre.saldo_final != null ? cierre.saldo_final : cierre.saldo;
+        totalMes += toMXN(sFinal, c.moneda || 'MXN', tiposCambio);
+      }
+    });
+
+    // Also add propiedades value if we have cierre data for at least one account
+    if (hasCierreData) {
+      propiedades.forEach(pr => {
+        totalMes += toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
+      });
+      barData.push(totalMes);
+    } else {
+      barData.push(null); // no data for this month
+    }
+  }
+
+  // If last month is null, use current patrimonio
+  if (barData[barData.length - 1] === null) {
+    barData[barData.length - 1] = patrimonioTotal;
   }
 
   // -- Build year options --
@@ -587,7 +630,7 @@ function renderDashboard() {
   }
 
   const diversificacionHTML = `
-    <div class="card" style="margin-bottom:24px;">
+    <div class="card" style="margin-bottom:0;">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
       </div>
@@ -650,15 +693,29 @@ function renderDashboard() {
   // -- Build Resumen Panel --
   var resumenPanelHTML = buildResumenPanel(movimientos, cuentas, prestamos, propiedades);
 
+  // -- Build "ultimos 15 dias" summary card --
+  var ultimos15DiasHTML = _buildUltimos15Dias(movimientos, tiposCambio);
+
   // -- Render HTML --
   el.innerHTML = `
-    <!-- ROW 1: Filtros + Patrimonio + Greeting -->
-    <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
+    <!-- ROW 1: 4 cards equal width -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
+      <!-- Patrimonio Neto -->
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:0;" onclick="mostrarDesglosePatrimonio()">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:14px;"></i>
+        </div>
+        <div style="min-width:0;">
+          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
+          <div style="font-size:18px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text-secondary);font-size:11px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+      </div>
       <!-- Filtros -->
-      <div class="card" style="padding:8px 12px;margin-bottom:0;">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;"><i class="fas fa-filter" style="margin-right:3px;"></i>Filtros:</span>
-          <select id="dashFilterPeriodo" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="applyDashboardFilters()">
+      <div class="card" style="padding:8px 12px;margin-bottom:0;display:flex;flex-direction:column;justify-content:center;">
+        <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;margin-bottom:4px;"><i class="fas fa-filter" style="margin-right:3px;"></i>Filtros:</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <select id="dashFilterPeriodo" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:80px;" onchange="applyDashboardFilters()">
             <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
             <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
             <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
@@ -666,8 +723,8 @@ function renderDashboard() {
             <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
             <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
           </select>
-          <select id="dashFilterMes" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="applyDashboardFilters()">
-            <option value="" ${!_dashboardFilters.mes ? 'selected' : ''}>Todos</option>
+          <select id="dashFilterMes" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:80px;" onchange="applyDashboardFilters()">
+            <option value="" ${!_dashboardFilters.mes ? 'selected' : ''}>Mes</option>
             <option value="0" ${_dashboardFilters.mes === 0 ? 'selected' : ''}>Enero</option>
             <option value="1" ${_dashboardFilters.mes === 1 ? 'selected' : ''}>Febrero</option>
             <option value="2" ${_dashboardFilters.mes === 2 ? 'selected' : ''}>Marzo</option>
@@ -681,24 +738,15 @@ function renderDashboard() {
             <option value="10" ${_dashboardFilters.mes === 10 ? 'selected' : ''}>Noviembre</option>
             <option value="11" ${_dashboardFilters.mes === 11 ? 'selected' : ''}>Diciembre</option>
           </select>
-          <select id="dashFilterAnio" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="applyDashboardFilters()">
+          <select id="dashFilterAnio" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:62px;" onchange="applyDashboardFilters()">
             ${yearOptions}
           </select>
         </div>
       </div>
-      <!-- Patrimonio Neto -->
-      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 20px;display:flex;align-items:center;gap:16px;margin-bottom:0;" onclick="mostrarDesglosePatrimonio()">
-        <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:16px;"></i>
-        </div>
-        <div>
-          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
-          <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(patrimonioTotal, 'MXN')}</div>
-        </div>
-        <div style="margin-left:auto;color:var(--text-secondary);font-size:12px;"><i class="fas fa-chevron-right"></i></div>
-      </div>
-      <!-- Greeting / Acciones Pendientes -->
-      ${resumenPanelHTML || '<div></div>'}
+      <!-- Ultimos 15 dias -->
+      ${ultimos15DiasHTML}
+      <!-- Saludo y Alertas -->
+      ${resumenPanelHTML || '<div class="card" style="margin-bottom:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;"><i class="fas fa-check-circle" style="color:var(--accent-green);margin-right:6px;"></i>Sin alertas pendientes</div>'}
     </div>
 
     <!-- ROW 2: 8 KPI Cards (4+4) -->
@@ -793,12 +841,10 @@ function renderDashboard() {
       <div id="seccionDeuda">${deudaHTML}</div>
     </div>
 
-    <!-- Indicador de Diversificacion -->
-    ${diversificacionHTML}
-
-    <!-- Charts Row 1: Donut + Bar -->
+    <!-- Diversificacion + Distribucion por Tipo (same row) -->
     <div class="grid-2" style="margin-bottom:24px;">
-      <div class="card">
+      ${diversificacionHTML}
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--accent-amber);"></i>Distribucion por Tipo</span>
         </div>
@@ -806,24 +852,28 @@ function renderDashboard() {
           <canvas id="dashDonutChart"></canvas>
         </div>
       </div>
+    </div>
+
+    <!-- Evolucion del Patrimonio (full width, 24 months) -->
+    <div style="margin-bottom:24px;">
       <div class="card">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
+          <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio (24 meses)</span>
           <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
             <i class="fas fa-edit"></i> Editar Historial
           </button>
         </div>
-        <div style="position:relative;height:280px;">
+        <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Charts Row 2: Line -->
+    <!-- Rendimientos vs Gastos (full width) -->
     <div style="margin-bottom:24px;">
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos (12 meses - ${anioFiltro})</span>
+          <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos (24 meses)</span>
         </div>
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
@@ -997,7 +1047,7 @@ function renderDashboard() {
     },
   });
 
-  // -- 2. Bar: Evolucion del Patrimonio (historial manual) --
+  // -- 2. Bar: Evolucion del Patrimonio (24 meses, historial + cierres) --
   if (window._charts.dashBar) window._charts.dashBar.destroy();
   const barCtx = document.getElementById('dashBarChart').getContext('2d');
   window._charts.dashBar = new Chart(barCtx, {
@@ -1012,6 +1062,7 @@ function renderDashboard() {
         borderWidth: 1,
         borderRadius: 4,
         barPercentage: 0.7,
+        skipNull: true,
       }],
     },
     options: {
@@ -1019,7 +1070,7 @@ function renderDashboard() {
       maintainAspectRatio: false,
       scales: {
         x: {
-          ticks: { color: chartFontColor, font: { size: 10, family: "'Plus Jakarta Sans'" } },
+          ticks: { color: chartFontColor, font: { size: 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
           grid: { display: false },
         },
         y: {
@@ -1042,23 +1093,25 @@ function renderDashboard() {
     },
   });
 
-  // -- 3. Line: Rendimientos vs Gastos 12 meses --
+  // -- 3. Line: Rendimientos vs Gastos 24 meses --
   const lineLabels = [];
   const rendData = [];
   const gastosData = [];
 
-  const chartRefMonth = anioFiltro === anioActual ? mesActual : 11;
-  for (let i = 11; i >= 0; i--) {
-    const dt = new Date(anioFiltro, chartRefMonth - i, 1);
+  for (let i = 23; i >= 0; i--) {
+    const dt = new Date(anioActual, mesActual - i, 1);
     const mIdx = dt.getMonth();
     const aIdx = dt.getFullYear();
     const per = `${aIdx}-${String(mIdx + 1).padStart(2, '0')}`;
     lineLabels.push(mesNombre(mIdx).substring(0, 3) + ' ' + aIdx.toString().slice(-2));
 
-    // Rendimientos for this period
+    // Rendimientos for this period (using _rendReal for real rendimiento)
     const rMes = rendimientos
       .filter(r => r.periodo === per)
-      .reduce((s, r) => s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio), 0);
+      .reduce((s, r) => {
+        const cta = _cuentaMapKpi[r.cuenta_id];
+        return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
+      }, 0);
     rendData.push(rMes);
 
     // Gastos for this period (excluding transfers) — use string prefix to avoid timezone issues
@@ -1720,7 +1773,66 @@ function guardarHistorialPatrimonio() {
 }
 
 /* ============================================================
-   RESUMEN / RECORDATORIOS PANEL
+   ULTIMOS 15 DIAS (card independiente)
+   ============================================================ */
+function _buildUltimos15Dias(movimientos, tiposCambio) {
+  var now = new Date();
+  var hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var hace15 = new Date(hoy.getTime() - 15 * 86400000);
+  var hace30 = new Date(hoy.getTime() - 30 * 86400000);
+
+  var ingresosRecientes = 0, gastosRecientes = 0, countRecientes = 0;
+  var ingresosPrev = 0, gastosPrev = 0;
+
+  (movimientos || []).forEach(function(mv) {
+    if (mv.transferencia_id) return;
+    var f = new Date(mv.fecha);
+    var montoMXN = mv.monto;
+    if (mv.moneda === 'USD') montoMXN = mv.monto * (tiposCambio.USD_MXN || 17);
+    else if (mv.moneda === 'EUR') montoMXN = mv.monto * (tiposCambio.EUR_MXN || 19);
+
+    if (f >= hace15 && f <= hoy) {
+      countRecientes++;
+      if (mv.tipo === 'ingreso') ingresosRecientes += montoMXN;
+      else gastosRecientes += montoMXN;
+    } else if (f >= hace30 && f < hace15) {
+      if (mv.tipo === 'ingreso') ingresosPrev += montoMXN;
+      else gastosPrev += montoMXN;
+    }
+  });
+
+  var gastosDiff = gastosPrev > 0 ? ((gastosRecientes - gastosPrev) / gastosPrev * 100) : 0;
+  var gastosDiffSign = gastosDiff > 0 ? '+' : '';
+  var gastosDiffColor = gastosDiff > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+
+  return `
+    <div class="card" style="margin-bottom:0;padding:10px 14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+        <i class="fas fa-chart-bar" style="margin-right:4px;color:var(--accent-purple);"></i>Ultimos 15 dias
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div>
+          <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent-green);">+${formatCurrency(ingresosRecientes, 'MXN')}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent-red);">-${formatCurrency(gastosRecientes, 'MXN')}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Movimientos</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${countRecientes}</div>
+        </div>
+        ${gastosPrev > 0 ? `<div>
+          <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">vs 15d anterior</div>
+          <div style="font-size:13px;font-weight:700;color:${gastosDiffColor};">${gastosDiffSign}${gastosDiff.toFixed(1)}%</div>
+        </div>` : `<div></div>`}
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   RESUMEN / RECORDATORIOS PANEL (Saludo y Alertas)
    ============================================================ */
 function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
   // Don't show if user dismissed for this session
@@ -1732,34 +1844,6 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
   // -- Greeting --
   var hour = now.getHours();
   var saludo = hour < 12 ? 'Buenos dias' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
-
-  // -- Weekly summary --
-  var hace7 = new Date(hoy.getTime() - 7 * 86400000);
-  var hace14 = new Date(hoy.getTime() - 14 * 86400000);
-  var ingresosWeek = 0, gastosWeek = 0, countWeek = 0;
-  var ingresosPrev = 0, gastosPrev = 0;
-  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
-
-  (movimientos || []).forEach(function(mv) {
-    if (mv.transferencia_id) return; // Exclude transfers
-    var f = new Date(mv.fecha);
-    var montoMXN = mv.monto;
-    if (mv.moneda === 'USD') montoMXN = mv.monto * (tiposCambio.USD_MXN || 17);
-    else if (mv.moneda === 'EUR') montoMXN = mv.monto * (tiposCambio.EUR_MXN || 19);
-
-    if (f >= hace7 && f <= hoy) {
-      countWeek++;
-      if (mv.tipo === 'ingreso') ingresosWeek += montoMXN;
-      else gastosWeek += montoMXN;
-    } else if (f >= hace14 && f < hace7) {
-      if (mv.tipo === 'ingreso') ingresosPrev += montoMXN;
-      else gastosPrev += montoMXN;
-    }
-  });
-
-  var gastosDiff = gastosPrev > 0 ? ((gastosWeek - gastosPrev) / gastosPrev * 100) : 0;
-  var gastosDiffSign = gastosDiff > 0 ? '+' : '';
-  var gastosDiffColor = gastosDiff > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
 
   // -- Pending actions --
   var pendingItems = [];
@@ -1889,89 +1973,53 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     });
   }
 
-  // -- Build HTML --
+  // -- Build HTML (compact card for grid-4) --
   var hasPending = pendingItems.length > 0;
   var hasReminders = reminderItems.length > 0;
-  var hasWeekData = countWeek > 0 || ingresosWeek > 0 || gastosWeek > 0;
 
   // If nothing to show, skip
-  if (!hasPending && !hasReminders && !hasWeekData) return '';
+  if (!hasPending && !hasReminders) return '';
 
-  var html = '<div class="resumen-panel" id="resumenPanel">';
-  html += '<div class="resumen-header">';
-  html += '<div style="display:flex;align-items:center;gap:10px;">';
-  html += '<i class="fas fa-sun" style="color:var(--accent-amber);font-size:18px;"></i>';
+  var html = '<div class="card" id="resumenPanel" style="margin-bottom:0;padding:10px 14px;">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+  html += '<div style="display:flex;align-items:center;gap:8px;">';
+  html += '<i class="fas fa-sun" style="color:var(--accent-amber);font-size:14px;"></i>';
   html += '<div>';
-  html += '<div style="font-size:16px;font-weight:700;color:var(--text-primary);">' + saludo + '!</div>';
-  html += '<div style="font-size:12px;color:var(--text-muted);">Resumen y recordatorios</div>';
+  html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">' + saludo + '!</div>';
   html += '</div></div>';
-  html += '<button onclick="dismissResumenPanel()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px;" title="Ocultar hasta el proximo login">';
+  html += '<button onclick="dismissResumenPanel()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px;" title="Ocultar">';
   html += '<i class="fas fa-times"></i></button>';
   html += '</div>';
 
-  html += '<div class="resumen-body">';
-
-  // Pending actions
+  // Pending actions (compact)
   if (hasPending) {
-    html += '<div class="resumen-section resumen-pending">';
-    html += '<div class="resumen-section-title"><i class="fas fa-bell"></i> Acciones Pendientes</div>';
     pendingItems.forEach(function(item, idx) {
       var hasDetail = item.detail ? true : false;
       var itemAction = item.action || '';
       if (hasDetail) {
         itemAction = 'onclick="var d=document.getElementById(\'greetDetail' + idx + '\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\';"';
       }
-      html += '<div class="resumen-item" ' + itemAction + ' style="cursor:pointer;">';
-      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
-      html += '<span>' + item.text + (hasDetail ? ' <i class="fas fa-chevron-down" style="font-size:9px;margin-left:4px;color:var(--text-muted);"></i>' : '') + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;font-size:11px;" ' + itemAction + '>';
+      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:14px;text-align:center;font-size:10px;"></i>';
+      html += '<span style="color:var(--text-secondary);line-height:1.3;">' + item.text + '</span>';
       html += '</div>';
       if (hasDetail) {
-        html += '<div id="greetDetail' + idx + '" style="display:none;padding:6px 0 6px 24px;">' + item.detail + '</div>';
+        html += '<div id="greetDetail' + idx + '" style="display:none;padding:4px 0 4px 20px;font-size:10px;">' + item.detail + '</div>';
       }
     });
-    html += '</div>';
   }
 
-  // Weekly summary
-  if (hasWeekData) {
-    html += '<div class="resumen-section resumen-weekly">';
-    html += '<div class="resumen-section-title"><i class="fas fa-chart-bar"></i> Ultimos 7 dias</div>';
-    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
-    html += '<div class="resumen-stat">';
-    html += '<div class="resumen-stat-label">Ingresos</div>';
-    html += '<div class="resumen-stat-value" style="color:var(--accent-green);">+$' + formatCurrency(ingresosWeek) + '</div>';
-    html += '</div>';
-    html += '<div class="resumen-stat">';
-    html += '<div class="resumen-stat-label">Gastos</div>';
-    html += '<div class="resumen-stat-value" style="color:var(--accent-red);">-$' + formatCurrency(gastosWeek) + '</div>';
-    html += '</div>';
-    html += '<div class="resumen-stat">';
-    html += '<div class="resumen-stat-label">Movimientos</div>';
-    html += '<div class="resumen-stat-value">' + countWeek + '</div>';
-    html += '</div>';
-    if (gastosPrev > 0) {
-      html += '<div class="resumen-stat">';
-      html += '<div class="resumen-stat-label">Gastos vs semana anterior</div>';
-      html += '<div class="resumen-stat-value" style="color:' + gastosDiffColor + ';">' + gastosDiffSign + gastosDiff.toFixed(1) + '%</div>';
-      html += '</div>';
-    }
-    html += '</div></div>';
-  }
-
-  // Reminders
+  // Reminders (compact)
   if (hasReminders) {
-    html += '<div class="resumen-section resumen-reminders">';
-    html += '<div class="resumen-section-title"><i class="fas fa-info-circle"></i> Recordatorios</div>';
     reminderItems.forEach(function(item) {
-      html += '<div class="resumen-item" ' + (item.action || '') + ' style="' + (item.action ? 'cursor:pointer;' : '') + '">';
-      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:16px;text-align:center;"></i>';
-      html += '<span>' + item.text + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;' + (item.action ? 'cursor:pointer;' : '') + '" ' + (item.action || '') + '>';
+      html += '<i class="fas ' + item.icon + '" style="color:' + item.color + ';width:14px;text-align:center;font-size:10px;"></i>';
+      html += '<span style="color:var(--text-muted);line-height:1.3;">' + item.text + '</span>';
       html += '</div>';
     });
-    html += '</div>';
   }
 
-  html += '</div></div>';
+  html += '</div>';
   return html;
 }
 
