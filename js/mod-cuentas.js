@@ -1869,6 +1869,7 @@ function generarFilasCapturaHistorica() {
   if (!cuenta) return;
 
   var esDebito = cuenta.tipo === 'debito';
+  var esPagare = cuenta.subtipo === 'pagare';
   var moneda = cuenta.moneda || 'MXN';
   var historial = cuenta.historial_saldos || [];
   var ahora = new Date();
@@ -1959,8 +1960,11 @@ function generarFilasCapturaHistorica() {
 
     var dateStyle = 'padding:4px 6px;font-size:12px;min-height:auto;width:125px;';
 
+    // Para pagares: label dinamico basado en fechas; para otros: nombre del mes
+    var mesLabel = esPagare ? _captHistPeriodoLabel(fechaInicioVal, fechaVal) : mesesNombres[m];
+
     filas += '<tr>' +
-      '<td style="font-weight:600;white-space:nowrap;font-size:12px;">' + mesesNombres[m] + indicadorExistente + '</td>' +
+      '<td style="font-weight:600;white-space:nowrap;font-size:12px;" id="captHistMesLabel_' + m + '">' + mesLabel + indicadorExistente + '</td>' +
       '<td><input type="date" class="form-input capt-hist-fecha-inicio" data-mes="' + m + '" value="' + fechaInicioVal + '" style="' + dateStyle + '" oninput="recalcCapturaHistorica(' + m + ')"></td>' +
       '<td><input type="number" class="form-input capt-hist-inicio" data-mes="' + m + '" step="0.01" min="0" value="' + saldoInicioVal + '"' + inicioReadonly + ' oninput="recalcCapturaHistorica(' + m + ')"></td>' +
       '<td><input type="number" class="form-input capt-hist-entradas" data-mes="' + m + '" step="0.01" min="0" value="' + entradasVal + '" style="' + inputStyle + '" oninput="recalcCapturaHistorica(' + m + ')" placeholder="0"></td>' +
@@ -1980,14 +1984,14 @@ function generarFilasCapturaHistorica() {
       '</div>' +
       '<div>' +
         '<div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);">' + moneda + ' | ' + (esDebito ? 'Debito' : 'Inversion') + ' | Ano ' + anio + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);">' + moneda + ' | ' + (esDebito ? 'Debito' : (esPagare ? 'Pagare (Plazo Fijo)' : 'Inversion')) + ' | Ano ' + anio + '</div>' +
       '</div>' +
     '</div>';
 
   contenedor.innerHTML = infoHTML +
     '<table class="data-table" style="font-size:13px;">' +
       '<thead><tr>' +
-        '<th style="min-width:70px;">Mes</th>' +
+        '<th style="min-width:70px;">' + (esPagare ? 'Periodo' : 'Mes') + '</th>' +
         '<th>Fecha Inicio</th>' +
         '<th style="text-align:right;">Saldo Inicial</th>' +
         '<th style="text-align:right;color:var(--accent-green);">Entradas</th>' +
@@ -2007,6 +2011,20 @@ function generarFilasCapturaHistorica() {
       recalcCapturaHistorica(i);
     }
   }
+}
+
+// Genera label de periodo para pagares a partir de fechas: "15-Ene / 14-Feb"
+function _captHistPeriodoLabel(fechaInicio, fechaCierre) {
+  var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  function fmt(f) {
+    if (!f) return '??';
+    var parts = f.split('-');
+    if (parts.length < 3) return '??';
+    var d = parseInt(parts[2], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    return d + '-' + (mesesCortos[m] || '??');
+  }
+  return fmt(fechaInicio) + ' / ' + fmt(fechaCierre);
 }
 
 function onCaptHistFinalChange(mes, mesMax) {
@@ -2051,6 +2069,18 @@ function recalcCapturaHistorica(mes) {
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
   if (!cuenta || cuenta.tipo === 'debito') return;
+
+  // Actualizar label del periodo para pagares (antes del early return por falta de saldo)
+  if (cuenta.subtipo === 'pagare') {
+    var fechaInicioElLabel = document.querySelector('.capt-hist-fecha-inicio[data-mes="' + mes + '"]');
+    var fechaCierreElLabel = document.querySelector('.capt-hist-fecha[data-mes="' + mes + '"]');
+    var labelEl = document.getElementById('captHistMesLabel_' + mes);
+    if (labelEl && fechaInicioElLabel && fechaCierreElLabel) {
+      var indicador = labelEl.querySelector('i');
+      labelEl.textContent = _captHistPeriodoLabel(fechaInicioElLabel.value, fechaCierreElLabel.value);
+      if (indicador) { labelEl.appendChild(document.createTextNode(' ')); labelEl.appendChild(indicador); }
+    }
+  }
 
   var inicioInput = document.querySelector('.capt-hist-inicio[data-mes="' + mes + '"]');
   var finalInput = document.querySelector('.capt-hist-final[data-mes="' + mes + '"]');
