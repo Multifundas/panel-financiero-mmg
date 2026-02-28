@@ -80,7 +80,7 @@ function renderRendimientos() {
           </div>
           <div class="form-group" style="margin-bottom:0;">
             <select id="filterRendMes" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
-              <option value="">Mes</option>
+              <option value="">Todos</option>
               ${mesFilterOpts}
             </select>
           </div>
@@ -134,15 +134,40 @@ function renderRendimientos() {
       </div>
     </div>
 
-    <!-- Grafica Rendimiento Acumulado -->
+    <!-- 1. Reporte Mensual de Rendimiento por Cuenta -->
     <div class="card" style="margin-bottom:16px;">
       <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
-        <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
+        <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
       </h3>
-      <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
+      <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
     </div>
 
-    <!-- Tabla Detalle de Rendimientos -->
+    <!-- 2. Rendimientos Mensuales Comparados (Ano vs Ano) -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <h3 style="font-size:13px;font-weight:700;margin:0;color:var(--text-primary);">
+          <i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent-purple);"></i>Rendimientos Mensuales Comparados
+        </h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:3px;">
+            <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
+            <select id="rendYoyAnio1" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;">
+            <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
+            <select id="rendYoyAnio2" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
+          </div>
+          <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;" onclick="rendCompararAnios()">
+            <i class="fas fa-chart-bar" style="margin-right:3px;"></i>Comparar
+          </button>
+        </div>
+      </div>
+      <div style="position:relative;height:320px;">
+        <canvas id="rendYoyBarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 3. Tabla Detalle de Rendimientos -->
     <div class="card" style="margin-bottom:16px;">
       <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">Detalle de Rendimientos</h3>
       <div style="overflow-x:auto;">
@@ -166,12 +191,12 @@ function renderRendimientos() {
       </div>
     </div>
 
-    <!-- Reporte Mensual de Rendimiento por Cuenta -->
-    <div class="card" style="margin-top:16px;">
+    <!-- 4. Grafica Rendimiento Acumulado -->
+    <div class="card" style="margin-bottom:16px;">
       <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
-        <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
+        <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
       </h3>
-      <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
+      <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
     </div>
     </div>
   `;
@@ -262,7 +287,105 @@ function renderRendimientos() {
   // Populate table and monthly report
   filterRendimientos();
   renderRendMensualReport();
+  renderRendYoyChart();
   setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 100);
+}
+
+/* -- Rendimientos Mensuales Comparados (Ano vs Ano) -- */
+function renderRendYoyChart() {
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var historial = loadData(STORAGE_KEYS.historial_patrimonio) || [];
+  var anioActual = new Date().getFullYear();
+
+  var yearsSet = new Set();
+  rendimientos.forEach(function(r) { if (r.periodo) { var yr = parseInt(r.periodo.split('-')[0]); if (!isNaN(yr)) yearsSet.add(yr); } });
+  movimientos.forEach(function(mv) { var yr = new Date(mv.fecha).getFullYear(); if (!isNaN(yr)) yearsSet.add(yr); });
+  yearsSet.add(anioActual);
+  yearsSet.add(anioActual - 1);
+
+  var yearsArr = Array.from(yearsSet).sort(function(a, b) { return b - a; }).slice(0, 5);
+
+  var sel1 = document.getElementById('rendYoyAnio1');
+  var sel2 = document.getElementById('rendYoyAnio2');
+  if (!sel1 || !sel2) return;
+
+  sel1.innerHTML = yearsArr.map(function(yr) { return '<option value="' + yr + '"' + (yr === anioActual ? ' selected' : '') + '>' + yr + '</option>'; }).join('');
+  sel2.innerHTML = yearsArr.map(function(yr) { return '<option value="' + yr + '"' + (yr === anioActual - 1 ? ' selected' : '') + '>' + yr + '</option>'; }).join('');
+
+  rendCompararAnios();
+}
+
+function rendCompararAnios() {
+  var sel1 = document.getElementById('rendYoyAnio1');
+  var sel2 = document.getElementById('rendYoyAnio2');
+  if (!sel1 || !sel2) return;
+
+  var anio1 = parseInt(sel1.value);
+  var anio2 = parseInt(sel2.value);
+
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaMapYoy = {};
+  cuentas.forEach(function(c) { cuentaMapYoy[c.id] = c; });
+
+  var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var rendMensual1 = [];
+  var rendMensual2 = [];
+
+  for (var m = 0; m < 12; m++) {
+    var periodo1 = anio1 + '-' + String(m + 1).padStart(2, '0');
+    var periodo2 = anio2 + '-' + String(m + 1).padStart(2, '0');
+    var r1 = rendimientos.filter(function(r) { return r.periodo === periodo1; }).reduce(function(sum, r) { var cta = cuentaMapYoy[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+    var r2 = rendimientos.filter(function(r) { return r.periodo === periodo2; }).reduce(function(sum, r) { var cta = cuentaMapYoy[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+    rendMensual1.push(r1);
+    rendMensual2.push(r2);
+  }
+
+  var _cc = typeof getChartColors === 'function' ? getChartColors() : { fontColor: '#94a3b8', gridColor: 'rgba(51,65,85,0.5)', borderColor: '#1e293b' };
+
+  window._charts = window._charts || {};
+  if (window._charts.rendYoyBar) window._charts.rendYoyBar.destroy();
+
+  var yoyCtx = document.getElementById('rendYoyBarChart');
+  if (!yoyCtx) return;
+  yoyCtx = yoyCtx.getContext('2d');
+
+  window._rendYoyAnio1 = anio1;
+  window._rendYoyAnio2 = anio2;
+  window._charts.rendYoyBar = new Chart(yoyCtx, {
+    type: 'bar',
+    data: {
+      labels: meses,
+      datasets: [
+        { label: String(anio1), data: rendMensual1, backgroundColor: 'rgba(59,130,246,0.7)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.6 },
+        { label: String(anio2), data: rendMensual2, backgroundColor: 'rgba(139,92,246,0.7)', borderColor: '#8b5cf6', borderWidth: 1, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.6 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      onClick: function(evt, elements) {
+        if (elements.length > 0) {
+          var idx = elements[0].index;
+          var dsIdx = elements[0].datasetIndex;
+          var anio = dsIdx === 0 ? window._rendYoyAnio1 : window._rendYoyAnio2;
+          var per = anio + '-' + String(idx + 1).padStart(2, '0');
+          var mesLabel = meses[idx] + ' ' + anio;
+          _mostrarDesgloseRendPeriodo(function(r) { return r.periodo === per; }, 'Desglose Rendimiento: ' + mesLabel, 'var(--accent-purple)');
+        }
+      },
+      scales: {
+        x: { ticks: { color: _cc.fontColor, font: { size: 11, family: "'Plus Jakarta Sans'" } }, grid: { display: false } },
+        y: { ticks: { color: _cc.fontColor, font: { size: 10, family: "'Plus Jakarta Sans'" }, callback: function(val) { return '$' + (val / 1000).toFixed(0) + 'k'; } }, grid: { color: _cc.gridColor } },
+      },
+      plugins: {
+        legend: { labels: { color: _cc.fontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true } },
+        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); } } },
+      },
+    },
+  });
 }
 
 /* -- Helper: calcula rendimiento real descontando flujos de capital -- */
@@ -446,34 +569,36 @@ function renderRendMensualReport() {
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   // Build header
-  var thead = '<tr><th style="min-width:100px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
+  var thead = '<tr><th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
   for (var m = 0; m < 12; m++) {
-    thead += '<th style="text-align:center;min-width:70px;">' + mesesCortos[m] + '</th>';
+    thead += '<th style="text-align:center;min-width:80px;">' + mesesCortos[m] + '</th>';
   }
-  thead += '<th style="text-align:right;min-width:80px;font-weight:800;">Total</th></tr>';
+  thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Total</th></tr>';
 
   // Build rows
   var totalPorMes = new Array(12).fill(0);
   var totalGeneral = 0;
+  var totalCapitalGeneral = 0;
 
   var rows = cuentasInversion.map(function(cta) {
     var moneda = cta.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;">' + cta.nombre + '</td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:12px;">' + cta.nombre + '</td>';
     var totalCuenta = 0;
+    var capitalInicial = 0;
 
     for (var m = 0; m < 12; m++) {
       var periodo = anio + '-' + String(m + 1).padStart(2, '0');
       var regs = rendimientos.filter(function(r) { return r.cuenta_id === cta.id && r.periodo === periodo; });
 
       if (regs.length === 0) {
-        row += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+        row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
         continue;
       }
 
       var rendMonto = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
       var rendPct = 0;
-      // Use first record's saldo_inicial for percentage
       var saldoInicial = regs[0].saldo_inicial || 0;
+      if (m === 0 || capitalInicial === 0) capitalInicial = saldoInicial;
       if (saldoInicial > 0) rendPct = (rendMonto / saldoInicial) * 100;
 
       var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
@@ -482,34 +607,48 @@ function renderRendMensualReport() {
 
       var color = rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var sign = rendMonto >= 0 ? '+' : '';
-      row += '<td style="text-align:right;font-size:10px;padding:4px 3px;">' +
-        '<div style="color:' + color + ';font-weight:600;white-space:nowrap;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:9px;opacity:0.8;">' + sign + rendPct.toFixed(2) + '%</div>' +
+      row += '<td style="text-align:right;padding:4px 4px;">' +
+        '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:12px;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
+        '<div style="color:' + color + ';font-size:10px;opacity:0.8;">' + sign + rendPct.toFixed(0) + '%</div>' +
       '</td>';
     }
+
+    // Cumulative percentage for the year
+    var capitalInicialMXN = toMXN(capitalInicial, moneda, tiposCambio);
+    totalCapitalGeneral += capitalInicialMXN;
+    var cumPct = capitalInicialMXN > 0 ? (totalCuenta / capitalInicialMXN * 100) : 0;
+    var cumPctSign = cumPct >= 0 ? '+' : '';
 
     totalGeneral += totalCuenta;
     var totalColor = totalCuenta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
     var totalSign = totalCuenta >= 0 ? '+' : '';
-    row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';">' + totalSign + formatCurrency(totalCuenta, 'MXN') + '</td>';
+    row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';font-size:12px;">' +
+      '<div>' + totalSign + formatCurrency(totalCuenta, 'MXN') + '</div>' +
+      '<div style="font-size:10px;opacity:0.8;">' + cumPctSign + cumPct.toFixed(1) + '%</div>' +
+    '</td>';
     row += '</tr>';
     return row;
   }).join('');
 
   // Total row
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;">Total</td>';
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:12px;">Total</td>';
   for (var m = 0; m < 12; m++) {
     if (totalPorMes[m] === 0) {
-      totalRow += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+      totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
     } else {
       var mColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var mSign = totalPorMes[m] >= 0 ? '+' : '';
-      totalRow += '<td style="text-align:right;font-size:11px;color:' + mColor + ';">' + mSign + formatCurrency(totalPorMes[m], 'MXN') + '</td>';
+      totalRow += '<td style="text-align:right;font-size:12px;color:' + mColor + ';">' + mSign + formatCurrency(totalPorMes[m], 'MXN') + '</td>';
     }
   }
   var gColor = totalGeneral >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   var gSign = totalGeneral >= 0 ? '+' : '';
-  totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';">' + gSign + formatCurrency(totalGeneral, 'MXN') + '</td></tr>';
+  var gCumPct = totalCapitalGeneral > 0 ? (totalGeneral / totalCapitalGeneral * 100) : 0;
+  var gCumSign = gCumPct >= 0 ? '+' : '';
+  totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';font-size:12px;">' +
+    '<div>' + gSign + formatCurrency(totalGeneral, 'MXN') + '</div>' +
+    '<div style="font-size:10px;opacity:0.8;">' + gCumSign + gCumPct.toFixed(1) + '%</div>' +
+  '</td></tr>';
 
   if (cuentasInversion.length === 0) {
     container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay cuentas de inversion activas.</div>';
@@ -518,7 +657,7 @@ function renderRendMensualReport() {
 
   container.innerHTML =
     '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
-    '<table class="data-table" style="font-size:10px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
+    '<table class="data-table" style="font-size:12px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 }
 
 /* -- Edit / Create rendimiento modal -- */

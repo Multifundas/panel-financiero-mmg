@@ -684,10 +684,10 @@ function renderDashboard() {
 
   // -- Render HTML --
   el.innerHTML = `
-    <!-- ROW 1: 3 cards (patrimonio wider + 15 dias + saludo) -->
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
-      <!-- Patrimonio Neto -->
-      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:0;" onclick="mostrarDesglosePatrimonio()">
+    <!-- ROW 1: 3 cards aligned to 4-col KPI grid -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
+      <!-- Patrimonio Neto (spans 2 columns) -->
+      <div class="card" style="grid-column:span 2;border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:0;" onclick="mostrarDesglosePatrimonio()">
         <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:14px;"></i>
         </div>
@@ -695,7 +695,7 @@ function renderDashboard() {
           <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
           <div style="font-size:22px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
         </div>
-        <div style="display:flex;gap:16px;align-items:center;flex-shrink:0;">
+        <div style="display:flex;gap:14px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
           <div style="text-align:center;">
             <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Bancarias</div>
             <div style="font-size:13px;font-weight:700;color:var(--accent-blue);">${formatCurrency(kpiBancarias, 'MXN')}</div>
@@ -707,6 +707,14 @@ function renderDashboard() {
           <div style="text-align:center;">
             <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Propiedades</div>
             <div style="font-size:13px;font-weight:700;color:var(--accent-amber);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Prestamos</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-purple);">${formatCurrency(_patCalc.prestamosOtorgados, 'MXN')}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Deuda</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-red);">-${formatCurrency(_patCalc.totalDeuda, 'MXN')}</div>
           </div>
         </div>
         <div style="color:var(--text-secondary);font-size:11px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
@@ -816,7 +824,7 @@ function renderDashboard() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--accent-amber);"></i>Distribucion por Tipo</span>
         </div>
-        <div style="position:relative;height:280px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;height:380px;display:flex;align-items:center;justify-content:center;">
           <canvas id="dashDonutChart"></canvas>
         </div>
       </div>
@@ -932,53 +940,19 @@ function renderDashboard() {
       </div>
     </div>
 
-    <!-- Analisis Ano vs Ano -->
-    <div style="margin-top:24px;" id="seccionAnalisisAnual">
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-          <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-purple);"></i>Analisis Ano vs Ano</span>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:3px;">
-              <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
-              <select id="yoyAnio1" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
-            </div>
-            <div style="display:flex;align-items:center;gap:3px;">
-              <label style="font-size:10px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
-              <select id="yoyAnio2" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
-            </div>
-            <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;" onclick="compararAnios()">
-              <i class="fas fa-chart-bar" style="margin-right:3px;"></i>Comparar
-            </button>
-          </div>
-        </div>
-      </div>
-      <div style="margin-bottom:24px;">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Rendimientos Mensuales Comparados</span>
-          </div>
-          <div style="position:relative;height:320px;">
-            <canvas id="yoyBarChart"></canvas>
-          </div>
-        </div>
-      </div>
+    <!-- Resumen Comparativo -->
+    <div style="margin-top:24px;">
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-green);"></i>Resumen Comparativo</span>
         </div>
         <div style="overflow-x:auto;">
-          <table class="data-table" id="yoyComparisonTable">
+          <table class="data-table" id="yoyComparisonTable" style="font-size:11px;">
             <thead>
-              <tr>
-                <th>Concepto</th>
-                <th style="text-align:right;">--</th>
-                <th style="text-align:right;">--</th>
-                <th style="text-align:right;">Diferencia</th>
-                <th style="text-align:right;">% Cambio</th>
-              </tr>
+              <tr id="yoyComparisonThead"></tr>
             </thead>
-            <tbody>
-              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Selecciona dos anos y presiona Comparar</td></tr>
+            <tbody id="yoyComparisonTbody">
+              <tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1322,307 +1296,117 @@ function renderDashboard() {
     });
   }
 
-  // -- Render Analisis Ano vs Ano section --
-  renderAnalisisAnual();
+  // -- Render Resumen Comparativo section --
+  renderResumenComparativo();
 
   // -- Init sortable tables for dashboard --
   setTimeout(function() { _initSortableTables(document.getElementById('module-dashboard')); }, 100);
 }
 
 /* ============================================================
-   DASHBOARD: Analisis Ano vs Ano
+   DASHBOARD: Resumen Comparativo (Mensual + Anual)
    ============================================================ */
-function renderAnalisisAnual() {
-  const anioActual = new Date().getFullYear();
-
-  // Build year options from available data
-  const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
-  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
-  const historial = loadData(STORAGE_KEYS.historial_patrimonio) || [];
-
-  // Collect all years present in data
-  const yearsSet = new Set();
-  movimientos.forEach(function(mv) {
-    var yr = new Date(mv.fecha).getFullYear();
-    if (!isNaN(yr)) yearsSet.add(yr);
-  });
-  rendimientos.forEach(function(r) {
-    if (r.periodo) {
-      var yr = parseInt(r.periodo.split('-')[0]);
-      if (!isNaN(yr)) yearsSet.add(yr);
-    }
-  });
-  historial.forEach(function(h) {
-    var yr = new Date(h.fecha).getFullYear();
-    if (!isNaN(yr)) yearsSet.add(yr);
-  });
-
-  // Ensure at least current and previous year
-  yearsSet.add(anioActual);
-  yearsSet.add(anioActual - 1);
-
-  // Sort descending, take last 5
-  var yearsArr = Array.from(yearsSet).sort(function(a, b) { return b - a; }).slice(0, 5);
-
-  var sel1 = document.getElementById('yoyAnio1');
-  var sel2 = document.getElementById('yoyAnio2');
-  if (!sel1 || !sel2) return;
-
-  sel1.innerHTML = yearsArr.map(function(yr) {
-    return '<option value="' + yr + '"' + (yr === anioActual ? ' selected' : '') + '>' + yr + '</option>';
-  }).join('');
-
-  sel2.innerHTML = yearsArr.map(function(yr) {
-    return '<option value="' + yr + '"' + (yr === anioActual - 1 ? ' selected' : '') + '>' + yr + '</option>';
-  }).join('');
-
-  // Auto-run comparison with defaults
-  compararAnios();
-}
-
-function compararAnios() {
-  var sel1 = document.getElementById('yoyAnio1');
-  var sel2 = document.getElementById('yoyAnio2');
-  if (!sel1 || !sel2) return;
-
-  var anio1 = parseInt(sel1.value);
-  var anio2 = parseInt(sel2.value);
-
-  // Load data
+function renderResumenComparativo() {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
-  var historial = loadData(STORAGE_KEYS.historial_patrimonio) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var cuentasComp = loadData(STORAGE_KEYS.cuentas) || [];
   var cuentaMapComp = {};
   cuentasComp.forEach(function(c) { cuentaMapComp[c.id] = c; });
 
-  // -- Calculate monthly rendimientos for each year (using _rendReal) --
-  var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var rendMensual1 = [];
-  var rendMensual2 = [];
-
-  for (var m = 0; m < 12; m++) {
-    var periodo1 = anio1 + '-' + String(m + 1).padStart(2, '0');
-    var periodo2 = anio2 + '-' + String(m + 1).padStart(2, '0');
-
-    var r1 = rendimientos
-      .filter(function(r) { return r.periodo === periodo1; })
-      .reduce(function(sum, r) { var cta = cuentaMapComp[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
-    var r2 = rendimientos
-      .filter(function(r) { return r.periodo === periodo2; })
-      .reduce(function(sum, r) { var cta = cuentaMapComp[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
-
-    rendMensual1.push(r1);
-    rendMensual2.push(r2);
-  }
-
-  // -- Build grouped bar chart --
-  var _cc = typeof getChartColors === 'function' ? getChartColors() : { fontColor: '#94a3b8', gridColor: 'rgba(51,65,85,0.5)', borderColor: '#1e293b' };
-  var chartFontColor = _cc.fontColor;
-  var gridColor = _cc.gridColor;
-
-  window._charts = window._charts || {};
-  if (window._charts.yoyBar) window._charts.yoyBar.destroy();
-
-  var yoyCtx = document.getElementById('yoyBarChart');
-  if (!yoyCtx) return;
-  yoyCtx = yoyCtx.getContext('2d');
-
-  // Store years for click handler
-  window._yoyAnio1 = anio1;
-  window._yoyAnio2 = anio2;
-  window._charts.yoyBar = new Chart(yoyCtx, {
-    type: 'bar',
-    data: {
-      labels: meses,
-      datasets: [
-        {
-          label: String(anio1),
-          data: rendMensual1,
-          backgroundColor: 'rgba(59,130,246,0.7)',
-          borderColor: '#3b82f6',
-          borderWidth: 1,
-          borderRadius: 4,
-          barPercentage: 0.8,
-          categoryPercentage: 0.6,
-        },
-        {
-          label: String(anio2),
-          data: rendMensual2,
-          backgroundColor: 'rgba(139,92,246,0.7)',
-          borderColor: '#8b5cf6',
-          borderWidth: 1,
-          borderRadius: 4,
-          barPercentage: 0.8,
-          categoryPercentage: 0.6,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      onClick: function(evt, elements) {
-        if (elements.length > 0) {
-          var idx = elements[0].index;
-          var dsIdx = elements[0].datasetIndex;
-          var anio = dsIdx === 0 ? window._yoyAnio1 : window._yoyAnio2;
-          var per = anio + '-' + String(idx + 1).padStart(2, '0');
-          _mostrarDesgloseRendPeriodo(per, meses[idx] + ' ' + anio);
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: chartFontColor, font: { size: 11, family: "'Plus Jakarta Sans'" } },
-          grid: { display: false },
-        },
-        y: {
-          ticks: {
-            color: chartFontColor,
-            font: { size: 10, family: "'Plus Jakarta Sans'" },
-            callback: function(val) { return '$' + (val / 1000).toFixed(0) + 'k'; },
-          },
-          grid: { color: gridColor },
-        },
-      },
-      plugins: {
-        legend: {
-          labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
-        },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); },
-          },
-        },
-      },
-    },
-  });
-
-  // -- Calculate annual aggregates --
-  // Ingresos (excluding transfers) — use string prefix to avoid timezone issues
-  var anio1Str = String(anio1);
-  var anio2Str = String(anio2);
-  var ingresos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio1Str); })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-  var ingresos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio2Str); })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-
-  // Gastos (excluding transfers)
-  var gastos1 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio1Str); })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-  var gastos2 = movimientos
-    .filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anio2Str); })
-    .reduce(function(sum, mv) { return sum + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-
-  // Rendimientos totales
-  var rendTotal1 = rendMensual1.reduce(function(a, b) { return a + b; }, 0);
-  var rendTotal2 = rendMensual2.reduce(function(a, b) { return a + b; }, 0);
-
-  // Balance neto
-  var balance1 = ingresos1 + rendTotal1 - gastos1;
-  var balance2 = ingresos2 + rendTotal2 - gastos2;
-
-  // Patrimonio from historial (closest record at end of each year)
-  function getPatrimonioAnio(yr) {
-    // Find the latest historial entry for the given year, or the closest one before year-end
-    var entries = historial
-      .filter(function(h) { return new Date(h.fecha).getFullYear() === yr; })
-      .sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-    if (entries.length > 0) return entries[0].valor;
-    // Fallback: find closest entry before or equal to Dec 31 of that year
-    var allBefore = historial
-      .filter(function(h) { return new Date(h.fecha) <= new Date(yr, 11, 31); })
-      .sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-    return allBefore.length > 0 ? allBefore[0].valor : 0;
-  }
-
-  var patrimonio1 = getPatrimonioAnio(anio1);
-  var patrimonio2 = getPatrimonioAnio(anio2);
-
-  // -- Current month vs same month last year --
   var nowDate = new Date();
   var mesActualComp = nowDate.getMonth();
-  var anioActualComp = nowDate.getFullYear();
-  var mesNombreComp = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][mesActualComp];
-  var perMesActual = anioActualComp + '-' + String(mesActualComp + 1).padStart(2, '0');
-  var perMesAnterior = (anioActualComp - 1) + '-' + String(mesActualComp + 1).padStart(2, '0');
+  var anioActual = nowDate.getFullYear();
+  var anioPrevio = anioActual - 1;
+  var mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var mesNombreComp = mesesNombres[mesActualComp];
 
-  var rendMesActual = rendimientos.filter(function(r) { return r.periodo === perMesActual; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
-  var rendMesAnterior = rendimientos.filter(function(r) { return r.periodo === perMesAnterior; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+  // -- Month periods --
+  var perMesActual = anioActual + '-' + String(mesActualComp + 1).padStart(2, '0');
+  var perMesPrevio = anioPrevio + '-' + String(mesActualComp + 1).padStart(2, '0');
+
+  // -- Annual string prefixes --
+  var anioActualStr = String(anioActual);
+  var anioPrevioStr = String(anioPrevio);
+
+  // -- Monthly data --
+  var ingresosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var ingresosMesPrevio = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesPrevio); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
 
   var gastosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-  var gastosMesAnterior = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesAnterior); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var gastosMesPrevio = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesPrevio); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
 
-  var ingresosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
-  var ingresosMesAnterior = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesAnterior); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var rendMesActual = rendimientos.filter(function(r) { return r.periodo === perMesActual; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+  var rendMesPrevio = rendimientos.filter(function(r) { return r.periodo === perMesPrevio; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
 
-  // -- Build comparison table rows --
+  // -- Annual data --
+  var ingresosAnioActual = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anioActualStr); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var ingresosAnioPrevio = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anioPrevioStr); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+
+  var gastosAnioActual = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anioActualStr); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var gastosAnioPrevio = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(anioPrevioStr); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+
+  var rendAnioActual = rendimientos.filter(function(r) { return r.periodo && r.periodo.startsWith(anioActualStr); }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+  var rendAnioPrevio = rendimientos.filter(function(r) { return r.periodo && r.periodo.startsWith(anioPrevioStr); }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+
+  // -- Build rows --
   var conceptos = [
-    { nombre: 'Ingresos Totales',      val1: ingresos1,   val2: ingresos2,   positiveIsGood: true },
-    { nombre: 'Gastos Totales',         val1: gastos1,     val2: gastos2,     positiveIsGood: false },
-    { nombre: 'Rendimientos Totales',   val1: rendTotal1,  val2: rendTotal2,  positiveIsGood: true },
-    { nombre: 'Balance Neto',           val1: balance1,    val2: balance2,    positiveIsGood: true },
-    { nombre: 'Patrimonio',             val1: patrimonio1, val2: patrimonio2, positiveIsGood: true },
-    { separator: true, label: mesNombreComp + ' ' + anioActualComp + ' vs ' + mesNombreComp + ' ' + (anioActualComp - 1) },
-    { nombre: 'Ingresos ' + mesNombreComp,      val1: ingresosMesActual,  val2: ingresosMesAnterior,  positiveIsGood: true },
-    { nombre: 'Gastos ' + mesNombreComp,         val1: gastosMesActual,    val2: gastosMesAnterior,    positiveIsGood: false },
-    { nombre: 'Rendimientos ' + mesNombreComp,   val1: rendMesActual,      val2: rendMesAnterior,      positiveIsGood: true },
+    { nombre: 'Ingresos',      mesPrevio: ingresosMesPrevio, mesActual: ingresosMesActual, anioPrevio: ingresosAnioPrevio, anioActual: ingresosAnioActual, positiveIsGood: true },
+    { nombre: 'Gastos',         mesPrevio: gastosMesPrevio,   mesActual: gastosMesActual,   anioPrevio: gastosAnioPrevio,   anioActual: gastosAnioActual,   positiveIsGood: false },
+    { nombre: 'Rendimientos',   mesPrevio: rendMesPrevio,     mesActual: rendMesActual,     anioPrevio: rendAnioPrevio,     anioActual: rendAnioActual,     positiveIsGood: true },
   ];
 
+  function _diffCell(val1, val2, positiveIsGood) {
+    var diff = val1 - val2;
+    var pct = val2 !== 0 ? ((diff / Math.abs(val2)) * 100) : (val1 !== 0 ? 100 : 0);
+    var isGood = positiveIsGood ? diff >= 0 : diff <= 0;
+    var color = diff === 0 ? 'var(--text-muted)' : (isGood ? 'var(--accent-green)' : 'var(--accent-red)');
+    var icon = '';
+    if (diff !== 0) {
+      if (positiveIsGood) {
+        icon = diff > 0 ? '<i class="fas fa-arrow-up" style="font-size:9px;margin-right:3px;"></i>' : '<i class="fas fa-arrow-down" style="font-size:9px;margin-right:3px;"></i>';
+      } else {
+        icon = diff < 0 ? '<i class="fas fa-arrow-down" style="font-size:9px;margin-right:3px;"></i>' : '<i class="fas fa-arrow-up" style="font-size:9px;margin-right:3px;"></i>';
+      }
+    }
+    var prefix = diff > 0 ? '+' : (diff < 0 ? '-' : '');
+    return { diffHTML: icon + prefix + formatCurrency(Math.abs(diff), 'MXN'), pctHTML: icon + formatPct(pct), color: color };
+  }
+
   var tbodyHTML = conceptos.map(function(c) {
-    if (c.separator) {
-      return '<tr><td colspan="5" style="padding:12px 0 4px;font-weight:700;font-size:12px;color:var(--accent-purple);border-top:2px solid var(--border-color);"><i class="fas fa-calendar-alt" style="margin-right:6px;"></i>' + c.label + '</td></tr>';
-    }
-    var diff = c.val1 - c.val2;
-    var pctCambio = c.val2 !== 0 ? ((diff / Math.abs(c.val2)) * 100) : (c.val1 !== 0 ? 100 : 0);
-
-    // Determine color: for gastos, an increase is bad (red), decrease is good (green)
-    var isImprovement;
-    if (c.positiveIsGood) {
-      isImprovement = diff >= 0;
-    } else {
-      isImprovement = diff <= 0;
-    }
-    var diffColor = diff === 0 ? 'var(--text-muted)' : (isImprovement ? 'var(--accent-green)' : 'var(--accent-red)');
-    var diffIcon = diff === 0 ? '' : (isImprovement ? '<i class="fas fa-arrow-up" style="font-size:10px;margin-right:4px;"></i>' : '<i class="fas fa-arrow-down" style="font-size:10px;margin-right:4px;"></i>');
-
-    // For gastos, flip the arrow logic (down arrow = improvement = green)
-    if (!c.positiveIsGood && diff !== 0) {
-      diffIcon = diff < 0 ? '<i class="fas fa-arrow-down" style="font-size:10px;margin-right:4px;"></i>' : '<i class="fas fa-arrow-up" style="font-size:10px;margin-right:4px;"></i>';
-    }
-
-    var diffPrefix = diff > 0 ? '+' : (diff < 0 ? '-' : '');
-    var diffDisplay = diffPrefix + formatCurrency(Math.abs(diff), 'MXN');
+    var mDiff = _diffCell(c.mesActual, c.mesPrevio, c.positiveIsGood);
+    var aDiff = _diffCell(c.anioActual, c.anioPrevio, c.positiveIsGood);
 
     return '<tr>' +
-      '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.val1, 'MXN') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(c.val2, 'MXN') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:' + diffColor + ';">' + diffIcon + diffDisplay + '</td>' +
-      '<td style="text-align:right;font-weight:700;color:' + diffColor + ';">' + diffIcon + formatPct(pctCambio) + '</td>' +
+      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.mesPrevio, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.mesActual, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + mDiff.color + ';white-space:nowrap;">' + mDiff.diffHTML + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:' + mDiff.color + ';white-space:nowrap;">' + mDiff.pctHTML + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;border-left:2px solid var(--border-color);">' + formatCurrency(c.anioPrevio, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.anioActual, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + aDiff.color + ';white-space:nowrap;">' + aDiff.diffHTML + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:' + aDiff.color + ';white-space:nowrap;">' + aDiff.pctHTML + '</td>' +
     '</tr>';
   }).join('');
 
-  // Update table headers and body
-  var table = document.getElementById('yoyComparisonTable');
-  if (table) {
-    var thead = table.querySelector('thead tr');
-    if (thead) {
-      thead.innerHTML =
-        '<th>Concepto</th>' +
-        '<th style="text-align:right;"><span class="badge badge-blue" style="font-size:11px;">' + anio1 + '</span></th>' +
-        '<th style="text-align:right;"><span class="badge badge-purple" style="font-size:11px;">' + anio2 + '</span></th>' +
-        '<th style="text-align:right;">Diferencia</th>' +
-        '<th style="text-align:right;">% Cambio</th>';
-    }
-    var tbody = table.querySelector('tbody');
-    if (tbody) {
-      tbody.innerHTML = tbodyHTML;
-    }
+  // Update table
+  var thead = document.getElementById('yoyComparisonThead');
+  var tbody = document.getElementById('yoyComparisonTbody');
+  if (thead) {
+    thead.innerHTML =
+      '<th>Concepto</th>' +
+      '<th style="text-align:right;white-space:nowrap;"><span class="badge badge-purple" style="font-size:10px;">' + mesNombreComp + ' ' + anioPrevio + '</span></th>' +
+      '<th style="text-align:right;white-space:nowrap;"><span class="badge badge-blue" style="font-size:10px;">' + mesNombreComp + ' ' + anioActual + '</span></th>' +
+      '<th style="text-align:right;">Dif</th>' +
+      '<th style="text-align:right;">%</th>' +
+      '<th style="text-align:right;white-space:nowrap;border-left:2px solid var(--border-color);"><span class="badge badge-purple" style="font-size:10px;">' + anioPrevio + '</span></th>' +
+      '<th style="text-align:right;white-space:nowrap;"><span class="badge badge-blue" style="font-size:10px;">' + anioActual + '</span></th>' +
+      '<th style="text-align:right;">Dif</th>' +
+      '<th style="text-align:right;">%</th>';
+  }
+  if (tbody) {
+    tbody.innerHTML = tbodyHTML;
   }
 }
 
