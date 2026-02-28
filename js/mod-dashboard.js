@@ -45,14 +45,17 @@ function renderDashboard() {
     tmpDate.setMonth(tmpDate.getMonth() + 1);
   }
 
-  // -- KPI 2: Rendimientos del periodo --
-  const rendPeriodo = rendimientos
-    .filter(r => periodosList.includes(r.periodo))
-    .reduce((sum, r) => sum + toMXN(r.rendimiento_monto, 'MXN', tiposCambio), 0);
-
-  // -- Helper: get moneda for a movimiento (fallback to cuenta moneda) --
+  // -- Helper: account map for lookups --
   const _cuentaMapKpi = {};
   cuentas.forEach(c => { _cuentaMapKpi[c.id] = c; });
+
+  // -- KPI 2: Rendimientos del periodo (using _rendReal for accurate calculation) --
+  const rendPeriodo = rendimientos
+    .filter(r => periodosList.includes(r.periodo))
+    .reduce((sum, r) => {
+      const cta = _cuentaMapKpi[r.cuenta_id];
+      return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
+    }, 0);
   function _getMovMoneda(mv) {
     if (mv.moneda) return mv.moneda;
     var cta = _cuentaMapKpi[mv.cuenta_id];
@@ -1390,8 +1393,11 @@ function compararAnios() {
   var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   var historial = loadData(STORAGE_KEYS.historial_patrimonio) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentasComp = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaMapComp = {};
+  cuentasComp.forEach(function(c) { cuentaMapComp[c.id] = c; });
 
-  // -- Calculate monthly rendimientos for each year --
+  // -- Calculate monthly rendimientos for each year (using _rendReal) --
   var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var rendMensual1 = [];
   var rendMensual2 = [];
@@ -1402,10 +1408,10 @@ function compararAnios() {
 
     var r1 = rendimientos
       .filter(function(r) { return r.periodo === periodo1; })
-      .reduce(function(sum, r) { return sum + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+      .reduce(function(sum, r) { var cta = cuentaMapComp[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
     var r2 = rendimientos
       .filter(function(r) { return r.periodo === periodo2; })
-      .reduce(function(sum, r) { return sum + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+      .reduce(function(sum, r) { var cta = cuentaMapComp[r.cuenta_id]; return sum + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
 
     rendMensual1.push(r1);
     rendMensual2.push(r2);
@@ -1545,8 +1551,8 @@ function compararAnios() {
   var perMesActual = anioActualComp + '-' + String(mesActualComp + 1).padStart(2, '0');
   var perMesAnterior = (anioActualComp - 1) + '-' + String(mesActualComp + 1).padStart(2, '0');
 
-  var rendMesActual = rendimientos.filter(function(r) { return r.periodo === perMesActual; }).reduce(function(s, r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
-  var rendMesAnterior = rendimientos.filter(function(r) { return r.periodo === perMesAnterior; }).reduce(function(s, r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+  var rendMesActual = rendimientos.filter(function(r) { return r.periodo === perMesActual; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
+  var rendMesAnterior = rendimientos.filter(function(r) { return r.periodo === perMesAnterior; }).reduce(function(s, r) { var cta = cuentaMapComp[r.cuenta_id]; return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio); }, 0);
 
   var gastosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
   var gastosMesAnterior = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesAnterior); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
@@ -1650,10 +1656,11 @@ function mostrarDesgloseRendimiento() {
     if (!cta || cta.activa === false || cta.tipo !== 'inversion') return;
     var nombre = cta.nombre;
     var moneda = cta.moneda || 'MXN';
-    var montoMXN = toMXN(r.rendimiento_monto || 0, moneda, tiposCambio);
+    var montoReal = _rendReal(r);
+    var montoMXN = toMXN(montoReal, moneda, tiposCambio);
     if (!byCuenta[cta.id]) byCuenta[cta.id] = { nombre: nombre, monto: 0, montoOrig: 0, moneda: moneda, count: 0, valMXN: toMXN(cta.saldo, moneda, tiposCambio), tasaAnual: 0 };
     byCuenta[cta.id].monto += montoMXN;
-    byCuenta[cta.id].montoOrig += (r.rendimiento_monto || 0);
+    byCuenta[cta.id].montoOrig += montoReal;
     byCuenta[cta.id].count++;
     total += montoMXN;
   });
@@ -2219,7 +2226,7 @@ function mostrarDesgloseBalance() {
   var tmp = new Date(fechaInicio);
   while(tmp <= fechaFin) { periodosList.push(tmp.getFullYear()+'-'+String(tmp.getMonth()+1).padStart(2,'0')); tmp.setMonth(tmp.getMonth()+1); }
 
-  var rendPeriodo = rendimientos.filter(function(r) { return periodosList.includes(r.periodo); }).reduce(function(s,r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+  var rendPeriodo = rendimientos.filter(function(r) { return periodosList.includes(r.periodo); }).reduce(function(s,r) { var ct = cuentaMap[r.cuenta_id]; return s + toMXN(_rendReal(r), ct ? ct.moneda : 'MXN', tiposCambio); }, 0);
   var movsFilt = movimientos.filter(function(mv) { return mv.fecha>=fi && mv.fecha<=ff; });
   var ingresos = movsFilt.filter(function(mv) { return mv.tipo==='ingreso' && !mv.transferencia_id; }).reduce(function(s,mv) { var m=mv.moneda||(cuentaMap[mv.cuenta_id]?cuentaMap[mv.cuenta_id].moneda:'MXN'); return s+toMXN(mv.monto,m,tiposCambio); }, 0);
   var gastos = movsFilt.filter(function(mv) { return mv.tipo==='gasto' && !mv.transferencia_id; }).reduce(function(s,mv) { var m=mv.moneda||(cuentaMap[mv.cuenta_id]?cuentaMap[mv.cuenta_id].moneda:'MXN'); return s+toMXN(mv.monto,m,tiposCambio); }, 0);
