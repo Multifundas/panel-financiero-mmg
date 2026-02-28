@@ -1,22 +1,6 @@
 /* ============================================================
    MODULE: DASHBOARD
    ============================================================ */
-// Dashboard filter state
-var _dashboardFilters = {
-  periodo: 'mensual',
-  anio: new Date().getFullYear(),
-  mes: null, // null = todos, 0-11 = mes especifico
-};
-
-function applyDashboardFilters() {
-  var periodoSel = document.getElementById('dashFilterPeriodo');
-  var anioSel = document.getElementById('dashFilterAnio');
-  var mesSel = document.getElementById('dashFilterMes');
-  if (periodoSel) _dashboardFilters.periodo = periodoSel.value;
-  if (anioSel) _dashboardFilters.anio = parseInt(anioSel.value);
-  if (mesSel) _dashboardFilters.mes = mesSel.value !== '' ? parseInt(mesSel.value) : null;
-  renderDashboard();
-}
 
 function renderDashboard() {
   const el = document.getElementById('module-dashboard');
@@ -30,67 +14,17 @@ function renderDashboard() {
   const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
   const propiedades = loadData(STORAGE_KEYS.propiedades) || [];
 
-  // -- Filter settings --
-  const periodo = _dashboardFilters.periodo;
-  const anioFiltro = _dashboardFilters.anio;
+  // -- Always show current month data (no filters) --
   const now = new Date();
   const mesActual = now.getMonth();
   const anioActual = now.getFullYear();
+  const anioFiltro = anioActual;
+  const periodo = 'mensual';
+  const periodoLabel = 'del Mes';
 
-  // -- Calculate date range based on selected period (or specific month) --
-  const mesFiltro = _dashboardFilters.mes; // null or 0-11
-  let fechaInicio, fechaFin;
-
-  if (mesFiltro !== null && mesFiltro !== undefined) {
-    // Specific month selected — override periodo
-    fechaInicio = new Date(anioFiltro, mesFiltro, 1);
-    fechaFin = new Date(anioFiltro, mesFiltro + 1, 0, 23, 59, 59); // last day of month
-    if (anioFiltro === anioActual && mesFiltro === mesActual) {
-      fechaFin = now;
-    }
-  } else {
-    fechaFin = new Date(anioFiltro, 11, 31, 23, 59, 59);
-    if (anioFiltro === anioActual) {
-      fechaFin = now;
-    }
-
-    switch (periodo) {
-      case 'semanal':
-        fechaInicio = new Date(fechaFin);
-        fechaInicio.setDate(fechaInicio.getDate() - 7);
-        break;
-      case 'mensual':
-        fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
-        break;
-      case 'bimestral':
-        fechaInicio = new Date(fechaFin);
-        fechaInicio.setMonth(fechaInicio.getMonth() - 2);
-        fechaInicio.setDate(1);
-        break;
-      case 'trimestral':
-        fechaInicio = new Date(fechaFin);
-        fechaInicio.setMonth(fechaInicio.getMonth() - 3);
-        fechaInicio.setDate(1);
-        break;
-      case 'semestral':
-        fechaInicio = new Date(fechaFin);
-        fechaInicio.setMonth(fechaInicio.getMonth() - 6);
-        fechaInicio.setDate(1);
-        break;
-      case 'anual':
-        fechaInicio = new Date(anioFiltro, 0, 1);
-        break;
-      default:
-        fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
-    }
-  }
-
-  // Period label for display
-  const periodoLabels = {
-    semanal: 'Semanal', mensual: 'del Mes', bimestral: 'Bimestral',
-    trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual'
-  };
-  const periodoLabel = periodoLabels[periodo] || 'del Mes';
+  // Current month date range
+  let fechaInicio = new Date(anioActual, mesActual, 1);
+  let fechaFin = now;
 
   // -- KPI 1: Patrimonio Total (cuentas + propiedades + prestamos otorgados - prestamos recibidos) --
   const _patCalc = typeof calcPatrimonioTotal === 'function' ? calcPatrimonioTotal() : { total: 0, cuentas: 0, propiedades: 0, prestamosOtorgados: 0, prestamosRecibidos: 0 };
@@ -172,12 +106,27 @@ function renderDashboard() {
   const cuentaMap = {};
   cuentas.forEach(c => cuentaMap[c.id] = c.nombre);
 
-  // -- Distribution by account type --
-  const distTipo = { debito: 0, inversion: 0, inmueble: 0, activo_fijo: 0 };
+  // -- Distribution by account type (including deuda as negative component) --
+  const distTipo = { debito: 0, inversion: 0, inmueble: 0, activo_fijo: 0, propiedades: 0, prestamos_otorgados: 0, deuda: 0 };
   cuentas.forEach(c => {
-    if (c.activa !== false && distTipo.hasOwnProperty(c.tipo)) {
+    if (c.activa !== false && c.tipo && (c.tipo === 'debito' || c.tipo === 'inversion' || c.tipo === 'inmueble' || c.tipo === 'activo_fijo')) {
       distTipo[c.tipo] += toMXN(_calcSaldoReal(c), c.moneda, tiposCambio);
     }
+  });
+  propiedades.forEach(pr => {
+    distTipo.propiedades += toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
+  });
+  prestamos.forEach(p => {
+    if (p.estado === 'pagado') return;
+    if (p.tipo === 'otorgado') distTipo.prestamos_otorgados += toMXN(p.saldo_pendiente, p.moneda, tiposCambio);
+    else distTipo.deuda += toMXN(p.saldo_pendiente, p.moneda, tiposCambio);
+  });
+  // Add preventa debt
+  propiedades.filter(pr => pr.tipo === 'preventa').forEach(pr => {
+    const enganche = pr.enganche || 0;
+    const pagado = enganche + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
+    const pendiente = Math.max(0, (pr.valor_compra || 0) - pagado);
+    distTipo.deuda += toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
   });
 
   // -- KPI summary cards: Bancarias, Inversiones, Propiedades, Prestamos --
@@ -206,14 +155,45 @@ function renderDashboard() {
   // -- Helper: color for KPI --
   function kpiColor(val) { return val >= 0 ? 'text-green' : 'text-red'; }
 
-  // -- Build historial patrimonio chart data (24 months, combinando historial manual + cierres) --
+  // -- Build historial patrimonio chart data (start from first data, max 24 months) --
+  // Find the earliest period with data (historial_patrimonio or cierres)
+  const allPatPeriodos = new Set();
+  historial.forEach(h => {
+    if (h.fecha) {
+      const hd = new Date(h.fecha);
+      allPatPeriodos.add(`${hd.getFullYear()}-${String(hd.getMonth() + 1).padStart(2, '0')}`);
+    }
+  });
+  cuentas.forEach(c => {
+    (c.historial_saldos || []).forEach(h => {
+      if (h.periodo) allPatPeriodos.add(h.periodo);
+      else if (h.fecha) {
+        const hd = new Date(h.fecha);
+        allPatPeriodos.add(`${hd.getFullYear()}-${String(hd.getMonth() + 1).padStart(2, '0')}`);
+      }
+    });
+  });
+  const sortedPatPeriodos = Array.from(allPatPeriodos).sort();
+  const firstPatPeriodo = sortedPatPeriodos.length > 0 ? sortedPatPeriodos[0] : `${anioActual}-01`;
+  const firstPatDate = new Date(parseInt(firstPatPeriodo.split('-')[0]), parseInt(firstPatPeriodo.split('-')[1]) - 1, 1);
+  const currentDate = new Date(anioActual, mesActual, 1);
+
+  // Calculate months between first data and now
+  let monthsDiff = (currentDate.getFullYear() - firstPatDate.getFullYear()) * 12 + (currentDate.getMonth() - firstPatDate.getMonth());
+  // Cap at 24 months
+  const numBarMonths = Math.min(Math.max(monthsDiff + 1, 1), 24);
+  const barStartDate = new Date(anioActual, mesActual - (numBarMonths - 1), 1);
+
   const barLabels = [];
   const barData = [];
-  for (let i = 23; i >= 0; i--) {
-    const dt = new Date(anioActual, mesActual - i, 1);
+  // Store periodo strings for click-desglose
+  const barPeriodos = [];
+  for (let i = 0; i < numBarMonths; i++) {
+    const dt = new Date(barStartDate.getFullYear(), barStartDate.getMonth() + i, 1);
     const mLabel = mesNombre(dt.getMonth()).substring(0, 3) + ' ' + dt.getFullYear().toString().slice(-2);
     const per = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
     barLabels.push(mLabel);
+    barPeriodos.push(per);
 
     // 1. Check historial_patrimonio for this month
     const hMatch = historial.find(h => {
@@ -231,7 +211,6 @@ function renderDashboard() {
     cuentas.forEach(c => {
       if (c.activa === false) return;
       const hist = c.historial_saldos || [];
-      // Find cierre matching this period (by periodo field, or by fecha matching year-month)
       const cierre = hist.find(h => {
         if (h.periodo === per) return true;
         if (h.fecha) {
@@ -247,14 +226,13 @@ function renderDashboard() {
       }
     });
 
-    // Also add propiedades value if we have cierre data for at least one account
     if (hasCierreData) {
       propiedades.forEach(pr => {
         totalMes += toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
       });
       barData.push(totalMes);
     } else {
-      barData.push(null); // no data for this month
+      barData.push(null);
     }
   }
 
@@ -263,12 +241,7 @@ function renderDashboard() {
     barData[barData.length - 1] = patrimonioTotal;
   }
 
-  // -- Build year options --
-  const availableYears = [];
-  for (let yr = anioActual; yr >= anioActual - 5; yr--) { availableYears.push(yr); }
-  const yearOptions = availableYears.map(yr =>
-    `<option value="${yr}" ${yr === anioFiltro ? 'selected' : ''}>${yr}</option>`
-  ).join('');
+  // (Filters removed — dashboard always shows current data)
 
   // -- Alertas de Vencimiento --
   const alertasVencimiento = [];
@@ -690,6 +663,16 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  // -- Top 5 Rendimientos Acumulados (across all time) --
+  const rendAcumByCuenta = {};
+  rendimientos.forEach(r => {
+    const cta = _cuentaMapKpi[r.cuenta_id];
+    if (!cta || cta.activa === false || cta.tipo !== 'inversion') return;
+    if (!rendAcumByCuenta[r.cuenta_id]) rendAcumByCuenta[r.cuenta_id] = { nombre: cta.nombre, monto: 0, moneda: cta.moneda || 'MXN' };
+    rendAcumByCuenta[r.cuenta_id].monto += toMXN(_rendReal(r), cta.moneda || 'MXN', tiposCambio);
+  });
+  const topRendAcum = Object.values(rendAcumByCuenta).sort((a, b) => b.monto - a.monto).slice(0, 5);
+
   // -- Build Resumen Panel --
   var resumenPanelHTML = buildResumenPanel(movimientos, cuentas, prestamos, propiedades);
 
@@ -698,50 +681,32 @@ function renderDashboard() {
 
   // -- Render HTML --
   el.innerHTML = `
-    <!-- ROW 1: 4 cards equal width -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
+    <!-- ROW 1: 3 cards (patrimonio wider + 15 dias + saludo) -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch;" id="dashboardTopRow">
       <!-- Patrimonio Neto -->
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:0;" onclick="mostrarDesglosePatrimonio()">
         <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:14px;"></i>
         </div>
-        <div style="min-width:0;">
+        <div style="min-width:0;flex:1;">
           <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
-          <div style="font-size:18px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+          <div style="font-size:22px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
         </div>
-        <div style="margin-left:auto;color:var(--text-secondary);font-size:11px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
-      </div>
-      <!-- Filtros -->
-      <div class="card" style="padding:8px 12px;margin-bottom:0;display:flex;flex-direction:column;justify-content:center;">
-        <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;margin-bottom:4px;"><i class="fas fa-filter" style="margin-right:3px;"></i>Filtros:</span>
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-          <select id="dashFilterPeriodo" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:80px;" onchange="applyDashboardFilters()">
-            <option value="semanal" ${periodo === 'semanal' ? 'selected' : ''}>Semanal</option>
-            <option value="mensual" ${periodo === 'mensual' ? 'selected' : ''}>Mensual</option>
-            <option value="bimestral" ${periodo === 'bimestral' ? 'selected' : ''}>Bimestral</option>
-            <option value="trimestral" ${periodo === 'trimestral' ? 'selected' : ''}>Trimestral</option>
-            <option value="semestral" ${periodo === 'semestral' ? 'selected' : ''}>Semestral</option>
-            <option value="anual" ${periodo === 'anual' ? 'selected' : ''}>Anual</option>
-          </select>
-          <select id="dashFilterMes" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:80px;" onchange="applyDashboardFilters()">
-            <option value="" ${!_dashboardFilters.mes ? 'selected' : ''}>Mes</option>
-            <option value="0" ${_dashboardFilters.mes === 0 ? 'selected' : ''}>Enero</option>
-            <option value="1" ${_dashboardFilters.mes === 1 ? 'selected' : ''}>Febrero</option>
-            <option value="2" ${_dashboardFilters.mes === 2 ? 'selected' : ''}>Marzo</option>
-            <option value="3" ${_dashboardFilters.mes === 3 ? 'selected' : ''}>Abril</option>
-            <option value="4" ${_dashboardFilters.mes === 4 ? 'selected' : ''}>Mayo</option>
-            <option value="5" ${_dashboardFilters.mes === 5 ? 'selected' : ''}>Junio</option>
-            <option value="6" ${_dashboardFilters.mes === 6 ? 'selected' : ''}>Julio</option>
-            <option value="7" ${_dashboardFilters.mes === 7 ? 'selected' : ''}>Agosto</option>
-            <option value="8" ${_dashboardFilters.mes === 8 ? 'selected' : ''}>Septiembre</option>
-            <option value="9" ${_dashboardFilters.mes === 9 ? 'selected' : ''}>Octubre</option>
-            <option value="10" ${_dashboardFilters.mes === 10 ? 'selected' : ''}>Noviembre</option>
-            <option value="11" ${_dashboardFilters.mes === 11 ? 'selected' : ''}>Diciembre</option>
-          </select>
-          <select id="dashFilterAnio" class="form-select" style="padding:3px 5px;font-size:10px;min-height:auto;width:62px;" onchange="applyDashboardFilters()">
-            ${yearOptions}
-          </select>
+        <div style="display:flex;gap:16px;align-items:center;flex-shrink:0;">
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Bancarias</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-blue);">${formatCurrency(kpiBancarias, 'MXN')}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Inversiones</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-green);">${formatCurrency(kpiInversiones, 'MXN')}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Propiedades</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-amber);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
+          </div>
         </div>
+        <div style="color:var(--text-secondary);font-size:11px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
       </div>
       <!-- Ultimos 15 dias -->
       ${ultimos15DiasHTML}
@@ -858,7 +823,7 @@ function renderDashboard() {
     <div style="margin-bottom:24px;">
       <div class="card">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio (24 meses)</span>
+          <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
           <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
             <i class="fas fa-edit"></i> Editar Historial
           </button>
@@ -873,7 +838,7 @@ function renderDashboard() {
     <div style="margin-bottom:24px;">
       <div class="card">
         <div class="card-header">
-          <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos (24 meses)</span>
+          <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos</span>
         </div>
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
@@ -881,9 +846,9 @@ function renderDashboard() {
       </div>
     </div>
 
-    <!-- Summary Tables -->
-    <div class="grid-2">
-      <div class="card">
+    <!-- Summary Tables (3 columns) -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-trophy" style="margin-right:8px;color:var(--accent-amber);"></i>Top 5 Activos</span>
         </div>
@@ -912,7 +877,7 @@ function renderDashboard() {
           </tbody>
         </table>
       </div>
-      <div class="card">
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-clock" style="margin-right:8px;color:var(--accent-blue);"></i>Ultimos 5 Movimientos</span>
         </div>
@@ -921,7 +886,6 @@ function renderDashboard() {
             <tr>
               <th>Fecha</th>
               <th>Descripcion</th>
-              <th>Tipo</th>
               <th style="text-align:right;">Monto</th>
             </tr>
           </thead>
@@ -929,15 +893,35 @@ function renderDashboard() {
             ${ultimosMovs.map(mv => {
               const esTransf = !!mv.transferencia_id;
               const esGasto = mv.tipo === 'gasto';
-              const tipoBadge = esTransf ? 'badge-purple' : (esGasto ? 'badge-red' : 'badge-green');
-              const tipoLabel = esTransf ? 'Transferencia' : (esGasto ? 'Gasto' : 'Ingreso');
               const signo = esGasto ? '-' : '+';
               const montoClass = esTransf ? '' : (esGasto ? 'text-red' : 'text-green');
               return `<tr>
-                <td>${formatDate(mv.fecha)}</td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mv.descripcion}">${mv.descripcion}</td>
-                <td><span class="badge ${tipoBadge}">${tipoLabel}</span></td>
+                <td style="white-space:nowrap;">${formatDate(mv.fecha)}</td>
+                <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mv.descripcion}">${mv.descripcion}</td>
                 <td style="text-align:right;font-weight:600;${esTransf ? 'color:var(--accent-purple);' : ''}" class="${montoClass}">${signo}${formatCurrency(mv.monto, mv.moneda)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-medal" style="margin-right:8px;color:var(--accent-green);"></i>Top 5 Rendimientos Acumulados</span>
+        </div>
+        <table class="data-table sortable-table">
+          <thead>
+            <tr>
+              <th>Cuenta</th>
+              <th style="text-align:right;">Rendimiento (MXN)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${topRendAcum.map(r => {
+              const color = r.monto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+              const signo = r.monto >= 0 ? '+' : '';
+              return `<tr>
+                <td style="font-weight:600;color:var(--text-primary);">${r.nombre}</td>
+                <td style="text-align:right;font-weight:600;color:${color};">${signo}${formatCurrency(r.monto, 'MXN')}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -1009,29 +993,47 @@ function renderDashboard() {
   const chartFontColor = _cc.fontColor;
   const gridColor = _cc.gridColor;
 
-  // -- 1. Donut: Distribucion por Tipo --
+  // -- 1. Pie: Distribucion por Tipo (including deuda) --
   if (window._charts.dashDonut) window._charts.dashDonut.destroy();
   const donutCtx = document.getElementById('dashDonutChart').getContext('2d');
+  const pieLabels = [];
+  const pieData = [];
+  const pieColors = [];
+  const pieColorMap = {
+    debito: { label: 'DEBITO', color: '#3b82f6' },
+    inversion: { label: 'INVERSION', color: '#10b981' },
+    inmueble: { label: 'INMUEBLE', color: '#f59e0b' },
+    activo_fijo: { label: 'ACTIVO FIJO', color: '#8b5cf6' },
+    propiedades: { label: 'PROPIEDADES', color: '#06b6d4' },
+    prestamos_otorgados: { label: 'PRESTAMOS OTORGADOS', color: '#84cc16' },
+    deuda: { label: 'DEUDA', color: '#ef4444' }
+  };
+  Object.keys(pieColorMap).forEach(key => {
+    if (distTipo[key] > 0) {
+      pieLabels.push(pieColorMap[key].label);
+      pieData.push(distTipo[key]);
+      pieColors.push(pieColorMap[key].color);
+    }
+  });
   window._charts.dashDonut = new Chart(donutCtx, {
-    type: 'doughnut',
+    type: 'pie',
     data: {
-      labels: ['DEBITO', 'INVERSION', 'INMUEBLE', 'ACTIVO FIJO'],
+      labels: pieLabels,
       datasets: [{
-        data: [distTipo.debito, distTipo.inversion, distTipo.inmueble, distTipo.activo_fijo],
-        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+        data: pieData,
+        backgroundColor: pieColors,
         borderColor: _cc.borderColor,
-        borderWidth: 3,
-        hoverOffset: 6,
+        borderWidth: 2,
+        hoverOffset: 8,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '65%',
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" } },
+          labels: { color: chartFontColor, padding: 12, font: { size: 11, family: "'Plus Jakarta Sans'" } },
         },
         tooltip: {
           callbacks: {
@@ -1047,7 +1049,9 @@ function renderDashboard() {
     },
   });
 
-  // -- 2. Bar: Evolucion del Patrimonio (24 meses, historial + cierres) --
+  // -- 2. Bar: Evolucion del Patrimonio (from first data, max 24 months) --
+  // Store barPeriodos for click handler
+  window._dashBarPeriodos = barPeriodos;
   if (window._charts.dashBar) window._charts.dashBar.destroy();
   const barCtx = document.getElementById('dashBarChart').getContext('2d');
   window._charts.dashBar = new Chart(barCtx, {
@@ -1068,6 +1072,13 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onClick: function(evt, elements) {
+        if (elements.length > 0) {
+          var idx = elements[0].index;
+          var per = window._dashBarPeriodos[idx];
+          if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
+        }
+      },
       scales: {
         x: {
           ticks: { color: chartFontColor, font: { size: 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
@@ -1093,17 +1104,34 @@ function renderDashboard() {
     },
   });
 
-  // -- 3. Line: Rendimientos vs Gastos 24 meses --
+  // -- 3. Line: Rendimientos vs Gastos (start from first data, max 24 months) --
+  // Find earliest period with rendimiento or gasto data
+  const allRendGastoPeriodos = new Set();
+  rendimientos.forEach(r => { if (r.periodo) allRendGastoPeriodos.add(r.periodo); });
+  movimientos.forEach(mv => {
+    if (mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha) {
+      allRendGastoPeriodos.add(mv.fecha.substring(0, 7));
+    }
+  });
+  const sortedRGPeriodos = Array.from(allRendGastoPeriodos).sort();
+  const firstRGPeriodo = sortedRGPeriodos.length > 0 ? sortedRGPeriodos[0] : `${anioActual}-01`;
+  const firstRGDate = new Date(parseInt(firstRGPeriodo.split('-')[0]), parseInt(firstRGPeriodo.split('-')[1]) - 1, 1);
+  let rgMonthsDiff = (currentDate.getFullYear() - firstRGDate.getFullYear()) * 12 + (currentDate.getMonth() - firstRGDate.getMonth());
+  const numLineMonths = Math.min(Math.max(rgMonthsDiff + 1, 1), 24);
+  const lineStartDate = new Date(anioActual, mesActual - (numLineMonths - 1), 1);
+
   const lineLabels = [];
   const rendData = [];
   const gastosData = [];
+  const linePeriodos = [];
 
-  for (let i = 23; i >= 0; i--) {
-    const dt = new Date(anioActual, mesActual - i, 1);
+  for (let i = 0; i < numLineMonths; i++) {
+    const dt = new Date(lineStartDate.getFullYear(), lineStartDate.getMonth() + i, 1);
     const mIdx = dt.getMonth();
     const aIdx = dt.getFullYear();
     const per = `${aIdx}-${String(mIdx + 1).padStart(2, '0')}`;
     lineLabels.push(mesNombre(mIdx).substring(0, 3) + ' ' + aIdx.toString().slice(-2));
+    linePeriodos.push(per);
 
     // Rendimientos for this period (using _rendReal for real rendimiento)
     const rMes = rendimientos
@@ -1114,7 +1142,7 @@ function renderDashboard() {
       }, 0);
     rendData.push(rMes);
 
-    // Gastos for this period (excluding transfers) — use string prefix to avoid timezone issues
+    // Gastos for this period (excluding transfers)
     const gMes = movimientos
       .filter(mv => {
         if (mv.tipo !== 'gasto' || mv.transferencia_id) return false;
@@ -1124,6 +1152,8 @@ function renderDashboard() {
     gastosData.push(gMes);
   }
 
+  // Store linePeriodos for click handler
+  window._dashLinePeriodos = linePeriodos;
   if (window._charts.dashLine) window._charts.dashLine.destroy();
   const lineCtx = document.getElementById('dashLineChart').getContext('2d');
   window._charts.dashLine = new Chart(lineCtx, {
@@ -1161,6 +1191,13 @@ function renderDashboard() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: function(evt, elements) {
+        if (elements.length > 0) {
+          var idx = elements[0].index;
+          var per = window._dashLinePeriodos[idx];
+          if (per) _mostrarDesgloseRendGastoPeriodo(per, lineLabels[idx]);
+        }
+      },
       scales: {
         x: {
           ticks: { color: chartFontColor, font: { size: 10, family: "'Plus Jakarta Sans'" } },
@@ -1386,6 +1423,9 @@ function compararAnios() {
   if (!yoyCtx) return;
   yoyCtx = yoyCtx.getContext('2d');
 
+  // Store years for click handler
+  window._yoyAnio1 = anio1;
+  window._yoyAnio2 = anio2;
   window._charts.yoyBar = new Chart(yoyCtx, {
     type: 'bar',
     data: {
@@ -1417,6 +1457,15 @@ function compararAnios() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: function(evt, elements) {
+        if (elements.length > 0) {
+          var idx = elements[0].index;
+          var dsIdx = elements[0].datasetIndex;
+          var anio = dsIdx === 0 ? window._yoyAnio1 : window._yoyAnio2;
+          var per = anio + '-' + String(idx + 1).padStart(2, '0');
+          _mostrarDesgloseRendPeriodo(per, meses[idx] + ' ' + anio);
+        }
+      },
       scales: {
         x: {
           ticks: { color: chartFontColor, font: { size: 11, family: "'Plus Jakarta Sans'" } },
@@ -1488,6 +1537,23 @@ function compararAnios() {
   var patrimonio1 = getPatrimonioAnio(anio1);
   var patrimonio2 = getPatrimonioAnio(anio2);
 
+  // -- Current month vs same month last year --
+  var nowDate = new Date();
+  var mesActualComp = nowDate.getMonth();
+  var anioActualComp = nowDate.getFullYear();
+  var mesNombreComp = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][mesActualComp];
+  var perMesActual = anioActualComp + '-' + String(mesActualComp + 1).padStart(2, '0');
+  var perMesAnterior = (anioActualComp - 1) + '-' + String(mesActualComp + 1).padStart(2, '0');
+
+  var rendMesActual = rendimientos.filter(function(r) { return r.periodo === perMesActual; }).reduce(function(s, r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+  var rendMesAnterior = rendimientos.filter(function(r) { return r.periodo === perMesAnterior; }).reduce(function(s, r) { return s + toMXN(r.rendimiento_monto, 'MXN', tiposCambio); }, 0);
+
+  var gastosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var gastosMesAnterior = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesAnterior); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+
+  var ingresosMesActual = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesActual); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+  var ingresosMesAnterior = movimientos.filter(function(mv) { return mv.tipo === 'ingreso' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(perMesAnterior); }).reduce(function(s, mv) { return s + toMXN(mv.monto, mv.moneda || 'MXN', tiposCambio); }, 0);
+
   // -- Build comparison table rows --
   var conceptos = [
     { nombre: 'Ingresos Totales',      val1: ingresos1,   val2: ingresos2,   positiveIsGood: true },
@@ -1495,9 +1561,16 @@ function compararAnios() {
     { nombre: 'Rendimientos Totales',   val1: rendTotal1,  val2: rendTotal2,  positiveIsGood: true },
     { nombre: 'Balance Neto',           val1: balance1,    val2: balance2,    positiveIsGood: true },
     { nombre: 'Patrimonio',             val1: patrimonio1, val2: patrimonio2, positiveIsGood: true },
+    { separator: true, label: mesNombreComp + ' ' + anioActualComp + ' vs ' + mesNombreComp + ' ' + (anioActualComp - 1) },
+    { nombre: 'Ingresos ' + mesNombreComp,      val1: ingresosMesActual,  val2: ingresosMesAnterior,  positiveIsGood: true },
+    { nombre: 'Gastos ' + mesNombreComp,         val1: gastosMesActual,    val2: gastosMesAnterior,    positiveIsGood: false },
+    { nombre: 'Rendimientos ' + mesNombreComp,   val1: rendMesActual,      val2: rendMesAnterior,      positiveIsGood: true },
   ];
 
   var tbodyHTML = conceptos.map(function(c) {
+    if (c.separator) {
+      return '<tr><td colspan="5" style="padding:12px 0 4px;font-weight:700;font-size:12px;color:var(--accent-purple);border-top:2px solid var(--border-color);"><i class="fas fa-calendar-alt" style="margin-right:6px;"></i>' + c.label + '</td></tr>';
+    }
     var diff = c.val1 - c.val2;
     var pctCambio = c.val2 !== 0 ? ((diff / Math.abs(c.val2)) * 100) : (c.val1 !== 0 ? 100 : 0);
 
@@ -1555,39 +1628,13 @@ function mostrarDesgloseRendimiento() {
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var rendimientosData = loadData(STORAGE_KEYS.rendimientos) || [];
 
-  /* Recalculate same period filter as the KPI */
-  var periodo = _dashboardFilters.periodo;
-  var anioFiltro = _dashboardFilters.anio;
-  var mesFiltro = _dashboardFilters.mes;
+  /* Always current month */
   var now = new Date();
   var mesActual = now.getMonth();
   var anioActual = now.getFullYear();
-  var fechaInicio, fechaFin;
-  if (mesFiltro !== null && mesFiltro !== undefined) {
-    fechaInicio = new Date(anioFiltro, mesFiltro, 1);
-    fechaFin = new Date(anioFiltro, mesFiltro + 1, 0, 23, 59, 59);
-    if (anioFiltro === anioActual && mesFiltro === mesActual) fechaFin = now;
-  } else {
-    fechaFin = new Date(anioFiltro, 11, 31, 23, 59, 59);
-    if (anioFiltro === anioActual) fechaFin = now;
-    switch (periodo) {
-      case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate() - 7); break;
-      case 'mensual': fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1); break;
-      case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 2); fechaInicio.setDate(1); break;
-      case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 3); fechaInicio.setDate(1); break;
-      case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth() - 6); fechaInicio.setDate(1); break;
-      case 'anual': fechaInicio = new Date(anioFiltro, 0, 1); break;
-      default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
-    }
-  }
-  var periodosList = [];
-  var tmpDate = new Date(fechaInicio);
-  while (tmpDate <= fechaFin) {
-    periodosList.push(tmpDate.getFullYear() + '-' + String(tmpDate.getMonth() + 1).padStart(2, '0'));
-    tmpDate.setMonth(tmpDate.getMonth() + 1);
-  }
-  var periodoLabels = { semanal: 'Semanal', mensual: 'del Mes', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' };
-  var periodoLabel = periodoLabels[periodo] || 'del Mes';
+  var anioFiltro = anioActual;
+  var periodoLabel = 'del Mes';
+  var periodosList = [anioActual + '-' + String(mesActual + 1).padStart(2, '0')];
 
   /* Filter rendimientos by period */
   var filteredRend = rendimientosData.filter(function(r) { return periodosList.includes(r.periodo); });
@@ -1630,7 +1677,7 @@ function mostrarDesgloseRendimiento() {
     }
   });
 
-  var entries = Object.values(byCuenta).sort(function(a, b) { return b.monto - a.monto; });
+  var entries = Object.values(byCuenta).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
 
   var rowsHTML = entries.map(function(r) {
     var peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : '0.0';
@@ -2040,6 +2087,7 @@ function mostrarDesgloseCuentas(tipo) {
   instituciones.forEach(function(i) { instMap[i.id] = i.nombre; });
 
   var filtered = cuentas.filter(function(c) { return c.activa !== false && c.tipo === tipo; });
+  filtered.sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var total = 0;
   var rows = filtered.map(function(c) {
     var saldoReal = _calcSaldoReal(c);
@@ -2068,7 +2116,8 @@ function mostrarDesglosePropiedades() {
   var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var total = 0;
-  var rows = propiedades.map(function(pr) {
+  var propsSorted = propiedades.slice().sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
+  var rows = propsSorted.map(function(pr) {
     var valMXN = toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
     total += valMXN;
     var tipoBadge = pr.tipo === 'preventa' ? 'badge-amber' : 'badge-green';
@@ -2093,7 +2142,7 @@ function mostrarDesglosePrestamos() {
   var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var totalOtorgados = 0, totalRecibidos = 0;
-  var rows = prestamos.filter(function(p) { return p.estado !== 'pagado'; }).map(function(p) {
+  var rows = prestamos.filter(function(p) { return p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); }).map(function(p) {
     var valMXN = toMXN(p.saldo_pendiente, p.moneda, tiposCambio);
     if (p.tipo === 'otorgado') totalOtorgados += valMXN;
     else totalRecibidos += valMXN;
@@ -2124,19 +2173,10 @@ function mostrarDesgloseGastos() {
   var cuentaMap = {};
   cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
 
-  var periodo = _dashboardFilters.periodo;
-  var anioFiltro = _dashboardFilters.anio;
+  /* Always current month */
   var now = new Date();
-  var fechaFin = anioFiltro === now.getFullYear() ? now : new Date(anioFiltro, 11, 31);
-  var fechaInicio;
-  switch(periodo) {
-    case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate()-7); break;
-    case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-2); fechaInicio.setDate(1); break;
-    case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-3); fechaInicio.setDate(1); break;
-    case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-6); fechaInicio.setDate(1); break;
-    case 'anual': fechaInicio = new Date(anioFiltro,0,1); break;
-    default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
-  }
+  var fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+  var fechaFin = now;
   var fi = fechaInicio.getFullYear()+'-'+String(fechaInicio.getMonth()+1).padStart(2,'0')+'-'+String(fechaInicio.getDate()).padStart(2,'0');
   var ff = fechaFin.getFullYear()+'-'+String(fechaFin.getMonth()+1).padStart(2,'0')+'-'+String(fechaFin.getDate()).padStart(2,'0');
 
@@ -2168,19 +2208,10 @@ function mostrarDesgloseBalance() {
   var cuentaMap = {};
   cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
 
-  var periodo = _dashboardFilters.periodo;
-  var anioFiltro = _dashboardFilters.anio;
+  /* Always current month */
   var now = new Date();
-  var fechaFin = anioFiltro === now.getFullYear() ? now : new Date(anioFiltro, 11, 31);
-  var fechaInicio;
-  switch(periodo) {
-    case 'semanal': fechaInicio = new Date(fechaFin); fechaInicio.setDate(fechaInicio.getDate()-7); break;
-    case 'bimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-2); fechaInicio.setDate(1); break;
-    case 'trimestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-3); fechaInicio.setDate(1); break;
-    case 'semestral': fechaInicio = new Date(fechaFin); fechaInicio.setMonth(fechaInicio.getMonth()-6); fechaInicio.setDate(1); break;
-    case 'anual': fechaInicio = new Date(anioFiltro,0,1); break;
-    default: fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
-  }
+  var fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+  var fechaFin = now;
   var fi = fechaInicio.getFullYear()+'-'+String(fechaInicio.getMonth()+1).padStart(2,'0')+'-'+String(fechaInicio.getDate()).padStart(2,'0');
   var ff = fechaFin.getFullYear()+'-'+String(fechaFin.getMonth()+1).padStart(2,'0')+'-'+String(fechaFin.getDate()).padStart(2,'0');
 
@@ -2203,4 +2234,141 @@ function mostrarDesgloseBalance() {
   '<div style="font-size:12px;color:var(--text-secondary);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Balance = Rendimientos + Ingresos - Gastos</div>';
 
   openModal('Desglose: Balance Neto', html);
+}
+
+/* ============================================================
+   CHART CLICK DESGLOSE HELPERS
+   ============================================================ */
+function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var propiedades = loadData(STORAGE_KEYS.propiedades) || [];
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+
+  var rows = [];
+  var total = 0;
+  cuentas.filter(function(c) { return c.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(c) {
+    var hist = c.historial_saldos || [];
+    var cierre = hist.find(function(h) {
+      if (h.periodo === periodo) return true;
+      if (h.fecha) { var hd = new Date(h.fecha); return hd.getFullYear() === parseInt(periodo.split('-')[0]) && hd.getMonth() === parseInt(periodo.split('-')[1]) - 1; }
+      return false;
+    });
+    if (cierre) {
+      var sFinal = cierre.saldo_final != null ? cierre.saldo_final : cierre.saldo;
+      var valMXN = toMXN(sFinal, c.moneda || 'MXN', tiposCambio);
+      total += valMXN;
+      rows.push('<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(sFinal, c.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
+    }
+  });
+
+  // Add propiedades
+  propiedades.sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(pr) {
+    var valMXN = toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio);
+    total += valMXN;
+    rows.push('<tr><td style="font-weight:600;">' + pr.nombre + '</td><td><span class="badge badge-amber" style="font-size:10px;">propiedad</span></td><td style="text-align:right;">' + formatCurrency(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
+  });
+
+  var html = '<table class="data-table"><thead><tr><th>Concepto</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows.join('') + '</tbody>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+
+  if (rows.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay datos de cierre para este periodo.</div>';
+  }
+
+  openModal('Desglose Patrimonio: ' + label, html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  // Rendimientos for this period
+  var rendFiltered = rendimientos.filter(function(r) { return r.periodo === periodo; });
+  var rendRows = [];
+  var rendTotal = 0;
+  rendFiltered.sort(function(a, b) { var na = cuentaMap[a.cuenta_id] ? cuentaMap[a.cuenta_id].nombre : ''; var nb = cuentaMap[b.cuenta_id] ? cuentaMap[b.cuenta_id].nombre : ''; return na.localeCompare(nb); }).forEach(function(r) {
+    var cta = cuentaMap[r.cuenta_id];
+    var nombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoReal = _rendReal(r);
+    var valMXN = toMXN(montoReal, moneda, tiposCambio);
+    rendTotal += valMXN;
+    var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
+  });
+
+  // Gastos for this period
+  var gastosFiltered = movimientos.filter(function(mv) { return mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha && mv.fecha.startsWith(periodo); });
+  gastosFiltered.sort(function(a, b) { return (a.descripcion || '').localeCompare(b.descripcion || ''); });
+  var gastosRows = [];
+  var gastosTotal = 0;
+  gastosFiltered.forEach(function(mv) {
+    var cta = cuentaMap[mv.cuenta_id];
+    var mon = mv.moneda || (cta ? cta.moneda : 'MXN');
+    var valMXN = toMXN(mv.monto, mon, tiposCambio);
+    gastosTotal += valMXN;
+    gastosRows.push('<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion || '') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrency(mv.monto, mon) + '</td></tr>');
+  });
+
+  var html = '';
+  html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-chart-line" style="margin-right:6px;"></i>Rendimientos: <span style="font-size:16px;">' + formatCurrency(rendTotal, 'MXN') + '</span></div>';
+  if (rendRows.length > 0) {
+    html += '<table class="data-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rendRows.join('') + '</tbody></table>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--text-muted);padding:8px;">Sin rendimientos en este periodo</div>';
+  }
+  html += '</div>';
+
+  html += '<div><div style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-receipt" style="margin-right:6px;"></i>Gastos: <span style="font-size:16px;">' + formatCurrency(gastosTotal, 'MXN') + '</span></div>';
+  if (gastosRows.length > 0) {
+    html += '<table class="data-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + gastosRows.join('') + '</tbody></table>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--text-muted);padding:8px;">Sin gastos en este periodo</div>';
+  }
+  html += '</div>';
+
+  openModal('Desglose: ' + label, html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+}
+
+function _mostrarDesgloseRendPeriodo(periodo, label) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+
+  var rendFiltered = rendimientos.filter(function(r) { return r.periodo === periodo; });
+  rendFiltered.sort(function(a, b) { var na = cuentaMap[a.cuenta_id] ? cuentaMap[a.cuenta_id].nombre : ''; var nb = cuentaMap[b.cuenta_id] ? cuentaMap[b.cuenta_id].nombre : ''; return na.localeCompare(nb); });
+  var total = 0;
+  var rows = rendFiltered.map(function(r) {
+    var cta = cuentaMap[r.cuenta_id];
+    var nombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoReal = _rendReal(r);
+    var valMXN = toMXN(montoReal, moneda, tiposCambio);
+    total += valMXN;
+    var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+  }).join('');
+
+  var totalColor = total >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var html = '<table class="data-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td>Total</td><td></td><td style="text-align:right;color:' + totalColor + ';">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+
+  if (rendFiltered.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay rendimientos registrados para este periodo.</div>';
+  }
+
+  openModal('Rendimientos: ' + label, html);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
 }
