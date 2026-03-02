@@ -523,6 +523,11 @@
       letter-spacing: 0.3px;
       font-weight: 700;
     }
+    /* Badge typography in modal desgloses: black text for better readability */
+    .modal-content .badge {
+      color: #000 !important;
+      text-shadow: none !important;
+    }
 
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }

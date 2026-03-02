@@ -263,10 +263,9 @@ function renderDashboard() {
     }
   }
 
-  // If last month is null, use current patrimonio
-  if (barData[barData.length - 1] === null) {
-    barData[barData.length - 1] = patrimonioTotal;
-  }
+  // For the current month, always use the live patrimonio calculation
+  // (matches the desglose de patrimonio total and account balances)
+  barData[barData.length - 1] = patrimonioTotal;
 
   // (Filters removed — dashboard always shows current data)
 
@@ -971,7 +970,7 @@ function renderDashboard() {
     <!-- Resumen Comparativo -->
     <div style="margin-top:24px;">
       <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="card-header" style="display:flex;align-items:center;gap:12px;">
           <span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-green);"></i>Resumen Comparativo</span>
           <select id="resumenCompMesFilter" class="form-select" style="padding:3px 8px;font-size:11px;min-height:auto;width:100px;" onchange="renderResumenComparativo()">
             <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
@@ -1019,12 +1018,18 @@ function renderDashboard() {
     prestamos_otorgados: { label: 'PRESTAMOS OTORGADOS', color: '#84cc16' },
     deuda: { label: 'DEUDA', color: '#ef4444' }
   };
+  // Build pie data entries and sort by value (largest first) so chart slices match legend order
+  const pieEntries = [];
   Object.keys(pieColorMap).forEach(key => {
     if (distTipo[key] > 0) {
-      pieLabels.push(pieColorMap[key].label);
-      pieData.push(distTipo[key]);
-      pieColors.push(pieColorMap[key].color);
+      pieEntries.push({ label: pieColorMap[key].label, value: distTipo[key], color: pieColorMap[key].color });
     }
+  });
+  pieEntries.sort((a, b) => b.value - a.value);
+  pieEntries.forEach(e => {
+    pieLabels.push(e.label);
+    pieData.push(e.value);
+    pieColors.push(e.color);
   });
   window._charts.dashDonut = new Chart(donutCtx, {
     type: 'pie',
@@ -1485,7 +1490,10 @@ function renderPatrimonioMensualReport() {
   var cuentaHistSorted = {};
   cuentas.forEach(function(c) {
     if (c.activa === false) return;
-    var hist = c.historial_cierres || [];
+    var hist = (c.historial_saldos || c.historial_cierres || []).map(function(h) {
+      var p = h.periodo || (h.fecha ? h.fecha.substring(0, 7) : '');
+      return { saldo_final: h.saldo_final, saldo: h.saldo, _periodo: p, periodo: p };
+    });
     cuentaHistSorted[c.id] = hist.slice().sort(function(a, b) { return (a._periodo || a.periodo || '').localeCompare(b._periodo || b.periodo || ''); });
   });
 
@@ -1513,24 +1521,34 @@ function renderPatrimonioMensualReport() {
   var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
   var subtotalCuentasPorMes = new Array(12).fill(0);
 
+  var mesActualIdx = new Date().getMonth(); // 0-indexed current month
   cuentasActivas.forEach(function(cta) {
     var moneda = cta.moneda || 'MXN';
     var sortedHist = cuentaHistSorted[cta.id] || [];
+    var saldoRealMXN = toMXN(_calcSaldoReal(cta), moneda, tiposCambio);
     var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">' + cta.nombre + ' <span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
     var lastVal = 0;
 
     for (var m = 0; m < 12; m++) {
       var per = anio + '-' + String(m + 1).padStart(2, '0');
-      var cierre = findCarryForward(sortedHist, per);
-      if (cierre) {
-        var saldo = cierre.saldo_final || cierre.saldo || 0;
-        var saldoMXN = toMXN(saldo, moneda, tiposCambio, per);
-        subtotalCuentasPorMes[m] += saldoMXN;
-        totalPorMes[m] += saldoMXN;
-        lastVal = saldoMXN;
-        row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(saldoMXN, 'MXN') + '</td>';
+      // For the current month, use the live saldo from accounts
+      if (m === mesActualIdx) {
+        subtotalCuentasPorMes[m] += saldoRealMXN;
+        totalPorMes[m] += saldoRealMXN;
+        lastVal = saldoRealMXN;
+        row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(saldoRealMXN, 'MXN') + '</td>';
       } else {
-        row += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+        var cierre = findCarryForward(sortedHist, per);
+        if (cierre) {
+          var saldo = cierre.saldo_final != null ? cierre.saldo_final : (cierre.saldo || 0);
+          var saldoMXN = toMXN(saldo, moneda, tiposCambio, per);
+          subtotalCuentasPorMes[m] += saldoMXN;
+          totalPorMes[m] += saldoMXN;
+          lastVal = saldoMXN;
+          row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(saldoMXN, 'MXN') + '</td>';
+        } else {
+          row += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+        }
       }
     }
     row += '<td style="text-align:right;font-weight:700;font-size:11px;">' + formatCurrency(lastVal, 'MXN') + '</td></tr>';
@@ -1698,7 +1716,7 @@ function mostrarDesgloseRendimiento() {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + r.nombre + (r.count > 0 ? '<br><span style="font-size:10px;color:var(--text-muted);">' + r.count + ' cierre' + (r.count > 1 ? 's' : '') + '</span>' : '') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.montoOrig, r.moneda) + '</td>' +
-      '<td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td>' +
+      '<td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td>' +
       '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.monto, 'MXN') + '</td>' +
       '<td style="text-align:right;color:' + tasaColor + ';font-weight:600;">' + (r.tasaAnual >= 0 ? '+' : '') + r.tasaAnual.toFixed(2) + '%</td>' +
       '<td style="text-align:right;color:var(--text-muted);">' + peso + '%</td>' +
@@ -2106,13 +2124,13 @@ function mostrarDesgloseCuentas(tipo) {
     var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
     total += valMXN;
     var tc = c.moneda !== 'MXN' ? getTipoCambio(c.moneda) : null;
-    var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
+    var tcDisplay = tc ? '$' + tc.toFixed(4) : '\u2014';
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
       '<td>' + (instMap[c.institucion_id] || '\u2014') + '</td>' +
       '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
       '<td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td>' +
-      '<td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td>' +
+      '<td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
     '</tr>';
   }).join('');
@@ -2373,7 +2391,7 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
     var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
-    rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
+    rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
   });
 
   // Gastos for this period
@@ -2432,7 +2450,7 @@ function _mostrarDesgloseRendPeriodo(periodo, label) {
     var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
-    return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
   }).join('');
 
   var totalColor = total >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';

@@ -82,8 +82,12 @@ function renderMovimientos() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
         <input type="date" id="filterMovDesde" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <input type="date" id="filterMovHasta" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
+        <select id="filterMovAnio" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:90px;" onchange="filterMovimientos()">
+          <option value="">Año</option>
+          ${(function() { var opts = ''; var cy = new Date().getFullYear(); for (var y = cy; y >= cy - 5; y--) opts += '<option value="' + y + '">' + y + '</option>'; return opts; })()}
+        </select>
         <select id="filterMovMes" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:100px;" onchange="filterMovimientos()">
-          <option value="">Todos</option>
+          <option value="">Mes</option>
           <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
           <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
           <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
@@ -152,13 +156,15 @@ function renderMovimientos() {
     </div>
   `;
 
-  // Set default quick filter to current month/year
+  // Set default year filter to current year and month to current month
   var nowMov = new Date();
-  var elAnio = document.getElementById('movFiltroAnio');
+  var elAnio = document.getElementById('filterMovAnio');
   if (elAnio) elAnio.value = String(nowMov.getFullYear());
+  var elMesDef = document.getElementById('filterMovMes');
+  if (elMesDef) elMesDef.value = String(nowMov.getMonth() + 1).padStart(2, '0');
 
-  // Apply quick filters then populate table
-  onMovFiltroRapido();
+  // Apply filters and populate table
+  filterMovimientos();
 
   // Enable sortable headers
   setTimeout(function() { _initSortableTables(el); }, 100);
@@ -179,6 +185,7 @@ function filterMovimientos() {
   // Read filter values
   const fDesde = document.getElementById('filterMovDesde') ? document.getElementById('filterMovDesde').value : '';
   const fHasta = document.getElementById('filterMovHasta') ? document.getElementById('filterMovHasta').value : '';
+  const fAnio = document.getElementById('filterMovAnio') ? document.getElementById('filterMovAnio').value : '';
   const fMes = document.getElementById('filterMovMes') ? document.getElementById('filterMovMes').value : '';
   const fTipo = document.getElementById('filterMovTipo') ? document.getElementById('filterMovTipo').value : '';
   const fCuenta = document.getElementById('filterMovCuenta') ? document.getElementById('filterMovCuenta').value : '';
@@ -188,6 +195,10 @@ function filterMovimientos() {
   const filtered = movimientos.filter(m => {
     if (fDesde && m.fecha < fDesde) return false;
     if (fHasta && m.fecha > fHasta) return false;
+    if (fAnio && m.fecha) {
+      var movYear = m.fecha.substring(0, 4);
+      if (movYear !== fAnio) return false;
+    }
     if (fMes && m.fecha) {
       var movMonth = m.fecha.substring(5, 7);
       if (movMonth !== fMes) return false;

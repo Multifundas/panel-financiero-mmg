@@ -206,8 +206,8 @@ function mostrarDesglosePatrimonio() {
     var saldoReal = _calcSaldoReal(c);
     var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
     var tc = c.moneda !== 'MXN' ? getTipoCambio(c.moneda) : null;
-    var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
-    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td><td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    var tcDisplay = tc ? '$' + tc.toFixed(4) : '\u2014';
+    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
   });
   html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="4">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
