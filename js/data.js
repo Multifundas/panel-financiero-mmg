@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   plantillas_recurrentes: 'pf_plantillas_recurrentes',
   metas:                 'pf_metas',
   ingresos_futuros:      'pf_ingresos_futuros',
+  tipos_cambio_historico: 'pf_tipos_cambio_historico',
 };
 
 /* ---------- In-memory cache ---------- */

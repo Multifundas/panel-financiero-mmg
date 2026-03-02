@@ -126,6 +126,28 @@ function renderConfiguracion() {
       </div>
     </div>
 
+    <!-- ROW 1b: Historial de Tipos de Cambio -->
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-history" style="margin-right:8px;color:var(--accent-purple);"></i>Historial de Tipos de Cambio Mensual</span>
+        <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addTipoCambioHistorico()">
+          <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
+        </button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table sortable-table" id="tablaTCHistorico" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Periodo</th>
+              <th style="text-align:right;">USD / MXN</th>
+              <th style="text-align:center;" data-no-sort="true">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTCHistorico"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ROW 2: Categorias (left) | Instituciones (right) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow2">
       <div class="card" style="margin-bottom:0;">
@@ -292,6 +314,10 @@ function renderConfiguracion() {
       </div>
     </div>
   `;
+
+  // Render TC historico table
+  renderTCHistoricoTable();
+  setTimeout(function() { _initSortableTables(document.getElementById('module-configuracion')); }, 100);
 }
 
 /* -- Configuracion: Moneda Base -- */
@@ -335,6 +361,101 @@ function saveTiposCambio() {
   updateHeaderPatrimonio();
   showToast('Tipos de cambio actualizados');
   renderConfiguracion();
+}
+
+/* -- Configuracion: Historial Tipos de Cambio Mensual -- */
+function renderTCHistoricoTable() {
+  var tbody = document.getElementById('tbodyTCHistorico');
+  if (!tbody) return;
+  var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+  historico.sort(function(a, b) { return (b.periodo || '').localeCompare(a.periodo || ''); });
+  var mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  if (historico.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">Sin registros. Haz click en "Agregar" para capturar.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = historico.map(function(h) {
+    var parts = h.periodo ? h.periodo.split('-') : ['',''];
+    var mesIdx = parseInt(parts[1]) - 1;
+    var mesLabel = (mesIdx >= 0 && mesIdx < 12) ? mesesNombres[mesIdx] + ' ' + parts[0] : h.periodo;
+    return '<tr>' +
+      '<td style="font-weight:600;">' + mesLabel + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + (h.USD_MXN != null ? '$' + Number(h.USD_MXN).toFixed(4) : '—') + '</td>' +
+      '<td style="text-align:center;white-space:nowrap;">' +
+        '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-right:2px;" onclick="editTipoCambioHistorico(\'' + h.periodo + '\')"><i class="fas fa-edit"></i></button>' +
+        '<button class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="deleteTipoCambioHistorico(\'' + h.periodo + '\')"><i class="fas fa-trash"></i></button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+function addTipoCambioHistorico() {
+  var now = new Date();
+  var anioActual = now.getFullYear();
+  var mesActual = now.getMonth();
+  var mesesOpts = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    .map(function(n, i) { return '<option value="' + String(i + 1).padStart(2, '0') + '"' + (i === mesActual ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+  var aniosOpts = '';
+  for (var y = anioActual; y >= anioActual - 5; y--) {
+    aniosOpts += '<option value="' + y + '">' + y + '</option>';
+  }
+  var html = '<form onsubmit="saveTipoCambioHistorico(event)">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:120px;"></div>' +
+    '</div>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
+  '</form>';
+  openModal('Agregar Tipo de Cambio Historico', html);
+}
+
+function saveTipoCambioHistorico(event) {
+  if (event) event.preventDefault();
+  var mes = document.getElementById('tcHistMes').value;
+  var anio = document.getElementById('tcHistAnio').value;
+  var usd = parseFloat(document.getElementById('tcHistUsdMxn').value);
+  if (!mes || !anio || isNaN(usd) || usd <= 0) { showToast('Completa todos los campos', 'error'); return; }
+  var periodo = anio + '-' + mes;
+  var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+  var existing = historico.findIndex(function(h) { return h.periodo === periodo; });
+  if (existing >= 0) { historico[existing].USD_MXN = usd; }
+  else { historico.push({ periodo: periodo, USD_MXN: usd }); }
+  saveData(STORAGE_KEYS.tipos_cambio_historico, historico);
+  window._tcHistoricoCache = null;
+  closeModal();
+  showToast('Tipo de cambio guardado para ' + periodo);
+  renderTCHistoricoTable();
+}
+
+function editTipoCambioHistorico(periodo) {
+  var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+  var reg = historico.find(function(h) { return h.periodo === periodo; });
+  if (!reg) return;
+  var parts = periodo.split('-');
+  var mesesOpts = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    .map(function(n, i) { return '<option value="' + String(i + 1).padStart(2, '0') + '"' + (String(i + 1).padStart(2, '0') === parts[1] ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+  var anioActual = new Date().getFullYear();
+  var aniosOpts = '';
+  for (var y = anioActual; y >= anioActual - 5; y--) { aniosOpts += '<option value="' + y + '"' + (String(y) === parts[0] ? ' selected' : '') + '>' + y + '</option>'; }
+  var html = '<form onsubmit="saveTipoCambioHistorico(event)">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required value="' + (reg.USD_MXN || '') + '" style="width:120px;"></div>' +
+    '</div>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
+  '</form>';
+  openModal('Editar Tipo de Cambio: ' + periodo, html);
+}
+
+function deleteTipoCambioHistorico(periodo) {
+  if (!confirm('Eliminar tipo de cambio de ' + periodo + '?')) return;
+  var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+  historico = historico.filter(function(h) { return h.periodo !== periodo; });
+  saveData(STORAGE_KEYS.tipos_cambio_historico, historico);
+  window._tcHistoricoCache = null;
+  showToast('Registro eliminado');
+  renderTCHistoricoTable();
 }
 
 /* -- Configuracion: Actualizar Tipos de Cambio desde Internet -- */

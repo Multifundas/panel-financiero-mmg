@@ -95,12 +95,15 @@ function showToast(message, type) {
 /* ============================================================
    MODAL SYSTEM
    ============================================================ */
-function openModal(title, bodyHTML) {
+function openModal(title, bodyHTML, options) {
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalBody').innerHTML = bodyHTML;
   // Reset modal width class before opening
   var mc = document.getElementById('modalContent');
-  if (mc) mc.classList.remove('modal-wide');
+  if (mc) {
+    mc.classList.remove('modal-wide');
+    if (options && options.wide) mc.classList.add('modal-wide');
+  }
   document.getElementById('modalOverlay').classList.add('show');
 }
 
@@ -198,13 +201,15 @@ function mostrarDesglosePatrimonio() {
 
   // Cuentas breakdown
   html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
-  html += '<table class="data-table sortable-table" style=""><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+  html += '<table class="data-table sortable-table" style=""><thead><tr><th>Cuenta</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
   cuentas.filter(function(c) { return c.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(c) {
     var saldoReal = _calcSaldoReal(c);
     var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
-    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    var tc = c.moneda !== 'MXN' ? getTipoCambio(c.moneda) : null;
+    var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
+    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:10px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td><td style="text-align:center;color:var(--text-muted);font-size:11px;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
   });
-  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
+  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="4">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
   // Propiedades breakdown
   if (propiedades.length > 0) {

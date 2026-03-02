@@ -568,10 +568,26 @@ function renderRendMensualReport() {
   });
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+  // Read periodo filter to determine which months to show
+  var fPeriodoEl = document.getElementById('filterRendPeriodo');
+  var fPeriodo = fPeriodoEl ? fPeriodoEl.value : '';
+  var mesesVisibles; // 0-indexed month numbers to show
+  if (fPeriodo === 'bimestral') {
+    mesesVisibles = [0, 2, 4, 6, 8, 10]; // Ene, Mar, May, Jul, Sep, Nov
+  } else if (fPeriodo === 'trimestral') {
+    mesesVisibles = [2, 5, 8, 11]; // Mar, Jun, Sep, Dic
+  } else if (fPeriodo === 'semestral') {
+    mesesVisibles = [5, 11]; // Jun, Dic
+  } else if (fPeriodo === 'anual') {
+    mesesVisibles = [11]; // Dic
+  } else {
+    mesesVisibles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // all
+  }
+
   // Build header
   var thead = '<tr><th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
-  for (var m = 0; m < 12; m++) {
-    thead += '<th style="text-align:center;min-width:80px;">' + mesesCortos[m] + '</th>';
+  for (var mi = 0; mi < mesesVisibles.length; mi++) {
+    thead += '<th style="text-align:center;min-width:80px;">' + mesesCortos[mesesVisibles[mi]] + '</th>';
   }
   thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Total</th></tr>';
 
@@ -586,29 +602,37 @@ function renderRendMensualReport() {
     var totalCuenta = 0;
     var capitalInicial = 0;
 
+    // Calculate all months for totals, but only render visible ones
     for (var m = 0; m < 12; m++) {
       var periodo = anio + '-' + String(m + 1).padStart(2, '0');
       var regs = rendimientos.filter(function(r) { return r.cuenta_id === cta.id && r.periodo === periodo; });
+
+      if (regs.length > 0) {
+        var rendMonto = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
+        var saldoInicial = regs[0].saldo_inicial || 0;
+        if (m === 0 || capitalInicial === 0) capitalInicial = saldoInicial;
+        var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
+        totalCuenta += rendMXN;
+        totalPorMes[m] += rendMXN;
+      }
+
+      // Only render cells for visible months
+      if (mesesVisibles.indexOf(m) === -1) continue;
 
       if (regs.length === 0) {
         row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
         continue;
       }
 
-      var rendMonto = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
+      var rendMontoVis = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
       var rendPct = 0;
-      var saldoInicial = regs[0].saldo_inicial || 0;
-      if (m === 0 || capitalInicial === 0) capitalInicial = saldoInicial;
-      if (saldoInicial > 0) rendPct = (rendMonto / saldoInicial) * 100;
+      var saldoInicialVis = regs[0].saldo_inicial || 0;
+      if (saldoInicialVis > 0) rendPct = (rendMontoVis / saldoInicialVis) * 100;
 
-      var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
-      totalCuenta += rendMXN;
-      totalPorMes[m] += rendMXN;
-
-      var color = rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-      var sign = rendMonto >= 0 ? '+' : '';
+      var color = rendMontoVis >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var sign = rendMontoVis >= 0 ? '+' : '';
       row += '<td style="text-align:right;padding:4px 4px;">' +
-        '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:12px;">' + sign + formatCurrency(rendMonto, moneda) + '</div>' +
+        '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:12px;">' + sign + formatCurrency(rendMontoVis, moneda) + '</div>' +
         '<div style="color:' + color + ';font-size:10px;opacity:0.8;">' + sign + rendPct.toFixed(0) + '%</div>' +
       '</td>';
     }
@@ -632,7 +656,8 @@ function renderRendMensualReport() {
 
   // Total row
   var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:12px;">Total</td>';
-  for (var m = 0; m < 12; m++) {
+  for (var mi = 0; mi < mesesVisibles.length; mi++) {
+    var m = mesesVisibles[mi];
     if (totalPorMes[m] === 0) {
       totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
     } else {

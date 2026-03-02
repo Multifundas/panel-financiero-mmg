@@ -23,7 +23,7 @@ function renderPrestamos() {
 
   el.innerHTML = `
     <div class="grid-3" style="margin-bottom:24px;">
-      <div class="card" style="border-left:3px solid var(--accent-amber);">
+      <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesglosePrestamosKpi('otorgado')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-hand-holding-usd" style="color:var(--accent-amber);font-size:16px;"></i>
@@ -31,8 +31,9 @@ function renderPrestamos() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Otorgado</span>
         </div>
         <div id="kpiTotalOtorgado" style="font-size:20px;font-weight:800;color:var(--accent-amber);">${formatCurrency(totalOtorgado, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-blue);">
+      <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePrestamosKpi('recibido')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-file-invoice-dollar" style="color:var(--accent-blue);font-size:16px;"></i>
@@ -40,8 +41,9 @@ function renderPrestamos() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Recibido</span>
         </div>
         <div id="kpiTotalRecibido" style="font-size:20px;font-weight:800;color:var(--accent-blue);">${formatCurrency(totalRecibido, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="border-left:3px solid var(--accent-${balanceColor});">
+      <div class="card" style="border-left:3px solid var(--accent-${balanceColor});cursor:pointer;" onclick="mostrarDesglosePrestamosKpi('balance')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-${balanceColor}-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-balance-scale" style="color:var(--accent-${balanceColor});font-size:16px;"></i>
@@ -49,6 +51,7 @@ function renderPrestamos() {
           <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
         </div>
         <div id="kpiBalanceNeto" style="font-size:20px;font-weight:800;color:var(--accent-${balanceColor});">${formatCurrency(balanceNeto, 'MXN')}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:24px;">
@@ -464,4 +467,71 @@ function checkVencimientos() {
     if (p.estado === 'activo' && p.fecha_vencimiento && p.fecha_vencimiento < hoy) { p.estado = 'vencido'; changed = true; }
   });
   if (changed) saveData(STORAGE_KEYS.prestamos, prestamos);
+}
+
+/* ============================================================
+   DESGLOSE PRESTAMOS KPI (click on KPI cards)
+   ============================================================ */
+function mostrarDesglosePrestamosKpi(tipo) {
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+
+  var titulo, filtered;
+  if (tipo === 'otorgado') {
+    titulo = 'Desglose: Prestamos Otorgados';
+    filtered = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; });
+  } else if (tipo === 'recibido') {
+    titulo = 'Desglose: Prestamos Recibidos';
+    filtered = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; });
+  } else {
+    titulo = 'Desglose: Balance Neto de Prestamos';
+    filtered = prestamos.filter(function(p) { return p.estado !== 'pagado'; });
+  }
+
+  if (filtered.length === 0) {
+    openModal(titulo, '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay prestamos activos en esta categoria.</div>');
+    return;
+  }
+
+  var totalMXN = 0;
+  var rows = filtered.sort(function(a, b) {
+    return toMXN(b.saldo_pendiente || b.monto_original, b.moneda || 'MXN', tiposCambio) - toMXN(a.saldo_pendiente || a.monto_original, a.moneda || 'MXN', tiposCambio);
+  }).map(function(p) {
+    var moneda = p.moneda || 'MXN';
+    var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
+    var valorMXN = toMXN(saldo, moneda, tiposCambio);
+    totalMXN += (p.tipo === 'otorgado' ? valorMXN : -valorMXN);
+    var tipoLabel = p.tipo === 'otorgado' ? '<span class="badge badge-amber" style="font-size:10px;">Otorgado</span>' : '<span class="badge badge-blue" style="font-size:10px;">Recibido</span>';
+    var estadoBadge = p.estado === 'vencido' ? '<span class="badge badge-red" style="font-size:10px;">Vencido</span>' : '<span class="badge badge-green" style="font-size:10px;">Activo</span>';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + (p.persona || 'N/A') + '</td>' +
+      (tipo === 'balance' ? '<td style="text-align:center;">' + tipoLabel + '</td>' : '') +
+      '<td style="text-align:right;white-space:nowrap;">' + formatCurrency(p.monto_original, moneda) + '</td>' +
+      '<td style="text-align:right;white-space:nowrap;font-weight:600;">' + formatCurrency(saldo, moneda) + '</td>' +
+      '<td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:10px;">' + moneda + '</span></td>' +
+      '<td style="text-align:right;white-space:nowrap;font-weight:600;color:var(--accent-blue);">' + formatCurrency(valorMXN, 'MXN') + '</td>' +
+      '<td style="text-align:center;">' + estadoBadge + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var totalColor = totalMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td>Total</td>' +
+    (tipo === 'balance' ? '<td></td>' : '') +
+    '<td></td><td></td><td></td>' +
+    '<td style="text-align:right;color:' + totalColor + ';">' + formatCurrency(Math.abs(totalMXN), 'MXN') + '</td>' +
+    '<td></td></tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Persona</th>' +
+    (tipo === 'balance' ? '<th style="text-align:center;">Tipo</th>' : '') +
+    '<th style="text-align:right;">Monto Original</th>' +
+    '<th style="text-align:right;">Saldo Pendiente</th>' +
+    '<th style="text-align:center;">Moneda</th>' +
+    '<th style="text-align:right;">Valor MXN</th>' +
+    '<th style="text-align:center;">Estado</th>' +
+  '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  openModal(titulo, html, { wide: true });
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }

@@ -512,6 +512,18 @@
       width: 97%;
     }
 
+    /* Uniform typography for modal desglose tables */
+    .modal-content .data-table {
+      font-size: 12px;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .modal-content .data-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 700;
+    }
+
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
@@ -600,13 +612,13 @@
       font-weight: 600;
     }
 
-    .badge-green { background: var(--accent-green-soft); color: var(--accent-green); }
+    .badge-green { background: rgba(16,185,129,0.25); color: #6ee7b7; font-weight: 700; border: 1.5px solid rgba(16,185,129,0.5); text-shadow: 0 0 4px rgba(16,185,129,0.25); }
     .badge-mxn { background: rgba(59,130,246,0.40); color: #bdd4ff; font-weight: 700; border: 1.5px solid rgba(59,130,246,0.6); text-shadow: 0 0 4px rgba(59,130,246,0.3); }
     .badge-usd { background: rgba(16,185,129,0.45); color: #a7f3d0; font-weight: 700; border: 1.5px solid rgba(16,185,129,0.65); text-shadow: 0 0 4px rgba(16,185,129,0.3); }
-    .badge-red { background: var(--accent-red-soft); color: var(--accent-red); }
-    .badge-blue { background: var(--accent-blue-soft); color: var(--accent-blue); }
-    .badge-amber { background: var(--accent-amber-soft); color: var(--accent-amber); }
-    .badge-purple { background: var(--accent-purple-soft); color: var(--accent-purple); }
+    .badge-red { background: rgba(239,68,68,0.25); color: #fca5a5; font-weight: 700; border: 1.5px solid rgba(239,68,68,0.5); text-shadow: 0 0 4px rgba(239,68,68,0.25); }
+    .badge-blue { background: rgba(59,130,246,0.25); color: #93c5fd; font-weight: 700; border: 1.5px solid rgba(59,130,246,0.5); text-shadow: 0 0 4px rgba(59,130,246,0.25); }
+    .badge-amber { background: rgba(245,158,11,0.30); color: #fcd34d; font-weight: 700; border: 1.5px solid rgba(245,158,11,0.55); text-shadow: 0 0 4px rgba(245,158,11,0.25); }
+    .badge-purple { background: rgba(139,92,246,0.25); color: #c4b5fd; font-weight: 700; border: 1.5px solid rgba(139,92,246,0.5); text-shadow: 0 0 4px rgba(139,92,246,0.25); }
 
     /* ── Utilities ── */
     .text-green { color: var(--accent-green); }

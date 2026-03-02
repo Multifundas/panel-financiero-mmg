@@ -63,14 +63,37 @@ function formatCurrency(amount, currency) {
   return formatted;
 }
 
-/** Convert any amount to MXN using stored exchange rates */
-function toMXN(amount, currency, tiposCambio) {
+/** Convert any amount to MXN using stored exchange rates.
+ *  Optional periodo param (YYYY-MM) uses historical rates if available. */
+function toMXN(amount, currency, tiposCambio, periodo) {
   currency = (currency || 'MXN').toUpperCase();
   if (currency === 'MXN') return amount;
-  const rates = tiposCambio || loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var rates = tiposCambio || loadData(STORAGE_KEYS.tipos_cambio) || {};
+  if (periodo) {
+    var hist = window._tcHistoricoCache || loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+    if (!window._tcHistoricoCache) window._tcHistoricoCache = hist;
+    var match = hist.find(function(h) { return h.periodo === periodo; });
+    if (match) rates = match;
+  }
   if (currency === 'USD') return amount * (rates['USD_MXN'] || 17.50);
   if (currency === 'EUR') return amount * (rates['EUR_MXN'] || 19.20);
   return amount;
+}
+
+/** Get exchange rate for a given currency and optional period */
+function getTipoCambio(currency, periodo) {
+  currency = (currency || 'MXN').toUpperCase();
+  if (currency === 'MXN') return 1;
+  var rates = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  if (periodo) {
+    var hist = window._tcHistoricoCache || loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+    if (!window._tcHistoricoCache) window._tcHistoricoCache = hist;
+    var match = hist.find(function(h) { return h.periodo === periodo; });
+    if (match) rates = match;
+  }
+  if (currency === 'USD') return rates['USD_MXN'] || 17.50;
+  if (currency === 'EUR') return rates['EUR_MXN'] || 19.20;
+  return 1;
 }
 
 /** Return CSS badge class for a currency code: MXN=blue, USD=green-strong, EUR=amber */
@@ -249,7 +272,12 @@ function _initSortableTables(root) {
   if (!root) root = document;
   var tables = root.querySelectorAll('table.sortable-table');
   tables.forEach(function(table) {
+    // Skip if already initialized
+    if (table.getAttribute('data-sortable-init') === 'true') return;
+    table.setAttribute('data-sortable-init', 'true');
+
     var headers = table.querySelectorAll('thead th');
+    var firstSortable = null;
     headers.forEach(function(th, colIdx) {
       if (th.getAttribute('data-no-sort') === 'true') return;
       th.style.cursor = 'pointer';
@@ -260,6 +288,8 @@ function _initSortableTables(root) {
       arrow.className = 'fas fa-sort';
       arrow.style.cssText = 'margin-left:6px;font-size:10px;color:var(--text-muted);opacity:0.6;';
       th.appendChild(arrow);
+
+      if (!firstSortable) firstSortable = th;
 
       th.addEventListener('click', function() {
         var tbody = table.querySelector('tbody');
@@ -302,6 +332,9 @@ function _initSortableTables(root) {
         rows.forEach(function(row) { tbody.appendChild(row); });
       });
     });
+
+    // Auto-sort by first column ascending (default alphabetical order)
+    if (firstSortable) firstSortable.click();
   });
 }
 

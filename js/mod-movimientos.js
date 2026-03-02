@@ -39,40 +39,11 @@ function renderMovimientos() {
     .map(c => `<option value="${c.id}">${c.nombre}</option>`)
     .join('');
 
-  // -- Determine available years from movimientos --
-  var movYears = {};
-  movimientos.forEach(function(m) { if (m.fecha) movYears[m.fecha.substring(0, 4)] = true; });
-  var yearOpts = Object.keys(movYears).sort().reverse().map(function(y) {
-    return '<option value="' + y + '">' + y + '</option>';
-  }).join('');
-
   // -- Render HTML --
   el.innerHTML = `
-    <!-- Filtros rapidos + KPI Cards en misma fila -->
-    <div style="display:flex;align-items:stretch;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-      <!-- Filtros rapidos a la izquierda -->
-      <div class="card" style="padding:8px 12px;display:flex;align-items:center;gap:6px;min-width:auto;margin-bottom:0;">
-        <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;white-space:nowrap;"><i class="fas fa-filter" style="margin-right:3px;"></i></span>
-        <select id="movFiltroPeriodo" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:95px;" onchange="onMovFiltroRapido()">
-          <option value="">Todo</option>
-          <option value="mensual" selected>Mensual</option>
-          <option value="trimestral">Trimestral</option>
-          <option value="semestral">Semestral</option>
-          <option value="anual">Anual</option>
-        </select>
-        <select id="movFiltroAnio" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="onMovFiltroRapido()">
-          <option value="">Todos</option>
-          ${yearOpts}
-        </select>
-        <select id="movFiltroMoneda" class="form-select" style="padding:3px 6px;font-size:11px;min-height:auto;width:70px;" onchange="onMovFiltroRapido()">
-          <option value="">Todas</option>
-          <option value="MXN">MXN</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
-      <!-- 4 KPI cards -->
-      <div class="card" style="flex:1;border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('ingreso')">
+    <!-- KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('ingreso')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
@@ -80,7 +51,7 @@ function renderMovimientos() {
         <div id="movSumIngresos" style="font-size:18px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrency(totalIngresos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="flex:1;border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('rendimiento')">
+      <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('rendimiento')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
@@ -88,7 +59,7 @@ function renderMovimientos() {
         <div id="movSumRendimientos" style="font-size:18px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrency(totalRendimientos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="flex:1;border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;" onclick="mostrarDesgloseMovimientos('gasto')">
+      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('gasto')">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
@@ -96,7 +67,7 @@ function renderMovimientos() {
         <div id="movSumGastos" style="font-size:18px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrency(totalGastos, 'MXN')}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
-      <div class="card" style="flex:1;border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;">
+      <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;margin-bottom:0;">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:14px;"></i>
           <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
@@ -111,6 +82,13 @@ function renderMovimientos() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
         <input type="date" id="filterMovDesde" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
         <input type="date" id="filterMovHasta" class="form-input" style="padding:5px 8px;font-size:12px;min-height:auto;width:130px;" onchange="filterMovimientos()">
+        <select id="filterMovMes" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:100px;" onchange="filterMovimientos()">
+          <option value="">Todos</option>
+          <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+          <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
         <select id="filterMovTipo" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:120px;" onchange="filterMovimientos()">
           <option value="">Todos</option>
           <option value="ingreso">Ingreso</option>
@@ -186,61 +164,6 @@ function renderMovimientos() {
   setTimeout(function() { _initSortableTables(el); }, 100);
 }
 
-/* -- Quick period/year/currency filter for Movimientos KPIs -- */
-function onMovFiltroRapido() {
-  var periodo = document.getElementById('movFiltroPeriodo') ? document.getElementById('movFiltroPeriodo').value : '';
-  var anio = document.getElementById('movFiltroAnio') ? document.getElementById('movFiltroAnio').value : '';
-  var moneda = document.getElementById('movFiltroMoneda') ? document.getElementById('movFiltroMoneda').value : '';
-
-  var desdeEl = document.getElementById('filterMovDesde');
-  var hastaEl = document.getElementById('filterMovHasta');
-  if (!desdeEl || !hastaEl) return;
-
-  // Calculate date range from periodo + anio
-  var now = new Date();
-  var y = anio ? parseInt(anio) : now.getFullYear();
-  var m = now.getMonth(); // 0-indexed
-  var desde = '', hasta = '';
-
-  if (periodo === 'mensual') {
-    // If selected year is current year, use current month; otherwise use December
-    var mes = (y === now.getFullYear()) ? m : 11;
-    desde = y + '-' + String(mes + 1).padStart(2, '0') + '-01';
-    var lastDay = new Date(y, mes + 1, 0).getDate();
-    hasta = y + '-' + String(mes + 1).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
-  } else if (periodo === 'trimestral') {
-    var qMonth = (y === now.getFullYear()) ? Math.floor(m / 3) * 3 : 9;
-    desde = y + '-' + String(qMonth + 1).padStart(2, '0') + '-01';
-    var lastDayQ = new Date(y, qMonth + 3, 0).getDate();
-    hasta = y + '-' + String(qMonth + 3).padStart(2, '0') + '-' + String(lastDayQ).padStart(2, '0');
-  } else if (periodo === 'semestral') {
-    var sMonth = (y === now.getFullYear()) ? (m < 6 ? 0 : 6) : 6;
-    desde = y + '-' + String(sMonth + 1).padStart(2, '0') + '-01';
-    var lastDayS = new Date(y, sMonth + 6, 0).getDate();
-    hasta = y + '-' + String(sMonth + 6).padStart(2, '0') + '-' + String(lastDayS).padStart(2, '0');
-  } else if (periodo === 'anual') {
-    desde = y + '-01-01';
-    hasta = y + '-12-31';
-  } else {
-    // "Todo" — clear date range, optionally still filter by year
-    if (anio) {
-      desde = y + '-01-01';
-      hasta = y + '-12-31';
-    } else {
-      desde = '';
-      hasta = '';
-    }
-  }
-
-  desdeEl.value = desde;
-  hastaEl.value = hasta;
-
-  // Store moneda filter for use in filterMovimientos
-  window._movFiltroMoneda = moneda;
-
-  filterMovimientos();
-}
-
 /* -- Filter and render the movimientos table rows -- */
 function filterMovimientos() {
   const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
@@ -256,26 +179,24 @@ function filterMovimientos() {
   // Read filter values
   const fDesde = document.getElementById('filterMovDesde') ? document.getElementById('filterMovDesde').value : '';
   const fHasta = document.getElementById('filterMovHasta') ? document.getElementById('filterMovHasta').value : '';
+  const fMes = document.getElementById('filterMovMes') ? document.getElementById('filterMovMes').value : '';
   const fTipo = document.getElementById('filterMovTipo') ? document.getElementById('filterMovTipo').value : '';
   const fCuenta = document.getElementById('filterMovCuenta') ? document.getElementById('filterMovCuenta').value : '';
   const fSearch = document.getElementById('filterMovSearch') ? document.getElementById('filterMovSearch').value.toLowerCase().trim() : '';
-
-  // Read quick filter moneda
-  const fMoneda = window._movFiltroMoneda || '';
 
   // Apply filters
   const filtered = movimientos.filter(m => {
     if (fDesde && m.fecha < fDesde) return false;
     if (fHasta && m.fecha > fHasta) return false;
+    if (fMes && m.fecha) {
+      var movMonth = m.fecha.substring(5, 7);
+      if (movMonth !== fMes) return false;
+    }
     if (fTipo) {
       if (fTipo === 'transferencia') { if (!m.transferencia_id) return false; }
       else { if (m.tipo !== fTipo || m.transferencia_id) return false; }
     }
     if (fCuenta && m.cuenta_id !== fCuenta) return false;
-    if (fMoneda) {
-      const ctaMon = cuentaMap[m.cuenta_id];
-      if (ctaMon && ctaMon.moneda !== fMoneda) return false;
-    }
     if (fSearch) {
       const desc = (m.descripcion || '').toLowerCase();
       const notas = (m.notas || '').toLowerCase();
@@ -828,7 +749,7 @@ function openPlantillasRecurrentes() {
       </div>
     </div>
     <div style="overflow-x:auto;">
-      <table class="data-table">
+      <table class="data-table sortable-table">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -838,7 +759,7 @@ function openPlantillasRecurrentes() {
             <th>Frecuencia</th>
             <th>Ultima Aplicacion</th>
             <th>Estado</th>
-            <th style="text-align:center;">Acciones</th>
+            <th style="text-align:center;" data-no-sort="true">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -1583,7 +1504,7 @@ function mostrarDesgloseMovimientos(tipo) {
       '<th>Cuenta</th><th style="text-align:center;">Cierres</th><th style="text-align:right;">Rendimiento</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
 
-    openModal(titulo, html);
+    openModal(titulo, html, { wide: true });
     setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
     return;
   }
@@ -1663,6 +1584,6 @@ function mostrarDesgloseMovimientos(tipo) {
     '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th style="text-align:right;">Saldo Actual</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table>' + catSection;
 
-  openModal(titulo, html);
+  openModal(titulo, html, { wide: true });
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
