@@ -235,16 +235,27 @@ function mostrarDesglosePatrimonio() {
     html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Otorgados</td><td style="text-align:right;color:var(--accent-amber);">' + formatCurrency(pat.prestamosOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
-  // Prestamos recibidos (deuda)
+  // Deuda (prestamos recibidos + preventa) — unified section matching evolución patrimonio format
   var recibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
-  if (recibidos.length > 0) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Prestamos Recibidos (deuda)</div>';
-    html += '<table class="data-table sortable-table" style=""><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
+  var preventasDeuda = propiedades.filter(function(pr) { return pr.tipo === 'preventa'; });
+  var totalDeuda = 0;
+  if (recibidos.length > 0 || preventasDeuda.length > 0) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Deuda</div>';
+    html += '<table class="data-table sortable-table" style=""><thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     recibidos.forEach(function(p) {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
+      totalDeuda += valMXN;
       html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Deuda</td><td style="text-align:right;color:var(--accent-red);">-' + formatCurrency(pat.prestamosRecibidos, 'MXN') + '</td></tr></tfoot></table></div>';
+    preventasDeuda.forEach(function(pr) {
+      var enganche = pr.enganche || 0;
+      var pagado = enganche + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
+      var pendiente = Math.max(0, (pr.valor_compra || 0) - pagado);
+      var valMXN = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
+      totalDeuda += valMXN;
+      html += '<tr><td style="font-weight:600;">' + pr.nombre + ' (preventa)</td><td style="text-align:right;">' + formatCurrency(pendiente, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    });
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Deuda</td><td style="text-align:right;color:var(--accent-red);">-' + formatCurrency(totalDeuda, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // Total
@@ -253,8 +264,7 @@ function mostrarDesglosePatrimonio() {
   html += '<div style="color:var(--text-muted);">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.cuentas, 'MXN') + '</div>';
   if (pat.propiedades > 0) html += '<div style="color:var(--text-muted);">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.propiedades, 'MXN') + '</div>';
   if (pat.prestamosOtorgados > 0) html += '<div style="color:var(--text-muted);">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrency(pat.prestamosOtorgados, 'MXN') + '</div>';
-  if (pat.prestamosRecibidos > 0) html += '<div style="color:var(--text-muted);">- Prestamos recibidos</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(pat.prestamosRecibidos, 'MXN') + '</div>';
-  if (pat.deudaPreventa > 0) html += '<div style="color:var(--text-muted);">- Deuda preventa</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(pat.deudaPreventa, 'MXN') + '</div>';
+  if (totalDeuda > 0) html += '<div style="color:var(--text-muted);">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrency(totalDeuda, 'MXN') + '</div>';
   html += '</div>';
   html += '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:18px;font-weight:800;">';
   html += '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrency(pat.total, 'MXN') + '</span>';

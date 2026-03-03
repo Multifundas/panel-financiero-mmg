@@ -1789,4 +1789,24 @@
   .data-table {
     min-width: 0 !important;
   }
+  .data-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .data-table thead {
+    display: table-header-group !important;
+  }
+  .data-table tfoot {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  /* Prevent sections from splitting across pages */
+  .modal-content > div {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  #modalBody > div {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }

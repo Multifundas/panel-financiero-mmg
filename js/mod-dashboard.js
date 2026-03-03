@@ -718,28 +718,6 @@ function renderDashboard() {
           <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
           <div style="font-size:22px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
         </div>
-        <div style="display:flex;gap:14px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Bancarias</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-blue);">${formatCurrency(kpiBancarias, 'MXN')}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Inversiones</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-green);">${formatCurrency(kpiInversiones, 'MXN')}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Propiedades</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-amber);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Prestamos</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-purple);">${formatCurrency(_patCalc.prestamosOtorgados, 'MXN')}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Deuda</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-red);">-${formatCurrency(_patCalc.totalDeuda, 'MXN')}</div>
-          </div>
-        </div>
         <div style="color:var(--text-secondary);font-size:11px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
       </div>
       <!-- Ultimos 15 dias -->
@@ -1010,13 +988,13 @@ function renderDashboard() {
   const pieData = [];
   const pieColors = [];
   const pieColorMap = {
-    debito: { label: 'DEBITO', color: '#3b82f6' },
-    inversion: { label: 'INVERSION', color: '#10b981' },
-    inmueble: { label: 'INMUEBLE', color: '#f59e0b' },
-    activo_fijo: { label: 'ACTIVO FIJO', color: '#8b5cf6' },
-    propiedades: { label: 'PROPIEDADES', color: '#06b6d4' },
-    prestamos_otorgados: { label: 'PRESTAMOS OTORGADOS', color: '#84cc16' },
-    deuda: { label: 'DEUDA', color: '#ef4444' }
+    debito: { label: 'Bancarias', color: '#3b82f6' },
+    inversion: { label: 'Inversiones', color: '#10b981' },
+    inmueble: { label: 'Inmuebles', color: '#f59e0b' },
+    activo_fijo: { label: 'Activos', color: '#8b5cf6' },
+    propiedades: { label: 'Propiedades', color: '#06b6d4' },
+    prestamos_otorgados: { label: 'Prestamos', color: '#84cc16' },
+    deuda: { label: 'Deuda', color: '#ef4444' }
   };
   // Build pie data entries and sort by value (largest first) so chart slices match legend order
   const pieEntries = [];
@@ -1084,6 +1062,9 @@ function renderDashboard() {
   window._dashBarPeriodos = barPeriodos;
   if (window._charts.dashBar) window._charts.dashBar.destroy();
   const barCtx = document.getElementById('dashBarChart').getContext('2d');
+  // Dynamic bar sizing: thinner bars when more months are shown
+  var _barPct = numBarMonths > 18 ? 0.5 : (numBarMonths > 12 ? 0.6 : 0.7);
+  var _barCatPct = numBarMonths > 18 ? 0.85 : (numBarMonths > 12 ? 0.9 : 0.95);
   window._charts.dashBar = new Chart(barCtx, {
     type: 'bar',
     data: {
@@ -1095,7 +1076,8 @@ function renderDashboard() {
         borderColor: '#3b82f6',
         borderWidth: 1,
         borderRadius: 4,
-        barPercentage: 0.7,
+        barPercentage: _barPct,
+        categoryPercentage: _barCatPct,
         skipNull: true,
       }],
     },
@@ -1111,7 +1093,7 @@ function renderDashboard() {
       },
       scales: {
         x: {
-          ticks: { color: chartFontColor, font: { size: 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
+          ticks: { color: chartFontColor, font: { size: numBarMonths > 18 ? 8 : 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
           grid: { display: false },
         },
         y: {
@@ -1126,6 +1108,10 @@ function renderDashboard() {
       plugins: {
         legend: { display: false },
         tooltip: {
+          titleFont: { size: 14, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 14, family: "'Plus Jakarta Sans'" },
+          padding: 14,
+          boxPadding: 6,
           callbacks: {
             label: function(ctx) { return 'Patrimonio: ' + formatCurrency(ctx.parsed.y, 'MXN'); },
           },
@@ -1186,6 +1172,9 @@ function renderDashboard() {
   window._dashLinePeriodos = linePeriodos;
   if (window._charts.dashLine) window._charts.dashLine.destroy();
   const lineCtx = document.getElementById('dashLineChart').getContext('2d');
+  // Dynamic point sizing for line chart when many months
+  var _linePointR = numLineMonths > 18 ? 2 : (numLineMonths > 12 ? 3 : 4);
+  var _linePointHoverR = numLineMonths > 18 ? 4 : (numLineMonths > 12 ? 5 : 6);
   window._charts.dashLine = new Chart(lineCtx, {
     type: 'line',
     data: {
@@ -1199,8 +1188,8 @@ function renderDashboard() {
           fill: true,
           tension: 0.35,
           pointBackgroundColor: '#10b981',
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: _linePointR,
+          pointHoverRadius: _linePointHoverR,
           borderWidth: 2,
         },
         {
@@ -1211,8 +1200,8 @@ function renderDashboard() {
           fill: true,
           tension: 0.35,
           pointBackgroundColor: '#ef4444',
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: _linePointR,
+          pointHoverRadius: _linePointHoverR,
           borderWidth: 2,
         },
       ],
@@ -1230,7 +1219,7 @@ function renderDashboard() {
       },
       scales: {
         x: {
-          ticks: { color: chartFontColor, font: { size: 10, family: "'Plus Jakarta Sans'" } },
+          ticks: { color: chartFontColor, font: { size: numLineMonths > 18 ? 8 : 10, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
           grid: { display: false },
         },
         y: {
@@ -1249,6 +1238,10 @@ function renderDashboard() {
           labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
         tooltip: {
+          titleFont: { size: 14, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 14, family: "'Plus Jakarta Sans'" },
+          padding: 14,
+          boxPadding: 6,
           callbacks: {
             label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); },
           },
@@ -1492,6 +1485,19 @@ function renderPatrimonioMensualReport(anioParam) {
 
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+  // For the current year, only show months up to and including the current month
+  var maxMes = esAnioActual ? mesActualIdx : 11; // 0-indexed
+
+  // Helper: format currency without decimals for this report
+  function fmtInt(val) {
+    var n = Math.round(Math.abs(val));
+    return '$' + n.toLocaleString('es-MX');
+  }
+
+  // Font size for this report (larger for readability)
+  var FS = '13px';
+  var FS_HEAD = '14px';
+
   // Pre-sort historial per cuenta
   var cuentaHistSorted = {};
   cuentas.forEach(function(c) {
@@ -1513,35 +1519,35 @@ function renderPatrimonioMensualReport(anioParam) {
     return result;
   }
 
-  // Build header
-  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Concepto</th>';
-  for (var m = 0; m < 12; m++) {
-    thead += '<th style="text-align:right;min-width:85px;">' + mesesCortos[m] + '</th>';
+  // Build header — only show months up to maxMes
+  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Concepto</th>';
+  for (var m = 0; m <= maxMes; m++) {
+    thead += '<th style="text-align:right;min-width:85px;font-size:' + FS + ';">' + mesesCortos[m] + '</th>';
   }
-  thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Ultimo</th></tr>';
+  thead += '<th style="text-align:right;min-width:100px;font-weight:800;font-size:' + FS + ';">Ultimo</th></tr>';
 
   var rows = '';
-  var totalPorMes = new Array(12).fill(0);
+  var numMeses = maxMes + 1;
+  var totalPorMes = new Array(numMeses).fill(0);
 
   // -- Cuentas activas --
   var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
-  var subtotalCuentasPorMes = new Array(12).fill(0);
+  var subtotalCuentasPorMes = new Array(numMeses).fill(0);
 
   cuentasActivas.forEach(function(cta) {
     var moneda = cta.moneda || 'MXN';
     var sortedHist = cuentaHistSorted[cta.id] || [];
     var saldoRealMXN = toMXN(_calcSaldoReal(cta), moneda, tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">' + cta.nombre + ' <span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + ' <span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
     var lastVal = 0;
 
-    for (var m = 0; m < 12; m++) {
+    for (var m = 0; m <= maxMes; m++) {
       var per = anio + '-' + String(m + 1).padStart(2, '0');
-      // For the current month of the current year, use the live saldo
       if (esAnioActual && m === mesActualIdx) {
         subtotalCuentasPorMes[m] += saldoRealMXN;
         totalPorMes[m] += saldoRealMXN;
         lastVal = saldoRealMXN;
-        row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(saldoRealMXN, 'MXN') + '</td>';
+        row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(saldoRealMXN) + '</td>';
       } else {
         var cierre = findCarryForward(sortedHist, per);
         if (cierre) {
@@ -1550,156 +1556,151 @@ function renderPatrimonioMensualReport(anioParam) {
           subtotalCuentasPorMes[m] += saldoMXN;
           totalPorMes[m] += saldoMXN;
           lastVal = saldoMXN;
-          row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(saldoMXN, 'MXN') + '</td>';
+          row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(saldoMXN) + '</td>';
         } else {
-          row += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>';
+          row += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>';
         }
       }
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;">' + formatCurrency(lastVal, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(lastVal) + '</td></tr>';
     rows += row;
   });
 
   // Subtotal cuentas
-  rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(59,130,246,0.05);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.05);z-index:1;font-size:11px;color:var(--accent-blue);">Subtotal Cuentas</td>';
+  rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(59,130,246,0.05);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Cuentas</td>';
   var lastSubCuentas = 0;
-  for (var m = 0; m < 12; m++) {
-    if (subtotalCuentasPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>'; }
-    else { lastSubCuentas = subtotalCuentasPorMes[m]; rows += '<td style="text-align:right;font-size:11px;color:var(--accent-blue);">' + formatCurrency(subtotalCuentasPorMes[m], 'MXN') + '</td>'; }
+  for (var m = 0; m <= maxMes; m++) {
+    if (subtotalCuentasPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
+    else { lastSubCuentas = subtotalCuentasPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-blue);">' + fmtInt(subtotalCuentasPorMes[m]) + '</td>'; }
   }
-  rows += '<td style="text-align:right;font-size:11px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(lastSubCuentas, 'MXN') + '</td></tr>';
+  rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-blue);">' + fmtInt(lastSubCuentas) + '</td></tr>';
 
   // -- Propiedades --
   var propActivas = propiedades.filter(function(p) { return p.activa !== false; });
-  var subtotalPropPorMes = new Array(12).fill(0);
+  var subtotalPropPorMes = new Array(numMeses).fill(0);
   propActivas.forEach(function(prop) {
     var valMXN = toMXN(prop.valor_actual || prop.valor_compra || 0, prop.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">' + prop.nombre + '</td>';
-    for (var m = 0; m < 12; m++) {
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td>';
+    for (var m = 0; m <= maxMes; m++) {
       subtotalPropPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
-      row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(valMXN, 'MXN') + '</td>';
+      row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(valMXN) + '</td>';
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
   });
 
   if (propActivas.length > 0) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(6,182,212,0.05);"><td style="position:sticky;left:0;background:rgba(6,182,212,0.05);z-index:1;font-size:11px;color:var(--accent-blue);">Subtotal Propiedades</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(6,182,212,0.05);"><td style="position:sticky;left:0;background:rgba(6,182,212,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Propiedades</td>';
     var lastSubProp = 0;
-    for (var m = 0; m < 12; m++) {
-      if (subtotalPropPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>'; }
-      else { lastSubProp = subtotalPropPorMes[m]; rows += '<td style="text-align:right;font-size:11px;color:var(--accent-blue);">' + formatCurrency(subtotalPropPorMes[m], 'MXN') + '</td>'; }
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalPropPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
+      else { lastSubProp = subtotalPropPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-blue);">' + fmtInt(subtotalPropPorMes[m]) + '</td>'; }
     }
-    rows += '<td style="text-align:right;font-size:11px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(lastSubProp, 'MXN') + '</td></tr>';
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-blue);">' + fmtInt(lastSubProp) + '</td></tr>';
   }
 
   // -- Préstamos otorgados --
   var prestOtorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; });
-  var subtotalOtorgPorMes = new Array(12).fill(0);
+  var subtotalOtorgPorMes = new Array(numMeses).fill(0);
   prestOtorgados.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">Prest. ' + (p.persona || 'N/A') + '</td>';
-    for (var m = 0; m < 12; m++) {
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td>';
+    for (var m = 0; m <= maxMes; m++) {
       subtotalOtorgPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
-      row += '<td style="text-align:right;font-size:11px;white-space:nowrap;">' + formatCurrency(valMXN, 'MXN') + '</td>';
+      row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(valMXN) + '</td>';
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
   });
 
   if (prestOtorgados.length > 0) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(132,204,22,0.05);"><td style="position:sticky;left:0;background:rgba(132,204,22,0.05);z-index:1;font-size:11px;color:var(--accent-green);">Subtotal Otorgados</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(132,204,22,0.05);"><td style="position:sticky;left:0;background:rgba(132,204,22,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-green);">Subtotal Otorgados</td>';
     var lastSubOtorg = 0;
-    for (var m = 0; m < 12; m++) {
-      if (subtotalOtorgPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>'; }
-      else { lastSubOtorg = subtotalOtorgPorMes[m]; rows += '<td style="text-align:right;font-size:11px;color:var(--accent-green);">' + formatCurrency(subtotalOtorgPorMes[m], 'MXN') + '</td>'; }
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalOtorgPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
+      else { lastSubOtorg = subtotalOtorgPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-green);">' + fmtInt(subtotalOtorgPorMes[m]) + '</td>'; }
     }
-    rows += '<td style="text-align:right;font-size:11px;font-weight:800;color:var(--accent-green);">' + formatCurrency(lastSubOtorg, 'MXN') + '</td></tr>';
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-green);">' + fmtInt(lastSubOtorg) + '</td></tr>';
   }
 
   // -- Deuda (préstamos recibidos + preventa de propiedades) --
   var prestRecibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; });
   var preventasPrest = prestamos.filter(function(p) { return p.tipo === 'preventa' && p.estado !== 'pagado'; });
-  // Deuda de preventa from propiedades (same logic as calcPatrimonioTotal)
   var preventasProp = propiedades.filter(function(pr) {
     return pr.tipo === 'preventa' && (pr.mensualidades_total - (pr.mensualidades_pagadas || 0)) > 0;
   });
 
-  var subtotalDeudaPorMes = new Array(12).fill(0);
+  var subtotalDeudaPorMes = new Array(numMeses).fill(0);
   var hayDeuda = (prestRecibidos.length > 0 || preventasPrest.length > 0 || preventasProp.length > 0);
 
-  // Préstamos recibidos
   prestRecibidos.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">Deuda: ' + (p.persona || 'N/A') + '</td>';
-    for (var m = 0; m < 12; m++) {
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td>';
+    for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
-      row += '<td style="text-align:right;font-size:11px;white-space:nowrap;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td>';
+      row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
   });
 
-  // Préstamos tipo preventa
   preventasPrest.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">Deuda: ' + (p.persona || 'N/A') + '</td>';
-    for (var m = 0; m < 12; m++) {
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td>';
+    for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
-      row += '<td style="text-align:right;font-size:11px;white-space:nowrap;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td>';
+      row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
   });
 
-  // Deuda de preventa de propiedades
   preventasProp.forEach(function(pr) {
     var enganche = pr.enganche || 0;
     var pagado = enganche + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
     var pendiente = Math.max(0, (pr.valor_compra || 0) - pagado);
     if (pendiente <= 0) return;
     var valMXN = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:11px;">Deuda: ' + (pr.nombre || 'Preventa') + '</td>';
-    for (var m = 0; m < 12; m++) {
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td>';
+    for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
-      row += '<td style="text-align:right;font-size:11px;white-space:nowrap;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td>';
+      row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
     }
-    row += '<td style="text-align:right;font-weight:700;font-size:11px;color:var(--accent-red);">-' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
   });
 
-  // Subtotal deuda
   if (hayDeuda) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(239,68,68,0.05);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.05);z-index:1;font-size:11px;color:var(--accent-red);">Subtotal Deuda</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(239,68,68,0.05);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-red);">Subtotal Deuda</td>';
     var lastSubDeuda = 0;
-    for (var m = 0; m < 12; m++) {
-      if (subtotalDeudaPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:11px;">\u2014</td>'; }
-      else { lastSubDeuda = subtotalDeudaPorMes[m]; rows += '<td style="text-align:right;font-size:11px;color:var(--accent-red);">-' + formatCurrency(subtotalDeudaPorMes[m], 'MXN') + '</td>'; }
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalDeudaPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
+      else { lastSubDeuda = subtotalDeudaPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(subtotalDeudaPorMes[m]) + '</td>'; }
     }
-    rows += '<td style="text-align:right;font-size:11px;font-weight:800;color:var(--accent-red);">-' + formatCurrency(lastSubDeuda, 'MXN') + '</td></tr>';
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-red);">-' + fmtInt(lastSubDeuda) + '</td></tr>';
   }
 
   // -- TOTAL PATRIMONIO NETO --
-  rows += '<tr style="font-weight:800;border-top:2px solid var(--border-color);background:rgba(59,130,246,0.08);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.08);z-index:1;font-size:12px;color:var(--text-primary);">PATRIMONIO NETO</td>';
+  rows += '<tr style="font-weight:800;border-top:2px solid var(--border-color);background:rgba(59,130,246,0.08);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.08);z-index:1;font-size:' + FS_HEAD + ';color:var(--text-primary);">PATRIMONIO NETO</td>';
   var lastTotal = 0;
-  for (var m = 0; m < 12; m++) {
+  for (var m = 0; m <= maxMes; m++) {
     if (totalPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>'; }
     else {
       lastTotal = totalPorMes[m];
       var tColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-      rows += '<td style="text-align:right;font-size:12px;color:' + tColor + ';">' + formatCurrency(totalPorMes[m], 'MXN') + '</td>';
+      rows += '<td style="text-align:right;font-size:' + FS_HEAD + ';color:' + tColor + ';">' + fmtInt(totalPorMes[m]) + '</td>';
     }
   }
   var lastColor = lastTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-  rows += '<td style="text-align:right;font-size:12px;font-weight:800;color:' + lastColor + ';">' + formatCurrency(lastTotal, 'MXN') + '</td></tr>';
+  rows += '<td style="text-align:right;font-size:' + FS_HEAD + ';font-weight:800;color:' + lastColor + ';">' + fmtInt(lastTotal) + '</td></tr>';
 
   // Year filter options
   var anioOpts = '';
@@ -1709,12 +1710,12 @@ function renderPatrimonioMensualReport(anioParam) {
 
   container.innerHTML =
     '<div class="card">' +
-      '<div class="card-header" style="display:flex;align-items:center;gap:12px;">' +
+      '<div class="card-header" style="display:flex;align-items:center;gap:12px;justify-content:flex-start;">' +
         '<span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Reporte Mensual de Patrimonio</span>' +
         '<select id="patrimonioReportAnioFilter" class="form-select" style="padding:3px 8px;font-size:11px;min-height:auto;width:80px;" onchange="renderPatrimonioMensualReport(this.value)">' + anioOpts + '</select>' +
       '</div>' +
       '<div style="overflow-x:auto;">' +
-        '<table class="data-table" style="font-size:11px;"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="data-table" style="font-size:' + FS + ';"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' +
       '</div>' +
     '</div>';
 }
