@@ -325,15 +325,14 @@ function mostrarDesgloseCuentas(tipoCuenta) {
     '</tr>';
   }).join('');
 
-  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:right;">Rend. %</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td colspan="3">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td>' +
     '<td style="text-align:right;color:' + color + ';">' + formatCurrency(totalMXN, 'MXN') + '</td>' +
     '<td></td><td></td>' +
-  '</tr>';
-
-  var html = '<table class="data-table sortable-table"><thead><tr>' +
-    '<th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:right;">Rend. %</th>' +
-    '</tr></thead><tbody>' + rows + '</tbody></table>';
+    '</tr></tfoot></table>';
 
   openModal(titulo, html);
   var mc = document.getElementById('modalContent');

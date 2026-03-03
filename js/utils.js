@@ -63,6 +63,24 @@ function formatCurrency(amount, currency) {
   return formatted;
 }
 
+/** Format currency without decimals (integer only) — for cleaner print reports */
+function formatCurrencyInt(amount, currency) {
+  if (_saldosHidden) {
+    var prefix = (currency || 'MXN').toUpperCase() === 'USD' ? 'US$' : (currency || 'MXN').toUpperCase() === 'EUR' ? '\u20AC' : '$';
+    return prefix + '••••••';
+  }
+  currency = (currency || 'MXN').toUpperCase();
+  var rounded = Math.round(Number(amount));
+  if (currency === 'MXN') {
+    return '$' + rounded.toLocaleString('es-MX');
+  } else if (currency === 'USD') {
+    return 'US$' + rounded.toLocaleString('en-US');
+  } else if (currency === 'EUR') {
+    return '\u20AC' + rounded.toLocaleString('en-US');
+  }
+  return currency + ' ' + rounded.toLocaleString('es-MX');
+}
+
 /** Convert any amount to MXN using stored exchange rates.
  *  Optional periodo param (YYYY-MM) uses historical rates if available. */
 function toMXN(amount, currency, tiposCambio, periodo) {
