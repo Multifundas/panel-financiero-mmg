@@ -7,8 +7,8 @@
       --border-color: #475569;
       --border-subtle: #334155;
       --text-primary: #f1f5f9;
-      --text-secondary: #cdd5de;
-      --text-muted: #a0b0c0;
+      --text-secondary: #e8ecf0;
+      --text-muted: #dde3ea;
       --accent-green: #10b981;
       --accent-green-soft: rgba(16, 185, 129, 0.15);
       --accent-red: #ef4444;
@@ -345,7 +345,7 @@
     }
 
     .card-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--text-primary);
     }
@@ -403,7 +403,7 @@
     }
 
     .data-table thead th {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
@@ -415,7 +415,7 @@
 
     .data-table tbody td {
       padding: 12px 14px;
-      font-size: 16px;
+      font-size: 14px;
       color: var(--text-primary);
       border-bottom: 1px solid rgba(51,65,85,0.5);
     }
@@ -424,17 +424,17 @@
       background: rgba(255,255,255,0.02);
     }
 
-    /* Consistent font sizing for desglose/modal tables (20% larger for readability) */
+    /* Consistent font sizing for desglose/modal tables */
     .modal-content .data-table thead th {
-      font-size: 13px;
+      font-size: 12px;
     }
     .modal-content .data-table tbody td {
-      font-size: 16px;
+      font-size: 14px;
       color: var(--text-primary);
     }
     .modal-content .data-table tfoot td,
     .modal-content .data-table tfoot tr td {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text-primary);
     }
@@ -512,13 +512,13 @@
       width: 97%;
     }
 
-    /* Uniform typography for modal desglose tables (20% larger) */
+    /* Uniform typography for modal desglose tables */
     .modal-content .data-table {
-      font-size: 14px;
+      font-size: 13px;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     .modal-content .data-table th {
-      font-size: 13px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
       font-weight: 700;
@@ -537,7 +537,7 @@
     }
 
     .modal-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
     }
 
@@ -756,9 +756,9 @@
 
       /* KPI values: smaller on mobile */
       .card .value,
-      .card [style*="font-size:22px"],
-      .card [style*="font-size: 22px"] {
-        font-size: 18px !important;
+      .card [style*="font-size:20px"],
+      .card [style*="font-size: 20px"] {
+        font-size: 16px !important;
       }
 
       /* Tables: horizontal scroll wrapper */
@@ -1067,9 +1067,9 @@
       }
 
       .card .value,
-      .card [style*="font-size:22px"],
-      .card [style*="font-size: 22px"] {
-        font-size: 16px !important;
+      .card [style*="font-size:20px"],
+      .card [style*="font-size: 20px"] {
+        font-size: 14px !important;
       }
 
       .header-title {
@@ -1152,8 +1152,8 @@
       --border-color: #cbd5e1;
       --border-subtle: #e2e8f0;
       --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
+      --text-secondary: #1e293b;
+      --text-muted: #334155;
       --accent-green: #059669;
       --accent-green-soft: rgba(5, 150, 105, 0.12);
       --accent-red: #dc2626;
@@ -1788,12 +1788,24 @@
     display: table-header-group !important;
   }
   .data-table tfoot {
+    display: table-footer-group !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+    break-before: avoid !important;
+    page-break-before: avoid !important;
   }
   .data-table tfoot tr {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+  /* Keep last 2 tbody rows together with tfoot to prevent subtotal orphaning */
+  .data-table tbody tr:last-child {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+  .data-table tbody tr:nth-last-child(2) {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
   /* Allow content to flow naturally across pages — do NOT use break-inside:avoid on large sections */
   .modal-header {
@@ -1804,5 +1816,10 @@
   #modalBody > div > div:first-child {
     break-after: avoid !important;
     page-break-after: avoid !important;
+  }
+  /* Keep section title+table together — avoid breaking between a section heading and its table */
+  #modalBody div[style*="margin-bottom"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }

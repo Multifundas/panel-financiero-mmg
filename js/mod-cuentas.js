@@ -48,35 +48,35 @@ function renderCuentas() {
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesgloseCuentas('debito')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-university" style="color:var(--accent-blue);font-size:16px;"></i>
+            <i class="fas fa-university" style="color:var(--accent-blue);font-size:19px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalBancarias, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countBancarias} cuenta${countBancarias !== 1 ? 's' : ''}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(totalBancarias, 'MXN')}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${countBancarias} cuenta${countBancarias !== 1 ? 's' : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseCuentas('inversion')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
+            <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:19px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalInversiones, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countInversiones} cuenta${countInversiones !== 1 ? 's' : ''}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(totalInversiones, 'MXN')}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${countInversiones} cuenta${countInversiones !== 1 ? 's' : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--text-secondary);cursor:pointer;" onclick="mostrarDesgloseCuentas('')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:rgba(148,163,184,0.1);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-wallet" style="color:var(--text-secondary);font-size:16px;"></i>
+            <i class="fas fa-wallet" style="color:var(--text-secondary);font-size:19px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total General</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total General</span>
         </div>
-        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrency(totalGeneral, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${countGeneral} cuenta${countGeneral !== 1 ? 's' : ''} activa${countGeneral !== 1 ? 's' : ''}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(totalGeneral, 'MXN')}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${countGeneral} cuenta${countGeneral !== 1 ? 's' : ''} activa${countGeneral !== 1 ? 's' : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
     </div>
 
@@ -192,7 +192,7 @@ function filterCuentas() {
     tbody.innerHTML = `
       <tr>
         <td colspan="9" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
-          <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
+          <i class="fas fa-search" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No se encontraron cuentas con los filtros aplicados.
         </td>
       </tr>`;
@@ -247,21 +247,21 @@ function filterCuentas() {
       <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
       <td>${instMap[c.institucion_id] || '\u2014'}</td>
       <td><span class="badge ${monedaBadgeClass(c.moneda)}">${c.moneda}</span></td>
-      <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(_calcSaldoReal(c), c.moneda)}</td>
+      <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrencyInt(_calcSaldoReal(c), c.moneda)}</td>
       <td style="text-align:right;color:${rendColor};font-weight:${rendAnualCalc !== 0 ? '600' : 'normal'};">${rendimiento}</td>
       <td>${subtipoHTML}</td>
-      <td style="font-size:12px;white-space:nowrap;">${ultCierreHTML}</td>
+      <td style="font-size:14px;white-space:nowrap;">${ultCierreHTML}</td>
       <td style="text-align:center;">
-        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;margin-right:4px;" onclick="editCuenta('${c.id}')" title="Editar">
           <i class="fas fa-pen"></i>
         </button>
-        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verEstadoCuenta('${c.id}')" title="Estado de Cuenta">
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verEstadoCuenta('${c.id}')" title="Estado de Cuenta">
           <i class="fas fa-file-invoice-dollar"></i>
         </button>
-        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-right:4px;" onclick="verHistorialCuenta('${c.id}')" title="Ver Historial">
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;margin-right:4px;" onclick="verHistorialCuenta('${c.id}')" title="Ver Historial">
           <i class="fas fa-history"></i>
         </button>
-        <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="deleteCuenta('${c.id}')" title="Eliminar">
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:14px;" onclick="deleteCuenta('${c.id}')" title="Eliminar">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -319,8 +319,8 @@ function mostrarDesgloseCuentas(tipoCuenta) {
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
       '<td>' + instNombre + '</td>' +
       '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(saldoReal, c.moneda) + '</td>' +
-      (c.moneda !== 'MXN' ? '<td style="text-align:right;color:var(--text-muted);">' + formatCurrency(valMXN, 'MXN') + '</td>' : '<td style="text-align:right;color:var(--text-muted);">\u2014</td>') +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(saldoReal, c.moneda) + '</td>' +
+      (c.moneda !== 'MXN' ? '<td style="text-align:right;color:var(--text-muted);">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' : '<td style="text-align:right;color:var(--text-muted);">\u2014</td>') +
       '<td style="text-align:right;">' + rendHTML + '</td>' +
     '</tr>';
   }).join('');
@@ -330,7 +330,7 @@ function mostrarDesgloseCuentas(tipoCuenta) {
     '</tr></thead><tbody>' + rows + '</tbody>' +
     '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td colspan="3">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td>' +
-    '<td style="text-align:right;color:' + color + ';">' + formatCurrency(totalMXN, 'MXN') + '</td>' +
+    '<td style="text-align:right;color:' + color + ';">' + formatCurrencyInt(totalMXN, 'MXN') + '</td>' +
     '<td></td><td></td>' +
     '</tr></tfoot></table>';
 
@@ -444,17 +444,17 @@ function editCuenta(id) {
                    value="${isEdit && cuenta.pagare_tasa ? cuenta.pagare_tasa : ''}" placeholder="Ej: 11.5">
           </div>
         </div>
-        <div id="pagareResumen" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;"></div>
+        <div id="pagareResumen" style="font-size:14px;color:var(--text-muted);margin-bottom:12px;"></div>
       </div>
 
       <!-- Campos Renta Variable -->
       <div id="rentaVarFields" style="display:none;">
         <div style="margin-bottom:12px;">
           <label class="form-label">Historial de Saldos</label>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">
             <i class="fas fa-info-circle" style="margin-right:4px;"></i>Registra los saldos actualizados con su fecha de captura.
           </div>
-          <table class="data-table" id="tablaRentaVarHistorial" style="font-size:13px;">
+          <table class="data-table" id="tablaRentaVarHistorial" style="font-size:16px;">
             <thead>
               <tr>
                 <th style="min-width:130px;">Fecha</th>
@@ -465,7 +465,7 @@ function editCuenta(id) {
             <tbody id="tbodyRentaVarHistorial">
             </tbody>
           </table>
-          <button type="button" class="btn btn-secondary" style="margin-top:8px;padding:4px 10px;font-size:11px;" onclick="agregarFilaRentaVar()">
+          <button type="button" class="btn btn-secondary" style="margin-top:8px;padding:4px 10px;font-size:13px;" onclick="agregarFilaRentaVar()">
             <i class="fas fa-plus"></i> Agregar Registro
           </button>
         </div>
@@ -546,7 +546,7 @@ function calcularResumenPagare() {
     const interesEstimado = saldo * (tasa / 100) * (dias / 365);
     resumenEl.innerHTML = `<i class="fas fa-calculator" style="margin-right:4px;color:var(--accent-green);"></i>` +
       `Plazo: <strong>${dias} dias</strong> | ` +
-      `Interes estimado: <strong class="text-green">${formatCurrency(interesEstimado, 'MXN')}</strong>`;
+      `Interes estimado: <strong class="text-green">${formatCurrencyInt(interesEstimado, 'MXN')}</strong>`;
   }
 }
 
@@ -566,7 +566,7 @@ function poblarHistorialRentaVar() {
           <td><input type="date" class="form-input rv-fecha" value="${h.fecha.substring(0, 10)}" style="padding:5px 8px;font-size:12px;"></td>
           <td><input type="number" class="form-input rv-saldo" value="${h.saldo}" step="0.01" style="padding:5px 8px;font-size:12px;"></td>
           <td style="text-align:center;">
-            <button type="button" class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="this.closest('tr').remove();">
+            <button type="button" class="btn btn-danger" style="padding:3px 6px;font-size:12px;" onclick="this.closest('tr').remove();">
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -586,7 +586,7 @@ function agregarFilaRentaVar() {
     <td><input type="date" class="form-input rv-fecha" value="${hoy}" style="padding:5px 8px;font-size:12px;"></td>
     <td><input type="number" class="form-input rv-saldo" value="" step="0.01" placeholder="0.00" style="padding:5px 8px;font-size:12px;"></td>
     <td style="text-align:center;">
-      <button type="button" class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="this.closest('tr').remove();">
+      <button type="button" class="btn btn-danger" style="padding:3px 6px;font-size:12px;" onclick="this.closest('tr').remove();">
         <i class="fas fa-trash"></i>
       </button>
     </td>
@@ -831,15 +831,15 @@ function cierreMensual() {
     var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
     var esDebito = c.tipo === 'debito';
     var histCta = c.historial_saldos || [];
-    var ultCierreLabel = histCta.length > 0 ? '<span style="font-size:10px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:3px;"></i>Ult. cierre: ' + formatDate(ultimoCierre) + '</span>' : '<span style="font-size:10px;color:var(--text-muted);font-style:italic;">Sin cierres previos</span>';
+    var ultCierreLabel = histCta.length > 0 ? '<span style="font-size:12px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:3px;"></i>Ult. cierre: ' + formatDate(ultimoCierre) + '</span>' : '<span style="font-size:12px;color:var(--text-muted);font-style:italic;">Sin cierres previos</span>';
     var rendCell = esDebito
-      ? '<td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:11px;">N/A</td>'
+      ? '<td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:13px;">N/A</td>'
       : '<td style="text-align:right;white-space:nowrap;" class="cierre-rend-cell" data-cuenta-id="' + c.id + '"><span style="color:var(--text-muted);">\u2014</span></td>';
     return '<tr>' +
-      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge ' + monedaBadgeClass(c.moneda) + '" style="font-size:10px;">' + c.moneda + '</span>' +
+      '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + ' <span class="badge ' + monedaBadgeClass(c.moneda) + '" style="font-size:12px;">' + c.moneda + '</span>' +
       '<br>' + ultCierreLabel +
-      (esDebito ? '' : '<br><span style="font-size:10px;color:var(--text-muted);">Movs: +' + formatCurrency(movNetos.ingresos, c.moneda) + ' / -' + formatCurrency(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(saldoInicioPeriodo, c.moneda) + '</td>' +
+      (esDebito ? '' : '<br><span style="font-size:12px;color:var(--text-muted);">Movs: +' + formatCurrencyInt(movNetos.ingresos, c.moneda) + ' / -' + formatCurrencyInt(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrencyInt(saldoInicioPeriodo, c.moneda) + '</td>' +
       '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
       '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + saldoInicioPeriodo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
       rendCell +
@@ -848,7 +848,7 @@ function cierreMensual() {
 
   var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
     '<div style="margin-bottom:16px;">' +
-    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">' +
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos del periodo y se anualiza segun los dias transcurridos.</div>' +
     '</div>' +
     '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
@@ -901,9 +901,9 @@ function recalcCierreRendimiento(inputEl) {
     } else {
       var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var sign = rend >= 0 ? '+' : '';
-      cell.innerHTML = '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, 'MXN') + '</span>' +
-        '<br><span style="font-size:11px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% en ' + dias + 'd</span>' +
-        '<br><span style="font-size:10px;color:' + color + ';opacity:0.8;">(' + sign + rendPctAnual.toFixed(2) + '% anual)</span>';
+      cell.innerHTML = '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrencyInt(rend, 'MXN') + '</span>' +
+        '<br><span style="font-size:13px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% en ' + dias + 'd</span>' +
+        '<br><span style="font-size:12px;color:' + color + ';opacity:0.8;">(' + sign + rendPctAnual.toFixed(2) + '% anual)</span>';
     }
   }
 }
@@ -1033,8 +1033,8 @@ function _mostrarRenovacionPagares(pagares) {
   var filas = pagares.map(function(p) {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + p.nombre +
-        ' <span class="badge ' + monedaBadgeClass(p.moneda) + '" style="font-size:10px;">' + p.moneda + '</span>' +
-        '<br><span style="font-size:11px;color:var(--text-muted);">Saldo: ' + formatCurrency(p.saldoFinal, p.moneda) + '</span>' +
+        ' <span class="badge ' + monedaBadgeClass(p.moneda) + '" style="font-size:12px;">' + p.moneda + '</span>' +
+        '<br><span style="font-size:13px;color:var(--text-muted);">Saldo: ' + formatCurrencyInt(p.saldoFinal, p.moneda) + '</span>' +
       '</td>' +
       '<td style="white-space:nowrap;"><input type="date" class="form-input renov-fecha-inicio" data-cuenta-id="' + p.id + '" value="' + p.fechaCierre + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
       '<td><input type="date" class="form-input renov-fecha-termino" data-cuenta-id="' + p.id + '" style="padding:5px 8px;font-size:13px;min-height:auto;"></td>' +
@@ -1045,11 +1045,11 @@ function _mostrarRenovacionPagares(pagares) {
   var html = '<div style="margin-bottom:16px;">' +
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
       '<div style="width:36px;height:36px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
-        '<i class="fas fa-redo" style="color:var(--accent-amber);font-size:14px;"></i>' +
+        '<i class="fas fa-redo" style="color:var(--accent-amber);font-size:17px;"></i>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:14px;font-weight:700;color:var(--text-primary);">Renovacion de Pagares</div>' +
-        '<div style="font-size:12px;color:var(--text-muted);">Los siguientes pagares finalizaron su plazo. Ingresa los datos del nuevo plazo.</div>' +
+        '<div style="font-size:17px;font-weight:700;color:var(--text-primary);">Renovacion de Pagares</div>' +
+        '<div style="font-size:14px;color:var(--text-muted);">Los siguientes pagares finalizaron su plazo. Ingresa los datos del nuevo plazo.</div>' +
       '</div>' +
     '</div>' +
     '</div>' +
@@ -1126,7 +1126,7 @@ function verHistorialCuenta(cuentaId) {
 
   var tablaHTML = '';
   if (historial.length === 0) {
-    tablaHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-chart-bar" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay historial de saldos.<br><span style="font-size:12px;">Usa "Cierre Mensual" para registrar saldos al final de cada mes.</span></div>';
+    tablaHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-chart-bar" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay historial de saldos.<br><span style="font-size:14px;">Usa "Cierre Mensual" para registrar saldos al final de cada mes.</span></div>';
   } else {
     var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var sorted = [...historial].sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
@@ -1148,21 +1148,21 @@ function verHistorialCuenta(cuentaId) {
         var mesIdx = parseInt(parts[1], 10) - 1;
         fechaLabel = meses[mesIdx] + ' ' + parts[0];
       }
-      var diasLabel = dias > 0 ? '<br><span style="font-size:10px;color:var(--text-muted);">' + dias + ' dias</span>' : '';
+      var diasLabel = dias > 0 ? '<br><span style="font-size:12px;color:var(--text-muted);">' + dias + ' dias</span>' : '';
       // Rendimiento compacto: monto + % periodo + % anual en una celda
-      var rendHTML = rendSign + formatCurrency(rend, moneda) +
-        '<br><span style="font-size:10px;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '% &middot; ' + rendSign + rendPctAnual.toFixed(2) + '% anual</span>';
+      var rendHTML = rendSign + formatCurrencyInt(rend, moneda) +
+        '<br><span style="font-size:12px;color:' + rendColor + ';">' + rendSign + rendPct.toFixed(2) + '% &middot; ' + rendSign + rendPctAnual.toFixed(2) + '% anual</span>';
       return '<tr>' +
         '<td style="font-weight:600;">' + fechaLabel + diasLabel + '</td>' +
-        '<td style="text-align:right;font-size:12px;">' + formatCurrency(sInicio, moneda) + '</td>' +
-        '<td style="text-align:right;font-weight:600;font-size:12px;">' + formatCurrency(sFinal, moneda) + '</td>' +
-        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;font-size:12px;">' + rendHTML + '</td>' +
+        '<td style="text-align:right;font-size:14px;">' + formatCurrencyInt(sInicio, moneda) + '</td>' +
+        '<td style="text-align:right;font-weight:600;font-size:14px;">' + formatCurrencyInt(sFinal, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + rendColor + ';font-weight:600;font-size:14px;">' + rendHTML + '</td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
-        '<button class="btn btn-secondary" style="padding:3px 7px;font-size:10px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Editar"><i class="fas fa-pen"></i></button>' +
-        '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+        '<button class="btn btn-secondary" style="padding:3px 7px;font-size:12px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Editar"><i class="fas fa-pen"></i></button>' +
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:12px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
         '</td></tr>';
     });
-    tablaHTML = '<table class="data-table" style="font-size:13px;"><thead><tr>' +
+    tablaHTML = '<table class="data-table" style="font-size:16px;"><thead><tr>' +
       '<th>Periodo</th><th style="text-align:right;">Saldo Inicial</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:center;">Acciones</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
 
@@ -1198,11 +1198,11 @@ function verHistorialCuenta(cuentaId) {
           maintainAspectRatio: false,
           scales: {
             x: { grid: { color: chartColorsTheme.gridColor }, ticks: { color: chartColorsTheme.fontColor, font: { size: 11 } } },
-            y: { grid: { color: chartColorsTheme.gridColor }, ticks: { color: chartColorsTheme.fontColor, font: { size: 11 }, callback: function(v) { return formatCurrency(v, moneda); } } }
+            y: { grid: { color: chartColorsTheme.gridColor }, ticks: { color: chartColorsTheme.fontColor, font: { size: 11 }, callback: function(v) { return formatCurrencyInt(v, moneda); } } }
           },
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: function(ctx2) { return formatCurrency(ctx2.parsed.y, moneda); } } }
+            tooltip: { callbacks: { label: function(ctx2) { return formatCurrencyInt(ctx2.parsed.y, moneda); } } }
           }
         }
       });
@@ -1211,9 +1211,9 @@ function verHistorialCuenta(cuentaId) {
 
   var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Registros</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + historial.length + ' mes' + (historial.length !== 1 ? 'es' : '') + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Registros</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + historial.length + ' mes' + (historial.length !== 1 ? 'es' : '') + '</div></div>' +
     '</div></div>' +
     tablaHTML +
     '<div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
@@ -1322,7 +1322,7 @@ function deleteCierreHistorial(cuentaId, idx) {
   if (!cuenta.historial_saldos || !cuenta.historial_saldos[idx]) return;
 
   var h = cuenta.historial_saldos[idx];
-  var confirmar = confirm('\u00BFEliminar el cierre de ' + (h.fecha ? h.fecha.substring(0, 7) : 'fecha desconocida') + '?\n\nSaldo Inicial: ' + formatCurrency(h.saldo_inicio || 0, cuenta.moneda || 'MXN') + '\nSaldo Final: ' + formatCurrency(h.saldo_final || 0, cuenta.moneda || 'MXN'));
+  var confirmar = confirm('\u00BFEliminar el cierre de ' + (h.fecha ? h.fecha.substring(0, 7) : 'fecha desconocida') + '?\n\nSaldo Inicial: ' + formatCurrencyInt(h.saldo_inicio || 0, cuenta.moneda || 'MXN') + '\nSaldo Final: ' + formatCurrencyInt(h.saldo_final || 0, cuenta.moneda || 'MXN'));
   if (!confirmar) return;
 
   // Remove from historial
@@ -1375,10 +1375,10 @@ function verEstadoCuenta(cuentaId) {
 
   var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Institucion</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + instNombre + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Moneda</div><div style="font-size:14px;font-weight:700;color:var(--accent-blue);">' + moneda + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-green);">' + formatCurrency(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Institucion</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + instNombre + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Moneda</div><div style="font-size:17px;font-weight:700;color:var(--accent-blue);">' + moneda + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
     '</div></div>' +
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">' +
     '<input type="date" id="edoCtaDesde" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:150px;" onchange="filterEstadoCuenta()" placeholder="Desde">' +
@@ -1387,8 +1387,8 @@ function verEstadoCuenta(cuentaId) {
     '<option value="">Todos</option><option value="ingreso">Abonos</option><option value="gasto">Cargos</option></select>' +
     '<input type="text" id="edoCtaSearch" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:180px;" placeholder="Buscar..." oninput="filterEstadoCuenta()">' +
     '<div style="margin-left:auto;display:flex;gap:6px;">' +
-    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="exportarEdoCuentaExcel()" title="Exportar Excel"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
-    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;border-color:var(--accent-red);color:var(--accent-red);" onclick="exportarEdoCuentaPDF()" title="Exportar PDF"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
+    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;" onclick="exportarEdoCuentaExcel()" title="Exportar Excel"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
+    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;border-color:var(--accent-red);color:var(--accent-red);" onclick="exportarEdoCuentaPDF()" title="Exportar PDF"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
     '</div>' +
     '</div>' +
     '<div id="edoCtaContenido"></div>' +
@@ -1503,10 +1503,10 @@ function filterEstadoCuenta() {
   // Build first row: Saldo de Apertura
   var filaInicial = '<tr style="background:rgba(16,185,129,0.08);font-weight:700;">' +
     '<td style="white-space:nowrap;color:var(--text-primary);">' + (fechaSaldoInicial ? formatDate(fechaSaldoInicial) : '\u2014') + '</td>' +
-    '<td style="font-size:12px;color:var(--text-primary);"><i class="fas fa-flag" style="margin-right:6px;color:var(--accent-green);"></i>Saldo de Apertura</td>' +
+    '<td style="font-size:14px;color:var(--text-primary);"><i class="fas fa-flag" style="margin-right:6px;color:var(--accent-green);"></i>Saldo de Apertura</td>' +
     '<td></td>' +
     '<td></td>' +
-    '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</td>' +
+    '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(saldoInicial, moneda) + '</td>' +
     '</tr>';
 
   // Build table rows for movements and cierre markers
@@ -1516,35 +1516,35 @@ function filterEstadoCuenta() {
       saldoRunning = e.cierreSaldoFinal;
       return '<tr style="background:rgba(59,130,246,0.08);border-top:2px solid rgba(59,130,246,0.3);border-bottom:2px solid rgba(59,130,246,0.3);">' +
         '<td style="white-space:nowrap;font-weight:700;color:var(--accent-blue);">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
-        '<td style="font-size:12px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
+        '<td style="font-size:14px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
         '<td></td>' +
         '<td></td>' +
-        '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrency(saldoRunning, moneda) + '</td>' +
+        '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
         '</tr>';
     }
 
     var cargo = '', abono = '';
     if (e.tipo === 'gasto') {
-      cargo = formatCurrency(e.monto, moneda);
+      cargo = formatCurrencyInt(e.monto, moneda);
       saldoRunning -= e.monto;
     } else if (e.tipo === 'ingreso') {
-      abono = formatCurrency(e.monto, moneda);
+      abono = formatCurrencyInt(e.monto, moneda);
       saldoRunning += e.monto;
     }
 
     // Determine origin badge
     var origenBadge = '';
-    if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:9px;margin-left:6px;">Transf.</span>';
-    else if (e.origen === 'Prestamo') origenBadge = '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;">Prestamo</span>';
-    else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:9px;margin-left:6px;">PDF</span>';
-    else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:9px;margin-left:6px;">Recurrente</span>';
+    if (e.origen === 'Transferencia') origenBadge = '<span class="badge badge-purple" style="font-size:11px;margin-left:6px;">Transf.</span>';
+    else if (e.origen === 'Prestamo') origenBadge = '<span class="badge badge-amber" style="font-size:11px;margin-left:6px;">Prestamo</span>';
+    else if (e.origen === 'PDF') origenBadge = '<span class="badge badge-red" style="font-size:11px;margin-left:6px;">PDF</span>';
+    else if (e.origen === 'Recurrente') origenBadge = '<span class="badge badge-green" style="font-size:11px;margin-left:6px;">Recurrente</span>';
 
     return '<tr>' +
       '<td style="white-space:nowrap;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
-      '<td style="font-size:12px;">' + e.descripcion + origenBadge + '</td>' +
+      '<td style="font-size:14px;">' + e.descripcion + origenBadge + '</td>' +
       '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +
       '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abono + '</td>' +
-      '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrency(saldoRunning, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
       '</tr>';
   });
 
@@ -1561,11 +1561,11 @@ function filterEstadoCuenta() {
   var esInversion = cuenta.tipo === 'inversion';
   var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (_calcSaldoReal(cuenta) * rendAnualPct / 100 / 12) : 0;
   var rendHTML = esInversion
-    ? '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
-      '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
-      (rendMonto ? '<div style="font-size:12px;color:var(--accent-green);font-weight:700;">Ultimo cierre: ' + formatCurrency(rendMonto, moneda) + '</div>' : '') +
-      (rendEstimadoMensual > 0 ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrency(rendEstimadoMensual, moneda) + '/mes</div>' : '') +
-      (rendFuente ? '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Cierre: ' + rendFuente + '</div>' : '') +
+    ? '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
+      '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
+      (rendMonto ? '<div style="font-size:14px;color:var(--accent-green);font-weight:700;">Ultimo cierre: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
+      (rendEstimadoMensual > 0 ? '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrencyInt(rendEstimadoMensual, moneda) + '/mes</div>' : '') +
+      (rendFuente ? '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Cierre: ' + rendFuente + '</div>' : '') +
       '</div>'
     : '';
 
@@ -1574,10 +1574,10 @@ function filterEstadoCuenta() {
     '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th>' +
     '</tr></thead><tbody>' + filaInicial + rows.join('') + '</tbody></table></div>' +
     '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:' + (esInversion ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr') + ';gap:12px;">' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo de Apertura</div><div style="font-size:15px;font-weight:800;color:var(--text-primary);">' + formatCurrency(saldoInicial, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:15px;font-weight:800;color:var(--accent-red);">' + formatCurrency(sumGastos, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:15px;font-weight:800;color:var(--accent-green);">' + formatCurrency(sumIngresos, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:15px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(saldoFinal, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo de Apertura</div><div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(saldoInicial, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(sumGastos, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrencyInt(sumIngresos, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoFinal, moneda) + '</div></div>' +
     rendHTML +
     '</div>';
 
@@ -1696,9 +1696,9 @@ function exportarEdoCuentaPDF() {
     return [
       r.fecha || '',
       r.descripcion || '',
-      r.cargo !== '' ? '-' + formatCurrency(r.cargo, data.moneda) : '',
-      r.abono !== '' ? '+' + formatCurrency(r.abono, data.moneda) : '',
-      formatCurrency(r.saldo, data.moneda)
+      r.cargo !== '' ? '-' + formatCurrencyInt(r.cargo, data.moneda) : '',
+      r.abono !== '' ? '+' + formatCurrencyInt(r.abono, data.moneda) : '',
+      formatCurrencyInt(r.saldo, data.moneda)
     ];
   });
 
@@ -1735,10 +1735,10 @@ function exportarEdoCuentaPDF() {
   var finalY = doc.lastAutoTable.finalY + 8;
   doc.setFontSize(10);
   doc.setFont(undefined, 'bold');
-  doc.text('Saldo de Apertura: ' + formatCurrency(data.saldoInicial, data.moneda), 14, finalY);
-  doc.text('Total Cargos: ' + formatCurrency(data.sumGastos, data.moneda), 14, finalY + 6);
-  doc.text('Total Abonos: ' + formatCurrency(data.sumIngresos, data.moneda), 14, finalY + 12);
-  doc.text('Saldo Final: ' + formatCurrency(data.saldoFinal, data.moneda), 14, finalY + 18);
+  doc.text('Saldo de Apertura: ' + formatCurrencyInt(data.saldoInicial, data.moneda), 14, finalY);
+  doc.text('Total Cargos: ' + formatCurrencyInt(data.sumGastos, data.moneda), 14, finalY + 6);
+  doc.text('Total Abonos: ' + formatCurrencyInt(data.sumIngresos, data.moneda), 14, finalY + 12);
+  doc.text('Saldo Final: ' + formatCurrencyInt(data.saldoFinal, data.moneda), 14, finalY + 18);
 
   var filename = 'EDC_' + data.cuenta.nombre.replace(/ /g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
   doc.save(filename);
@@ -1814,8 +1814,8 @@ function capturaHistorica() {
     '<form id="formCapturaHistorica" onsubmit="saveCapturaHistorica(event)" onkeydown="if(event.key===\'Enter\'&&event.target.tagName!==\'BUTTON\'){event.preventDefault();}">' +
       '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);border-left:3px solid var(--accent-amber);">' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:14px;"></i>' +
-          '<span style="font-size:12px;color:var(--text-secondary);">Captura los cierres mensuales historicos. Registra saldos, entradas, salidas y transferencias entre cuentas. El rendimiento se calcula automaticamente.</span>' +
+          '<i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:17px;"></i>' +
+          '<span style="font-size:14px;color:var(--text-secondary);">Captura los cierres mensuales historicos. Registra saldos, entradas, salidas y transferencias entre cuentas. El rendimiento se calcula automaticamente.</span>' +
         '</div>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
@@ -1834,8 +1834,8 @@ function capturaHistorica() {
         '</div>' +
       '</div>' +
       '<div id="capturaHistoricaTabla" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
-        '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">' +
-          '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:18px;opacity:0.4;"></i>' +
+        '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:16px;">' +
+          '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:22px;opacity:0.4;"></i>' +
           'Selecciona una cuenta para comenzar.' +
         '</div>' +
       '</div>' +
@@ -1857,8 +1857,8 @@ function generarFilasCapturaHistorica() {
   var cuentaId = document.getElementById('captHistCuenta').value;
   var anio = parseInt(document.getElementById('captHistAnio').value);
   if (!cuentaId) {
-    contenedor.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">' +
-      '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:18px;opacity:0.4;"></i>' +
+    contenedor.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:16px;">' +
+      '<i class="fas fa-hand-pointer" style="display:block;margin-bottom:8px;font-size:22px;opacity:0.4;"></i>' +
       'Selecciona una cuenta para comenzar.</div>';
     return;
   }
@@ -1952,8 +1952,8 @@ function generarFilasCapturaHistorica() {
     var inicioReadonly = (m > 0 && tieneRefAnterior) ? ' readonly style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;opacity:0.6;background:var(--bg-base);"' : ' style="padding:4px 6px;font-size:12px;min-width:90px;min-height:auto;"';
 
     var rendCell = esDebito
-      ? '<td style="text-align:center;color:var(--text-muted);font-size:11px;">N/A</td>'
-      : '<td style="text-align:right;font-size:11px;" id="captHistRend_' + m + '"><span style="color:var(--text-muted);">--</span></td>';
+      ? '<td style="text-align:center;color:var(--text-muted);font-size:13px;">N/A</td>'
+      : '<td style="text-align:right;font-size:13px;" id="captHistRend_' + m + '"><span style="color:var(--text-muted);">--</span></td>';
 
     var inputStyle = 'padding:4px 6px;font-size:12px;min-width:80px;min-height:auto;';
 
@@ -1963,7 +1963,7 @@ function generarFilasCapturaHistorica() {
     var mesLabel = esPagare ? _captHistPeriodoLabel(fechaInicioVal, fechaVal) : mesesNombres[m];
 
     filas += '<tr>' +
-      '<td style="font-weight:600;white-space:nowrap;font-size:12px;" id="captHistMesLabel_' + m + '">' + mesLabel + indicadorExistente + '</td>' +
+      '<td style="font-weight:600;white-space:nowrap;font-size:14px;" id="captHistMesLabel_' + m + '">' + mesLabel + indicadorExistente + '</td>' +
       '<td><input type="date" class="form-input capt-hist-fecha-inicio" data-mes="' + m + '" value="' + fechaInicioVal + '" style="' + dateStyle + '" oninput="recalcCapturaHistorica(' + m + ')"></td>' +
       '<td><input type="number" class="form-input capt-hist-inicio" data-mes="' + m + '" step="0.01" min="0" value="' + saldoInicioVal + '"' + inicioReadonly + ' oninput="recalcCapturaHistorica(' + m + ')"></td>' +
       '<td><input type="number" class="form-input capt-hist-entradas" data-mes="' + m + '" step="0.01" min="0" value="' + entradasVal + '" style="' + inputStyle + '" oninput="recalcCapturaHistorica(' + m + ')" placeholder="0"></td>' +
@@ -1979,16 +1979,16 @@ function generarFilasCapturaHistorica() {
   var infoHTML =
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
       '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
-        '<i class="fas fa-university" style="color:var(--accent-blue);font-size:13px;"></i>' +
+        '<i class="fas fa-university" style="color:var(--accent-blue);font-size:16px;"></i>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);">' + moneda + ' | ' + (esDebito ? 'Debito' : (esPagare ? 'Pagare (Plazo Fijo)' : 'Inversion')) + ' | Ano ' + anio + '</div>' +
+        '<div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);">' + moneda + ' | ' + (esDebito ? 'Debito' : (esPagare ? 'Pagare (Plazo Fijo)' : 'Inversion')) + ' | Ano ' + anio + '</div>' +
       '</div>' +
     '</div>';
 
   contenedor.innerHTML = infoHTML +
-    '<table class="data-table" style="font-size:13px;">' +
+    '<table class="data-table" style="font-size:16px;">' +
       '<thead><tr>' +
         '<th style="min-width:70px;">' + (esPagare ? 'Periodo' : 'Mes') + '</th>' +
         '<th>Fecha Inicio</th>' +
@@ -2123,9 +2123,9 @@ function recalcCapturaHistorica(mes) {
   var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   var sign = rend >= 0 ? '+' : '';
   cell.innerHTML =
-    '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrency(rend, cuenta.moneda) + '</span>' +
-    '<br><span style="font-size:10px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% (' + dias + 'd)</span>' +
-    '<br><span style="font-size:10px;color:' + color + ';opacity:0.7;">' + sign + rendPctAnual.toFixed(2) + '% anual</span>';
+    '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrencyInt(rend, cuenta.moneda) + '</span>' +
+    '<br><span style="font-size:12px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% (' + dias + 'd)</span>' +
+    '<br><span style="font-size:12px;color:' + color + ';opacity:0.7;">' + sign + rendPctAnual.toFixed(2) + '% anual</span>';
 }
 
 function saveCapturaHistorica(event) {

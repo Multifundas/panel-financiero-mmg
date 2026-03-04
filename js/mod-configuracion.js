@@ -1245,16 +1245,16 @@ function exportarPDF() {
     'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1e293b;margin:0;padding:40px;background:#fff;font-size:13px;}' +
     'h1{font-size:24px;margin-bottom:4px;color:#0f172a;}' +
     'h2{font-size:16px;margin-top:32px;margin-bottom:12px;color:#334155;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}' +
-    '.subtitle{color:#64748b;font-size:13px;margin-bottom:24px;}' +
+    '.subtitle{color:#1e293b;font-size:13px;margin-bottom:24px;}' +
     '.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}' +
     '.kpi-card{border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;}' +
-    '.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:6px;}' +
+    '.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;margin-bottom:6px;}' +
     '.kpi-value{font-size:20px;font-weight:800;color:#0f172a;}' +
     'table{width:100%;border-collapse:collapse;margin-bottom:20px;}' +
-    'th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;border-bottom:2px solid #e2e8f0;}' +
+    'th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;border-bottom:2px solid #e2e8f0;}' +
     'td{padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;}' +
     'tr:nth-child(even){background:#f8fafc;}' +
-    '.footer{margin-top:40px;text-align:center;color:#94a3b8;font-size:11px;border-top:1px solid #e2e8f0;padding-top:16px;}' +
+    '.footer{margin-top:40px;text-align:center;color:#334155;font-size:11px;border-top:1px solid #e2e8f0;padding-top:16px;}' +
     '@media print{body{padding:20px;}.no-print{display:none;}@page{margin:15mm;}}' +
     '</style>' +
     '</head>' +

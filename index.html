@@ -235,7 +235,10 @@
     <div class="modal-content" id="modalContent" onclick="event.stopPropagation()">
       <div class="modal-header">
         <h3 class="modal-title" id="modalTitle"></h3>
-        <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button class="modal-close" style="color:var(--accent-blue);" onclick="window.print()" title="Imprimir"><i class="fas fa-print"></i></button>
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
       </div>
       <div id="modalBody"></div>
     </div>

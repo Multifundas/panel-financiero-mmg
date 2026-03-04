@@ -4,7 +4,7 @@
 function getChartColors() {
   var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   return {
-    fontColor: isDark ? '#94a3b8' : '#475569',
+    fontColor: isDark ? '#dde3ea' : '#1e293b',
     gridColor: isDark ? 'rgba(51,65,85,0.5)' : 'rgba(203,213,225,0.5)',
     borderColor: isDark ? '#1e293b' : '#ffffff',
   };

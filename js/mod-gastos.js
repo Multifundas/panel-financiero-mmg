@@ -29,14 +29,14 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
     return `
       <div class="card" style="margin-bottom:24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-          <h3 style="font-size:14px;font-weight:700;color:var(--text-primary);margin:0;">
+          <h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">
             <i class="fas fa-bullseye" style="margin-right:8px;color:var(--accent-blue);"></i>Presupuesto Mensual
           </h3>
-          <button class="btn" onclick="configurarPresupuestos()" style="font-size:12px;padding:6px 14px;">
+          <button class="btn" onclick="configurarPresupuestos()" style="font-size:14px;padding:6px 14px;">
             <i class="fas fa-cog" style="margin-right:4px;"></i>Configurar Presupuestos
           </button>
         </div>
-        <p style="color:var(--text-muted);font-size:13px;margin:0;">No hay presupuestos configurados. Haz clic en "Configurar Presupuestos" para establecer limites mensuales por categoria.</p>
+        <p style="color:var(--text-muted);font-size:16px;margin:0;">No hay presupuestos configurados. Haz clic en "Configurar Presupuestos" para establecer limites mensuales por categoria.</p>
       </div>
     `;
   }
@@ -73,22 +73,22 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
       <div style="padding:12px 0;border-bottom:1px solid var(--border-color);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;">
-            <i class="fas ${cat.icono}" style="color:${cat.color};font-size:14px;width:20px;text-align:center;"></i>
-            <span style="font-weight:600;font-size:13px;color:var(--text-primary);">${cat.nombre}</span>
-            <span class="badge" style="background:${badgeColor};color:${barColor};font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;">${badgeText}</span>
+            <i class="fas ${cat.icono}" style="color:${cat.color};font-size:17px;width:20px;text-align:center;"></i>
+            <span style="font-weight:600;font-size:16px;color:var(--text-primary);">${cat.nombre}</span>
+            <span class="badge" style="background:${badgeColor};color:${barColor};font-size:12px;padding:2px 8px;border-radius:10px;font-weight:600;">${badgeText}</span>
           </div>
-          <div style="font-size:12px;color:var(--text-secondary);">
-            <span style="font-weight:700;color:${barColor};">${formatCurrency(spent, 'MXN')}</span>
-            <span style="color:var(--text-muted);"> / ${formatCurrency(budgetMXN, 'MXN')}</span>
+          <div style="font-size:14px;color:var(--text-secondary);">
+            <span style="font-weight:700;color:${barColor};">${formatCurrencyInt(spent, 'MXN')}</span>
+            <span style="color:var(--text-muted);"> / ${formatCurrencyInt(budgetMXN, 'MXN')}</span>
           </div>
         </div>
         <div class="progress-bar" style="height:8px;background:var(--bg-base);border-radius:4px;overflow:hidden;">
           <div class="progress-bar-fill" style="width:${barWidth}%;height:100%;background:${barColor};border-radius:4px;transition:width 0.4s ease;"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:6px;">
-          <span style="font-size:11px;color:var(--text-muted);">${pct.toFixed(1)}% utilizado</span>
-          <span style="font-size:11px;color:${remaining >= 0 ? 'var(--text-secondary)' : '#ef4444'};font-weight:600;">
-            ${remaining >= 0 ? 'Disponible: ' + formatCurrency(remaining, 'MXN') : 'Excedido: ' + formatCurrency(Math.abs(remaining), 'MXN')}
+          <span style="font-size:13px;color:var(--text-muted);">${pct.toFixed(1)}% utilizado</span>
+          <span style="font-size:13px;color:${remaining >= 0 ? 'var(--text-secondary)' : '#ef4444'};font-weight:600;">
+            ${remaining >= 0 ? 'Disponible: ' + formatCurrencyInt(remaining, 'MXN') : 'Excedido: ' + formatCurrencyInt(Math.abs(remaining), 'MXN')}
           </span>
         </div>
       </div>
@@ -111,11 +111,11 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
   return `
     <div class="card" style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <h3 style="font-size:14px;font-weight:700;color:var(--text-primary);margin:0;">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">
           <i class="fas fa-bullseye" style="margin-right:8px;color:var(--accent-blue);"></i>Presupuesto Mensual
-          <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:8px;">${mesNombre(mesActual)} ${anioActual}</span>
+          <span style="font-size:13px;font-weight:400;color:var(--text-muted);margin-left:8px;">${mesNombre(mesActual)} ${anioActual}</span>
         </h3>
-        <button class="btn" onclick="configurarPresupuestos()" style="font-size:12px;padding:6px 14px;">
+        <button class="btn" onclick="configurarPresupuestos()" style="font-size:14px;padding:6px 14px;">
           <i class="fas fa-cog" style="margin-right:4px;"></i>Configurar Presupuestos
         </button>
       </div>
@@ -126,22 +126,22 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
       <div style="margin-top:16px;padding:14px;background:var(--bg-base);border-radius:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;">
-            <i class="fas fa-chart-pie" style="color:var(--accent-blue);font-size:14px;"></i>
-            <span style="font-weight:700;font-size:13px;color:var(--text-primary);">Total Presupuesto</span>
-            <span class="badge" style="background:${totalBadgeColor};color:${totalBarColor};font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;">${totalBadgeText}</span>
+            <i class="fas fa-chart-pie" style="color:var(--accent-blue);font-size:17px;"></i>
+            <span style="font-weight:700;font-size:16px;color:var(--text-primary);">Total Presupuesto</span>
+            <span class="badge" style="background:${totalBadgeColor};color:${totalBarColor};font-size:12px;padding:2px 8px;border-radius:10px;font-weight:600;">${totalBadgeText}</span>
           </div>
-          <div style="font-size:13px;">
-            <span style="font-weight:700;color:${totalBarColor};">${formatCurrency(totalGastado, 'MXN')}</span>
-            <span style="color:var(--text-muted);"> / ${formatCurrency(totalPresupuesto, 'MXN')}</span>
+          <div style="font-size:16px;">
+            <span style="font-weight:700;color:${totalBarColor};">${formatCurrencyInt(totalGastado, 'MXN')}</span>
+            <span style="color:var(--text-muted);"> / ${formatCurrencyInt(totalPresupuesto, 'MXN')}</span>
           </div>
         </div>
         <div class="progress-bar" style="height:10px;background:var(--bg-card);border-radius:5px;overflow:hidden;">
           <div class="progress-bar-fill" style="width:${totalBarWidth}%;height:100%;background:${totalBarColor};border-radius:5px;transition:width 0.4s ease;"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:6px;">
-          <span style="font-size:11px;color:var(--text-muted);">${totalPct.toFixed(1)}% utilizado</span>
-          <span style="font-size:11px;color:${totalRemaining >= 0 ? 'var(--text-secondary)' : '#ef4444'};font-weight:600;">
-            ${totalRemaining >= 0 ? 'Disponible: ' + formatCurrency(totalRemaining, 'MXN') : 'Excedido: ' + formatCurrency(Math.abs(totalRemaining), 'MXN')}
+          <span style="font-size:13px;color:var(--text-muted);">${totalPct.toFixed(1)}% utilizado</span>
+          <span style="font-size:13px;color:${totalRemaining >= 0 ? 'var(--text-secondary)' : '#ef4444'};font-weight:600;">
+            ${totalRemaining >= 0 ? 'Disponible: ' + formatCurrencyInt(totalRemaining, 'MXN') : 'Excedido: ' + formatCurrencyInt(Math.abs(totalRemaining), 'MXN')}
           </span>
         </div>
       </div>
@@ -165,8 +165,8 @@ function configurarPresupuestos() {
     rowsHTML += `
       <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color);">
         <div style="display:flex;align-items:center;gap:8px;min-width:180px;">
-          <i class="fas ${cat.icono}" style="color:${cat.color};font-size:14px;width:20px;text-align:center;"></i>
-          <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${cat.nombre}</span>
+          <i class="fas ${cat.icono}" style="color:${cat.color};font-size:17px;width:20px;text-align:center;"></i>
+          <span style="font-size:16px;font-weight:600;color:var(--text-primary);">${cat.nombre}</span>
         </div>
         <div style="flex:1;display:flex;align-items:center;gap:8px;">
           <input type="number" class="form-input" name="pres_monto_${cat.id}" value="${monto}"
@@ -183,7 +183,7 @@ function configurarPresupuestos() {
 
   var html = `
     <form onsubmit="savePresupuestos(event)">
-      <p style="color:var(--text-secondary);font-size:12px;margin-bottom:16px;">
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
         Establece el limite mensual de gasto para cada categoria. Deja en blanco o en 0 las categorias que no deseas rastrear.
       </p>
       <div style="max-height:400px;overflow-y:auto;">
@@ -285,8 +285,8 @@ function renderGastos() {
     <!-- Nota informativa -->
     <div class="card" style="margin-bottom:24px;border-left:3px solid var(--accent-amber);">
       <div style="display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:16px;"></i>
-        <span style="color:var(--text-secondary);font-size:13px;">Los gastos se registran desde <strong style="color:var(--text-primary);cursor:pointer;text-decoration:underline;" onclick="navigateTo('movimientos')">Movimientos</strong>. Aqui se muestra el analisis y visualizacion.</span>
+        <i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:19px;"></i>
+        <span style="color:var(--text-secondary);font-size:16px;">Los gastos se registran desde <strong style="color:var(--text-primary);cursor:pointer;text-decoration:underline;" onclick="navigateTo('movimientos')">Movimientos</strong>. Aqui se muestra el analisis y visualizacion.</span>
       </div>
     </div>
 
@@ -306,8 +306,8 @@ function renderGastos() {
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total del Mes:</div>
-          <div style="font-size:20px;font-weight:800;color:var(--accent-red);">${formatCurrency(totalMes, 'MXN')}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total del Mes:</div>
+          <div style="font-size:24px;font-weight:800;color:var(--accent-red);">${formatCurrencyInt(totalMes, 'MXN')}</div>
         </div>
       </div>
     </div>
@@ -315,18 +315,34 @@ function renderGastos() {
     <!-- Charts -->
     <div class="grid-2" style="margin-bottom:24px;">
       <div class="card">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion por Categoria</h3>
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion por Categoria</h3>
         <div style="height:300px;display:flex;align-items:center;justify-content:center;"><canvas id="gastosDonutChart"></canvas></div>
       </div>
       <div class="card">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Gastos Mensuales por Categoria (12 meses)</h3>
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Gastos Mensuales por Categoria (12 meses)</h3>
         <div style="height:300px;"><canvas id="gastosBarChart"></canvas></div>
       </div>
     </div>
 
+    <!-- Reporte Mensual de Gastos -->
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <h3 style="font-size:17px;font-weight:700;margin:0;color:var(--text-primary);">
+          <i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--accent-red);"></i>Reporte Mensual de Gastos
+        </h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:14px;font-weight:600;color:var(--text-secondary);">Ano:</label>
+          <select id="filterGastosMensualAnio" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:80px;" onchange="renderGastosMensualReport()">
+            ${aniosOpts}
+          </select>
+        </div>
+      </div>
+      <div id="gastosMensualReportContainer" style="overflow-x:auto;"></div>
+    </div>
+
     <!-- Tabla Gastos agrupados por categoria -->
     <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Gastos del Mes</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Gastos del Mes</h3>
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaGastos">
           <thead>
@@ -412,7 +428,7 @@ function renderGastos() {
               const val = ctx.parsed;
               const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-              return ctx.label + ': ' + formatCurrency(val, 'MXN') + ' (' + pct + '%)';
+              return ctx.label + ': ' + formatCurrencyInt(val, 'MXN') + ' (' + pct + '%)';
             },
           },
         },
@@ -487,7 +503,7 @@ function renderGastos() {
       },
       plugins: {
         legend: { labels: { color: chartFontColor, padding: 12, font: { size: 11, family: "'Plus Jakarta Sans'" }, usePointStyle: true } },
-        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); } } },
+        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); } } },
       },
     },
   });
@@ -537,24 +553,137 @@ function renderGastos() {
         <td>${formatDate(m.fecha)}</td>
         <td>${m.descripcion || '-'}</td>
         <td>${ctaNombre}</td>
-        <td style="text-align:right;">${formatCurrency(m.monto, moneda)}</td>
-        <td style="text-align:right;">${formatCurrency(montoMXN, 'MXN')}</td>
+        <td style="text-align:right;">${formatCurrencyInt(m.monto, moneda)}</td>
+        <td style="text-align:right;">${formatCurrencyInt(montoMXN, 'MXN')}</td>
       </tr>`;
     });
 
     // Subtotal row
     rowsHTML += `<tr style="background:var(--bg-card-hover);font-weight:700;">
       <td colspan="5" style="text-align:right;color:var(--text-secondary);">Subtotal ${catNombre}:</td>
-      <td style="text-align:right;color:var(--accent-red);">${formatCurrency(subtotal, 'MXN')}</td>
+      <td style="text-align:right;color:var(--accent-red);">${formatCurrencyInt(subtotal, 'MXN')}</td>
     </tr>`;
   });
 
   // Grand total row
   rowsHTML += `<tr style="background:var(--bg-base);font-weight:800;border-top:2px solid var(--border-color);">
-    <td colspan="5" style="text-align:right;color:var(--text-primary);font-size:14px;">TOTAL GASTOS:</td>
-    <td style="text-align:right;color:var(--accent-red);font-size:14px;">${formatCurrency(totalGeneral, 'MXN')}</td>
+    <td colspan="5" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>
+    <td style="text-align:right;color:var(--accent-red);font-size:17px;">${formatCurrencyInt(totalGeneral, 'MXN')}</td>
   </tr>`;
 
   tbody.innerHTML = rowsHTML;
+  renderGastosMensualReport();
   setTimeout(function() { _initSortableTables(document.getElementById('module-gastos')); }, 100);
+}
+
+/* ============================================================
+   REPORTE MENSUAL DE GASTOS  (12 columnas = meses, filas = categorias)
+   ============================================================ */
+function renderGastosMensualReport() {
+  var container = document.getElementById('gastosMensualReportContainer');
+  if (!container) return;
+
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+
+  var fAnioEl = document.getElementById('filterGastosMensualAnio');
+  var anio = fAnioEl ? parseInt(fAnioEl.value) : new Date().getFullYear();
+
+  var gastos = movimientos.filter(function(m) { return m.tipo === 'gasto'; });
+  var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Collect all categories that have gastos in this year
+  var catsConGastos = {};
+  gastos.forEach(function(m) {
+    var f = new Date(m.fecha);
+    if (f.getFullYear() === anio) {
+      var catId = m.categoria_id || 'sin_cat';
+      catsConGastos[catId] = true;
+    }
+  });
+
+  var catIds = Object.keys(catsConGastos).sort(function(a, b) {
+    var na = catMap[a] ? catMap[a].nombre : 'ZZZ';
+    var nb = catMap[b] ? catMap[b].nombre : 'ZZZ';
+    return na.localeCompare(nb);
+  });
+
+  if (catIds.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay gastos registrados en ' + anio + '.</div>';
+    return;
+  }
+
+  // Build header
+  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Categoria</th>';
+  for (var mi = 0; mi < 12; mi++) {
+    thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
+  }
+  thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th></tr>';
+
+  // Build rows
+  var totalPorMes = new Array(12).fill(0);
+  var totalGeneral = 0;
+
+  var rows = catIds.map(function(catId) {
+    var cat = catMap[catId];
+    var catNombre = cat ? cat.nombre : 'Sin Categoria';
+    var catIcono = cat ? cat.icono : 'fa-question';
+    var catColor = cat ? cat.color : '#94a3b8';
+
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
+      '<i class="fas ' + catIcono + '" style="color:' + catColor + ';margin-right:6px;font-size:12px;"></i>' + catNombre + '</td>';
+
+    var totalCat = 0;
+
+    for (var m = 0; m < 12; m++) {
+      var montoMes = 0;
+      gastos.forEach(function(g) {
+        var f = new Date(g.fecha);
+        if (f.getFullYear() === anio && f.getMonth() === m) {
+          var gCat = g.categoria_id || 'sin_cat';
+          if (gCat === catId) {
+            var cta = cuentaMap[g.cuenta_id];
+            montoMes += toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
+          }
+        }
+      });
+
+      totalCat += montoMes;
+      totalPorMes[m] += montoMes;
+
+      if (montoMes === 0) {
+        row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+      } else {
+        row += '<td style="text-align:right;color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</td>';
+      }
+    }
+
+    totalGeneral += totalCat;
+    row += '<td style="text-align:right;font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</td>';
+    row += '</tr>';
+    return row;
+  }).join('');
+
+  // Total row
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">Total</td>';
+  for (var mi = 0; mi < 12; mi++) {
+    if (totalPorMes[mi] === 0) {
+      totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+    } else {
+      totalRow += '<td style="text-align:right;font-size:14px;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalPorMes[mi], 'MXN') + '</td>';
+    }
+  }
+  totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td></tr>';
+
+  container.innerHTML =
+    '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
+
+  setTimeout(function() { _initSortableTables(container); }, 100);
 }

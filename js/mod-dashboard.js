@@ -316,7 +316,7 @@ function renderDashboard() {
           nombre: p.persona + (p.tipo === 'otorgado' ? ' (otorgado)' : ' (recibido)'),
           tipoLabel: 'Prestamo',
           tipoIcon: 'fa-handshake',
-          monto: formatCurrency(p.saldo_pendiente, p.moneda),
+          monto: formatCurrencyInt(p.saldo_pendiente, p.moneda),
           ...alerta,
         });
       }
@@ -336,11 +336,11 @@ function renderDashboard() {
         // Remanente = valor_compra - enganche - (total_mensualidades * monto_mensualidad)
         var prRemanente = Math.max(0, (pr.valor_compra || 0) - prEnganche - ((pr.mensualidades_total || 0) * prMontoMens));
         var prSaldoTotal = prTotalMensualidades + prRemanente;
-        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrency(prMontoMens, pr.moneda);
+        var prMontoInfo = prRestantes + ' mensualidad' + (prRestantes !== 1 ? 'es' : '') + ' x ' + formatCurrencyInt(prMontoMens, pr.moneda);
         if (prRemanente > 0) {
-          prMontoInfo += '<br>Remanente al termino: ' + formatCurrency(prRemanente, pr.moneda);
+          prMontoInfo += '<br>Remanente al termino: ' + formatCurrencyInt(prRemanente, pr.moneda);
         }
-        prMontoInfo += '<br><span style="font-weight:700;">Saldo total: ' + formatCurrency(prSaldoTotal, pr.moneda) + '</span>';
+        prMontoInfo += '<br><span style="font-weight:700;">Saldo total: ' + formatCurrencyInt(prSaldoTotal, pr.moneda) + '</span>';
         alertasVencimiento.push({
           nombre: pr.nombre,
           tipoLabel: 'Preventa',
@@ -458,7 +458,7 @@ function renderDashboard() {
       tipoLabel: 'Preventa',
       tipoBadge: 'badge-amber',
       monto: montoPendiente,
-      detalle: restantes + ' mensualidades restantes | Pagado: ' + formatCurrency(pagado, pr.moneda || 'MXN') + ' de ' + formatCurrency(pr.valor_compra, pr.moneda || 'MXN'),
+      detalle: restantes + ' mensualidades restantes | Pagado: ' + formatCurrencyInt(pagado, pr.moneda || 'MXN') + ' de ' + formatCurrencyInt(pr.valor_compra, pr.moneda || 'MXN'),
     });
   });
 
@@ -472,7 +472,7 @@ function renderDashboard() {
       <tr>
         <td style="font-weight:600;color:var(--text-primary);">${r.nombre}</td>
         <td><span class="badge ${r.tipoBadge}">${r.tipoLabel}</span></td>
-        <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(r.monto, 'MXN')}</td>
+        <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrencyInt(r.monto, 'MXN')}</td>
         <td style="color:var(--text-muted);font-size:12px;">${r.detalle}</td>
       </tr>
     `).join('');
@@ -487,12 +487,12 @@ function renderDashboard() {
           <div>
             <div class="grid-2" style="margin-bottom:16px;">
               <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:13px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Deuda</div>
-                <div style="font-size:26px;font-weight:800;color:var(--accent-red);">${formatCurrency(totalDeuda, 'MXN')}</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Deuda</div>
+                <div style="font-size:24px;font-weight:800;color:var(--accent-red);">${formatCurrencyInt(totalDeuda, 'MXN')}</div>
               </div>
               <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:13px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Deuda / Patrimonio</div>
-                <div style="font-size:26px;font-weight:800;color:${deudaColor};">${ratioDeudaPatrimonio.toFixed(1)}%</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Deuda / Patrimonio</div>
+                <div style="font-size:24px;font-weight:800;color:${deudaColor};">${ratioDeudaPatrimonio.toFixed(1)}%</div>
                 <div style="margin-top:6px;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;">
                   <div style="height:100%;width:${Math.min(ratioDeudaPatrimonio, 100)}%;background:${deudaColor};border-radius:3px;"></div>
                 </div>
@@ -605,7 +605,7 @@ function renderDashboard() {
             '<span style="width:10px;height:10px;border-radius:50%;background:' + color + ';display:inline-block;"></span>' +
             label +
           '</span>' +
-          '<span style="font-size:11px;color:var(--text-muted);">' + formatCurrency(val, 'MXN') + ' (' + pct.toFixed(1) + '%)</span>' +
+          '<span style="font-size:11px;color:var(--text-muted);">' + formatCurrencyInt(val, 'MXN') + ' (' + pct.toFixed(1) + '%)</span>' +
         '</div>' +
         '<div style="height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;">' +
           '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 0.3s;"></div>' +
@@ -715,10 +715,10 @@ function renderDashboard() {
           <i class="fas fa-landmark" style="color:var(--accent-blue);font-size:17px;"></i>
         </div>
         <div style="min-width:0;flex:1;">
-          <span style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
-          <div style="font-size:26px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrency(patrimonioTotal, 'MXN')}</div>
+          <span style="font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
+          <div style="font-size:24px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrencyInt(patrimonioTotal, 'MXN')}</div>
         </div>
-        <div style="color:var(--text-primary);font-size:13px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+        <div style="color:var(--text-primary);font-size:12px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
       </div>
       <!-- Ultimos 15 dias -->
       ${ultimos15DiasHTML}
@@ -733,40 +733,40 @@ function renderDashboard() {
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-university" style="color:var(--accent-blue);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Cuentas Bancarias</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiBancarias, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">${kpiBancariasCount} cuenta${kpiBancariasCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(kpiBancarias, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">${kpiBancariasCount} cuenta${kpiBancariasCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesgloseCuentas('inversion')">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Inversiones</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiInversiones, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">${kpiInversionesCount} producto${kpiInversionesCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(kpiInversiones, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">${kpiInversionesCount} producto${kpiInversionesCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesglosePropiedades()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-building" style="color:var(--accent-amber);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Propiedades</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Propiedades</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPropiedades, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">${kpiPropiedadesCount} propiedad${kpiPropiedadesCount !== 1 ? 'es' : ''} <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(kpiPropiedades, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">${kpiPropiedadesCount} propiedad${kpiPropiedadesCount !== 1 ? 'es' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesglosePrestamos()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-handshake" style="color:var(--accent-purple);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Prestamos</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Prestamos</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--text-primary);">${formatCurrency(kpiPrestamosNeto, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">${kpiPrestamosCount} prestamo${kpiPrestamosCount !== 1 ? 's' : ''} activo${kpiPrestamosCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div style="font-size:20px;font-weight:800;color:var(--text-primary);">${formatCurrencyInt(kpiPrestamosNeto, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">${kpiPrestamosCount} prestamo${kpiPrestamosCount !== 1 ? 's' : ''} activo${kpiPrestamosCount !== 1 ? 's' : ''} <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;" id="dashboardKPIGrid2">
@@ -775,40 +775,40 @@ function renderDashboard() {
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${formatCurrency(totalDeuda, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">${ratioDeudaPatrimonio.toFixed(1)}% del patrimonio</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent-red);">${formatCurrencyInt(totalDeuda, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">${ratioDeudaPatrimonio.toFixed(1)}% del patrimonio</div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesgloseRendimiento()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento ${periodoLabel}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento ${periodoLabel}</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:var(--accent-amber);">${formatCurrency(rendPeriodo, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--accent-amber);margin-top:2px;font-weight:600;">${rendPromedio.toFixed(2)}% anual prom. <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent-amber);">${formatCurrencyInt(rendPeriodo, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--accent-amber);margin-top:2px;font-weight:600;">${rendPromedio.toFixed(2)}% anual prom. <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesgloseGastos()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-receipt" style="color:var(--accent-red);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Gastos ${periodoLabel}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Gastos ${periodoLabel}</span>
         </div>
-        <div class="text-red" style="font-size:22px;font-weight:800;">${formatCurrency(gastosPeriodo, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">Rend: <span class="text-green">${formatCurrency(rendPeriodo, 'MXN')}</span></div>
+        <div class="text-red" style="font-size:20px;font-weight:800;">${formatCurrencyInt(gastosPeriodo, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">Rend: <span class="text-green">${formatCurrencyInt(rendPeriodo, 'MXN')}</span></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesgloseBalance()">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-balance-scale" style="color:var(--accent-purple);font-size:14px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
         </div>
-        <div class="${kpiColor(balanceNeto)}" style="font-size:22px;font-weight:800;">${formatCurrency(balanceNeto, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-primary);margin-top:2px;">Rend + Ing - Gastos <i class="fas fa-chevron-right" style="font-size:10px;margin-left:3px;"></i></div>
+        <div class="${kpiColor(balanceNeto)}" style="font-size:20px;font-weight:800;">${formatCurrencyInt(balanceNeto, 'MXN')}</div>
+        <div style="font-size:11px;color:var(--text-primary);margin-top:2px;">Rend + Ing - Gastos <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
       </div>
     </div>
 
@@ -887,7 +887,7 @@ function renderDashboard() {
               return `<tr>
                 <td style="font-weight:600;color:var(--text-primary);">${c.nombre}</td>
                 <td><span class="badge ${tipoBadge}">${tipoLabel}</span></td>
-                <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrency(c.valorMXN, 'MXN')}</td>
+                <td style="text-align:right;font-weight:600;color:var(--text-primary);">${formatCurrencyInt(c.valorMXN, 'MXN')}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -914,7 +914,7 @@ function renderDashboard() {
               return `<tr>
                 <td style="white-space:nowrap;">${formatDate(mv.fecha)}</td>
                 <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mv.descripcion}">${mv.descripcion}</td>
-                <td style="text-align:right;font-weight:600;${esTransf ? 'color:var(--accent-purple);' : ''}" class="${montoClass}">${signo}${formatCurrency(mv.monto, mv.moneda)}</td>
+                <td style="text-align:right;font-weight:600;${esTransf ? 'color:var(--accent-purple);' : ''}" class="${montoClass}">${signo}${formatCurrencyInt(mv.monto, mv.moneda)}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -937,7 +937,7 @@ function renderDashboard() {
               const signo = r.monto >= 0 ? '+' : '';
               return `<tr>
                 <td style="font-weight:600;color:var(--text-primary);">${r.nombre}</td>
-                <td style="text-align:right;font-weight:600;color:${color};">${signo}${formatCurrency(r.monto, 'MXN')}</td>
+                <td style="text-align:right;font-weight:600;color:${color};">${signo}${formatCurrencyInt(r.monto, 'MXN')}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -1032,7 +1032,7 @@ function renderDashboard() {
               const val = ctx.parsed;
               const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-              return ctx.label + ': ' + formatCurrency(val, 'MXN') + ' (' + pct + '%)';
+              return ctx.label + ': ' + formatCurrencyInt(val, 'MXN') + ' (' + pct + '%)';
             },
           },
         },
@@ -1108,12 +1108,12 @@ function renderDashboard() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          titleFont: { size: 17, weight: 'bold', family: "'Plus Jakarta Sans'" },
-          bodyFont: { size: 17, family: "'Plus Jakarta Sans'" },
-          padding: 17,
-          boxPadding: 8,
+          titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
+          padding: 15,
+          boxPadding: 7,
           callbacks: {
-            label: function(ctx) { return 'Patrimonio: ' + formatCurrency(ctx.parsed.y, 'MXN'); },
+            label: function(ctx) { return 'Patrimonio: ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
           },
         },
       },
@@ -1238,12 +1238,12 @@ function renderDashboard() {
           labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
         tooltip: {
-          titleFont: { size: 17, weight: 'bold', family: "'Plus Jakarta Sans'" },
-          bodyFont: { size: 17, family: "'Plus Jakarta Sans'" },
-          padding: 17,
-          boxPadding: 8,
+          titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
+          padding: 15,
+          boxPadding: 7,
           callbacks: {
-            label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y, 'MXN'); },
+            label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
           },
         },
       },
@@ -1283,7 +1283,7 @@ function renderDashboard() {
                   const val = ctx.parsed;
                   const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
                   const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                  return ctx.label + ': ' + formatCurrency(val, 'MXN') + ' (' + pct + '%)';
+                  return ctx.label + ': ' + formatCurrencyInt(val, 'MXN') + ' (' + pct + '%)';
                 },
               },
             },
@@ -1424,7 +1424,7 @@ function renderResumenComparativo() {
       }
     }
     var prefix = diff > 0 ? '+' : (diff < 0 ? '-' : '');
-    return { diffHTML: icon + prefix + formatCurrency(Math.abs(diff), 'MXN'), pctHTML: icon + formatPct(pct), color: color };
+    return { diffHTML: icon + prefix + formatCurrencyInt(Math.abs(diff), 'MXN'), pctHTML: icon + formatPct(pct), color: color };
   }
 
   var tbodyHTML = conceptos.map(function(c) {
@@ -1433,12 +1433,12 @@ function renderResumenComparativo() {
 
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;">' + c.nombre + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.mesPrevio, 'MXN') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.mesActual, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrencyInt(c.mesPrevio, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrencyInt(c.mesActual, 'MXN') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:' + mDiff.color + ';white-space:nowrap;">' + mDiff.diffHTML + '</td>' +
       '<td style="text-align:right;font-weight:700;color:' + mDiff.color + ';white-space:nowrap;">' + mDiff.pctHTML + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;border-left:2px solid var(--border-color);">' + formatCurrency(c.anioPrevio, 'MXN') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrency(c.anioActual, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;border-left:2px solid var(--border-color);">' + formatCurrencyInt(c.anioPrevio, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrencyInt(c.anioActual, 'MXN') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:' + aDiff.color + ';white-space:nowrap;">' + aDiff.diffHTML + '</td>' +
       '<td style="text-align:right;font-weight:700;color:' + aDiff.color + ';white-space:nowrap;">' + aDiff.pctHTML + '</td>' +
     '</tr>';
@@ -1494,9 +1494,9 @@ function renderPatrimonioMensualReport(anioParam) {
     return '$' + n.toLocaleString('es-MX');
   }
 
-  // Font size for this report (20% larger for readability)
-  var FS = '16px';
-  var FS_HEAD = '17px';
+  // Font size for this report
+  var FS = '14px';
+  var FS_HEAD = '15px';
 
   // Pre-sort historial per cuenta
   var cuentaHistSorted = {};
@@ -1521,6 +1521,7 @@ function renderPatrimonioMensualReport(anioParam) {
 
   // Build header — only show months up to maxMes
   var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Concepto</th>';
+  thead += '<th style="text-align:center;min-width:50px;font-size:' + FS + ';">Mon.</th>';
   for (var m = 0; m <= maxMes; m++) {
     thead += '<th style="text-align:right;min-width:85px;font-size:' + FS + ';">' + mesesCortos[m] + '</th>';
   }
@@ -1538,7 +1539,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var moneda = cta.moneda || 'MXN';
     var sortedHist = cuentaHistSorted[cta.id] || [];
     var saldoRealMXN = toMXN(_calcSaldoReal(cta), moneda, tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + ' <span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
     var lastVal = 0;
 
     for (var m = 0; m <= maxMes; m++) {
@@ -1567,7 +1568,7 @@ function renderPatrimonioMensualReport(anioParam) {
   });
 
   // Subtotal cuentas
-  rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(59,130,246,0.05);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Cuentas</td>';
+  rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(59,130,246,0.05);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Cuentas</td><td></td>';
   var lastSubCuentas = 0;
   for (var m = 0; m <= maxMes; m++) {
     if (subtotalCuentasPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
@@ -1580,7 +1581,8 @@ function renderPatrimonioMensualReport(anioParam) {
   var subtotalPropPorMes = new Array(numMeses).fill(0);
   propActivas.forEach(function(prop) {
     var valMXN = toMXN(prop.valor_actual || prop.valor_compra || 0, prop.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td>';
+    var propMoneda = prop.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(propMoneda) + '" style="font-size:9px;padding:1px 5px;">' + propMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalPropPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
@@ -1591,7 +1593,7 @@ function renderPatrimonioMensualReport(anioParam) {
   });
 
   if (propActivas.length > 0) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(6,182,212,0.05);"><td style="position:sticky;left:0;background:rgba(6,182,212,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Propiedades</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(6,182,212,0.05);"><td style="position:sticky;left:0;background:rgba(6,182,212,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-blue);">Subtotal Propiedades</td><td></td>';
     var lastSubProp = 0;
     for (var m = 0; m <= maxMes; m++) {
       if (subtotalPropPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
@@ -1606,7 +1608,8 @@ function renderPatrimonioMensualReport(anioParam) {
   prestOtorgados.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td>';
+    var pMoneda = p.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(pMoneda) + '" style="font-size:9px;padding:1px 5px;">' + pMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalOtorgPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
@@ -1617,7 +1620,7 @@ function renderPatrimonioMensualReport(anioParam) {
   });
 
   if (prestOtorgados.length > 0) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(132,204,22,0.05);"><td style="position:sticky;left:0;background:rgba(132,204,22,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-green);">Subtotal Otorgados</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(132,204,22,0.05);"><td style="position:sticky;left:0;background:rgba(132,204,22,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-green);">Subtotal Otorgados</td><td></td>';
     var lastSubOtorg = 0;
     for (var m = 0; m <= maxMes; m++) {
       if (subtotalOtorgPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
@@ -1639,7 +1642,8 @@ function renderPatrimonioMensualReport(anioParam) {
   prestRecibidos.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td>';
+    var dMoneda = p.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(dMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
@@ -1652,7 +1656,8 @@ function renderPatrimonioMensualReport(anioParam) {
   preventasPrest.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td>';
+    var dpMoneda = p.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(dpMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dpMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
@@ -1668,7 +1673,8 @@ function renderPatrimonioMensualReport(anioParam) {
     var pendiente = Math.max(0, (pr.valor_compra || 0) - pagado);
     if (pendiente <= 0) return;
     var valMXN = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td>';
+    var prMoneda = pr.moneda || 'MXN';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(prMoneda) + '" style="font-size:9px;padding:1px 5px;">' + prMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
@@ -1679,7 +1685,7 @@ function renderPatrimonioMensualReport(anioParam) {
   });
 
   if (hayDeuda) {
-    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(239,68,68,0.05);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-red);">Subtotal Deuda</td>';
+    rows += '<tr style="font-weight:700;border-top:1px solid var(--border-color);background:rgba(239,68,68,0.05);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.05);z-index:1;font-size:' + FS + ';color:var(--accent-red);">Subtotal Deuda</td><td></td>';
     var lastSubDeuda = 0;
     for (var m = 0; m <= maxMes; m++) {
       if (subtotalDeudaPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);font-size:' + FS + ';">\u2014</td>'; }
@@ -1689,7 +1695,7 @@ function renderPatrimonioMensualReport(anioParam) {
   }
 
   // -- TOTAL PATRIMONIO NETO --
-  rows += '<tr style="font-weight:800;border-top:2px solid var(--border-color);background:rgba(59,130,246,0.08);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.08);z-index:1;font-size:' + FS_HEAD + ';color:var(--text-primary);">PATRIMONIO NETO</td>';
+  rows += '<tr style="font-weight:800;border-top:2px solid var(--border-color);background:rgba(59,130,246,0.08);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.08);z-index:1;font-size:' + FS_HEAD + ';color:var(--text-primary);">PATRIMONIO NETO</td><td></td>';
   var lastTotal = 0;
   for (var m = 0; m <= maxMes; m++) {
     if (totalPorMes[m] === 0) { rows += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>'; }
@@ -1789,9 +1795,9 @@ function mostrarDesgloseRendimiento() {
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + r.nombre + (r.count > 0 ? '<br><span style="font-size:10px;color:var(--text-muted);">' + r.count + ' cierre' + (r.count > 1 ? 's' : '') + '</span>' : '') + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.montoOrig, r.moneda) + '</td>' +
-      '<td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(r.monto, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrencyInt(r.montoOrig, r.moneda) + '</td>' +
+      '<td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrencyInt(r.monto, 'MXN') + '</td>' +
       '<td style="text-align:right;color:' + tasaColor + ';font-weight:600;">' + (r.tasaAnual >= 0 ? '+' : '') + r.tasaAnual.toFixed(2) + '%</td>' +
       '<td style="text-align:right;color:var(--text-muted);">' + peso + '%</td>' +
     '</tr>';
@@ -1801,7 +1807,7 @@ function mostrarDesgloseRendimiento() {
   rowsHTML += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td>Total</td>' +
     '<td></td><td></td>' +
-    '<td style="text-align:right;color:var(--accent-amber);">' + totalSign + formatCurrency(total, 'MXN') + '</td>' +
+    '<td style="text-align:right;color:var(--accent-amber);">' + totalSign + formatCurrencyInt(total, 'MXN') + '</td>' +
     '<td></td>' +
     '<td style="text-align:right;color:var(--text-muted);">100%</td>' +
   '</tr>';
@@ -1964,11 +1970,11 @@ function _buildUltimos15Dias(movimientos, tiposCambio) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <div>
           <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent-green);">+${formatCurrency(ingresosRecientes, 'MXN')}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent-green);">+${formatCurrencyInt(ingresosRecientes, 'MXN')}</div>
         </div>
         <div>
           <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent-red);">-${formatCurrency(gastosRecientes, 'MXN')}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent-red);">-${formatCurrencyInt(gastosRecientes, 'MXN')}</div>
         </div>
         <div>
           <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Movimientos</div>
@@ -2062,7 +2068,7 @@ function buildResumenPanel(movimientos, cuentas, prestamos, propiedades) {
     var pagosDetail = pagosPreventa.map(function(pp) {
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border-color);">' +
         '<span style="font-weight:600;color:var(--text-primary);">' + pp.nombre + '</span>' +
-        '<span style="font-weight:700;color:var(--accent-red);">' + formatCurrency(pp.monto, pp.moneda) + ' <span style="font-size:10px;color:var(--text-muted);">en ' + pp.dias + ' dia' + (pp.dias !== 1 ? 's' : '') + '</span></span>' +
+        '<span style="font-weight:700;color:var(--accent-red);">' + formatCurrencyInt(pp.monto, pp.moneda) + ' <span style="font-size:10px;color:var(--text-muted);">en ' + pp.dias + ' dia' + (pp.dias !== 1 ? 's' : '') + '</span></span>' +
       '</div>';
     }).join('');
     pendingItems.push({
@@ -2203,15 +2209,15 @@ function mostrarDesgloseCuentas(tipo) {
       '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
       '<td>' + (instMap[c.institucion_id] || '\u2014') + '</td>' +
       '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
-      '<td style="text-align:right;">' + formatCurrency(saldoReal, c.moneda) + '</td>' +
-      '<td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td>' +
-      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(saldoReal, c.moneda) + '</td>' +
+      '<td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
     '</tr>';
   }).join('');
 
   var tipoLabel = tipo === 'debito' ? 'Cuentas Bancarias' : tipo === 'inversion' ? 'Inversiones' : tipo;
   var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
-    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="5">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="5">Total</td><td style="text-align:right;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: ' + tipoLabel, html);
   var mc = document.querySelector('.modal-content');
@@ -2231,13 +2237,13 @@ function mostrarDesglosePropiedades() {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + pr.nombre + '</td>' +
       '<td><span class="badge ' + tipoBadge + '">' + (pr.tipo || 'escriturado') + '</span></td>' +
-      '<td style="text-align:right;">' + formatCurrency(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td>' +
-      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
     '</tr>';
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
-    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: Propiedades', html);
   var mc = document.querySelector('.modal-content');
@@ -2257,15 +2263,15 @@ function mostrarDesglosePrestamos() {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + p.persona + '</td>' +
       '<td><span class="badge ' + tipoBadge + '">' + p.tipo + '</span></td>' +
-      '<td style="text-align:right;">' + formatCurrency(p.saldo_pendiente, p.moneda) + '</td>' +
-      '<td style="text-align:right;font-weight:600;">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(p.saldo_pendiente, p.moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
     '</tr>';
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
-    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Otorgados</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrency(totalOtorgados, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td colspan="3">Recibidos</td><td style="text-align:right;color:var(--accent-red);">' + formatCurrency(totalRecibidos, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td colspan="3">Neto</td><td style="text-align:right;">' + formatCurrency(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Otorgados</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td colspan="3">Recibidos</td><td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td colspan="3">Neto</td><td style="text-align:right;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: Prestamos', html);
   var mc = document.querySelector('.modal-content');
@@ -2295,7 +2301,7 @@ function mostrarDesgloseGastos() {
     var mon = mv.moneda || (cta ? cta.moneda : 'MXN');
     var valMXN = toMXN(mv.monto, mon, tiposCambio);
     total += valMXN;
-    return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrency(mv.monto, mon) + '</td></tr>';
+    return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrencyInt(mv.monto, mon) + '</td></tr>';
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + '</tbody></table>' +
@@ -2333,10 +2339,10 @@ function mostrarDesgloseBalance() {
   var balance = rendPeriodo + ingresos - gastos;
 
   var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Rendimientos</div><div style="font-size:22px;font-weight:800;color:var(--accent-green);">+' + formatCurrency(rendPeriodo, 'MXN') + '</div></div>' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Ingresos</div><div style="font-size:22px;font-weight:800;color:var(--accent-green);">+' + formatCurrency(ingresos, 'MXN') + '</div></div>' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Gastos</div><div style="font-size:22px;font-weight:800;color:var(--accent-red);">-' + formatCurrency(gastos, 'MXN') + '</div></div>' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Balance Neto</div><div style="font-size:22px;font-weight:800;color:' + (balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + formatCurrency(balance, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Rendimientos</div><div style="font-size:20px;font-weight:800;color:var(--accent-green);">+' + formatCurrencyInt(rendPeriodo, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Ingresos</div><div style="font-size:20px;font-weight:800;color:var(--accent-green);">+' + formatCurrencyInt(ingresos, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Gastos</div><div style="font-size:20px;font-weight:800;color:var(--accent-red);">-' + formatCurrencyInt(gastos, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Balance Neto</div><div style="font-size:20px;font-weight:800;color:' + (balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + formatCurrencyInt(balance, 'MXN') + '</div></div>' +
   '</div>' +
   '<div style="font-size:14px;color:var(--text-primary);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Balance = Rendimientos + Ingresos - Gastos</div>';
 
@@ -2361,7 +2367,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   var totalCuentas = 0, totalPropiedades = 0, totalOtorgados = 0, totalDeuda = 0;
 
   // -- Cuentas --
-  html += '<div style="margin-bottom:16px;"><div style="font-size:16px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
+  html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:8px;"><i class="fas fa-wallet" style="margin-right:6px;"></i>Cuentas</div>';
   html += '<table class="data-table sortable-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
   cuentas.filter(function(c) { return c.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(c) {
     var moneda = c.moneda || 'MXN';
@@ -2388,13 +2394,13 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
 
     totalCuentas += valMXN;
     var tcCell = moneda !== 'MXN' ? '$' + tc.toFixed(4) : '—';
-    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:12px;">' + c.tipo + '</span></td><td><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:12px;">' + moneda + '</span></td><td style="text-align:right;">' + formatCurrencyInt(sFinal, moneda) + '</td><td style="text-align:right;color:var(--text-primary);font-size:13px;font-weight:600;">' + tcCell + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
+    html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:12px;">' + c.tipo + '</span></td><td><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:12px;">' + moneda + '</span></td><td style="text-align:right;">' + formatCurrencyInt(sFinal, moneda) + '</td><td style="text-align:right;color:var(--text-primary);font-size:12px;font-weight:600;">' + tcCell + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
   });
   html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="5">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrencyInt(totalCuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
   // -- Propiedades --
   if (propiedades.length > 0) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:16px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-building" style="margin-right:6px;"></i>Propiedades</div>';
+    html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-building" style="margin-right:6px;"></i>Propiedades</div>';
     html += '<table class="data-table sortable-table"><thead><tr><th>Propiedad</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     propiedades.slice().sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(pr) {
       var valMXN = toMXN(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN', tiposCambio, periodo);
@@ -2407,7 +2413,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   // -- Prestamos otorgados --
   var otorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   if (otorgados.length > 0) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:16px;font-weight:700;color:var(--accent-amber);margin-bottom:8px;"><i class="fas fa-hand-holding-usd" style="margin-right:6px;"></i>Prestamos Otorgados</div>';
+    html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-amber);margin-bottom:8px;"><i class="fas fa-hand-holding-usd" style="margin-right:6px;"></i>Prestamos Otorgados</div>';
     html += '<table class="data-table sortable-table"><thead><tr><th>Persona</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     otorgados.forEach(function(p) {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio, periodo);
@@ -2421,7 +2427,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   var recibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventas = propiedades.filter(function(pr) { return pr.tipo === 'preventa'; });
   if (recibidos.length > 0 || preventas.length > 0) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:16px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Deuda</div>';
+    html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>Deuda</div>';
     html += '<table class="data-table sortable-table"><thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>';
     recibidos.forEach(function(p) {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio, periodo);
@@ -2442,13 +2448,13 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   // -- Total Patrimonio Neto --
   var patrimonioNeto = totalCuentas + totalPropiedades + totalOtorgados - totalDeuda;
   html += '<div style="padding:16px;border-radius:10px;background:var(--bg-base);margin-top:16px;">' +
-    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:16px;">' +
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:14px;">' +
     '<div style="color:var(--text-primary);">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalCuentas, 'MXN') + '</div>' +
     (totalPropiedades > 0 ? '<div style="color:var(--text-primary);">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</div>' : '') +
     (totalOtorgados > 0 ? '<div style="color:var(--text-primary);">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</div>' : '') +
     (totalDeuda > 0 ? '<div style="color:var(--text-primary);">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</div>' : '') +
     '</div>' +
-    '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:22px;font-weight:800;">' +
+    '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:800;">' +
     '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrencyInt(patrimonioNeto, 'MXN') + '</span>' +
     '</div></div>';
 
@@ -2480,7 +2486,7 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
     var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
-    rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>');
+    rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>');
   });
 
   // Gastos for this period
@@ -2493,11 +2499,11 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
     var mon = mv.moneda || (cta ? cta.moneda : 'MXN');
     var valMXN = toMXN(mv.monto, mon, tiposCambio);
     gastosTotal += valMXN;
-    gastosRows.push('<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion || '') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrency(mv.monto, mon) + '</td></tr>');
+    gastosRows.push('<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion || '') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrencyInt(mv.monto, mon) + '</td></tr>');
   });
 
   var html = '';
-  html += '<div style="margin-bottom:16px;"><div style="font-size:16px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-chart-line" style="margin-right:6px;"></i>Rendimientos: <span style="font-size:19px;">' + formatCurrency(rendTotal, 'MXN') + '</span></div>';
+  html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-chart-line" style="margin-right:6px;"></i>Rendimientos: <span style="font-size:17px;">' + formatCurrencyInt(rendTotal, 'MXN') + '</span></div>';
   if (rendRows.length > 0) {
     html += '<table class="data-table sortable-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rendRows.join('') + '</tbody></table>';
   } else {
@@ -2505,7 +2511,7 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
   }
   html += '</div>';
 
-  html += '<div><div style="font-size:16px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-receipt" style="margin-right:6px;"></i>Gastos: <span style="font-size:19px;">' + formatCurrency(gastosTotal, 'MXN') + '</span></div>';
+  html += '<div><div style="font-size:14px;font-weight:700;color:var(--accent-red);margin-bottom:8px;"><i class="fas fa-receipt" style="margin-right:6px;"></i>Gastos: <span style="font-size:17px;">' + formatCurrencyInt(gastosTotal, 'MXN') + '</span></div>';
   if (gastosRows.length > 0) {
     html += '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + gastosRows.join('') + '</tbody></table>';
   } else {
@@ -2539,12 +2545,12 @@ function _mostrarDesgloseRendPeriodo(periodo, label) {
     var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
-    return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:11px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(valMXN, 'MXN') + '</td></tr>';
+    return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
   }).join('');
 
   var totalColor = total >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   var html = '<table class="data-table sortable-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
-    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td>Total</td><td></td><td></td><td style="text-align:right;color:' + totalColor + ';">' + formatCurrency(total, 'MXN') + '</td></tr></tfoot></table>';
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td>Total</td><td></td><td></td><td style="text-align:right;color:' + totalColor + ';">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 
   if (rendFiltered.length === 0) {
     html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay rendimientos registrados para este periodo.</div>';

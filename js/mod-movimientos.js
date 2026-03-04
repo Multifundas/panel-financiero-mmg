@@ -45,35 +45,35 @@ function renderMovimientos() {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
       <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('ingreso')">
         <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:14px;"></i>
-          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
+          <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
         </div>
-        <div id="movSumIngresos" style="font-size:18px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrency(totalIngresos, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div id="movSumIngresos" style="font-size:22px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrencyInt(totalIngresos, 'MXN')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('rendimiento')">
         <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:14px;"></i>
-          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
+          <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
         </div>
-        <div id="movSumRendimientos" style="font-size:18px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrency(totalRendimientos, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div id="movSumRendimientos" style="font-size:22px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrencyInt(totalRendimientos, 'MXN')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('gasto')">
         <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:14px;"></i>
-          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
+          <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
         </div>
-        <div id="movSumGastos" style="font-size:18px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrency(totalGastos, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div id="movSumGastos" style="font-size:22px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrencyInt(totalGastos, 'MXN')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;margin-bottom:0;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:14px;"></i>
-          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
+          <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
         </div>
-        <div id="movSumBalance" style="font-size:18px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:4px;">${(balance >= 0 ? '+' : '') + formatCurrency(balance, 'MXN')}</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
+        <div id="movSumBalance" style="font-size:22px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:4px;">${(balance >= 0 ? '+' : '') + formatCurrencyInt(balance, 'MXN')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
       </div>
     </div>
 
@@ -106,28 +106,28 @@ function renderMovimientos() {
         <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;flex:1;min-width:120px;" oninput="filterMovimientos()">
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:11px;flex:1;min-width:70px;">
+        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:13px;flex:1;min-width:70px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
         </button>
-        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:11px;flex:1;min-width:60px;">
+        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:13px;flex:1;min-width:60px;">
           <i class="fas fa-file-pdf" style="margin-right:3px;color:#ef4444;"></i>PDF
         </button>
-        <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:11px;flex:1;min-width:90px;">
+        <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:13px;flex:1;min-width:90px;">
           <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
         </button>
-        <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:11px;flex:1;min-width:100px;">
+        <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:13px;flex:1;min-width:100px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Carga Masiva
         </button>
-        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:11px;flex:1;min-width:60px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
+        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:13px;flex:1;min-width:60px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
           <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
         </button>
-        <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:11px;flex:1;min-width:110px;border-color:var(--accent-purple);color:var(--accent-purple);">
+        <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:13px;flex:1;min-width:110px;border-color:var(--accent-purple);color:var(--accent-purple);">
           <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Transferencia
         </button>
-        <button class="btn btn-secondary" onclick="cierreMensual()" style="padding:5px 10px;font-size:11px;flex:1;min-width:80px;border-color:var(--accent-green);color:var(--accent-green);">
+        <button class="btn btn-secondary" onclick="cierreMensual()" style="padding:5px 10px;font-size:13px;flex:1;min-width:80px;border-color:var(--accent-green);color:var(--accent-green);">
           <i class="fas fa-calendar-check" style="margin-right:3px;"></i>Cierre
         </button>
-        <button class="btn btn-primary" onclick="editMovimiento(null)" style="padding:5px 10px;font-size:11px;flex:1;min-width:80px;">
+        <button class="btn btn-primary" onclick="editMovimiento(null)" style="padding:5px 10px;font-size:13px;flex:1;min-width:80px;">
           <i class="fas fa-plus" style="margin-right:3px;"></i>Nuevo
         </button>
       </div>
@@ -136,7 +136,7 @@ function renderMovimientos() {
     <!-- Tabla de Movimientos -->
     <div class="card" style="padding:8px 12px;">
       <div style="overflow-x:auto;">
-        <table class="data-table sortable-table" id="tablaMovimientos" style="font-size:12px;">
+        <table class="data-table sortable-table" id="tablaMovimientos" style="font-size:14px;">
           <thead>
             <tr>
               <th style="width:30px;" data-no-sort="true"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
@@ -245,11 +245,11 @@ function filterMovimientos() {
   const elGastos = document.getElementById('movSumGastos');
   const elRendimientos = document.getElementById('movSumRendimientos');
   const elBalance = document.getElementById('movSumBalance');
-  if (elIngresos) elIngresos.textContent = formatCurrency(sumIngresos, 'MXN');
-  if (elRendimientos) elRendimientos.textContent = formatCurrency(sumRendimientos, 'MXN');
-  if (elGastos) elGastos.textContent = formatCurrency(sumGastos, 'MXN');
+  if (elIngresos) elIngresos.textContent = formatCurrencyInt(sumIngresos, 'MXN');
+  if (elRendimientos) elRendimientos.textContent = formatCurrencyInt(sumRendimientos, 'MXN');
+  if (elGastos) elGastos.textContent = formatCurrencyInt(sumGastos, 'MXN');
   if (elBalance) {
-    elBalance.textContent = (sumBalance >= 0 ? '+' : '') + formatCurrency(sumBalance, 'MXN');
+    elBalance.textContent = (sumBalance >= 0 ? '+' : '') + formatCurrencyInt(sumBalance, 'MXN');
     elBalance.style.color = sumBalance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   }
 
@@ -261,7 +261,7 @@ function filterMovimientos() {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
-          <i class="fas fa-search" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
+          <i class="fas fa-search" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No se encontraron movimientos con los filtros aplicados.
         </td>
       </tr>`;
@@ -284,7 +284,7 @@ function filterMovimientos() {
     const montoColor = esTransferencia ? 'var(--accent-purple)' : (m.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)');
 
     // Property link badge
-    const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:9px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
+    const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:11px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
 
     return `
       <tr>
@@ -294,12 +294,12 @@ function filterMovimientos() {
         <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
         <td>${cuentaNombre}</td>
         <td>${catNombre}</td>
-        <td style="text-align:right;font-weight:600;color:${montoColor};">${signo}${formatCurrency(m.monto, moneda)}</td>
+        <td style="text-align:right;font-weight:600;color:${montoColor};">${signo}${formatCurrencyInt(m.monto, moneda)}</td>
         <td style="text-align:center;">
-          <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;margin-right:4px;" onclick="editMovimiento('${m.id}')">
+          <button class="btn btn-secondary" style="padding:5px 10px;font-size:13px;margin-right:4px;" onclick="editMovimiento('${m.id}')">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deleteMovimiento('${m.id}')">
+          <button class="btn btn-danger" style="padding:5px 10px;font-size:13px;" onclick="deleteMovimiento('${m.id}')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -401,7 +401,7 @@ function editMovimiento(id) {
           <option value="">No asociar</option>
           ${propOpciones}
         </select>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
       </div>
 
       <div class="form-group">
@@ -596,9 +596,9 @@ function deleteMovimiento(id) {
     });
   }
 
-  var msgConfirm = '\u00BFEstas seguro de eliminar este movimiento?\n"' + (mov.descripcion || 'Sin descripcion') + '" por ' + formatCurrency(mov.monto, mov.moneda || 'MXN');
+  var msgConfirm = '\u00BFEstas seguro de eliminar este movimiento?\n"' + (mov.descripcion || 'Sin descripcion') + '" por ' + formatCurrencyInt(mov.monto, mov.moneda || 'MXN');
   if (contraparte) {
-    msgConfirm += '\n\nEste movimiento es parte de una transferencia. Tambien se eliminara la contraparte:\n"' + (contraparte.descripcion || 'Sin descripcion') + '" por ' + formatCurrency(contraparte.monto, contraparte.moneda || 'MXN');
+    msgConfirm += '\n\nEste movimiento es parte de una transferencia. Tambien se eliminara la contraparte:\n"' + (contraparte.descripcion || 'Sin descripcion') + '" por ' + formatCurrencyInt(contraparte.monto, contraparte.moneda || 'MXN');
   }
   msgConfirm += '\n\nEsta accion revertira el efecto en el saldo de la(s) cuenta(s).';
 
@@ -708,7 +708,7 @@ function openPlantillasRecurrentes() {
     rowsHTML = `
       <tr>
         <td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);">
-          <i class="fas fa-sync-alt" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>
+          <i class="fas fa-sync-alt" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>
           No hay plantillas recurrentes. Crea una para automatizar movimientos periodicos.
         </td>
       </tr>`;
@@ -727,19 +727,19 @@ function openPlantillasRecurrentes() {
       return '<tr>' +
         '<td style="font-weight:500;color:var(--text-primary);">' + (p.nombre || '\u2014') + '</td>' +
         '<td><span class="badge ' + tipoBadge + '">' + tipoLabel + '</span></td>' +
-        '<td style="text-align:right;font-weight:600;">' + formatCurrency(p.monto, p.moneda || 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(p.monto, p.moneda || 'MXN') + '</td>' +
         '<td>' + cuentaNombre + '</td>' +
         '<td>' + _frecuenciaLabel(p.frecuencia) + ' (dia ' + p.dia_periodo + ')</td>' +
-        '<td>' + ultimaApl + (pendiente ? ' <span class="badge badge-amber" style="font-size:9px;margin-left:4px;">Pendiente</span>' : '') + '</td>' +
+        '<td>' + ultimaApl + (pendiente ? ' <span class="badge badge-amber" style="font-size:11px;margin-left:4px;">Pendiente</span>' : '') + '</td>' +
         '<td><span class="badge ' + estadoBadge + '">' + estadoLabel + '</span></td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
-          '<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;margin-right:4px;" onclick="aplicarPlantilla(\'' + p.id + '\')" title="Aplicar">' +
+          '<button class="btn btn-primary" style="padding:5px 10px;font-size:13px;margin-right:4px;" onclick="aplicarPlantilla(\'' + p.id + '\')" title="Aplicar">' +
             '<i class="fas fa-play"></i>' +
           '</button>' +
-          '<button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;margin-right:4px;" onclick="editPlantillaRecurrente(\'' + p.id + '\')" title="Editar">' +
+          '<button class="btn btn-secondary" style="padding:5px 10px;font-size:13px;margin-right:4px;" onclick="editPlantillaRecurrente(\'' + p.id + '\')" title="Editar">' +
             '<i class="fas fa-edit"></i>' +
           '</button>' +
-          '<button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deletePlantillaRecurrente(\'' + p.id + '\')" title="Eliminar">' +
+          '<button class="btn btn-danger" style="padding:5px 10px;font-size:13px;" onclick="deletePlantillaRecurrente(\'' + p.id + '\')" title="Eliminar">' +
             '<i class="fas fa-trash"></i>' +
           '</button>' +
         '</td>' +
@@ -750,11 +750,11 @@ function openPlantillasRecurrentes() {
   var contentHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div>
-        <span style="font-size:13px;color:var(--text-muted);">${plantillas.length} plantilla(s) &middot; ${pendientes.length} pendiente(s)</span>
+        <span style="font-size:16px;color:var(--text-muted);">${plantillas.length} plantilla(s) &middot; ${pendientes.length} pendiente(s)</span>
       </div>
       <div style="display:flex;gap:8px;">
-        ${pendientes.length > 0 ? '<button class="btn btn-primary" onclick="aplicarTodasPendientes()" style="font-size:12px;"><i class="fas fa-play-circle" style="margin-right:4px;"></i>Aplicar Todas Pendientes (' + pendientes.length + ')</button>' : ''}
-        <button class="btn btn-primary" onclick="editPlantillaRecurrente(null)" style="font-size:12px;">
+        ${pendientes.length > 0 ? '<button class="btn btn-primary" onclick="aplicarTodasPendientes()" style="font-size:14px;"><i class="fas fa-play-circle" style="margin-right:4px;"></i>Aplicar Todas Pendientes (' + pendientes.length + ')</button>' : ''}
+        <button class="btn btn-primary" onclick="editPlantillaRecurrente(null)" style="font-size:14px;">
           <i class="fas fa-plus" style="margin-right:4px;"></i>Nueva Plantilla
         </button>
       </div>
@@ -1212,7 +1212,7 @@ function onTransferModalChange() {
     }
     var tc = parseFloat(tcInput.value) || 0;
     var montoDestCalc = montoOrigen * tc;
-    montoDestinoInput.value = montoDestCalc > 0 ? formatCurrency(montoDestCalc, ctaDestino.moneda) : '---';
+    montoDestinoInput.value = montoDestCalc > 0 ? formatCurrencyInt(montoDestCalc, ctaDestino.moneda) : '---';
   } else {
     tcSection.style.display = 'none';
   }
@@ -1261,7 +1261,7 @@ function executeTransferenciaModal(event) {
 
   var saldoRealOrigen = _calcSaldoReal(ctaOrigen);
   if (saldoRealOrigen < monto_origen) {
-    var confirmar = confirm('La cuenta origen tiene un saldo de ' + formatCurrency(saldoRealOrigen, moneda_origen) + ' que es menor al monto. \u00BFContinuar?');
+    var confirmar = confirm('La cuenta origen tiene un saldo de ' + formatCurrencyInt(saldoRealOrigen, moneda_origen) + ' que es menor al monto. \u00BFContinuar?');
     if (!confirmar) return;
   }
 
@@ -1341,10 +1341,10 @@ function onMovCheckboxChange() {
     var div = document.createElement('div');
     div.id = 'movSelectionBar';
     div.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:var(--accent-blue);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:8px;margin-top:8px;z-index:10;';
-    div.innerHTML = '<span id="movSelCount" style="font-weight:700;font-size:13px;">0 seleccionados</span>' +
+    div.innerHTML = '<span id="movSelCount" style="font-weight:700;font-size:16px;">0 seleccionados</span>' +
       '<div style="display:flex;gap:8px;">' +
-      '<button class="btn" onclick="exportarSeleccionExcel()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
-      '<button class="btn" onclick="exportarSeleccionPDF()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
+      '<button class="btn" onclick="exportarSeleccionExcel()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:14px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
+      '<button class="btn" onclick="exportarSeleccionPDF()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:14px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
       '</div>';
     container.appendChild(div);
     bar = div;
@@ -1438,7 +1438,7 @@ function _exportMovsToPDF(data, titulo) {
       m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
       cta ? cta.nombre : '',
       m.categoria_id ? (data.catMap[m.categoria_id] || '') : '',
-      (m.tipo === 'ingreso' ? '+' : '-') + formatCurrency(m.monto, cta ? cta.moneda : 'MXN')
+      (m.tipo === 'ingreso' ? '+' : '-') + formatCurrencyInt(m.monto, cta ? cta.moneda : 'MXN')
     ];
   });
 
@@ -1500,7 +1500,7 @@ function mostrarDesgloseMovimientos(tipo) {
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
         '<td style="text-align:center;">' + entry[1].count + ' cierre' + (entry[1].count > 1 ? 's' : '') + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:' + rendColor + ';">' + rendSign + formatCurrencyInt(entry[1].monto, 'MXN') + '</td>' +
       '</tr>';
     }).join('');
 
@@ -1508,7 +1508,7 @@ function mostrarDesgloseMovimientos(tipo) {
     var totalRendColor = totalRend >= 0 ? 'var(--accent-amber)' : 'var(--accent-red)';
     rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
       '<td colspan="2">Total</td>' +
-      '<td style="text-align:right;color:' + totalRendColor + ';">' + totalRendSign + formatCurrency(totalRend, 'MXN') + '</td>' +
+      '<td style="text-align:right;color:' + totalRendColor + ';">' + totalRendSign + formatCurrencyInt(totalRend, 'MXN') + '</td>' +
     '</tr>';
 
     var html = '<table class="data-table sortable-table"><thead><tr>' +
@@ -1553,15 +1553,15 @@ function mostrarDesgloseMovimientos(tipo) {
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
       '<td style="text-align:center;">' + entry[1].count + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrency(entry[1].monto, 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(entry[1].monto, 'MXN') + '</td>' +
       '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(entry[1].saldo, entry[1].monedaSaldo) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(entry[1].saldo, entry[1].monedaSaldo) + '</td>' +
     '</tr>';
   }).join('');
 
   rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td>Total</td><td style="text-align:center;">' + filtered.length + '</td>' +
-    '<td style="text-align:right;color:' + color + ';">' + formatCurrency(total, 'MXN') + '</td>' +
+    '<td style="text-align:right;color:' + color + ';">' + formatCurrencyInt(total, 'MXN') + '</td>' +
     '<td></td><td></td>' +
   '</tr>';
 
@@ -1581,12 +1581,12 @@ function mostrarDesgloseMovimientos(tipo) {
       var pct = total > 0 ? (entry[1] / total * 100).toFixed(1) : '0.0';
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrency(entry[1], 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(entry[1], 'MXN') + '</td>' +
         '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
       '</tr>';
     }).join('');
     catSection = '<div style="margin-top:20px;">' +
-      '<h4 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
+      '<h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
       '<table class="data-table sortable-table"><thead><tr><th>Categoria</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th></tr></thead>' +
       '<tbody>' + catRows + '</tbody></table></div>';
   }

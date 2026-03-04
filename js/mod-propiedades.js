@@ -40,56 +40,56 @@ function renderPropiedades() {
       '<div class="card" style="border-left:3px solid var(--accent-green);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'valor\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-city" style="color:var(--accent-green);font-size:14px;"></i>' +
+            '<i class="fas fa-city" style="color:var(--accent-green);font-size:17px;"></i>' +
           '</div>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor Portafolio</span>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor Portafolio</span>' +
         '</div>' +
-        '<div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrency(valorPortafolio, 'MXN') + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+        '<div style="font-size:22px;font-weight:800;color:var(--accent-green);">' + formatCurrencyInt(valorPortafolio, 'MXN') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-red);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'deuda\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:14px;"></i>' +
+            '<i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:17px;"></i>' +
           '</div>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Deuda Total</span>' +
         '</div>' +
-        '<div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrency(deudaTotalPropiedades, 'MXN') + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+        '<div style="font-size:22px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(deudaTotalPropiedades, 'MXN') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'rentas\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-money-check-alt" style="color:var(--accent-blue);font-size:14px;"></i>' +
+            '<i class="fas fa-money-check-alt" style="color:var(--accent-blue);font-size:17px;"></i>' +
           '</div>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rentas Mensuales</span>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rentas Mensuales</span>' +
         '</div>' +
-        '<div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(ingresoMensualRentas, 'MXN') + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+        '<div style="font-size:22px;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(ingresoMensualRentas, 'MXN') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-amber);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'preventas\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-hard-hat" style="color:var(--accent-amber);font-size:14px;"></i>' +
+            '<i class="fas fa-hard-hat" style="color:var(--accent-amber);font-size:17px;"></i>' +
           '</div>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Preventas</span>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Preventas</span>' +
         '</div>' +
-        '<div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + countPreventas + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+        '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + countPreventas + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
       '<div class="card" style="border-left:3px solid var(--accent-purple);cursor:pointer;" onclick="mostrarDesglosePropKPI(\'terminadas\')">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
           '<div style="width:32px;height:32px;border-radius:8px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">' +
-            '<i class="fas fa-building" style="color:var(--accent-purple);font-size:14px;"></i>' +
+            '<i class="fas fa-building" style="color:var(--accent-purple);font-size:17px;"></i>' +
           '</div>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Terminadas</span>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Terminadas</span>' +
         '</div>' +
-        '<div style="font-size:18px;font-weight:800;color:var(--accent-purple);">' + countTerminadas + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
+        '<div style="font-size:22px;font-weight:800;color:var(--accent-purple);">' + countTerminadas + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>' +
       '</div>' +
 
     '</div>' +
@@ -97,11 +97,11 @@ function renderPropiedades() {
     /* ---------- Charts ---------- */
     '<div class="grid-2" style="margin-bottom:24px;">' +
       '<div class="card">' +
-        '<h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion del Valor por Propiedad</h3>' +
+        '<h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion del Valor por Propiedad</h3>' +
         '<div style="height:280px;"><canvas id="propDonutChart"></canvas></div>' +
       '</div>' +
       '<div class="card">' +
-        '<h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Ingreso por Renta Mensual</h3>' +
+        '<h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Ingreso por Renta Mensual</h3>' +
         '<div style="height:280px;"><canvas id="propBarChart"></canvas></div>' +
       '</div>' +
     '</div>' +
@@ -174,7 +174,7 @@ function renderPropiedades() {
         tooltip: {
           callbacks: {
             label: function (ctx) {
-              return ctx.label + ': ' + formatCurrency(ctx.parsed, 'MXN');
+              return ctx.label + ': ' + formatCurrencyInt(ctx.parsed, 'MXN');
             }
           }
         }
@@ -224,7 +224,7 @@ function renderPropiedades() {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function (ctx) { return formatCurrency(ctx.parsed.y, 'MXN'); }
+            label: function (ctx) { return formatCurrencyInt(ctx.parsed.y, 'MXN'); }
           }
         }
       }
@@ -285,19 +285,19 @@ function filterPropiedades() {
       : '<span class="badge badge-purple">Terminada</span>';
 
     var actions =
-      '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="editPropiedad(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+      '<button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="editPropiedad(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
     if (p.tipo === 'preventa') {
-      actions += '<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="registrarPagoMensualidad(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
+      actions += '<button class="btn btn-primary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="registrarPagoMensualidad(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
     } else {
-      actions += '<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="actualizarValor(\'' + p.id + '\')" title="Actualizar Valor"><i class="fas fa-chart-line"></i></button>';
+      actions += '<button class="btn btn-primary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="actualizarValor(\'' + p.id + '\')" title="Actualizar Valor"><i class="fas fa-chart-line"></i></button>';
     }
-    actions += '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deletePropiedad(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+    actions += '<button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="deletePropiedad(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
 
     return '<div class="card" style="margin-bottom:0;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
         '<div>' +
-          '<h3 style="font-size:15px;font-weight:700;color:var(--text-primary);margin:0 0 4px 0;">' + (p.nombre || '') + '</h3>' +
-          '<div style="font-size:11px;color:var(--text-muted);">' +
+          '<h3 style="font-size:18px;font-weight:700;color:var(--text-primary);margin:0 0 4px 0;">' + (p.nombre || '') + '</h3>' +
+          '<div style="font-size:13px;color:var(--text-muted);">' +
             '<i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>' + (p.ubicacion || 'Sin ubicacion') +
             ' ' + tipoBadge + ' <span class="badge ' + monedaBadgeClass(moneda) + '">' + moneda + '</span>' +
           '</div>' +
@@ -335,20 +335,20 @@ function buildPreventaCard(p, moneda) {
       if (dias > 0) parts.push(dias + (dias === 1 ? ' dia' : ' dias'));
       countdownHTML =
         '<div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--accent-amber-soft);display:flex;align-items:center;gap:8px;">' +
-          '<i class="fas fa-clock" style="color:var(--accent-amber);font-size:14px;"></i>' +
-          '<span style="font-size:12px;color:var(--accent-amber);font-weight:600;">Entrega en ' + parts.join(', ') + ' (' + formatDate(p.fecha_entrega) + ')</span>' +
+          '<i class="fas fa-clock" style="color:var(--accent-amber);font-size:17px;"></i>' +
+          '<span style="font-size:14px;color:var(--accent-amber);font-weight:600;">Entrega en ' + parts.join(', ') + ' (' + formatDate(p.fecha_entrega) + ')</span>' +
         '</div>';
     } else if (diffDias === 0) {
       countdownHTML =
         '<div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;gap:8px;">' +
-          '<i class="fas fa-check-circle" style="color:var(--accent-green);font-size:14px;"></i>' +
-          '<span style="font-size:12px;color:var(--accent-green);font-weight:600;">Entrega programada para hoy</span>' +
+          '<i class="fas fa-check-circle" style="color:var(--accent-green);font-size:17px;"></i>' +
+          '<span style="font-size:14px;color:var(--accent-green);font-weight:600;">Entrega programada para hoy</span>' +
         '</div>';
     } else {
       countdownHTML =
         '<div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--accent-red-soft);display:flex;align-items:center;gap:8px;">' +
-          '<i class="fas fa-exclamation-triangle" style="color:var(--accent-red);font-size:14px;"></i>' +
-          '<span style="font-size:12px;color:var(--accent-red);font-weight:600;">Entrega vencida hace ' + Math.abs(diffDias) + ' dias (' + formatDate(p.fecha_entrega) + ')</span>' +
+          '<i class="fas fa-exclamation-triangle" style="color:var(--accent-red);font-size:17px;"></i>' +
+          '<span style="font-size:14px;color:var(--accent-red);font-weight:600;">Entrega vencida hace ' + Math.abs(diffDias) + ' dias (' + formatDate(p.fecha_entrega) + ')</span>' +
         '</div>';
     }
   }
@@ -359,24 +359,24 @@ function buildPreventaCard(p, moneda) {
     /* KPI row */
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Enganche</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-blue);">' + formatCurrency(p.enganche || 0, moneda) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Enganche</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-blue);">' + formatCurrencyInt(p.enganche || 0, moneda) + '</div>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Pagado</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-green);">' + formatCurrency(res.total_pagado, moneda) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Pagado</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(res.total_pagado, moneda) + '</div>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Saldo Pendiente</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-amber);">' + formatCurrency(res.saldo_pendiente, moneda) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Saldo Pendiente</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-amber);">' + formatCurrencyInt(res.saldo_pendiente, moneda) + '</div>' +
       '</div>' +
     '</div>' +
 
     /* Progress bar */
     '<div style="margin-bottom:12px;">' +
       '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-        '<span style="font-size:11px;color:var(--text-muted);">Progreso de Pagos</span>' +
-        '<span style="font-size:11px;font-weight:600;color:var(--text-primary);">' + pagadas + ' / ' + totales + ' mensualidades</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Progreso de Pagos</span>' +
+        '<span style="font-size:13px;font-weight:600;color:var(--text-primary);">' + pagadas + ' / ' + totales + ' mensualidades</span>' +
       '</div>' +
       '<div class="progress-bar">' +
         '<div class="progress-bar-fill" style="width:' + progPct + '%;"></div>' +
@@ -384,10 +384,10 @@ function buildPreventaCard(p, moneda) {
     '</div>' +
 
     /* Details row */
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;color:var(--text-muted);">' +
-      '<div>Valor Compra: <strong style="color:var(--text-primary);">' + formatCurrency(p.valor_compra, moneda) + '</strong></div>' +
-      '<div>Valor Venta Est.: <strong style="color:var(--text-primary);">' + formatCurrency(p.valor_venta_estimado || 0, moneda) + '</strong></div>' +
-      '<div>Ganancia Potencial: <strong style="color:' + gananciaColor + ';">' + formatCurrency(res.ganancia_potencial, moneda) + '</strong></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:14px;color:var(--text-muted);">' +
+      '<div>Valor Compra: <strong style="color:var(--text-primary);">' + formatCurrencyInt(p.valor_compra, moneda) + '</strong></div>' +
+      '<div>Valor Venta Est.: <strong style="color:var(--text-primary);">' + formatCurrencyInt(p.valor_venta_estimado || 0, moneda) + '</strong></div>' +
+      '<div>Ganancia Potencial: <strong style="color:' + gananciaColor + ';">' + formatCurrencyInt(res.ganancia_potencial, moneda) + '</strong></div>' +
     '</div>' +
 
     countdownHTML
@@ -408,23 +408,23 @@ function buildTerminadaCard(p, moneda) {
     /* KPI row */
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor de Mercado Estimado</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-blue);">' + formatCurrency(p.valor_actual, moneda) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Valor de Mercado Estimado</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-blue);">' + formatCurrencyInt(p.valor_actual, moneda) + '</div>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Renta Mensual</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-green);">' + formatCurrency(p.renta_mensual || 0, moneda) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Renta Mensual</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(p.renta_mensual || 0, moneda) + '</div>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento Anual</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--accent-purple);">' + formatPct(res.rendimiento_anual) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rendimiento Anual</div>' +
+        '<div style="font-size:19px;font-weight:700;color:var(--accent-purple);">' + formatPct(res.rendimiento_anual) + '</div>' +
       '</div>' +
     '</div>' +
 
     /* Details row */
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;color:var(--text-muted);">' +
-      '<div>Plusvalia: <strong style="color:' + plusvaliaColor + ';">' + formatCurrency(res.plusvalia, moneda) + ' (' + formatPct(res.plusvalia_pct) + ')</strong></div>' +
-      '<div>Gastos Mant.: <strong style="color:var(--text-primary);">' + formatCurrency(p.gastos_mantenimiento || 0, moneda) + '</strong></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:14px;color:var(--text-muted);">' +
+      '<div>Plusvalia: <strong style="color:' + plusvaliaColor + ';">' + formatCurrencyInt(res.plusvalia, moneda) + ' (' + formatPct(res.plusvalia_pct) + ')</strong></div>' +
+      '<div>Gastos Mant.: <strong style="color:var(--text-primary);">' + formatCurrencyInt(p.gastos_mantenimiento || 0, moneda) + '</strong></div>' +
       '<div>' + ocupadaBadge + '</div>' +
     '</div>'
   );
@@ -461,7 +461,7 @@ function editPropiedad(id) {
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
         '<div class="form-group"><label class="form-label">Valor de Compra *</label>' +
           '<input type="number" id="propiedadValorCompra" class="form-input" required step="0.01" min="0" value="' + (isEdit ? prop.valor_compra : '') + '" placeholder="0.00"></div>' +
-        '<div class="form-group"><label class="form-label">Valor de Mercado Estimado *</label><div style="font-size:10px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Precio estimado de venta hoy en el mercado</div>' +
+        '<div class="form-group"><label class="form-label">Valor de Mercado Estimado *</label><div style="font-size:12px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Precio estimado de venta hoy en el mercado</div>' +
           '<input type="number" id="propiedadValorActual" class="form-input" required step="0.01" min="0" value="' + (isEdit ? prop.valor_actual : '') + '" placeholder="0.00"></div>' +
         '<div class="form-group"><label class="form-label">Moneda *</label>' +
           '<select id="propiedadMoneda" class="form-select" required>' +
@@ -474,7 +474,7 @@ function editPropiedad(id) {
       /* ---- Preventa fields ---- */
       '<div id="preventaFields" style="display:' + (tipoVal === 'preventa' ? 'block' : 'none') + ';">' +
         '<div style="padding:12px;border-radius:8px;background:var(--bg-base);margin-bottom:12px;">' +
-          '<div style="font-size:12px;font-weight:600;color:var(--accent-amber);margin-bottom:8px;">Datos de Preventa</div>' +
+          '<div style="font-size:14px;font-weight:600;color:var(--accent-amber);margin-bottom:8px;">Datos de Preventa</div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
             '<div class="form-group"><label class="form-label">Enganche</label>' +
               '<input type="number" id="propiedadEnganche" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.enganche || '') : '') + '" placeholder="0.00"></div>' +
@@ -496,7 +496,7 @@ function editPropiedad(id) {
           '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
             '<div class="form-group"><label class="form-label">Valor Venta Estimado</label>' +
               '<input type="number" id="propiedadValorVentaEstimadoP" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.valor_venta_estimado || '') : '') + '" placeholder="0.00"></div>' +
-            '<div class="form-group"><label class="form-label">Monto Pago Final</label><div style="font-size:10px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Pago al termino del acuerdo</div>' +
+            '<div class="form-group"><label class="form-label">Monto Pago Final</label><div style="font-size:12px;color:var(--text-muted);margin-top:-4px;margin-bottom:4px;">Pago al termino del acuerdo</div>' +
               '<input type="number" id="propiedadMontoPagoFinal" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.monto_pago_final || '') : '') + '" placeholder="0.00"></div>' +
             '<div class="form-group"><label class="form-label">Fecha Pago Final</label>' +
               '<input type="date" id="propiedadFechaPagoFinal" class="form-input" value="' + (isEdit && prop.fecha_pago_final ? prop.fecha_pago_final : '') + '"></div>' +
@@ -507,7 +507,7 @@ function editPropiedad(id) {
       /* ---- Terminada fields ---- */
       '<div id="terminadaFields" style="display:' + (tipoVal === 'terminada' ? 'block' : 'none') + ';">' +
         '<div style="padding:12px;border-radius:8px;background:var(--bg-base);margin-bottom:12px;">' +
-          '<div style="font-size:12px;font-weight:600;color:var(--accent-purple);margin-bottom:8px;">Datos de Propiedad Terminada</div>' +
+          '<div style="font-size:14px;font-weight:600;color:var(--accent-purple);margin-bottom:8px;">Datos de Propiedad Terminada</div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
             '<div class="form-group"><label class="form-label">Renta Mensual</label>' +
               '<input type="number" id="propiedadRentaMensual" class="form-input" step="0.01" min="0" value="' + (isEdit ? (prop.renta_mensual || '') : '') + '" placeholder="0.00"></div>' +
@@ -675,8 +675,8 @@ function actualizarValor(propiedadId) {
   var formHTML =
     '<form id="formActualizarValor" onsubmit="saveActualizarValor(event, \'' + propiedadId + '\')">' +
       '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
-        '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Propiedad: <strong style="color:var(--text-primary);">' + prop.nombre + '</strong></div>' +
-        '<div style="font-size:12px;color:var(--text-muted);">Valor de mercado actual: <strong style="color:var(--accent-blue);">' + formatCurrency(prop.valor_actual, prop.moneda || 'MXN') + '</strong></div>' +
+        '<div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Propiedad: <strong style="color:var(--text-primary);">' + prop.nombre + '</strong></div>' +
+        '<div style="font-size:14px;color:var(--text-muted);">Valor de mercado actual: <strong style="color:var(--accent-blue);">' + formatCurrencyInt(prop.valor_actual, prop.moneda || 'MXN') + '</strong></div>' +
       '</div>' +
       '<div class="form-group"><label class="form-label">Nuevo Valor *</label>' +
         '<input type="number" id="nuevoValor" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>' +
@@ -988,14 +988,14 @@ function verCalendarioPagos() {
   var proximoPagoHTML = '';
   if (proximosPagos.length > 0) {
     proximoPagoHTML = proximosPagos.map(function(pp) {
-      var vencidoBadge = pp.vencido ? ' <span style="font-size:9px;background:var(--accent-red);color:#fff;padding:1px 5px;border-radius:4px;font-weight:600;">VENCIDO</span>' : '';
+      var vencidoBadge = pp.vencido ? ' <span style="font-size:11px;background:var(--accent-red);color:#fff;padding:1px 5px;border-radius:4px;font-weight:600;">VENCIDO</span>' : '';
       return '<div style="margin-bottom:4px;">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--accent-red);">' + formatCurrency(pp.monto, pp.moneda) + vencidoBadge + '</div>' +
-        '<div style="font-size:10px;color:var(--text-muted);">' + pp.nombre + ' - ' + formatDate(pp.fecha) + '</div>' +
+        '<div style="font-size:14px;font-weight:700;color:var(--accent-red);">' + formatCurrencyInt(pp.monto, pp.moneda) + vencidoBadge + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);">' + pp.nombre + ' - ' + formatDate(pp.fecha) + '</div>' +
       '</div>';
     }).join('');
   } else {
-    proximoPagoHTML = '<div style="font-size:12px;color:var(--text-muted);">Sin pagos pendientes</div>';
+    proximoPagoHTML = '<div style="font-size:14px;color:var(--text-muted);">Sin pagos pendientes</div>';
   }
 
   /* ===== BUILD HTML ===== */
@@ -1005,9 +1005,9 @@ function verCalendarioPagos() {
   html +=
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
       '<div style="width:36px;height:36px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
-        '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:15px;"></i>' +
+        '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:18px;"></i>' +
       '</div>' +
-      '<h2 style="font-size:18px;font-weight:800;color:var(--text-primary);margin:0;">Calendario de Pagos Proximos</h2>' +
+      '<h2 style="font-size:22px;font-weight:800;color:var(--text-primary);margin:0;">Calendario de Pagos Proximos</h2>' +
     '</div>';
 
   /* ---- Visual Timeline: 3-month columns ---- */
@@ -1023,14 +1023,14 @@ function verCalendarioPagos() {
       '<div style="display:flex;flex-direction:column;">' +
         /* Month header */
         '<div style="padding:10px 12px;border-radius:8px;background:' + (isCurrent ? 'var(--accent-blue)' : 'var(--bg-base)') + ';margin-bottom:12px;text-align:center;">' +
-          '<div style="font-size:13px;font-weight:700;color:' + (isCurrent ? '#fff' : 'var(--text-primary)') + ';">' + meses3[mi].label + '</div>' +
-          (isCurrent ? '<div style="font-size:10px;color:rgba(255,255,255,0.7);margin-top:2px;">Mes actual</div>' : '') +
+          '<div style="font-size:16px;font-weight:700;color:' + (isCurrent ? '#fff' : 'var(--text-primary)') + ';">' + meses3[mi].label + '</div>' +
+          (isCurrent ? '<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;">Mes actual</div>' : '') +
         '</div>';
 
     if (mesEventos.length === 0) {
       html +=
-        '<div style="text-align:center;padding:20px 8px;color:var(--text-muted);font-size:12px;">' +
-          '<i class="fas fa-check-circle" style="display:block;margin-bottom:6px;opacity:0.4;font-size:18px;"></i>' +
+        '<div style="text-align:center;padding:20px 8px;color:var(--text-muted);font-size:14px;">' +
+          '<i class="fas fa-check-circle" style="display:block;margin-bottom:6px;opacity:0.4;font-size:22px;"></i>' +
           'Sin movimientos' +
         '</div>';
     } else {
@@ -1079,21 +1079,21 @@ function verCalendarioPagos() {
 
         var extraInfo = '';
         if (ev.tipo === 'mensualidad' && ev.restantes !== undefined) {
-          extraInfo = '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">' + ev.restantes + ' restante' + (ev.restantes !== 1 ? 's' : '') + '</div>';
+          extraInfo = '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + ev.restantes + ' restante' + (ev.restantes !== 1 ? 's' : '') + '</div>';
         }
 
         html +=
           '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;margin-bottom:8px;border-radius:8px;background:' + bgColor + ';border-left:3px solid ' + borderColor + ';">' +
             '<div style="min-width:28px;height:28px;border-radius:6px;background:' + borderColor + '15;display:flex;align-items:center;justify-content:center;margin-top:2px;">' +
-              '<i class="fas ' + iconClass + '" style="color:' + iconColor + ';font-size:11px;"></i>' +
+              '<i class="fas ' + iconClass + '" style="color:' + iconColor + ';font-size:13px;"></i>' +
             '</div>' +
             '<div style="flex:1;min-width:0;">' +
               '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:4px;">' +
-                '<div style="font-size:11px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + ev.nombre + '">' + ev.nombre + '</div>' +
-                '<div style="font-size:10px;color:var(--text-muted);white-space:nowrap;">Dia ' + ev.dia + '</div>' +
+                '<div style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + ev.nombre + '">' + ev.nombre + '</div>' +
+                '<div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Dia ' + ev.dia + '</div>' +
               '</div>' +
-              '<div style="font-size:12px;font-weight:700;color:' + montoColor + ';margin-top:2px;">' + signo + ' ' + formatCurrency(ev.monto, ev.moneda) + '</div>' +
-              '<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">' + labelTipo + '</div>' +
+              '<div style="font-size:14px;font-weight:700;color:' + montoColor + ';margin-top:2px;">' + signo + ' ' + formatCurrencyInt(ev.monto, ev.moneda) + '</div>' +
+              '<div style="font-size:12px;color:var(--text-muted);margin-top:1px;">' + labelTipo + '</div>' +
               extraInfo +
             '</div>' +
           '</div>';
@@ -1116,17 +1116,17 @@ function verCalendarioPagos() {
     if (mesEventos.length > 0) {
       html +=
         '<div style="margin-top:auto;padding:8px 10px;border-radius:6px;background:var(--bg-base);">' +
-          '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;">' +
             '<span>Ingresos</span>' +
-            '<span style="color:var(--accent-green);font-weight:600;">+' + formatCurrency(mesInflow, 'MXN') + '</span>' +
+            '<span style="color:var(--accent-green);font-weight:600;">+' + formatCurrencyInt(mesInflow, 'MXN') + '</span>' +
           '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;">' +
             '<span>Egresos</span>' +
-            '<span style="color:var(--accent-red);font-weight:600;">-' + formatCurrency(mesOutflow, 'MXN') + '</span>' +
+            '<span style="color:var(--accent-red);font-weight:600;">-' + formatCurrencyInt(mesOutflow, 'MXN') + '</span>' +
           '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:' + mesNetColor + ';border-top:1px solid var(--border-color);padding-top:4px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:' + mesNetColor + ';border-top:1px solid var(--border-color);padding-top:4px;">' +
             '<span>Neto</span>' +
-            '<span>' + (mesNet >= 0 ? '+' : '') + formatCurrency(mesNet, 'MXN') + '</span>' +
+            '<span>' + (mesNet >= 0 ? '+' : '') + formatCurrencyInt(mesNet, 'MXN') + '</span>' +
           '</div>' +
         '</div>';
     }
@@ -1143,23 +1143,23 @@ function verCalendarioPagos() {
     '<div style="display:flex;align-items:center;gap:16px;margin-top:12px;padding:8px 12px;">' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-red);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Mensualidad</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Mensualidad</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-purple);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Ultima Mensualidad</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Ultima Mensualidad</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-green);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Renta</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Renta</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-amber);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Mantenimiento / Saldo Remanente</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Mantenimiento / Saldo Remanente</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:5px;">' +
         '<div style="width:10px;height:10px;border-radius:2px;background:var(--accent-purple);"></div>' +
-        '<span style="font-size:11px;color:var(--text-muted);">Pago Final</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);">Pago Final</span>' +
       '</div>' +
     '</div>';
 
@@ -1168,21 +1168,21 @@ function verCalendarioPagos() {
     html +=
       '<div class="card" style="margin-top:16px;">' +
         '<div class="card-header"><span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Resumen de Preventas</span></div>' +
-        '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="font-size:12px;"><thead><tr>' +
+        '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="font-size:14px;"><thead><tr>' +
           '<th>Propiedad</th><th style="text-align:center;">Pagadas / Total</th><th style="text-align:center;">Restantes</th>' +
           '<th>Monto Mensualidad</th><th>Ultima Mensualidad</th><th>Pago Final</th><th>Fecha Pago Final</th>' +
         '</tr></thead><tbody>';
     preventaResumen.forEach(function(pr) {
       var pfColor = pr.pagoFinalMonto > 0 ? 'var(--accent-purple)' : 'var(--accent-green)';
       var pfLabel = pr.tienePagoFinal
-        ? formatCurrency(pr.pagoFinalMonto, pr.moneda)
-        : (pr.saldoRemanente > 0 ? formatCurrency(pr.saldoRemanente, pr.moneda) + ' <span class="badge badge-amber" style="font-size:9px;">Estimado</span>' : formatCurrency(0, pr.moneda) + ' <span class="badge badge-green" style="font-size:9px;">Cubierto</span>');
+        ? formatCurrencyInt(pr.pagoFinalMonto, pr.moneda)
+        : (pr.saldoRemanente > 0 ? formatCurrencyInt(pr.saldoRemanente, pr.moneda) + ' <span class="badge badge-amber" style="font-size:11px;">Estimado</span>' : formatCurrencyInt(0, pr.moneda) + ' <span class="badge badge-green" style="font-size:11px;">Cubierto</span>');
       var pfFechaLabel = pr.pagoFinalFecha ? formatDate(new Date(pr.pagoFinalFecha + 'T00:00:00')) : '\u2014';
       html += '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + pr.nombre + '</td>' +
         '<td style="text-align:center;">' + pr.pagadas + ' / ' + pr.totales + '</td>' +
         '<td style="text-align:center;font-weight:600;color:var(--accent-red);">' + pr.restantes + '</td>' +
-        '<td>' + formatCurrency(pr.monto_mensualidad, pr.moneda) + '</td>' +
+        '<td>' + formatCurrencyInt(pr.monto_mensualidad, pr.moneda) + '</td>' +
         '<td>' + formatDate(pr.ultimaMensualidad) + '</td>' +
         '<td style="font-weight:600;color:' + pfColor + ';">' + pfLabel + '</td>' +
         '<td>' + pfFechaLabel + '</td>' +
@@ -1215,11 +1215,11 @@ function mostrarDesglosePropKPI(tipo) {
         '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
         '<td><span class="badge ' + tipoBadge + '">' + tipoLabel + '</span></td>' +
         '<td>' + (p.ubicacion || '-') + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:var(--accent-green);">' + formatCurrency(valMXN, 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-green);">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
       '</tr>';
     }).join('');
     rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td>' +
-      '<td style="text-align:right;color:var(--accent-green);">' + formatCurrency(total, 'MXN') + '</td></tr>';
+      '<td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(total, 'MXN') + '</td></tr>';
     var html = '<table class="data-table sortable-table"><thead><tr><th>Propiedad</th><th>Tipo</th><th>Ubicacion</th><th style="text-align:right;">Valor (MXN)</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html);
     var mc = document.querySelector('.modal-content');
@@ -1239,14 +1239,14 @@ function mostrarDesglosePropKPI(tipo) {
       var restantes = (p.mensualidades_total || 0) - (p.mensualidades_pagadas || 0);
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
-        '<td>' + formatCurrency(toMXN(p.valor_compra, moneda, tiposCambio), 'MXN') + '</td>' +
-        '<td>' + formatCurrency(toMXN(pagado, moneda, tiposCambio), 'MXN') + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrency(pendMXN, 'MXN') + '</td>' +
+        '<td>' + formatCurrencyInt(toMXN(p.valor_compra, moneda, tiposCambio), 'MXN') + '</td>' +
+        '<td>' + formatCurrencyInt(toMXN(pagado, moneda, tiposCambio), 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(pendMXN, 'MXN') + '</td>' +
         '<td style="text-align:center;">' + restantes + '</td>' +
       '</tr>';
     }).join('');
     rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total Deuda</td>' +
-      '<td style="text-align:right;color:var(--accent-red);">' + formatCurrency(total, 'MXN') + '</td><td></td></tr>';
+      '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(total, 'MXN') + '</td><td></td></tr>';
     var html2 = '<table class="data-table sortable-table"><thead><tr><th>Propiedad</th><th>Valor Compra</th><th>Pagado</th><th style="text-align:right;">Pendiente</th><th style="text-align:center;">Mensualidades Rest.</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html2);
     var mc = document.querySelector('.modal-content');
@@ -1264,11 +1264,11 @@ function mostrarDesglosePropKPI(tipo) {
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '</td>' +
         '<td>' + ocupadaBadge + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:' + (p.ocupada ? 'var(--accent-blue)' : 'var(--text-muted)') + ';">' + formatCurrency(rentaMXN, 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:' + (p.ocupada ? 'var(--accent-blue)' : 'var(--text-muted)') + ';">' + formatCurrencyInt(rentaMXN, 'MXN') + '</td>' +
       '</tr>';
     }).join('');
     rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Total Activo</td>' +
-      '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(total, 'MXN') + '</td></tr>';
+      '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrencyInt(total, 'MXN') + '</td></tr>';
     var html3 = '<table class="data-table sortable-table"><thead><tr><th>Propiedad</th><th>Estado</th><th style="text-align:right;">Renta Mensual</th></tr></thead><tbody>' + rows + '</tbody></table>';
     openModal(titulo, html3);
     var mc3 = document.querySelector('.modal-content');
@@ -1286,15 +1286,15 @@ function mostrarDesglosePropKPI(tipo) {
       var totales = p.mensualidades_total || 0;
       var restantes = totales - pagadas;
       var remanente = Math.max(0, (p.valor_compra || 0) - (p.enganche || 0) - (totales * (p.monto_mensualidad || 0)));
-      var pagoFinalHTML = p.monto_pago_final ? formatCurrency(p.monto_pago_final, moneda) + (p.fecha_pago_final ? '<br><span style="font-size:10px;color:var(--text-muted);">' + formatDate(p.fecha_pago_final) + '</span>' : '') : '-';
+      var pagoFinalHTML = p.monto_pago_final ? formatCurrencyInt(p.monto_pago_final, moneda) + (p.fecha_pago_final ? '<br><span style="font-size:12px;color:var(--text-muted);">' + formatDate(p.fecha_pago_final) + '</span>' : '') : '-';
       return '<tr>' +
-        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:10px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
-        '<td style="text-align:right;">' + formatCurrency(p.valor_compra, moneda) + '</td>' +
-        '<td style="text-align:right;color:var(--accent-green);">' + formatCurrency(res.total_pagado, moneda) + '</td>' +
-        '<td style="text-align:right;color:var(--accent-red);">' + formatCurrency(res.saldo_pendiente, moneda) + '</td>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:12px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(p.valor_compra, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(res.total_pagado, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(res.saldo_pendiente, moneda) + '</td>' +
         '<td style="text-align:center;">' + pagadas + '/' + totales + ' (' + restantes + ' rest.)</td>' +
-        '<td style="text-align:right;">' + formatCurrency(p.monto_mensualidad || 0, moneda) + '</td>' +
-        '<td style="text-align:right;color:var(--accent-amber);">' + (remanente > 0 ? formatCurrency(remanente, moneda) : '-') + '</td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(p.monto_mensualidad || 0, moneda) + '</td>' +
+        '<td style="text-align:right;color:var(--accent-amber);">' + (remanente > 0 ? formatCurrencyInt(remanente, moneda) : '-') + '</td>' +
         '<td style="text-align:right;">' + pagoFinalHTML + '</td>' +
         '<td style="text-align:center;">' + (p.fecha_entrega ? formatDate(p.fecha_entrega) : '-') + '</td>' +
       '</tr>';
@@ -1315,10 +1315,10 @@ function mostrarDesglosePropKPI(tipo) {
       var ocupadaBadge = p.ocupada ? '<span class="badge badge-green">Si</span>' : '<span class="badge badge-red">No</span>';
       var plusColor = res.plusvalia >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       return '<tr>' +
-        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:10px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
-        '<td style="text-align:right;">' + formatCurrency(p.valor_actual, moneda) + '</td>' +
-        '<td style="text-align:right;color:' + plusColor + ';">' + formatCurrency(res.plusvalia, moneda) + ' (' + formatPct(res.plusvalia_pct) + ')</td>' +
-        '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrency(p.renta_mensual || 0, moneda) + '</td>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + p.nombre + '<br><span style="font-size:12px;color:var(--text-muted);">' + (p.ubicacion || '') + '</span></td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(p.valor_actual, moneda) + '</td>' +
+        '<td style="text-align:right;color:' + plusColor + ';">' + formatCurrencyInt(res.plusvalia, moneda) + ' (' + formatPct(res.plusvalia_pct) + ')</td>' +
+        '<td style="text-align:right;color:var(--accent-blue);">' + formatCurrencyInt(p.renta_mensual || 0, moneda) + '</td>' +
         '<td style="text-align:center;">' + ocupadaBadge + '</td>' +
         '<td style="text-align:right;">' + formatPct(res.rendimiento_anual) + '</td>' +
       '</tr>';
