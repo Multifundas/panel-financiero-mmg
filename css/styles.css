@@ -1315,6 +1315,36 @@
       .grid-5 { grid-template-columns: repeat(3, 1fr); }
     }
 
+    /* ── Range slider (zoom control) ── */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: var(--border-subtle);
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid var(--bg-card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid var(--bg-card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
 /* ============================================================
    AI ASSISTANT
    ============================================================ */
@@ -1731,6 +1761,10 @@
 
 /* ── Print Styles (for modal printing) ── */
 @media print {
+  /* Reset auto-zoom for printing */
+  html {
+    zoom: 1 !important;
+  }
   /* Hide everything */
   body > * {
     display: none !important;

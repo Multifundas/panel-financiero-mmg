@@ -126,6 +126,26 @@ function renderConfiguracion() {
       </div>
     </div>
 
+    <!-- ROW 1a: Zoom / Tamano de pantalla -->
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-desktop" style="margin-right:8px;color:var(--accent-purple);"></i>Tamano de Pantalla</span>
+        <span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;" id="cfgZoomActual"></span>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">La interfaz se adapta automaticamente al tamano de tu monitor. Ajusta el control si deseas que los elementos se vean mas grandes o mas pequenos.</p>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
+          <i class="fas fa-search-minus" style="color:var(--text-muted);font-size:13px;"></i>
+          <input type="range" id="cfgZoomSlider" class="form-input" style="flex:1;padding:0;cursor:pointer;" min="1200" max="2800" step="50" value="${config.zoom_referencia || 1920}" oninput="previewZoom(this.value)" onchange="saveZoomReferencia(this.value)">
+          <i class="fas fa-search-plus" style="color:var(--text-muted);font-size:13px;"></i>
+        </div>
+        <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="document.getElementById('cfgZoomSlider').value=1920;previewZoom(1920);saveZoomReferencia(1920);">
+          <i class="fas fa-undo" style="margin-right:4px;"></i>Restablecer
+        </button>
+      </div>
+      <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">Mover a la izquierda = elementos mas grandes. Mover a la derecha = elementos mas pequenos. Tu pantalla: <span id="cfgScreenInfo"></span></p>
+    </div>
+
     <!-- ROW 1b: Historial de Tipos de Cambio -->
     <div class="card" style="margin-bottom:24px;">
       <div class="card-header">
@@ -318,6 +338,43 @@ function renderConfiguracion() {
   // Render TC historico table
   renderTCHistoricoTable();
   setTimeout(function() { _initSortableTables(document.getElementById('module-configuracion')); }, 100);
+
+  // Populate zoom info
+  _updateZoomInfo();
+}
+
+/* -- Configuracion: Zoom / Tamano de Pantalla -- */
+function _updateZoomInfo() {
+  var zoomEl = document.getElementById('cfgZoomActual');
+  var screenEl = document.getElementById('cfgScreenInfo');
+  if (zoomEl) {
+    var currentZoom = parseFloat(document.documentElement.style.zoom) || 1;
+    zoomEl.textContent = 'Zoom: ' + Math.round(currentZoom * 100) + '%';
+  }
+  if (screenEl) {
+    screenEl.textContent = window.screen.width + ' x ' + window.screen.height + ' px';
+  }
+}
+
+function previewZoom(val) {
+  var ref = parseInt(val);
+  if (isNaN(ref) || ref < 1200) ref = 1200;
+  var zoom = window.screen.width / ref;
+  zoom = Math.max(0.4, Math.min(1.25, zoom));
+  document.documentElement.style.zoom = zoom;
+  _updateZoomInfo();
+}
+
+function saveZoomReferencia(val) {
+  var ref = parseInt(val);
+  if (isNaN(ref) || ref < 1200) ref = 1200;
+  if (ref > 2800) ref = 2800;
+  var config = loadData(STORAGE_KEYS.config) || getDefaultConfig();
+  config.zoom_referencia = ref;
+  saveData(STORAGE_KEYS.config, config);
+  applyAutoZoom();
+  _updateZoomInfo();
+  showToast('Tamano de pantalla ajustado');
 }
 
 /* -- Configuracion: Moneda Base -- */

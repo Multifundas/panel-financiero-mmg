@@ -1,4 +1,40 @@
 /* ============================================================
+   AUTO-ZOOM: Adapt layout to any screen size automatically
+   Uses screen.width (CSS pixels, stable across zoom levels)
+   divided by a reference width to compute the zoom factor.
+   Reference default = 1920.  Adjustable from Configuracion.
+   Tablets/mobile (screen <= 1024px) are excluded (media queries).
+   ============================================================ */
+var _autoZoomRef = 1920; // default reference width
+
+function applyAutoZoom() {
+  // Use screen.width which is stable regardless of current zoom
+  var screenW = window.screen.width;
+  // Don't apply on mobile / tablets — media queries handle those
+  if (screenW <= 1024) {
+    document.documentElement.style.zoom = '';
+    return;
+  }
+  var config = (typeof loadData === 'function' && typeof STORAGE_KEYS !== 'undefined')
+    ? loadData(STORAGE_KEYS.config) : null;
+  var ref = (config && config.zoom_referencia) ? config.zoom_referencia : _autoZoomRef;
+  var zoom = screenW / ref;
+  // Clamp between 0.4 and 1.25
+  zoom = Math.max(0.4, Math.min(1.25, zoom));
+  document.documentElement.style.zoom = zoom;
+}
+
+// Debounced resize handler
+var _autoZoomTimer = null;
+window.addEventListener('resize', function() {
+  clearTimeout(_autoZoomTimer);
+  _autoZoomTimer = setTimeout(applyAutoZoom, 150);
+});
+
+// Apply immediately on script load (before DOMContentLoaded)
+applyAutoZoom();
+
+/* ============================================================
    INIT APP
    ============================================================ */
 function initApp() {
@@ -53,6 +89,9 @@ function initApp() {
     var hideIcon = document.getElementById('hideSaldosIcon');
     if (hideIcon) hideIcon.className = 'fas fa-eye-slash';
   }
+
+  // Apply auto-zoom with user config
+  applyAutoZoom();
 
   // Render initial module
   navigateTo('dashboard');
