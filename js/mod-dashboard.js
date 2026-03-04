@@ -628,59 +628,47 @@ function renderDashboard() {
     divExplain = 'La mayor parte de tu dinero esta concentrada en pocos activos. Si uno de ellos tiene problemas, tu patrimonio se veria muy afectado. Considera diversificar.';
   }
 
+  const _divExplainTooltip = 'Indice Herfindahl-Hirschman (HHI): metodo usado por la SEC y reguladores financieros para medir concentracion. Puntaje: ' + diversificationScore.toFixed(0) + '/100. 0-40: Muy concentrado | 40-70: Moderado | 70-100: Buena diversificacion';
   const diversificacionHTML = `
-    <div class="card" style="margin-bottom:0;">
-      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;max-height:520px;overflow:hidden;">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
       </div>
-      <div class="grid-2" style="gap:24px;">
-        <!-- Left: explanation + gauge + badge -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;border-left:3px solid ${divColor};">
-            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
-              <i class="fas fa-question-circle" style="margin-right:6px;color:${divColor};"></i>Como se calcula este indicador?
-            </div>
-            <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
-              Se utiliza el <strong>Indice Herfindahl-Hirschman (HHI)</strong>, un metodo reconocido internacionalmente
-              (usado por la SEC, bancos centrales y reguladores financieros) para medir que tan concentrado o diversificado
-              esta un portafolio. Se calcula sumando el cuadrado del porcentaje que cada activo representa del total.<br>
-              <strong>Puntaje: ${diversificationScore.toFixed(0)} de 100</strong> &mdash; mientras mas alto, mejor diversificado.<br>
-              <span style="color:var(--text-muted);font-size:11px;">0-40: Muy concentrado &nbsp;|&nbsp; 40-70: Moderado &nbsp;|&nbsp; 70-100: Buena diversificacion</span>
-            </div>
-            <div style="font-size:12px;color:${divColor};font-weight:600;margin-top:8px;">
-              <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
+      <div style="display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;padding-bottom:8px;">
+        <!-- Gauge chart at top with tooltip -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;cursor:help;" title="${_divExplainTooltip}" id="divGaugeContainer">
+          <div style="position:relative;width:150px;height:150px;">
+            <canvas id="dashDiversificacionGauge"></canvas>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+              <div style="font-size:32px;font-weight:800;color:${divColor};">${diversificationScore.toFixed(0)}</div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Puntos</div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-            <div style="position:relative;width:180px;height:180px;">
-              <canvas id="dashDiversificacionGauge"></canvas>
-              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-                <div style="font-size:36px;font-weight:800;color:${divColor};">${diversificationScore.toFixed(0)}</div>
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Puntos</div>
-              </div>
-            </div>
-            <span class="badge ${divBadge}" style="font-size:12px;padding:4px 14px;">
-              <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divRecommendation}
-            </span>
-            <div style="font-size:11px;color:var(--text-muted);">${cuentasActivas.length} activos en portafolio</div>
-          </div>
+          <span class="badge ${divBadge}" style="font-size:11px;padding:3px 12px;">
+            <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divRecommendation}
+          </span>
         </div>
-        <!-- Right: breakdown bars -->
-        <div>
-          <div style="margin-bottom:16px;">
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
-              <i class="fas fa-layer-group" style="margin-right:4px;"></i> Por Tipo de Activo
+        <!-- Recommendation text -->
+        <div style="text-align:center;font-size:12px;color:${divColor};font-weight:600;padding:0 12px;line-height:1.5;">
+          <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);text-align:center;">${cuentasActivas.length} activos en portafolio</div>
+        <!-- Breakdown bars -->
+        <div style="padding:0 8px;">
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+              <i class="fas fa-layer-group" style="margin-right:4px;"></i> Por Tipo
             </div>
             ${divTipoBars}
           </div>
-          <div style="margin-bottom:16px;">
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
               <i class="fas fa-coins" style="margin-right:4px;"></i> Por Moneda
             </div>
             ${divMonedaBars}
           </div>
           <div>
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
               <i class="fas fa-university" style="margin-right:4px;"></i> Por Institucion
             </div>
             ${divInstBars}
@@ -812,17 +800,17 @@ function renderDashboard() {
       </div>
     </div>
 
-    <!-- Diversificacion + Distribucion por Tipo (same row) -->
-    <div class="grid-2" style="margin-bottom:24px;">
+    <!-- Diversificacion + Distribucion por Tipo (same row, matched height) -->
+    <div class="grid-2" style="margin-bottom:24px;align-items:stretch;">
       ${diversificacionHTML}
-      <div class="card" style="margin-bottom:0;">
-        <div class="card-header">
+      <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;max-height:520px;overflow:hidden;">
+        <div class="card-header" style="flex-shrink:0;">
           <span class="card-title"><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--accent-amber);"></i>Distribucion por Tipo</span>
         </div>
-        <div style="position:relative;height:320px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
           <canvas id="dashDonutChart"></canvas>
         </div>
-        <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:12px 8px 8px;margin-top:8px;border-top:1px solid var(--border-color);"></div>
+        <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:12px 8px 8px;margin-top:8px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
       </div>
     </div>
 
@@ -948,8 +936,8 @@ function renderDashboard() {
     <!-- Resumen Comparativo -->
     <div style="margin-top:24px;">
       <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;gap:12px;">
-          <span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-green);"></i>Resumen Comparativo</span>
+        <div class="card-header" style="display:flex;align-items:center;gap:12px;justify-content:flex-start;">
+          <span class="card-title" style="margin-right:0;"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-green);"></i>Resumen Comparativo</span>
           <select id="resumenCompMesFilter" class="form-select" style="padding:3px 8px;font-size:11px;min-height:auto;width:100px;" onchange="renderResumenComparativo()">
             <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
             <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
@@ -1485,8 +1473,8 @@ function renderPatrimonioMensualReport(anioParam) {
 
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  // For the current year, only show months up to and including the current month
-  var maxMes = esAnioActual ? mesActualIdx : 11; // 0-indexed
+  // Always show all 12 months
+  var maxMes = 11; // 0-indexed, always show Ene through Dic
 
   // Helper: format currency without decimals for this report
   function fmtInt(val) {
@@ -1519,9 +1507,9 @@ function renderPatrimonioMensualReport(anioParam) {
     return result;
   }
 
-  // Build header — only show months up to maxMes
-  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Concepto</th>';
-  thead += '<th style="text-align:center;min-width:50px;font-size:' + FS + ';">Mon.</th>';
+  // Build header — always show all 12 months
+  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Cuenta</th>';
+  thead += '<th style="text-align:left;min-width:50px;font-size:' + FS + ';">Mon.</th>';
   for (var m = 0; m <= maxMes; m++) {
     thead += '<th style="text-align:right;min-width:85px;font-size:' + FS + ';">' + mesesCortos[m] + '</th>';
   }
@@ -1539,7 +1527,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var moneda = cta.moneda || 'MXN';
     var sortedHist = cuentaHistSorted[cta.id] || [];
     var saldoRealMXN = toMXN(_calcSaldoReal(cta), moneda, tiposCambio);
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
     var lastVal = 0;
 
     for (var m = 0; m <= maxMes; m++) {
@@ -1582,7 +1570,7 @@ function renderPatrimonioMensualReport(anioParam) {
   propActivas.forEach(function(prop) {
     var valMXN = toMXN(prop.valor_actual || prop.valor_compra || 0, prop.moneda || 'MXN', tiposCambio);
     var propMoneda = prop.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(propMoneda) + '" style="font-size:9px;padding:1px 5px;">' + propMoneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(propMoneda) + '" style="font-size:9px;padding:1px 5px;">' + propMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalPropPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
@@ -1609,7 +1597,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var pMoneda = p.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(pMoneda) + '" style="font-size:9px;padding:1px 5px;">' + pMoneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(pMoneda) + '" style="font-size:9px;padding:1px 5px;">' + pMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalOtorgPorMes[m] += valMXN;
       totalPorMes[m] += valMXN;
@@ -1643,7 +1631,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var dMoneda = p.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(dMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dMoneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(dMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
@@ -1657,7 +1645,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var dpMoneda = p.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(dpMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dpMoneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(dpMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dpMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;
@@ -1674,7 +1662,7 @@ function renderPatrimonioMensualReport(anioParam) {
     if (pendiente <= 0) return;
     var valMXN = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
     var prMoneda = pr.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td><td style="text-align:center;"><span class="badge ' + monedaBadgeClass(prMoneda) + '" style="font-size:9px;padding:1px 5px;">' + prMoneda + '</span></td>';
+    var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(prMoneda) + '" style="font-size:9px;padding:1px 5px;">' + prMoneda + '</span></td>';
     for (var m = 0; m <= maxMes; m++) {
       subtotalDeudaPorMes[m] += valMXN;
       totalPorMes[m] -= valMXN;

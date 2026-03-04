@@ -94,7 +94,8 @@ function renderMovimientos() {
           <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
         </select>
         <select id="filterMovTipo" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:120px;" onchange="filterMovimientos()">
-          <option value="">Todos</option>
+          <option value="" disabled selected>Tipo</option>
+          <option value="todos">Todos</option>
           <option value="ingreso">Ingreso</option>
           <option value="gasto">Gasto</option>
           <option value="transferencia">Transferencia</option>
@@ -106,11 +107,8 @@ function renderMovimientos() {
         <input type="text" id="filterMovSearch" class="form-input" placeholder="Buscar..." style="padding:5px 8px;font-size:12px;min-height:auto;flex:1;min-width:120px;" oninput="filterMovimientos()">
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <button class="btn btn-secondary" onclick="exportarExcel('movimientos')" style="padding:5px 10px;font-size:13px;flex:1;min-width:70px;">
+        <button class="btn btn-secondary" onclick="exportarMovsFiltradosExcel()" style="padding:5px 10px;font-size:13px;flex:1;min-width:70px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
-        </button>
-        <button class="btn btn-secondary" onclick="exportarMovsPDF()" style="padding:5px 10px;font-size:13px;flex:1;min-width:60px;">
-          <i class="fas fa-file-pdf" style="margin-right:3px;color:#ef4444;"></i>PDF
         </button>
         <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:13px;flex:1;min-width:90px;">
           <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
@@ -203,7 +201,7 @@ function filterMovimientos() {
       var movMonth = m.fecha.substring(5, 7);
       if (movMonth !== fMes) return false;
     }
-    if (fTipo) {
+    if (fTipo && fTipo !== 'todos') {
       if (fTipo === 'transferencia') { if (!m.transferencia_id) return false; }
       else { if (m.tipo !== fTipo || m.transferencia_id) return false; }
     }
@@ -1410,7 +1408,28 @@ function exportarSeleccionPDF() {
 }
 
 function exportarMovsPDF() {
-  _exportMovsToPDF(_getSelectedOrAllMovs(), 'Movimientos');
+  // Use filtered data from visible table rows (checkbox values contain IDs)
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
+
+  var checkboxes = document.querySelectorAll('#tablaMovimientos tbody .mov-checkbox');
+  var filteredIds = [];
+  checkboxes.forEach(function(cb) { filteredIds.push(cb.value); });
+
+  var filtered;
+  if (filteredIds.length > 0) {
+    filtered = movimientos.filter(function(m) { return filteredIds.indexOf(m.id) !== -1; });
+  } else {
+    filtered = movimientos;
+  }
+  filtered = filtered.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+
+  _exportMovsToPDF({ movimientos: filtered, cuentaMap: cuentaMap, catMap: catMap }, 'Movimientos');
 }
 
 function _exportMovsToPDF(data, titulo) {
@@ -1597,4 +1616,57 @@ function mostrarDesgloseMovimientos(tipo) {
 
   openModal(titulo, html, { wide: true });
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+}
+
+/* ============================================================
+   EXPORT FILTERED MOVIMIENTOS TO EXCEL
+   ============================================================ */
+function exportarMovsFiltradosExcel() {
+  // Get currently visible rows from the filtered table
+  var rows = document.querySelectorAll('#tablaMovimientos tbody tr');
+  if (!rows || rows.length === 0) {
+    showToast('No hay movimientos para exportar', 'warning');
+    return;
+  }
+
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {}; cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {}; categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+
+  // Get filtered mov IDs from checkboxes
+  var checkboxes = document.querySelectorAll('#tablaMovimientos tbody .mov-checkbox');
+  var filteredIds = [];
+  checkboxes.forEach(function(cb) { filteredIds.push(cb.value); });
+
+  var filtered = movimientos.filter(function(m) { return filteredIds.indexOf(m.id) !== -1; });
+
+  if (filtered.length === 0) {
+    showToast('No hay movimientos para exportar', 'warning');
+    return;
+  }
+
+  var wsData = [['Fecha', 'Descripcion', 'Tipo', 'Cuenta', 'Categoria', 'Monto', 'Moneda']];
+  filtered.forEach(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var catNombre = m.categoria_id && catMap[m.categoria_id] ? catMap[m.categoria_id] : '';
+    if (typeof catNombre === 'object') catNombre = catNombre.nombre || '';
+    wsData.push([
+      m.fecha || '',
+      m.descripcion || '',
+      m.tipo === 'ingreso' ? 'Ingreso' : (m.transferencia_id ? 'Transferencia' : 'Gasto'),
+      cta ? cta.nombre : '',
+      catNombre,
+      (m.tipo === 'ingreso' ? 1 : -1) * m.monto,
+      cta ? cta.moneda : 'MXN'
+    ]);
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
+  XLSX.writeFile(wb, 'movimientos_filtrados.xlsx');
+  showToast('Excel exportado con ' + filtered.length + ' movimientos');
 }

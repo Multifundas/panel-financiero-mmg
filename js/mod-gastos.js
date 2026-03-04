@@ -27,7 +27,7 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
 
   if (budgetItems.length === 0) {
     return `
-      <div class="card" style="margin-bottom:24px;">
+      <div class="card" style="margin-bottom:0;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
           <h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">
             <i class="fas fa-bullseye" style="margin-right:8px;color:var(--accent-blue);"></i>Presupuesto Mensual
@@ -109,7 +109,7 @@ function _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, ti
   var totalBarWidth = Math.min(totalPct, 100);
 
   return `
-    <div class="card" style="margin-bottom:24px;">
+    <div class="card" style="margin-bottom:0;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
         <h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">
           <i class="fas fa-bullseye" style="margin-right:8px;color:var(--accent-blue);"></i>Presupuesto Mensual
@@ -278,22 +278,27 @@ function renderGastos() {
   // Build presupuesto section HTML
   const presupuestoHTML = _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, tiposCambio);
 
+  // Build filter options for Detalle section
+  const mesesNombresArr = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const detMesesOptsHTML = mesesNombresArr.map((n, i) =>
+    `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${n}</option>`
+  ).join('');
+  const detAniosOptsHTML = [...aniosSet].sort((a, b) => b - a)
+    .map(a => `<option value="${a}" ${a === anioActual ? 'selected' : ''}>${a}</option>`)
+    .join('');
+  const detCatOptsHTML = categorias.map(cat =>
+    `<option value="${cat.id}">${cat.nombre}</option>`
+  ).join('');
+  const detCuentaOptsHTML = cuentas.map(cta =>
+    `<option value="${cta.id}">${cta.nombre}</option>`
+  ).join('');
+
   el.innerHTML = `
-    <!-- Presupuesto Mensual -->
-    ${presupuestoHTML}
-
-    <!-- Nota informativa -->
-    <div class="card" style="margin-bottom:24px;border-left:3px solid var(--accent-amber);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:19px;"></i>
-        <span style="color:var(--text-secondary);font-size:16px;">Los gastos se registran desde <strong style="color:var(--text-primary);cursor:pointer;text-decoration:underline;" onclick="navigateTo('movimientos')">Movimientos</strong>. Aqui se muestra el analisis y visualizacion.</span>
-      </div>
-    </div>
-
-    <!-- Filtro Mes/Ano y KPI -->
-    <div class="card" style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <!-- Top row: Filtro + Nota + Presupuesto -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+      <!-- LEFT: Filtro Mes/Ano + Total -->
+      <div class="card" style="margin-bottom:0;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
           <div class="form-group" style="margin-bottom:0;min-width:140px;">
             <select id="filterGastosMes" class="form-select" onchange="renderGastos()">
               ${mesesOpts}
@@ -310,6 +315,15 @@ function renderGastos() {
           <div style="font-size:24px;font-weight:800;color:var(--accent-red);">${formatCurrencyInt(totalMes, 'MXN')}</div>
         </div>
       </div>
+      <!-- MIDDLE: Nota informativa -->
+      <div class="card" style="margin-bottom:0;border-left:3px solid var(--accent-amber);display:flex;align-items:center;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-info-circle" style="color:var(--accent-amber);font-size:19px;"></i>
+          <span style="color:var(--text-secondary);font-size:16px;">Los gastos se registran desde <strong style="color:var(--text-primary);cursor:pointer;text-decoration:underline;" onclick="navigateTo('movimientos')">Movimientos</strong>. Aqui se muestra el analisis y visualizacion.</span>
+        </div>
+      </div>
+      <!-- RIGHT: Presupuesto -->
+      ${presupuestoHTML}
     </div>
 
     <!-- Charts -->
@@ -326,7 +340,7 @@ function renderGastos() {
 
     <!-- Reporte Mensual de Gastos -->
     <div class="card" style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
         <h3 style="font-size:17px;font-weight:700;margin:0;color:var(--text-primary);">
           <i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--accent-red);"></i>Reporte Mensual de Gastos
         </h3>
@@ -342,7 +356,25 @@ function renderGastos() {
 
     <!-- Tabla Gastos agrupados por categoria -->
     <div class="card">
-      <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Detalle de Gastos del Mes</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">Detalle de Gastos</h3>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <select id="filterGastosDetMes" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:100px;" onchange="filterGastosDetalle()">
+          <option value="">Mes</option>
+          ${detMesesOptsHTML}
+        </select>
+        <select id="filterGastosDetAnio" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:80px;" onchange="filterGastosDetalle()">
+          <option value="">Ano</option>
+          ${detAniosOptsHTML}
+        </select>
+        <select id="filterGastosDetCat" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:140px;" onchange="filterGastosDetalle()">
+          <option value="">Todas las categorias</option>
+          ${detCatOptsHTML}
+        </select>
+        <select id="filterGastosDetCuenta" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:150px;" onchange="filterGastosDetalle()">
+          <option value="">Todas las cuentas</option>
+          ${detCuentaOptsHTML}
+        </select>
+      </div>
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaGastos">
           <thead>
@@ -508,70 +540,14 @@ function renderGastos() {
     },
   });
 
-  // -- Table: gastos grouped by category with subtotals --
-  const tbody = document.getElementById('tbodyGastos');
-  if (!tbody) return;
+  // -- Set default filter values for Detalle section --
+  var detMesEl = document.getElementById('filterGastosDetMes');
+  var detAnioEl = document.getElementById('filterGastosDetAnio');
+  if (detMesEl) detMesEl.value = String(mesActual);
+  if (detAnioEl) detAnioEl.value = String(anioActual);
 
-  if (gastosSelected.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No hay gastos registrados en este periodo</td></tr>';
-    return;
-  }
-
-  // Group by category
-  const grouped = {};
-  gastosSelected.forEach(m => {
-    const catId = m.categoria_id || 'sin_cat';
-    if (!grouped[catId]) grouped[catId] = [];
-    grouped[catId].push(m);
-  });
-
-  let totalGeneral = 0;
-  let rowsHTML = '';
-
-  // Sort categories by total descending
-  const sortedCats = Object.entries(grouped).sort((a, b) => {
-    const totA = a[1].reduce((s, m) => { const c = cuentaMap[m.cuenta_id]; return s + toMXN(m.monto, c ? c.moneda : 'MXN', tiposCambio); }, 0);
-    const totB = b[1].reduce((s, m) => { const c = cuentaMap[m.cuenta_id]; return s + toMXN(m.monto, c ? c.moneda : 'MXN', tiposCambio); }, 0);
-    return totB - totA;
-  });
-
-  sortedCats.forEach(([catId, items]) => {
-    const cat = catMap[catId];
-    const catNombre = cat ? cat.nombre : 'Sin Categoria';
-    let subtotal = 0;
-
-    items.sort((a, b) => b.fecha.localeCompare(a.fecha)).forEach((m, i) => {
-      const cta = cuentaMap[m.cuenta_id];
-      const ctaNombre = cta ? cta.nombre : 'Desconocida';
-      const moneda = cta ? cta.moneda : 'MXN';
-      const montoMXN = toMXN(m.monto, moneda, tiposCambio);
-      subtotal += montoMXN;
-      totalGeneral += montoMXN;
-
-      rowsHTML += `<tr>
-        <td>${i === 0 ? '<strong>' + catNombre + '</strong>' : ''}</td>
-        <td>${formatDate(m.fecha)}</td>
-        <td>${m.descripcion || '-'}</td>
-        <td>${ctaNombre}</td>
-        <td style="text-align:right;">${formatCurrencyInt(m.monto, moneda)}</td>
-        <td style="text-align:right;">${formatCurrencyInt(montoMXN, 'MXN')}</td>
-      </tr>`;
-    });
-
-    // Subtotal row
-    rowsHTML += `<tr style="background:var(--bg-card-hover);font-weight:700;">
-      <td colspan="5" style="text-align:right;color:var(--text-secondary);">Subtotal ${catNombre}:</td>
-      <td style="text-align:right;color:var(--accent-red);">${formatCurrencyInt(subtotal, 'MXN')}</td>
-    </tr>`;
-  });
-
-  // Grand total row
-  rowsHTML += `<tr style="background:var(--bg-base);font-weight:800;border-top:2px solid var(--border-color);">
-    <td colspan="5" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>
-    <td style="text-align:right;color:var(--accent-red);font-size:17px;">${formatCurrencyInt(totalGeneral, 'MXN')}</td>
-  </tr>`;
-
-  tbody.innerHTML = rowsHTML;
+  // Populate the detail table via filterGastosDetalle
+  filterGastosDetalle();
   renderGastosMensualReport();
   setTimeout(function() { _initSortableTables(document.getElementById('module-gastos')); }, 100);
 }
@@ -661,12 +637,14 @@ function renderGastosMensualReport() {
       if (montoMes === 0) {
         row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
       } else {
-        row += '<td style="text-align:right;color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</td>';
+        row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMesCat(' + anio + ',' + m + ',\'' + catId + '\')">' +
+          '<span style="color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</span></td>';
       }
     }
 
     totalGeneral += totalCat;
-    row += '<td style="text-align:right;font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</td>';
+    row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
+      '<span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</span></td>';
     row += '</tr>';
     return row;
   }).join('');
@@ -677,7 +655,8 @@ function renderGastosMensualReport() {
     if (totalPorMes[mi] === 0) {
       totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
     } else {
-      totalRow += '<td style="text-align:right;font-size:14px;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalPorMes[mi], 'MXN') + '</td>';
+      totalRow += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMes(' + anio + ',' + mi + ')">' +
+        '<span style="font-size:14px;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalPorMes[mi], 'MXN') + '</span></td>';
     }
   }
   totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td></tr>';
@@ -686,4 +665,260 @@ function renderGastosMensualReport() {
     '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 
   setTimeout(function() { _initSortableTables(container); }, 100);
+}
+
+/* ============================================================
+   FILTRO DETALLE DE GASTOS
+   ============================================================ */
+function filterGastosDetalle() {
+  var tbody = document.getElementById('tbodyGastos');
+  if (!tbody) return;
+
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+
+  var cuentaMap = {};
+  cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+
+  var fMesEl = document.getElementById('filterGastosDetMes');
+  var fAnioEl = document.getElementById('filterGastosDetAnio');
+  var fCatEl = document.getElementById('filterGastosDetCat');
+  var fCuentaEl = document.getElementById('filterGastosDetCuenta');
+
+  var fMes = fMesEl && fMesEl.value !== '' ? parseInt(fMesEl.value) : null;
+  var fAnio = fAnioEl && fAnioEl.value !== '' ? parseInt(fAnioEl.value) : null;
+  var fCat = fCatEl ? fCatEl.value : '';
+  var fCuenta = fCuentaEl ? fCuentaEl.value : '';
+
+  var gastos = movimientos.filter(function(m) {
+    if (m.tipo !== 'gasto') return false;
+    var f = new Date(m.fecha);
+    if (fMes !== null && f.getMonth() !== fMes) return false;
+    if (fAnio !== null && f.getFullYear() !== fAnio) return false;
+    if (fCat && (m.categoria_id || 'sin_cat') !== fCat) return false;
+    if (fCuenta && m.cuenta_id !== fCuenta) return false;
+    return true;
+  });
+
+  if (gastos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No hay gastos registrados con estos filtros</td></tr>';
+    return;
+  }
+
+  // Group by category
+  var grouped = {};
+  gastos.forEach(function(m) {
+    var catId = m.categoria_id || 'sin_cat';
+    if (!grouped[catId]) grouped[catId] = [];
+    grouped[catId].push(m);
+  });
+
+  var totalGeneral = 0;
+  var rowsHTML = '';
+
+  // Sort categories by total descending
+  var sortedCats = Object.entries(grouped).sort(function(a, b) {
+    var totA = a[1].reduce(function(s, m) { var c = cuentaMap[m.cuenta_id]; return s + toMXN(m.monto, c ? c.moneda : 'MXN', tiposCambio); }, 0);
+    var totB = b[1].reduce(function(s, m) { var c = cuentaMap[m.cuenta_id]; return s + toMXN(m.monto, c ? c.moneda : 'MXN', tiposCambio); }, 0);
+    return totB - totA;
+  });
+
+  sortedCats.forEach(function(entry) {
+    var catId = entry[0];
+    var items = entry[1];
+    var cat = catMap[catId];
+    var catNombre = cat ? cat.nombre : 'Sin Categoria';
+    var subtotal = 0;
+
+    items.sort(function(a, b) { return b.fecha.localeCompare(a.fecha); }).forEach(function(m, i) {
+      var cta = cuentaMap[m.cuenta_id];
+      var ctaNombre = cta ? cta.nombre : 'Desconocida';
+      var moneda = cta ? cta.moneda : 'MXN';
+      var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+      subtotal += montoMXN;
+      totalGeneral += montoMXN;
+
+      rowsHTML += '<tr>' +
+        '<td>' + (i === 0 ? '<strong>' + catNombre + '</strong>' : '') + '</td>' +
+        '<td>' + formatDate(m.fecha) + '</td>' +
+        '<td>' + (m.descripcion || '-') + '</td>' +
+        '<td>' + ctaNombre + '</td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+      '</tr>';
+    });
+
+    // Subtotal row
+    rowsHTML += '<tr style="background:var(--bg-card-hover);font-weight:700;">' +
+      '<td colspan="5" style="text-align:right;color:var(--text-secondary);">Subtotal ' + catNombre + ':</td>' +
+      '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(subtotal, 'MXN') + '</td>' +
+    '</tr>';
+  });
+
+  // Grand total row
+  rowsHTML += '<tr style="background:var(--bg-base);font-weight:800;border-top:2px solid var(--border-color);">' +
+    '<td colspan="5" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>' +
+    '<td style="text-align:right;color:var(--accent-red);font-size:17px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>' +
+  '</tr>';
+
+  tbody.innerHTML = rowsHTML;
+  setTimeout(function() { _initSortableTables(document.getElementById('tablaGastos')); }, 100);
+}
+
+/* ============================================================
+   DETALLE MODAL: Gasto por Mes + Categoria
+   ============================================================ */
+function mostrarDetalleGastoMesCat(anio, mes, catId) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {}; cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {}; categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+  var cat = catMap[catId];
+  var catNombre = cat ? cat.nombre : 'Sin Categoria';
+  var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  var gastos = movimientos.filter(function(m) {
+    if (m.tipo !== 'gasto') return false;
+    var f = new Date(m.fecha);
+    if (f.getFullYear() !== anio || f.getMonth() !== mes) return false;
+    var gCat = m.categoria_id || 'sin_cat';
+    return gCat === catId;
+  }).sort(function(a, b) { return b.fecha.localeCompare(a.fecha); });
+
+  var total = 0;
+  var rows = gastos.map(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var ctaNombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    total += montoMXN;
+    return '<tr>' +
+      '<td>' + formatDate(m.fecha) + '</td>' +
+      '<td style="font-weight:500;color:var(--text-primary);">' + (m.descripcion || '-') + '</td>' +
+      '<td>' + ctaNombre + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td colspan="4" style="text-align:right;">Total:</td>' +
+    '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(total, 'MXN') + '</td>' +
+  '</tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Fecha</th><th>Descripcion</th><th>Cuenta</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Monto MXN</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  if (gastos.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:25px;margin-bottom:8px;display:block;"></i>No hay gastos en esta categoria para este mes.</div>';
+  }
+
+  openModal(catNombre + ' - ' + mesesNombres[mes] + ' ' + anio, html, {wide: true});
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+}
+
+/* ============================================================
+   DETALLE MODAL: Todos los gastos de un mes
+   ============================================================ */
+function mostrarDetalleGastoMes(anio, mes) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {}; cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {}; categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+  var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  var gastos = movimientos.filter(function(m) {
+    if (m.tipo !== 'gasto') return false;
+    var f = new Date(m.fecha);
+    return f.getFullYear() === anio && f.getMonth() === mes;
+  }).sort(function(a, b) { return b.fecha.localeCompare(a.fecha); });
+
+  var total = 0;
+  var rows = gastos.map(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var ctaNombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var catNombre = catMap[m.categoria_id] ? catMap[m.categoria_id].nombre : 'Sin Categoria';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    total += montoMXN;
+    return '<tr>' +
+      '<td>' + formatDate(m.fecha) + '</td>' +
+      '<td style="font-weight:500;color:var(--text-primary);">' + (m.descripcion || '-') + '</td>' +
+      '<td>' + catNombre + '</td>' +
+      '<td>' + ctaNombre + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td colspan="5" style="text-align:right;">Total:</td>' +
+    '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(total, 'MXN') + '</td>' +
+  '</tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Fecha</th><th>Descripcion</th><th>Categoria</th><th>Cuenta</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Monto MXN</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  openModal('Gastos - ' + mesesNombres[mes] + ' ' + anio, html, {wide: true});
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+}
+
+/* ============================================================
+   DETALLE MODAL: Gastos de una categoria en todo el ano
+   ============================================================ */
+function mostrarDetalleGastoCatAnio(anio, catId) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {}; cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {}; categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+  var cat = catMap[catId];
+  var catNombre = cat ? cat.nombre : 'Sin Categoria';
+
+  var gastos = movimientos.filter(function(m) {
+    if (m.tipo !== 'gasto') return false;
+    var f = new Date(m.fecha);
+    if (f.getFullYear() !== anio) return false;
+    var gCat = m.categoria_id || 'sin_cat';
+    return gCat === catId;
+  }).sort(function(a, b) { return b.fecha.localeCompare(a.fecha); });
+
+  var total = 0;
+  var rows = gastos.map(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var ctaNombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    total += montoMXN;
+    return '<tr>' +
+      '<td>' + formatDate(m.fecha) + '</td>' +
+      '<td style="font-weight:500;color:var(--text-primary);">' + (m.descripcion || '-') + '</td>' +
+      '<td>' + ctaNombre + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td colspan="4" style="text-align:right;">Total:</td>' +
+    '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(total, 'MXN') + '</td>' +
+  '</tr>';
+
+  var html = '<table class="data-table sortable-table"><thead><tr>' +
+    '<th>Fecha</th><th>Descripcion</th><th>Cuenta</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Monto MXN</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  openModal(catNombre + ' - Ano ' + anio, html, {wide: true});
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }

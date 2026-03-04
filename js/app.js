@@ -98,6 +98,16 @@ function initApp() {
 
   // Auto-update exchange rates on startup (silent, non-blocking)
   autoActualizarTipoCambio();
+
+  // Show auth status icon in header
+  if (typeof _renderAuthStatusIcon === 'function') {
+    _renderAuthStatusIcon();
+  }
+
+  // Auto-save previous month TC historico if missing
+  if (typeof _autoGrabarTCHistoricoMes === 'function') {
+    _autoGrabarTCHistoricoMes();
+  }
 }
 
 /* ============================================================

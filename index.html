@@ -236,6 +236,8 @@
       <div class="modal-header">
         <h3 class="modal-title" id="modalTitle"></h3>
         <div style="display:flex;align-items:center;gap:6px;">
+          <button class="modal-close" style="color:var(--accent-green);" onclick="exportModalExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
+          <button class="modal-close" style="color:var(--accent-red);" onclick="exportModalPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           <button class="modal-close" style="color:var(--accent-blue);" onclick="window.print()" title="Imprimir"><i class="fas fa-print"></i></button>
           <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>

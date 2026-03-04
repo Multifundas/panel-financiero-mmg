@@ -146,30 +146,34 @@ function renderConfiguracion() {
       <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">Mover a la izquierda = elementos mas grandes. Mover a la derecha = elementos mas pequenos. Tu pantalla: <span id="cfgScreenInfo"></span></p>
     </div>
 
-    <!-- ROW 1b: Historial de Tipos de Cambio -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-history" style="margin-right:8px;color:var(--accent-purple);"></i>Historial de Tipos de Cambio Mensual</span>
-        <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addTipoCambioHistorico()">
-          <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
-        </button>
+    <!-- ROW 1b: TC Historico + Categorias + Instituciones (3 columnas) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow2">
+      <!-- TC Historico -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+          <span class="card-title"><i class="fas fa-history" style="margin-right:8px;color:var(--accent-purple);"></i>Historial T/C Mensual</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <select id="tcHistYearFilter" class="form-select" style="padding:4px 8px;font-size:12px;min-width:80px;" onchange="renderTCHistoricoTable()">
+            </select>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addTipoCambioHistorico()">
+              <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+          <table class="data-table sortable-table" id="tablaTCHistorico" style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th style="text-align:right;">USD / MXN</th>
+                <th style="text-align:center;" data-no-sort="true">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyTCHistorico"></tbody>
+          </table>
+        </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table sortable-table" id="tablaTCHistorico" style="font-size:12px;">
-          <thead>
-            <tr>
-              <th>Periodo</th>
-              <th style="text-align:right;">USD / MXN</th>
-              <th style="text-align:center;" data-no-sort="true">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyTCHistorico"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ROW 2: Categorias (left) | Instituciones (right) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow2">
+      <!-- Categorias -->
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-tags" style="margin-right:8px;color:var(--accent-green);"></i>Categorias de Gasto</span>
@@ -191,6 +195,7 @@ function renderConfiguracion() {
           </table>
         </div>
       </div>
+      <!-- Instituciones -->
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-university" style="margin-right:8px;color:var(--accent-purple);"></i>Instituciones</span>
@@ -289,8 +294,8 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- ROW 5: Datos de Ejemplo (left) | Borrar Todo (right) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow5">
+    <!-- ROW 5: Datos de Ejemplo | Borrar Todo | Acerca de | Autenticacion (4 columnas) -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:24px;" id="cfgRow5">
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-database" style="margin-right:8px;color:var(--accent-blue);"></i>Datos de Ejemplo</span>
@@ -309,10 +314,6 @@ function renderConfiguracion() {
           <i class="fas fa-trash" style="margin-right:6px;"></i>Borrar Todos los Datos
         </button>
       </div>
-    </div>
-
-    <!-- ROW 6: Acerca de (left) | Autenticacion (right) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow6">
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-info-circle" style="margin-right:8px;color:var(--accent-blue);"></i>Acerca de</span>
@@ -341,6 +342,12 @@ function renderConfiguracion() {
 
   // Populate zoom info
   _updateZoomInfo();
+
+  // Auth status icon in header
+  _renderAuthStatusIcon();
+
+  // Auto-save previous month TC historico if missing
+  _autoGrabarTCHistoricoMes();
 }
 
 /* -- Configuracion: Zoom / Tamano de Pantalla -- */
@@ -427,8 +434,32 @@ function renderTCHistoricoTable() {
   var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
   historico.sort(function(a, b) { return (b.periodo || '').localeCompare(a.periodo || ''); });
   var mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // -- Populate year filter dropdown --
+  var yearSelect = document.getElementById('tcHistYearFilter');
+  if (yearSelect) {
+    var yearsSet = {};
+    historico.forEach(function(h) {
+      if (h.periodo) { var y = h.periodo.split('-')[0]; if (y) yearsSet[y] = true; }
+    });
+    var currentYear = String(new Date().getFullYear());
+    if (!yearsSet[currentYear]) yearsSet[currentYear] = true;
+    var years = Object.keys(yearsSet).sort().reverse();
+    var selectedYear = yearSelect.value || currentYear;
+    if (years.indexOf(selectedYear) < 0) selectedYear = years[0] || currentYear;
+    var prevHTML = yearSelect.innerHTML;
+    var newHTML = years.map(function(y) {
+      return '<option value="' + y + '"' + (y === selectedYear ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+    if (prevHTML !== newHTML) yearSelect.innerHTML = newHTML;
+    // Filter by selected year
+    historico = historico.filter(function(h) {
+      return h.periodo && h.periodo.split('-')[0] === selectedYear;
+    });
+  }
+
   if (historico.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">Sin registros. Haz click en "Agregar" para capturar.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">Sin registros para este ano. Haz click en "Agregar" para capturar.</td></tr>';
     return;
   }
   tbody.innerHTML = historico.map(function(h) {
@@ -1358,5 +1389,70 @@ function exportarPDF() {
     showToast('Reporte PDF generado. Usa "Guardar como PDF" en el dialogo de impresion.');
   } else {
     showToast('No se pudo abrir la ventana. Verifica que tu navegador permita ventanas emergentes.', 'error');
+  }
+}
+
+/* ============================================================
+   AUTH STATUS ICON IN HEADER
+   ============================================================ */
+
+/**
+ * Render a small auth status icon in the header-right area.
+ * Shows green shield if Supabase is configured, red if not.
+ */
+function _renderAuthStatusIcon() {
+  var headerRight = document.querySelector('.header-right');
+  if (!headerRight) return;
+  if (document.getElementById('authStatusIcon')) return; // already exists
+
+  var isConnected = typeof isSupabaseConfigured === 'function' && isSupabaseConfigured();
+  var btn = document.createElement('button');
+  btn.id = 'authStatusIcon';
+  btn.className = 'theme-toggle';
+  btn.title = isConnected ? 'Autenticacion: Conectado' : 'Autenticacion: No configurada';
+  btn.onclick = function() { navigateTo('configuracion'); };
+  btn.innerHTML = '<i class="fas fa-shield-alt" style="color:' + (isConnected ? 'var(--accent-green)' : 'var(--accent-red)') + ';"></i>';
+  headerRight.insertBefore(btn, headerRight.firstChild);
+}
+
+/* ============================================================
+   AUTO-GRABAR TC HISTORICO DEL MES ANTERIOR
+   ============================================================ */
+
+/**
+ * If the current date is after the 1st of the month and there is no
+ * TC historico record for the PREVIOUS month, automatically create one
+ * using the current USD/MXN exchange rate.
+ */
+function _autoGrabarTCHistoricoMes() {
+  try {
+    var now = new Date();
+    // Only run if we are past the 1st day
+    if (now.getDate() < 2) return;
+
+    // Calculate previous month's periodo
+    var prevMonth = now.getMonth(); // 0-indexed current month; previous = current - 1
+    var prevYear = now.getFullYear();
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear = prevYear - 1;
+    }
+    var periodo = prevYear + '-' + String(prevMonth).padStart(2, '0');
+
+    var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+    var exists = historico.some(function(h) { return h.periodo === periodo; });
+    if (exists) return; // already recorded
+
+    // Get current USD/MXN rate
+    var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+    var usdMxn = tiposCambio.USD_MXN;
+    if (!usdMxn || usdMxn <= 0) return; // no valid rate available
+
+    historico.push({ periodo: periodo, USD_MXN: usdMxn });
+    saveData(STORAGE_KEYS.tipos_cambio_historico, historico);
+    window._tcHistoricoCache = null;
+    console.log('[AutoTC] Guardado TC historico para ' + periodo + ': USD/MXN = ' + usdMxn);
+  } catch (e) {
+    console.warn('[AutoTC] Error al auto-grabar TC historico:', e);
   }
 }

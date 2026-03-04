@@ -368,6 +368,59 @@ function consultarTCHistorico() {
 }
 
 /* ============================================================
+   MODAL EXPORT: Excel & PDF
+   ============================================================ */
+function exportModalExcel() {
+  var title = document.getElementById('modalTitle').textContent || 'Reporte';
+  var tables = document.querySelectorAll('#modalBody .data-table');
+  if (!tables || tables.length === 0) {
+    showToast('No hay tabla para exportar', 'warning');
+    return;
+  }
+  var wb = XLSX.utils.book_new();
+  tables.forEach(function(table, idx) {
+    var ws = XLSX.utils.table_to_sheet(table);
+    var sheetName = tables.length > 1 ? title.substring(0, 25) + '_' + (idx + 1) : title.substring(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+  XLSX.writeFile(wb, title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '_') + '.xlsx');
+  showToast('Excel exportado');
+}
+
+function exportModalPDF() {
+  var title = document.getElementById('modalTitle').textContent || 'Reporte';
+  var tables = document.querySelectorAll('#modalBody .data-table');
+  if (!tables || tables.length === 0) {
+    showToast('No hay tabla para exportar', 'warning');
+    return;
+  }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(title, 14, 16);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(new Date().toLocaleDateString('es-MX'), 14, 22);
+
+  var startY = 28;
+  tables.forEach(function(table) {
+    doc.autoTable({
+      html: table,
+      startY: startY,
+      styles: { fontSize: 8, cellPadding: 2, font: 'helvetica' },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+    });
+    startY = doc.lastAutoTable.finalY + 10;
+  });
+
+  doc.save(title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '_') + '.pdf');
+  showToast('PDF exportado');
+}
+
+/* ============================================================
    UPDATE HEADER DATE
    ============================================================ */
 function updateHeaderDate() {
