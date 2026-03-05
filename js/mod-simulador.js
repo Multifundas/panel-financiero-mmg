@@ -146,6 +146,10 @@ function renderSimulador() {
             <span class="card-title"><i class="fas fa-clock" style="margin-right:8px;color:var(--accent-green);"></i>Resultado</span>
           </div>
           <div id="dur-resumen" style="font-size:18px;font-weight:700;margin-bottom:16px;"></div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('durChart','duracion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('durChart','Duracion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
           <div style="position:relative;height:320px;">
             <canvas id="durChart"></canvas>
           </div>
@@ -224,6 +228,10 @@ function renderSimulador() {
         </div>
         <div class="card" style="margin-bottom:24px;">
           <div id="inv-resumen" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;"></div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('invChart','simulador_inversion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('invChart','Simulador de Inversion')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
           <div style="position:relative;height:320px;">
             <canvas id="invChart"></canvas>
           </div>
@@ -363,6 +371,10 @@ function renderSimulador() {
           <div class="card-header">
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-purple);"></i>Crecimiento Comparado</span>
           </div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('compChart','comparacion_escenarios')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('compChart','Crecimiento Comparado')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
           <div style="position:relative;height:340px;">
             <canvas id="compChart"></canvas>
           </div>
@@ -448,6 +460,10 @@ function renderSimulador() {
           <div class="card-header">
             <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-amber);"></i>Comparacion Antes vs Despues</span>
           </div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('impChart','simulador_impacto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('impChart','Comparacion Antes vs Despues')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
           <div style="position:relative;height:320px;">
             <canvas id="impChart"></canvas>
           </div>
@@ -531,6 +547,10 @@ function renderSimulador() {
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-green);"></i>Crecimiento del Capital</span>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('icChart','interes_compuesto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('icChart','Crecimiento del Capital')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:340px;">
             <canvas id="icChart"></canvas>
@@ -630,6 +650,10 @@ function renderSimulador() {
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-amber);"></i>Crecimiento si Inviertes</span>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('opoChart','costo_oportunidad')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('opoChart','Crecimiento si Inviertes')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:340px;">
             <canvas id="opoChart"></canvas>

@@ -421,6 +421,33 @@ function exportModalPDF() {
 }
 
 /* ============================================================
+   CHART EXPORT: Download chart as PNG image
+   ============================================================ */
+function exportChartAsImage(canvasId, filename) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) { showToast('Grafica no encontrada', 'warning'); return; }
+  var link = document.createElement('a');
+  link.download = (filename || 'grafica') + '_' + new Date().toISOString().slice(0, 10) + '.png';
+  link.href = canvas.toDataURL('image/png', 1.0);
+  link.click();
+  showToast('Imagen exportada');
+}
+
+function printChart(canvasId, title) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) { showToast('Grafica no encontrada', 'warning'); return; }
+  var dataUrl = canvas.toDataURL('image/png', 1.0);
+  var win = window.open('', '_blank');
+  win.document.write('<html><head><title>' + (title || 'Grafica') + '</title>' +
+    '<style>body{margin:20px;font-family:sans-serif;text-align:center;}h2{margin-bottom:16px;}img{max-width:100%;}</style></head><body>' +
+    '<h2>' + (title || '') + '</h2>' +
+    '<img src="' + dataUrl + '">' +
+    '</body></html>');
+  win.document.close();
+  setTimeout(function() { win.print(); }, 300);
+}
+
+/* ============================================================
    UPDATE HEADER DATE
    ============================================================ */
 function updateHeaderDate() {

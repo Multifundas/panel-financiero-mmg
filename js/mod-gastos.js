@@ -257,12 +257,13 @@ function renderGastos() {
     if (m.tipo === 'gasto' && m.fecha) aniosSet.add(new Date(m.fecha).getFullYear());
   });
   aniosSet.add(anioActual);
+  aniosSet.add(2025);
   const aniosOpts = [...aniosSet].sort((a, b) => b - a)
     .map(a => `<option value="${a}" ${a === anioActual ? 'selected' : ''}>${a}</option>`)
     .join('');
 
-  // All gastos
-  const gastos = movimientos.filter(m => m.tipo === 'gasto');
+  // All gastos (excluding transfers)
+  const gastos = movimientos.filter(m => m.tipo === 'gasto' && !m.transferencia_id);
 
   // Selected month gastos
   const gastosDelMes = gastos.filter(m => {
@@ -329,11 +330,23 @@ function renderGastos() {
     <!-- Charts -->
     <div class="grid-2" style="margin-bottom:24px;">
       <div class="card">
-        <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion por Categoria</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:17px;font-weight:700;margin:0;color:var(--text-primary);">Distribucion por Categoria</h3>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('gastosDonutChart','gastos_distribucion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('gastosDonutChart','Distribucion por Categoria')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
+        </div>
         <div style="height:300px;display:flex;align-items:center;justify-content:center;"><canvas id="gastosDonutChart"></canvas></div>
       </div>
       <div class="card">
-        <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Gastos Mensuales por Categoria (12 meses)</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:17px;font-weight:700;margin:0;color:var(--text-primary);">Gastos Mensuales por Categoria (12 meses)</h3>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('gastosBarChart','gastos_mensual_cat')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('gastosBarChart','Gastos Mensuales por Categoria')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
+        </div>
         <div style="height:300px;"><canvas id="gastosBarChart"></canvas></div>
       </div>
     </div>
@@ -379,10 +392,10 @@ function renderGastos() {
         <table class="data-table sortable-table" id="tablaGastos">
           <thead>
             <tr>
-              <th>Categoria</th>
               <th>Fecha</th>
-              <th>Descripcion</th>
               <th>Cuenta</th>
+              <th>Categoria</th>
+              <th>Descripcion</th>
               <th style="text-align:right;">Monto</th>
               <th style="text-align:right;">Monto (MXN)</th>
             </tr>
@@ -572,7 +585,7 @@ function renderGastosMensualReport() {
   var fAnioEl = document.getElementById('filterGastosMensualAnio');
   var anio = fAnioEl ? parseInt(fAnioEl.value) : new Date().getFullYear();
 
-  var gastos = movimientos.filter(function(m) { return m.tipo === 'gasto'; });
+  var gastos = movimientos.filter(function(m) { return m.tipo === 'gasto' && !m.transferencia_id; });
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   // Collect all categories that have gastos in this year
@@ -695,7 +708,7 @@ function filterGastosDetalle() {
   var fCuenta = fCuentaEl ? fCuentaEl.value : '';
 
   var gastos = movimientos.filter(function(m) {
-    if (m.tipo !== 'gasto') return false;
+    if (m.tipo !== 'gasto' || m.transferencia_id) return false;
     var f = new Date(m.fecha);
     if (fMes !== null && f.getMonth() !== fMes) return false;
     if (fAnio !== null && f.getFullYear() !== fAnio) return false;
@@ -727,39 +740,38 @@ function filterGastosDetalle() {
     return totB - totA;
   });
 
+  // Flatten all items sorted by date descending (no category grouping)
+  var allItems = [];
   sortedCats.forEach(function(entry) {
     var catId = entry[0];
     var items = entry[1];
     var cat = catMap[catId];
     var catNombre = cat ? cat.nombre : 'Sin Categoria';
-    var subtotal = 0;
-
-    items.sort(function(a, b) { return b.fecha.localeCompare(a.fecha); }).forEach(function(m, i) {
-      var cta = cuentaMap[m.cuenta_id];
-      var ctaNombre = cta ? cta.nombre : 'Desconocida';
-      var moneda = cta ? cta.moneda : 'MXN';
-      var montoMXN = toMXN(m.monto, moneda, tiposCambio);
-      subtotal += montoMXN;
-      totalGeneral += montoMXN;
-
-      rowsHTML += '<tr>' +
-        '<td>' + (i === 0 ? '<strong>' + catNombre + '</strong>' : '') + '</td>' +
-        '<td>' + formatDate(m.fecha) + '</td>' +
-        '<td>' + (m.descripcion || '-') + '</td>' +
-        '<td>' + ctaNombre + '</td>' +
-        '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
-        '<td style="text-align:right;">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
-      '</tr>';
+    items.forEach(function(m) {
+      allItems.push({ m: m, catNombre: catNombre });
     });
+  });
+  allItems.sort(function(a, b) { return (b.m.fecha || '').localeCompare(a.m.fecha || ''); });
 
-    // Subtotal row
-    rowsHTML += '<tr style="background:var(--bg-card-hover);font-weight:700;">' +
-      '<td colspan="5" style="text-align:right;color:var(--text-secondary);">Subtotal ' + catNombre + ':</td>' +
-      '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(subtotal, 'MXN') + '</td>' +
+  allItems.forEach(function(item) {
+    var m = item.m;
+    var cta = cuentaMap[m.cuenta_id];
+    var ctaNombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    totalGeneral += montoMXN;
+
+    rowsHTML += '<tr>' +
+      '<td>' + formatDate(m.fecha) + '</td>' +
+      '<td>' + ctaNombre + '</td>' +
+      '<td>' + item.catNombre + '</td>' +
+      '<td>' + (m.descripcion || '-') + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
     '</tr>';
   });
 
-  // Grand total row
+  // Grand total row (no category subtotals)
   rowsHTML += '<tr style="background:var(--bg-base);font-weight:800;border-top:2px solid var(--border-color);">' +
     '<td colspan="5" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>' +
     '<td style="text-align:right;color:var(--accent-red);font-size:17px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>' +

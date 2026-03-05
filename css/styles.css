@@ -538,6 +538,19 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Sticky thead in modal tables for scrolling */
+    #modalBody .data-table thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+
+    /* Tabular-nums for all amount cells */
+    .data-table td {
+      font-variant-numeric: tabular-nums;
+    }
+
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
       to { opacity: 1; transform: scale(1) translateY(0); }

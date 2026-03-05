@@ -512,9 +512,13 @@ function renderDashboard() {
               </tbody>
             </table>
           </div>
-          <div style="display:flex;align-items:center;justify-content:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
             <div style="position:relative;width:100%;max-width:260px;height:260px;">
               <canvas id="dashDeudaDonutChart"></canvas>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashDeudaDonutChart','deuda_composicion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+              <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashDeudaDonutChart','Composicion de Deuda')" title="Imprimir"><i class="fas fa-print"></i></button>
             </div>
           </div>
         </div>
@@ -630,13 +634,23 @@ function renderDashboard() {
 
   const _divExplainTooltip = 'Indice Herfindahl-Hirschman (HHI): metodo usado por la SEC y reguladores financieros para medir concentracion. Puntaje: ' + diversificationScore.toFixed(0) + '/100. 0-40: Muy concentrado | 40-70: Moderado | 70-100: Buena diversificacion';
   const diversificacionHTML = `
-    <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;max-height:520px;overflow:hidden;">
+    <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
+        <i class="fas fa-question-circle" style="color:var(--text-muted);font-size:14px;cursor:pointer;" onclick="document.getElementById('divExplainBox').style.display=document.getElementById('divExplainBox').style.display==='none'?'block':'none'" title="Ver explicacion"></i>
       </div>
-      <div style="display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;padding-bottom:8px;">
-        <!-- Gauge chart at top with tooltip -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;cursor:help;" title="${_divExplainTooltip}" id="divGaugeContainer">
+      <div id="divExplainBox" style="display:none;padding:10px 14px;margin-bottom:8px;background:var(--bg-secondary);border-radius:8px;font-size:11px;color:var(--text-secondary);line-height:1.5;">
+        <strong>Indice Herfindahl-Hirschman (HHI):</strong> metodo usado por la SEC y reguladores financieros para medir concentracion.<br>
+        Puntaje: <strong>${diversificationScore.toFixed(0)}/100</strong>. 0-40: Muy concentrado | 40-70: Moderado | 70-100: Buena diversificacion.<br>
+        ${divExplain}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:8px;">
+        <!-- Gauge chart at top -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;" id="divGaugeContainer">
+          <div style="display:flex;gap:4px;justify-content:center;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashDiversificacionGauge','diversificacion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashDiversificacionGauge','Indicador de Diversificacion')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
           <div style="position:relative;width:150px;height:150px;">
             <canvas id="dashDiversificacionGauge"></canvas>
             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
@@ -647,10 +661,6 @@ function renderDashboard() {
           <span class="badge ${divBadge}" style="font-size:11px;padding:3px 12px;">
             <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divRecommendation}
           </span>
-        </div>
-        <!-- Recommendation text -->
-        <div style="text-align:center;font-size:12px;color:${divColor};font-weight:600;padding:0 12px;line-height:1.5;">
-          <i class="fas ${divIcon}" style="margin-right:4px;"></i>${divExplain}
         </div>
         <div style="font-size:11px;color:var(--text-muted);text-align:center;">${cuentasActivas.length} activos en portafolio</div>
         <!-- Breakdown bars -->
@@ -706,7 +716,7 @@ function renderDashboard() {
           <span style="font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">Patrimonio Neto</span>
           <div style="font-size:24px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatCurrencyInt(patrimonioTotal, 'MXN')}</div>
         </div>
-        <div style="color:var(--text-primary);font-size:12px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+        <div style="color:var(--text-primary);font-size:12px;flex-shrink:0;"></div>
       </div>
       <!-- Ultimos 15 dias -->
       ${ultimos15DiasHTML}
@@ -803,11 +813,15 @@ function renderDashboard() {
     <!-- Diversificacion + Distribucion por Tipo (same row, matched height) -->
     <div class="grid-2" style="margin-bottom:24px;align-items:stretch;">
       ${diversificacionHTML}
-      <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;max-height:520px;overflow:hidden;">
+      <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;">
         <div class="card-header" style="flex-shrink:0;">
           <span class="card-title"><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--accent-amber);"></i>Distribucion por Tipo</span>
+          <div style="display:flex;gap:4px;margin-left:auto;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashDonutChart','distribucion_tipo')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashDonutChart','Distribucion por Tipo')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
         </div>
-        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:260px;">
           <canvas id="dashDonutChart"></canvas>
         </div>
         <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:12px 8px 8px;margin-top:8px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
@@ -819,6 +833,10 @@ function renderDashboard() {
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos</span>
+          <div style="display:flex;gap:4px;margin-left:auto;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashLineChart','rendimientos_vs_gastos')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashLineChart','Rendimientos vs Gastos')" title="Imprimir"><i class="fas fa-print"></i></button>
+          </div>
         </div>
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
@@ -831,9 +849,13 @@ function renderDashboard() {
       <div class="card">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
           <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
-          <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
-            <i class="fas fa-edit"></i> Editar Historial
-          </button>
+          <div style="display:flex;gap:4px;margin-left:auto;">
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashBarChart','evolucion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashBarChart','Evolucion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
+              <i class="fas fa-edit"></i> Editar Historial
+            </button>
+          </div>
         </div>
         <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
@@ -1015,12 +1037,16 @@ function renderDashboard() {
       plugins: {
         legend: { display: false },
         tooltip: {
+          titleFont: { size: 14, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
+          padding: 12,
+          boxPadding: 6,
           callbacks: {
             label: function(ctx) {
               const val = ctx.parsed;
               const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-              return ctx.label + ': ' + formatCurrencyInt(val, 'MXN') + ' (' + pct + '%)';
+              return ' ' + ctx.label + ': ' + formatCurrencyInt(val, 'MXN') + ' (' + pct + '%)';
             },
           },
         },
@@ -1100,6 +1126,7 @@ function renderDashboard() {
           bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
           padding: 15,
           boxPadding: 7,
+          position: 'nearest',
           callbacks: {
             label: function(ctx) { return 'Patrimonio: ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
           },
@@ -1226,12 +1253,24 @@ function renderDashboard() {
           labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
         tooltip: {
+          mode: 'index',
+          intersect: false,
           titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
           bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
           padding: 15,
           boxPadding: 7,
           callbacks: {
             label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
+            afterBody: function(tooltipItems) {
+              if (tooltipItems.length >= 2) {
+                var rend = tooltipItems[0].parsed.y || 0;
+                var gasto = tooltipItems[1].parsed.y || 0;
+                var balance = rend - gasto;
+                var sign = balance >= 0 ? '+' : '';
+                return ['', 'Balance: ' + sign + formatCurrencyInt(balance, 'MXN')];
+              }
+              return [];
+            },
           },
         },
       },
@@ -1473,8 +1512,8 @@ function renderPatrimonioMensualReport(anioParam) {
 
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  // Always show all 12 months
-  var maxMes = 11; // 0-indexed, always show Ene through Dic
+  // Only show months up to current month for current year, all 12 for past years
+  var maxMes = esAnioActual ? mesActualIdx : 11;
 
   // Helper: format currency without decimals for this report
   function fmtInt(val) {

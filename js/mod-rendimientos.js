@@ -160,6 +160,8 @@ function renderRendimientos() {
           <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;" onclick="rendCompararAnios()">
             <i class="fas fa-chart-bar" style="margin-right:3px;"></i>Comparar
           </button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('rendYoyBarChart','rendimientos_comparados')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('rendYoyBarChart','Rendimientos Comparados')" title="Imprimir"><i class="fas fa-print"></i></button>
         </div>
       </div>
       <div style="position:relative;height:320px;">
@@ -193,9 +195,15 @@ function renderRendimientos() {
 
     <!-- 4. Grafica Rendimiento Acumulado -->
     <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
-        <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
-      </h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
+          <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
+        </h3>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('rendLineChart','rendimiento_acumulado')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('rendLineChart','Rendimiento Acumulado')" title="Imprimir"><i class="fas fa-print"></i></button>
+        </div>
+      </div>
       <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
     </div>
     </div>

@@ -1168,7 +1168,7 @@ function verHistorialCuenta(cuentaId) {
 
     // Chart data (chronological order)
     var chartSorted = [...historial].sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
-    tablaHTML += '<div style="margin-top:20px;"><canvas id="historialCuentaChart" height="200"></canvas></div>';
+    tablaHTML += '<div style="margin-top:20px;"><div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage(\'historialCuentaChart\',\'historial_cuenta\')" title="Descargar imagen"><i class="fas fa-download"></i></button><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart(\'historialCuentaChart\',\'Historial de Cuenta\')" title="Imprimir"><i class="fas fa-print"></i></button></div><canvas id="historialCuentaChart" height="200"></canvas></div>';
 
     // We'll render the chart after modal opens
     setTimeout(function() {

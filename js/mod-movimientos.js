@@ -88,6 +88,7 @@ function renderMovimientos() {
         </select>
         <select id="filterMovMes" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:100px;" onchange="filterMovimientos()">
           <option value="">Mes</option>
+          <option value="todos">Todos</option>
           <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
           <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
           <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
@@ -110,14 +111,17 @@ function renderMovimientos() {
         <button class="btn btn-secondary" onclick="exportarMovsFiltradosExcel()" style="padding:5px 10px;font-size:13px;flex:1;min-width:70px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Excel
         </button>
+        <button class="btn btn-secondary" onclick="exportarMovsFiltradosPDF()" style="padding:5px 10px;font-size:13px;flex:1;min-width:60px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
+          <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
+        </button>
         <button class="btn btn-secondary" onclick="openPlantillasRecurrentes()" style="padding:5px 10px;font-size:13px;flex:1;min-width:90px;">
           <i class="fas fa-sync-alt" style="margin-right:3px;"></i>Plantillas
         </button>
         <button class="btn btn-secondary" onclick="openCargaMasiva()" style="padding:5px 10px;font-size:13px;flex:1;min-width:100px;">
           <i class="fas fa-file-excel" style="margin-right:3px;"></i>Carga Masiva
         </button>
-        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:13px;flex:1;min-width:60px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444;">
-          <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
+        <button class="btn btn-secondary" onclick="openPdfImport()" style="padding:5px 10px;font-size:13px;flex:1;min-width:80px;border-color:var(--accent-amber);color:var(--accent-amber);">
+          <i class="fas fa-upload" style="margin-right:3px;"></i>Cargar PDF
         </button>
         <button class="btn btn-secondary" onclick="openTransferenciaModal()" style="padding:5px 10px;font-size:13px;flex:1;min-width:110px;border-color:var(--accent-purple);color:var(--accent-purple);">
           <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Transferencia
@@ -139,10 +143,10 @@ function renderMovimientos() {
             <tr>
               <th style="width:30px;" data-no-sort="true"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
               <th>Fecha</th>
-              <th>Descripcion</th>
-              <th>Tipo</th>
-              <th>Cuenta</th>
               <th>Categoria</th>
+              <th>Descripcion</th>
+              <th>Cuenta</th>
+              <th>Tipo</th>
               <th style="text-align:right;">Monto</th>
               <th style="text-align:center;" data-no-sort="true">Acciones</th>
             </tr>
@@ -197,7 +201,7 @@ function filterMovimientos() {
       var movYear = m.fecha.substring(0, 4);
       if (movYear !== fAnio) return false;
     }
-    if (fMes && m.fecha) {
+    if (fMes && fMes !== 'todos' && m.fecha) {
       var movMonth = m.fecha.substring(5, 7);
       if (movMonth !== fMes) return false;
     }
@@ -288,10 +292,10 @@ function filterMovimientos() {
       <tr>
         <td><input type="checkbox" class="mov-checkbox" value="${m.id}" onchange="onMovCheckboxChange()"></td>
         <td>${formatDate(m.fecha)}</td>
-        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}</td>
-        <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
-        <td>${cuentaNombre}</td>
         <td>${catNombre}</td>
+        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}</td>
+        <td>${cuentaNombre}</td>
+        <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
         <td style="text-align:right;font-weight:600;color:${montoColor};">${signo}${formatCurrencyInt(m.monto, moneda)}</td>
         <td style="text-align:center;">
           <button class="btn btn-secondary" style="padding:5px 10px;font-size:13px;margin-right:4px;" onclick="editMovimiento('${m.id}')">
@@ -1407,6 +1411,8 @@ function exportarSeleccionPDF() {
   _exportMovsToPDF(_getSelectedOrAllMovs(), 'Movimientos Seleccionados');
 }
 
+function exportarMovsFiltradosPDF() { exportarMovsPDF(); }
+
 function exportarMovsPDF() {
   // Use filtered data from visible table rows (checkbox values contain IDs)
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
@@ -1507,7 +1513,8 @@ function mostrarDesgloseMovimientos(tipo) {
       var nombre = cta ? cta.nombre : 'Desconocida';
       if (!rendByCuenta[nombre]) rendByCuenta[nombre] = { monto: 0, count: 0 };
       var monRend = cta ? cta.moneda : 'MXN';
-      rendByCuenta[nombre].monto += toMXN(r.rendimiento_monto || 0, monRend, tiposCambio);
+      var realRend = (typeof _rendReal === 'function') ? _rendReal(r) : (r.rendimiento_monto || 0);
+      rendByCuenta[nombre].monto += toMXN(realRend, monRend, tiposCambio);
       rendByCuenta[nombre].count++;
     });
 

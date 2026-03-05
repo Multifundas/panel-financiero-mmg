@@ -219,83 +219,77 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- ROW 3: Exportar/Importar Datos (left) | Exportar Reportes (right) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;" id="cfgRow3">
+    <!-- ROW 3: 5 cards in single row (Exportar Datos | Exportar Reportes | Respaldo Info | Exportar Respaldo | Importar Respaldo) -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;" id="cfgRow3">
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
-          <span class="card-title"><i class="fas fa-file-export" style="margin-right:8px;color:var(--accent-amber);"></i>Exportar / Importar Datos</span>
+          <span class="card-title"><i class="fas fa-file-export" style="margin-right:8px;color:var(--accent-amber);"></i>Exportar / Importar</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="exportData()">
-            <i class="fas fa-download" style="margin-right:6px;"></i>Exportar JSON
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Datos en formato JSON.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-primary" style="font-size:12px;" onclick="exportData()">
+            <i class="fas fa-download" style="margin-right:4px;"></i>Exportar JSON
           </button>
-          <label class="btn btn-secondary" style="cursor:pointer;">
-            <i class="fas fa-upload" style="margin-right:6px;"></i>Importar JSON
+          <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;text-align:center;">
+            <i class="fas fa-upload" style="margin-right:4px;"></i>Importar JSON
             <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
           </label>
         </div>
-        <p style="margin-top:10px;font-size:12px;color:var(--text-muted);">Exporta todos tus datos en formato JSON para respaldo, o importa un archivo previamente exportado.</p>
       </div>
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-file-excel" style="margin-right:8px;color:var(--accent-green);"></i>Exportar Reportes</span>
         </div>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Genera reportes en Excel o PDF.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('cuentas')">
-            <i class="fas fa-university" style="margin-right:4px;"></i>Cuentas
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('cuentas')">
+            <i class="fas fa-university" style="margin-right:3px;"></i>Cuentas
           </button>
-          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('movimientos')">
-            <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Movimientos
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('movimientos')">
+            <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Movimientos
           </button>
-          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('rendimientos')">
-            <i class="fas fa-chart-line" style="margin-right:4px;"></i>Rendimientos
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('rendimientos')">
+            <i class="fas fa-chart-line" style="margin-right:3px;"></i>Rendimientos
           </button>
-          <button class="btn btn-primary" style="font-size:12px;padding:6px 10px;" onclick="exportarExcel('completo')">
-            <i class="fas fa-file-excel" style="margin-right:4px;"></i>Completo
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('completo')">
+            <i class="fas fa-file-excel" style="margin-right:3px;"></i>Completo
           </button>
-          <button class="btn btn-primary" style="font-size:12px;padding:6px 10px;background:var(--accent-red);border-color:var(--accent-red);" onclick="exportarPDF()">
-            <i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 8px;background:var(--accent-red);border-color:var(--accent-red);" onclick="exportarPDF()">
+            <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
           </button>
         </div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-green);"></i>Respaldo de Datos</span>
+        </div>
+        ${getRespaldoIndicadorHTML()}
+        <div style="margin-top:8px;padding:6px 8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;">
+          <p style="margin:0;font-size:10px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>Al importar se reemplazan todos los datos.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-download" style="margin-right:8px;color:var(--accent-blue);"></i>Exportar Respaldo</span>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Descarga una copia completa de todos tus datos.</p>
+        <button class="btn btn-primary" style="font-size:12px;" onclick="exportarRespaldo()">
+          <i class="fas fa-download" style="margin-right:4px;"></i>Exportar JSON
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-upload" style="margin-right:8px;color:var(--accent-amber);"></i>Importar Respaldo</span>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Restaura desde un archivo de respaldo.</p>
+        <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;text-align:center;">
+          <i class="fas fa-file-import" style="margin-right:4px;"></i>Seleccionar Archivo
+          <input type="file" accept=".json" onchange="importarRespaldo(event)" style="display:none;">
+        </label>
       </div>
     </div>
 
-    <!-- ROW 4: Respaldos - 3 columnas (info | exportar | importar) -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-header">
-        <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-green);"></i>Respaldo de Datos</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="cfgRespaldos">
-        <!-- Info -->
-        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
-          ${getRespaldoIndicadorHTML()}
-          <div style="margin-top:10px;padding:8px 10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;">
-            <p style="margin:0;font-size:11px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Al importar se reemplazan todos los datos.</p>
-          </div>
-        </div>
-        <!-- Exportar -->
-        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
-          <h4 style="margin:0 0 8px 0;font-size:13px;color:var(--text-primary);"><i class="fas fa-download" style="margin-right:6px;color:var(--accent-blue);"></i>Exportar Respaldo</h4>
-          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Descarga una copia completa de todos tus datos.</p>
-          <button class="btn btn-primary" style="font-size:12px;" onclick="exportarRespaldo()">
-            <i class="fas fa-download" style="margin-right:6px;"></i>Exportar JSON
-          </button>
-        </div>
-        <!-- Importar -->
-        <div style="padding:14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">
-          <h4 style="margin:0 0 8px 0;font-size:13px;color:var(--text-primary);"><i class="fas fa-upload" style="margin-right:6px;color:var(--accent-amber);"></i>Importar Respaldo</h4>
-          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Restaura tus datos desde un archivo de respaldo.</p>
-          <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;">
-            <i class="fas fa-file-import" style="margin-right:6px;"></i>Seleccionar Archivo
-            <input type="file" accept=".json" onchange="importarRespaldo(event)" style="display:none;">
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <!-- ROW 5: Datos de Ejemplo | Borrar Todo | Acerca de | Autenticacion (4 columnas) -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:24px;" id="cfgRow5">
+    <!-- ROW 4: Datos de Ejemplo | Borrar Todo | Acerca de | Autenticacion (4 columnas) -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;" id="cfgRow5">
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-database" style="margin-right:8px;color:var(--accent-blue);"></i>Datos de Ejemplo</span>
@@ -458,22 +452,34 @@ function renderTCHistoricoTable() {
     });
   }
 
-  if (historico.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">Sin registros para este ano. Haz click en "Agregar" para capturar.</td></tr>';
-    return;
+  // Build a map of periodo -> record for quick lookup
+  var historicoMap = {};
+  historico.forEach(function(h) { if (h.periodo) historicoMap[h.periodo] = h; });
+
+  var selectedYear = yearSelect ? (yearSelect.value || String(new Date().getFullYear())) : String(new Date().getFullYear());
+
+  // Always show all 12 months for the selected year
+  tbody.innerHTML = '';
+  for (var mi = 0; mi < 12; mi++) {
+    var per = selectedYear + '-' + String(mi + 1).padStart(2, '0');
+    var h = historicoMap[per];
+    var mesLabel = mesesNombres[mi] + ' ' + selectedYear;
+    if (h && h.USD_MXN != null) {
+      tbody.innerHTML += '<tr>' +
+        '<td style="font-weight:600;">' + mesLabel + '</td>' +
+        '<td style="text-align:right;font-weight:600;">$' + Number(h.USD_MXN).toFixed(4) + '</td>' +
+        '<td style="text-align:center;white-space:nowrap;">' +
+          '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-right:2px;" onclick="editTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-edit"></i></button>' +
+          '<button class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="deleteTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-trash"></i></button>' +
+        '</td></tr>';
+    } else {
+      tbody.innerHTML += '<tr>' +
+        '<td style="font-weight:600;color:var(--text-muted);">' + mesLabel + '</td>' +
+        '<td style="text-align:center;color:var(--text-muted);">\u2014</td>' +
+        '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="addTipoCambioHistoricoMes(\'' + per + '\')"><i class="fas fa-plus"></i></button></td>' +
+      '</tr>';
+    }
   }
-  tbody.innerHTML = historico.map(function(h) {
-    var parts = h.periodo ? h.periodo.split('-') : ['',''];
-    var mesIdx = parseInt(parts[1]) - 1;
-    var mesLabel = (mesIdx >= 0 && mesIdx < 12) ? mesesNombres[mesIdx] + ' ' + parts[0] : h.periodo;
-    return '<tr>' +
-      '<td style="font-weight:600;">' + mesLabel + '</td>' +
-      '<td style="text-align:right;font-weight:600;">' + (h.USD_MXN != null ? '$' + Number(h.USD_MXN).toFixed(4) : '—') + '</td>' +
-      '<td style="text-align:center;white-space:nowrap;">' +
-        '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-right:2px;" onclick="editTipoCambioHistorico(\'' + h.periodo + '\')"><i class="fas fa-edit"></i></button>' +
-        '<button class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="deleteTipoCambioHistorico(\'' + h.periodo + '\')"><i class="fas fa-trash"></i></button>' +
-      '</td></tr>';
-  }).join('');
 }
 
 function addTipoCambioHistorico() {
@@ -504,6 +510,34 @@ function saveTipoCambioHistorico(event) {
   var usd = parseFloat(document.getElementById('tcHistUsdMxn').value);
   if (!mes || !anio || isNaN(usd) || usd <= 0) { showToast('Completa todos los campos', 'error'); return; }
   var periodo = anio + '-' + mes;
+  var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
+  var existing = historico.findIndex(function(h) { return h.periodo === periodo; });
+  if (existing >= 0) { historico[existing].USD_MXN = usd; }
+  else { historico.push({ periodo: periodo, USD_MXN: usd }); }
+  saveData(STORAGE_KEYS.tipos_cambio_historico, historico);
+  window._tcHistoricoCache = null;
+  closeModal();
+  showToast('Tipo de cambio guardado para ' + periodo);
+  renderTCHistoricoTable();
+}
+
+function addTipoCambioHistoricoMes(periodo) {
+  var parts = periodo.split('-');
+  var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mesIdx = parseInt(parts[1]) - 1;
+  var mesNombre = mesesNombres[mesIdx] || '';
+  var html = '<form onsubmit="saveTipoCambioHistoricoDirecto(event,\'' + periodo + '\')">' +
+    '<p style="font-size:14px;margin-bottom:16px;color:var(--text-primary);"><strong>' + mesNombre + ' ' + parts[0] + '</strong></p>' +
+    '<div class="form-group"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxnDirect" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:160px;" autofocus></div>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
+  '</form>';
+  openModal('Agregar T/C: ' + mesNombre + ' ' + parts[0], html);
+}
+
+function saveTipoCambioHistoricoDirecto(event, periodo) {
+  if (event) event.preventDefault();
+  var usd = parseFloat(document.getElementById('tcHistUsdMxnDirect').value);
+  if (isNaN(usd) || usd <= 0) { showToast('Ingresa un valor valido', 'error'); return; }
   var historico = loadData(STORAGE_KEYS.tipos_cambio_historico) || [];
   var existing = historico.findIndex(function(h) { return h.periodo === periodo; });
   if (existing >= 0) { historico[existing].USD_MXN = usd; }

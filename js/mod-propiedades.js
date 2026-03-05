@@ -97,11 +97,11 @@ function renderPropiedades() {
     /* ---------- Charts ---------- */
     '<div class="grid-2" style="margin-bottom:24px;">' +
       '<div class="card">' +
-        '<h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Distribucion del Valor por Propiedad</h3>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">Distribucion del Valor por Propiedad</h3><div style="display:flex;gap:4px;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage(\'propDonutChart\',\'propiedades_valor\')" title="Descargar imagen"><i class="fas fa-download"></i></button><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart(\'propDonutChart\',\'Distribucion del Valor por Propiedad\')" title="Imprimir"><i class="fas fa-print"></i></button></div></div>' +
         '<div style="height:280px;"><canvas id="propDonutChart"></canvas></div>' +
       '</div>' +
       '<div class="card">' +
-        '<h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Ingreso por Renta Mensual</h3>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;">Ingreso por Renta Mensual</h3><div style="display:flex;gap:4px;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage(\'propBarChart\',\'propiedades_renta\')" title="Descargar imagen"><i class="fas fa-download"></i></button><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart(\'propBarChart\',\'Ingreso por Renta Mensual\')" title="Imprimir"><i class="fas fa-print"></i></button></div></div>' +
         '<div style="height:280px;"><canvas id="propBarChart"></canvas></div>' +
       '</div>' +
     '</div>' +
