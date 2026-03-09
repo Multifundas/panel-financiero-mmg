@@ -148,11 +148,13 @@ function calcPatrimonioTotal() {
   propiedades.forEach(p => {
     totalPropiedades += toMXN(p.valor_actual || 0, p.moneda || 'MXN', tiposCambio);
     // Deuda de preventa pendiente
-    if (p.tipo === 'preventa' && (p.mensualidades_total - p.mensualidades_pagadas) > 0) {
+    if (p.tipo === 'preventa') {
       var enganche = p.enganche || 0;
-      var pagado = enganche + (p.mensualidades_pagadas * p.monto_mensualidad);
-      var pendiente = Math.max(0, p.valor_compra - pagado);
-      totalDeudaPreventa += toMXN(pendiente, p.moneda || 'MXN', tiposCambio);
+      var pagado = enganche + ((p.mensualidades_pagadas || 0) * (p.monto_mensualidad || 0));
+      var pendiente = Math.max(0, (p.valor_compra || 0) - pagado);
+      if (pendiente > 0) {
+        totalDeudaPreventa += toMXN(pendiente, p.moneda || 'MXN', tiposCambio);
+      }
     }
   });
   prestamos.forEach(p => {
@@ -209,7 +211,7 @@ function mostrarDesglosePatrimonio() {
     var tcDisplay = tc ? '$' + tc.toFixed(4) : '\u2014';
     html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:12px;">' + c.tipo + '</span></td><td style="text-align:right;">' + formatCurrencyInt(saldoReal, c.moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:12px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
   });
-  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="4">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrencyInt(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
+  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Cuentas</td><td></td><td></td><td></td><td style="text-align:right;color:var(--accent-blue);font-weight:700;">' + formatCurrencyInt(pat.cuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
   // Propiedades breakdown
   if (propiedades.length > 0) {
@@ -220,7 +222,7 @@ function mostrarDesglosePatrimonio() {
       var tipoBadge = p.tipo === 'preventa' ? 'badge-amber' : 'badge-purple';
       html += '<tr><td style="font-weight:600;">' + p.nombre + '</td><td><span class="badge ' + tipoBadge + '" style="font-size:12px;">' + (p.tipo === 'preventa' ? 'Preventa' : 'Terminada') + '</span></td><td style="text-align:right;">' + formatCurrencyInt(p.valor_actual || 0, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Propiedades</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(pat.propiedades, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Propiedades</td><td></td><td></td><td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(pat.propiedades, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // Prestamos otorgados (activos)
@@ -232,7 +234,7 @@ function mostrarDesglosePatrimonio() {
       var valMXN = toMXN(p.saldo_pendiente, p.moneda || 'MXN', tiposCambio);
       html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrencyInt(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Otorgados</td><td style="text-align:right;color:var(--accent-amber);">' + formatCurrencyInt(pat.prestamosOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Otorgados</td><td></td><td style="text-align:right;color:var(--accent-amber);font-weight:700;">' + formatCurrencyInt(pat.prestamosOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // Deuda (prestamos recibidos + preventa) — unified section matching evolución patrimonio format
@@ -255,7 +257,7 @@ function mostrarDesglosePatrimonio() {
       totalDeuda += valMXN;
       html += '<tr><td style="font-weight:600;">' + pr.nombre + ' (preventa)</td><td style="text-align:right;">' + formatCurrencyInt(pendiente, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Deuda</td><td style="text-align:right;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Deuda</td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // Total

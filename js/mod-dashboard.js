@@ -404,7 +404,13 @@ function renderDashboard() {
 
   // -- Deuda Total Calculations --
   const prestamosRecibidos = prestamos.filter(p => p.tipo === 'recibido' && p.estado === 'activo');
-  const preventaPendientes = propiedades.filter(pr => pr.tipo === 'preventa' && (pr.mensualidades_total - pr.mensualidades_pagadas) > 0);
+  const preventaPendientes = propiedades.filter(pr => {
+    if (pr.tipo !== 'preventa') return false;
+    var enganche = pr.enganche || 0;
+    var pagado = enganche + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
+    var pendiente = (pr.valor_compra || 0) - pagado;
+    return pendiente > 0;
+  });
 
   let deudaPrestamos = 0;
   prestamosRecibidos.forEach(p => {
@@ -605,11 +611,11 @@ function renderDashboard() {
       var color = colorsMap ? (colorsMap[key] || colorsArr[idx % colorsArr.length]) : colorsArr[idx % colorsArr.length];
       return '<div style="margin-bottom:8px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
-          '<span style="font-size:12px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-size:14px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">' +
             '<span style="width:10px;height:10px;border-radius:50%;background:' + color + ';display:inline-block;"></span>' +
             label +
           '</span>' +
-          '<span style="font-size:11px;color:var(--text-muted);">' + formatCurrencyInt(val, 'MXN') + ' (' + pct.toFixed(1) + '%)</span>' +
+          '<span style="font-size:13px;color:var(--text-muted);">' + formatCurrencyInt(val, 'MXN') + ' (' + pct.toFixed(1) + '%)</span>' +
         '</div>' +
         '<div style="height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;">' +
           '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 0.3s;"></div>' +
@@ -637,9 +643,9 @@ function renderDashboard() {
     <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <span class="card-title"><i class="fas fa-th" style="margin-right:8px;color:${divColor};"></i>Indicador de Diversificacion</span>
-        <i class="fas fa-question-circle" style="color:var(--text-muted);font-size:14px;cursor:pointer;" onclick="document.getElementById('divExplainBox').style.display=document.getElementById('divExplainBox').style.display==='none'?'block':'none'" title="Ver explicacion"></i>
+        <i class="fas fa-question-circle" style="color:var(--text-muted);font-size:14px;cursor:pointer;" onclick="var b=document.getElementById('divExplainBox');if(b.style.display==='none'){b.style.display='block';b.style.maxHeight=b.scrollHeight+'px';}else{b.style.maxHeight='0px';setTimeout(function(){b.style.display='none';},200);}" title="Ver explicacion"></i>
       </div>
-      <div id="divExplainBox" style="display:none;padding:10px 14px;margin-bottom:8px;background:var(--bg-secondary);border-radius:8px;font-size:11px;color:var(--text-secondary);line-height:1.5;">
+      <div id="divExplainBox" style="display:none;max-height:0;overflow:hidden;transition:max-height 0.2s ease-out;padding:10px 14px;margin-bottom:8px;background:var(--bg-secondary);border-radius:8px;font-size:11px;color:var(--text-secondary);line-height:1.5;">
         <strong>Indice Herfindahl-Hirschman (HHI):</strong> metodo usado por la SEC y reguladores financieros para medir concentracion.<br>
         Puntaje: <strong>${diversificationScore.toFixed(0)}/100</strong>. 0-40: Muy concentrado | 40-70: Moderado | 70-100: Buena diversificacion.<br>
         ${divExplain}
@@ -666,19 +672,19 @@ function renderDashboard() {
         <!-- Breakdown bars -->
         <div style="padding:0 8px;">
           <div style="margin-bottom:10px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
               <i class="fas fa-layer-group" style="margin-right:4px;"></i> Por Tipo
             </div>
             ${divTipoBars}
           </div>
           <div style="margin-bottom:10px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
               <i class="fas fa-coins" style="margin-right:4px;"></i> Por Moneda
             </div>
             ${divMonedaBars}
           </div>
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
               <i class="fas fa-university" style="margin-right:4px;"></i> Por Institucion
             </div>
             ${divInstBars}
@@ -821,10 +827,10 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashDonutChart','Distribucion por Tipo')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
         </div>
-        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:260px;">
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;height:220px;max-width:220px;margin:0 auto;">
           <canvas id="dashDonutChart"></canvas>
         </div>
-        <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:12px 8px 8px;margin-top:8px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
+        <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 8px;margin-top:10px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
       </div>
     </div>
 
@@ -1028,19 +1034,22 @@ function renderDashboard() {
         backgroundColor: pieColors,
         borderColor: _cc.borderColor,
         borderWidth: 2,
-        hoverOffset: 8,
+        hoverOffset: 12,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: { top: 10, bottom: 10, left: 10, right: 10 },
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
-          titleFont: { size: 14, weight: 'bold', family: "'Plus Jakarta Sans'" },
-          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
-          padding: 12,
-          boxPadding: 6,
+          titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 14, family: "'Plus Jakarta Sans'" },
+          padding: 14,
+          boxPadding: 8,
           callbacks: {
             label: function(ctx) {
               const val = ctx.parsed;
@@ -1064,8 +1073,8 @@ function renderDashboard() {
     pieItems.sort(function(a, b) { return b.value - a.value; });
     pieLegendContainer.innerHTML = pieItems.map(function(item) {
       return '<div style="display:flex;flex-direction:column;align-items:center;min-width:80px;">' +
-        '<span style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;">' + item.label + '</span>' +
-        '<span style="font-size:11px;color:var(--text-muted);margin-top:1px;">' + item.pct.toFixed(1) + '%</span>' +
+        '<span style="font-size:15px;font-weight:700;color:var(--text-primary);white-space:nowrap;">' + item.label + '</span>' +
+        '<span style="font-size:13px;color:var(--text-muted);margin-top:2px;">' + formatCurrencyInt(item.value, 'MXN') + ' (' + item.pct.toFixed(1) + '%)</span>' +
         '<div style="width:100%;height:4px;border-radius:2px;background:' + item.color + ';margin-top:4px;"></div>' +
       '</div>';
     }).join('');
@@ -1119,16 +1128,23 @@ function renderDashboard() {
           grid: { color: gridColor },
         },
       },
+      interaction: { mode: 'index', intersect: false, axis: 'x' },
       plugins: {
         legend: { display: false },
         tooltip: {
+          mode: 'index',
+          intersect: false,
+          axis: 'x',
           titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
           bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
           padding: 15,
           boxPadding: 7,
-          position: 'nearest',
           callbacks: {
-            label: function(ctx) { return 'Patrimonio: ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
+            title: function(tooltipItems) {
+              if (tooltipItems.length > 0) return tooltipItems[0].label;
+              return '';
+            },
+            label: function(ctx) { return ' Patrimonio: ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
           },
         },
       },
@@ -1224,7 +1240,7 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: 'index', intersect: false, axis: 'x' },
       onClick: function(evt, elements) {
         if (elements.length > 0) {
           var idx = elements[0].index;
@@ -1255,12 +1271,20 @@ function renderDashboard() {
         tooltip: {
           mode: 'index',
           intersect: false,
+          axis: 'x',
           titleFont: { size: 15, weight: 'bold', family: "'Plus Jakarta Sans'" },
           bodyFont: { size: 15, family: "'Plus Jakarta Sans'" },
           padding: 15,
           boxPadding: 7,
           callbacks: {
-            label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrencyInt(ctx.parsed.y, 'MXN'); },
+            title: function(tooltipItems) {
+              if (tooltipItems.length > 0) return tooltipItems[0].label;
+              return '';
+            },
+            label: function(ctx) {
+              var val = ctx.parsed.y || 0;
+              return ' ' + ctx.dataset.label + ': ' + formatCurrencyInt(val, 'MXN');
+            },
             afterBody: function(tooltipItems) {
               if (tooltipItems.length >= 2) {
                 var rend = tooltipItems[0].parsed.y || 0;
@@ -1356,14 +1380,7 @@ function renderDashboard() {
         cutout: '75%',
         plugins: {
           legend: { display: false },
-          tooltip: {
-            filter: function(tooltipItem) { return tooltipItem.dataIndex === 0; },
-            callbacks: {
-              label: function(ctx) {
-                return 'Diversificacion: ' + ctx.parsed.toFixed(1) + '%';
-              },
-            },
-          },
+          tooltip: { enabled: false },
         },
       },
     });
@@ -1546,7 +1563,7 @@ function renderPatrimonioMensualReport(anioParam) {
     return result;
   }
 
-  // Build header — always show all 12 months
+  // Build header — only months up to maxMes
   var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Cuenta</th>';
   thead += '<th style="text-align:left;min-width:50px;font-size:' + FS + ';">Mon.</th>';
   for (var m = 0; m <= maxMes; m++) {
@@ -2243,8 +2260,45 @@ function mostrarDesgloseCuentas(tipo) {
   }).join('');
 
   var tipoLabel = tipo === 'debito' ? 'Cuentas Bancarias' : tipo === 'inversion' ? 'Inversiones' : tipo;
-  var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
-    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="5">Total</td><td style="text-align:right;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
+
+  // For inversiones, add rendimiento % column
+  var extraTh = '';
+  var extraTd = '';
+  if (tipo === 'inversion') {
+    extraTh = '<th style="text-align:right;">Rend. %</th>';
+    // Recalculate rows with rendimiento column
+    var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+    rows = filtered.map(function(c) {
+      var saldoReal = _calcSaldoReal(c);
+      var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
+      var tc = c.moneda !== 'MXN' ? getTipoCambio(c.moneda) : null;
+      var tcDisplay = tc ? '$' + tc.toFixed(4) : '\u2014';
+      // Get tasa anual from ultimo cierre
+      var tasaAnual = c.rendimiento_anual || 0;
+      var hist = c.historial_saldos || [];
+      if (hist.length > 0) {
+        var ultimoCierre = hist.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
+        if (ultimoCierre.rendimiento_pct_anual != null) tasaAnual = ultimoCierre.rendimiento_pct_anual;
+      }
+      var tasaColor = tasaAnual >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var tasaSign = tasaAnual >= 0 ? '+' : '';
+      var tasaDisplay = (tasaAnual !== 0) ? tasaSign + tasaAnual.toFixed(2) + '%' : '\u2014';
+      return '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);">' + c.nombre + '</td>' +
+        '<td>' + (instMap[c.institucion_id] || '\u2014') + '</td>' +
+        '<td><span class="badge ' + monedaBadgeClass(c.moneda) + '">' + c.moneda + '</span></td>' +
+        '<td style="text-align:right;">' + formatCurrencyInt(saldoReal, c.moneda) + '</td>' +
+        '<td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td>' +
+        '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:' + tasaColor + ';">' + tasaDisplay + '</td>' +
+      '</tr>';
+    }).join('');
+    extraTd = '<td></td>';
+  }
+
+  var numCols = tipo === 'inversion' ? 7 : 6;
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th>' + extraTh + '</tr></thead><tbody>' +
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td><td></td><td></td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td>' + extraTd + '</tr></tfoot></table>';
 
   openModal('Desglose: ' + tipoLabel, html);
   var mc = document.querySelector('.modal-content');
@@ -2270,7 +2324,7 @@ function mostrarDesglosePropiedades() {
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
-    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Total</td><td style="text-align:right;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: Propiedades', html);
   var mc = document.querySelector('.modal-content');
@@ -2296,9 +2350,9 @@ function mostrarDesglosePrestamos() {
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
-    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Otorgados</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td colspan="3">Recibidos</td><td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td colspan="3">Neto</td><td style="text-align:right;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Otorgados</td><td></td><td></td><td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td style="font-weight:700;">Recibidos</td><td></td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
+    '<tr style="font-weight:700;"><td style="font-weight:700;">Neto</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
 
   openModal('Desglose: Prestamos', html);
   var mc = document.querySelector('.modal-content');
@@ -2423,7 +2477,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
     var tcCell = moneda !== 'MXN' ? '$' + tc.toFixed(4) : '—';
     html += '<tr><td style="font-weight:600;">' + c.nombre + '</td><td><span class="badge badge-blue" style="font-size:12px;">' + c.tipo + '</span></td><td><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:12px;">' + moneda + '</span></td><td style="text-align:right;">' + formatCurrencyInt(sFinal, moneda) + '</td><td style="text-align:right;color:var(--text-primary);font-size:12px;font-weight:600;">' + tcCell + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
   });
-  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="5">Subtotal Cuentas</td><td style="text-align:right;color:var(--accent-blue);">' + formatCurrencyInt(totalCuentas, 'MXN') + '</td></tr></tfoot></table></div>';
+  html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Cuentas</td><td></td><td></td><td></td><td></td><td style="text-align:right;color:var(--accent-blue);font-weight:700;">' + formatCurrencyInt(totalCuentas, 'MXN') + '</td></tr></tfoot></table></div>';
 
   // -- Propiedades --
   if (propiedades.length > 0) {
@@ -2434,7 +2488,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
       totalPropiedades += valMXN;
       html += '<tr><td style="font-weight:600;">' + pr.nombre + '</td><td><span class="badge badge-amber" style="font-size:12px;">' + (pr.tipo === 'preventa' ? 'Preventa' : 'Terminada') + '</span></td><td style="text-align:right;">' + formatCurrencyInt(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3">Subtotal Propiedades</td><td style="text-align:right;color:var(--accent-green);">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Propiedades</td><td></td><td></td><td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // -- Prestamos otorgados --
@@ -2447,7 +2501,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
       totalOtorgados += valMXN;
       html += '<tr><td style="font-weight:600;">' + p.persona + '</td><td style="text-align:right;">' + formatCurrencyInt(p.saldo_pendiente, p.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Otorgados</td><td style="text-align:right;color:var(--accent-amber);">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Otorgados</td><td></td><td style="text-align:right;color:var(--accent-amber);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // -- Deuda (prestamos recibidos + preventa) --
@@ -2469,7 +2523,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
       totalDeuda += valMXN;
       html += '<tr><td style="font-weight:600;">' + pr.nombre + ' (preventa)</td><td style="text-align:right;">' + formatCurrencyInt(pendiente, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2">Subtotal Deuda</td><td style="text-align:right;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</td></tr></tfoot></table></div>';
+    html += '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Subtotal Deuda</td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</td></tr></tfoot></table></div>';
   }
 
   // -- Total Patrimonio Neto --
