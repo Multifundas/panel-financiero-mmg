@@ -842,6 +842,8 @@ function renderDashboard() {
           <div style="display:flex;gap:4px;margin-left:auto;">
             <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashLineChart','rendimientos_vs_gastos')" title="Descargar imagen"><i class="fas fa-download"></i></button>
             <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashLineChart','Rendimientos vs Gastos')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportRendVsGastosExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportRendVsGastosPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
         <div style="position:relative;height:300px;">
@@ -858,6 +860,8 @@ function renderDashboard() {
           <div style="display:flex;gap:4px;margin-left:auto;">
             <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashBarChart','evolucion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
             <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashBarChart','Evolucion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportEvolucionPatrimonioExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportEvolucionPatrimonioPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
             <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
               <i class="fas fa-edit"></i> Editar Historial
             </button>
@@ -1104,6 +1108,7 @@ function renderDashboard() {
   // -- 2. Bar: Evolucion del Patrimonio (from first data, max 24 months) --
   // Store barPeriodos for click handler
   window._dashBarPeriodos = barPeriodos;
+  window._dashBarData = { labels: barLabels, data: barData, periodos: barPeriodos };
   if (window._charts.dashBar) window._charts.dashBar.destroy();
   const barCtx = document.getElementById('dashBarChart').getContext('2d');
   // Dynamic bar sizing: thinner bars when more months are shown
@@ -1240,6 +1245,7 @@ function renderDashboard() {
 
   // Store linePeriodos for click handler
   window._dashLinePeriodos = linePeriodos;
+  window._dashLineData = { labels: lineLabels, rend: rendData, gastos: gastosData, periodos: linePeriodos };
   if (window._charts.dashLine) window._charts.dashLine.destroy();
   const lineCtx = document.getElementById('dashLineChart').getContext('2d');
   // Dynamic point sizing for line chart when many months
@@ -1625,8 +1631,11 @@ function renderPatrimonioMensualReport(anioParam) {
   var numMeses = maxMes + 1;
   var totalPorMes = new Array(numMeses).fill(0);
 
-  // -- Cuentas activas --
-  var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
+  // Excel export data collector
+  var _reportExcelRows = [];
+
+  // -- Cuentas activas (orden alfabetico) --
+  var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var subtotalCuentasPorMes = new Array(numMeses).fill(0);
 
   cuentasActivas.forEach(function(cta) {
@@ -1635,6 +1644,7 @@ function renderPatrimonioMensualReport(anioParam) {
     var saldoRealMXN = toMXN(_calcSaldoReal(cta), moneda, tiposCambio);
     var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + cta.nombre + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:9px;padding:1px 5px;">' + moneda + '</span></td>';
     var lastVal = 0;
+    var exRow = [cta.nombre, moneda];
 
     for (var m = 0; m <= maxMes; m++) {
       var per = anio + '-' + String(m + 1).padStart(2, '0');
@@ -1642,9 +1652,10 @@ function renderPatrimonioMensualReport(anioParam) {
         subtotalCuentasPorMes[m] += saldoRealMXN;
         totalPorMes[m] += saldoRealMXN;
         lastVal = saldoRealMXN;
+        exRow.push(Math.round(saldoRealMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(saldoRealMXN) + '</td>';
       } else if (esAnioActual && m > mesActualIdx) {
-        // Future month — show $0
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         var cierre = findCarryForward(sortedHist, per);
@@ -1654,14 +1665,18 @@ function renderPatrimonioMensualReport(anioParam) {
           subtotalCuentasPorMes[m] += saldoMXN;
           totalPorMes[m] += saldoMXN;
           lastVal = saldoMXN;
+          exRow.push(Math.round(saldoMXN));
           row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(saldoMXN) + '</td>';
         } else {
+          exRow.push(0);
           row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
         }
       }
     }
+    exRow.push(Math.round(lastVal));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(lastVal) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   // Subtotal cuentas
@@ -1673,25 +1688,34 @@ function renderPatrimonioMensualReport(anioParam) {
     else { lastSubCuentas = subtotalCuentasPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-blue);">' + fmtInt(subtotalCuentasPorMes[m]) + '</td>'; }
   }
   rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-blue);">' + fmtInt(lastSubCuentas) + '</td></tr>';
+  var exSubCuentas = ['Subtotal Cuentas', ''];
+  for (var m = 0; m <= maxMes; m++) exSubCuentas.push(Math.round(subtotalCuentasPorMes[m]));
+  exSubCuentas.push(Math.round(lastSubCuentas));
+  _reportExcelRows.push(exSubCuentas);
 
-  // -- Propiedades --
-  var propActivas = propiedades.filter(function(p) { return p.activa !== false; });
+  // -- Propiedades (orden alfabetico) --
+  var propActivas = propiedades.filter(function(p) { return p.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var subtotalPropPorMes = new Array(numMeses).fill(0);
   propActivas.forEach(function(prop) {
     var valMXN = toMXN(prop.valor_actual || prop.valor_compra || 0, prop.moneda || 'MXN', tiposCambio);
     var propMoneda = prop.moneda || 'MXN';
     var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">' + prop.nombre + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(propMoneda) + '" style="font-size:9px;padding:1px 5px;">' + propMoneda + '</span></td>';
+    var exRow = [prop.nombre, propMoneda];
     for (var m = 0; m <= maxMes; m++) {
       if (esAnioActual && m > mesActualIdx) {
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         subtotalPropPorMes[m] += valMXN;
         totalPorMes[m] += valMXN;
+        exRow.push(Math.round(valMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(valMXN) + '</td>';
       }
     }
+    exRow.push(Math.round(valMXN));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   if (propActivas.length > 0) {
@@ -1702,27 +1726,36 @@ function renderPatrimonioMensualReport(anioParam) {
       else { lastSubProp = subtotalPropPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-blue);">' + fmtInt(subtotalPropPorMes[m]) + '</td>'; }
     }
     rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-blue);">' + fmtInt(lastSubProp) + '</td></tr>';
+    var exSubProp = ['Subtotal Propiedades', ''];
+    for (var m = 0; m <= maxMes; m++) exSubProp.push(Math.round(subtotalPropPorMes[m]));
+    exSubProp.push(Math.round(lastSubProp));
+    _reportExcelRows.push(exSubProp);
   }
 
-  // -- Préstamos otorgados --
-  var prestOtorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; });
+  // -- Préstamos otorgados (orden alfabetico) --
+  var prestOtorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var subtotalOtorgPorMes = new Array(numMeses).fill(0);
   prestOtorgados.forEach(function(p) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var pMoneda = p.moneda || 'MXN';
     var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Prest. ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(pMoneda) + '" style="font-size:9px;padding:1px 5px;">' + pMoneda + '</span></td>';
+    var exRow = ['Prest. ' + (p.persona || 'N/A'), pMoneda];
     for (var m = 0; m <= maxMes; m++) {
       if (esAnioActual && m > mesActualIdx) {
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         subtotalOtorgPorMes[m] += valMXN;
         totalPorMes[m] += valMXN;
+        exRow.push(Math.round(valMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(valMXN) + '</td>';
       }
     }
+    exRow.push(Math.round(valMXN));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';">' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   if (prestOtorgados.length > 0) {
@@ -1733,14 +1766,18 @@ function renderPatrimonioMensualReport(anioParam) {
       else { lastSubOtorg = subtotalOtorgPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-green);">' + fmtInt(subtotalOtorgPorMes[m]) + '</td>'; }
     }
     rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-green);">' + fmtInt(lastSubOtorg) + '</td></tr>';
+    var exSubOtorg = ['Subtotal Otorgados', ''];
+    for (var m = 0; m <= maxMes; m++) exSubOtorg.push(Math.round(subtotalOtorgPorMes[m]));
+    exSubOtorg.push(Math.round(lastSubOtorg));
+    _reportExcelRows.push(exSubOtorg);
   }
 
-  // -- Deuda (préstamos recibidos + preventa de propiedades) --
-  var prestRecibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; });
-  var preventasPrest = prestamos.filter(function(p) { return p.tipo === 'preventa' && p.estado !== 'pagado'; });
+  // -- Deuda (préstamos recibidos + preventa de propiedades, orden alfabetico) --
+  var prestRecibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
+  var preventasPrest = prestamos.filter(function(p) { return p.tipo === 'preventa' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventasProp = propiedades.filter(function(pr) {
     return pr.tipo === 'preventa' && (pr.mensualidades_total - (pr.mensualidades_pagadas || 0)) > 0;
-  });
+  }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
 
   var subtotalDeudaPorMes = new Array(numMeses).fill(0);
   var hayDeuda = (prestRecibidos.length > 0 || preventasPrest.length > 0 || preventasProp.length > 0);
@@ -1750,17 +1787,22 @@ function renderPatrimonioMensualReport(anioParam) {
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var dMoneda = p.moneda || 'MXN';
     var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(dMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dMoneda + '</span></td>';
+    var exRow = ['Deuda: ' + (p.persona || 'N/A'), dMoneda];
     for (var m = 0; m <= maxMes; m++) {
       if (esAnioActual && m > mesActualIdx) {
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         subtotalDeudaPorMes[m] += valMXN;
         totalPorMes[m] -= valMXN;
+        exRow.push(-Math.round(valMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
       }
     }
+    exRow.push(-Math.round(valMXN));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   preventasPrest.forEach(function(p) {
@@ -1768,17 +1810,22 @@ function renderPatrimonioMensualReport(anioParam) {
     var valMXN = toMXN(saldo, p.moneda || 'MXN', tiposCambio);
     var dpMoneda = p.moneda || 'MXN';
     var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (p.persona || 'N/A') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(dpMoneda) + '" style="font-size:9px;padding:1px 5px;">' + dpMoneda + '</span></td>';
+    var exRow = ['Deuda: ' + (p.persona || 'N/A'), dpMoneda];
     for (var m = 0; m <= maxMes; m++) {
       if (esAnioActual && m > mesActualIdx) {
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         subtotalDeudaPorMes[m] += valMXN;
         totalPorMes[m] -= valMXN;
+        exRow.push(-Math.round(valMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
       }
     }
+    exRow.push(-Math.round(valMXN));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   preventasProp.forEach(function(pr) {
@@ -1789,17 +1836,22 @@ function renderPatrimonioMensualReport(anioParam) {
     var valMXN = toMXN(pendiente, pr.moneda || 'MXN', tiposCambio);
     var prMoneda = pr.moneda || 'MXN';
     var row = '<tr><td style="font-weight:600;color:var(--accent-red);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:' + FS + ';">Deuda: ' + (pr.nombre || 'Preventa') + '</td><td style="text-align:left;"><span class="badge ' + monedaBadgeClass(prMoneda) + '" style="font-size:9px;padding:1px 5px;">' + prMoneda + '</span></td>';
+    var exRow = ['Deuda: ' + (pr.nombre || 'Preventa'), prMoneda];
     for (var m = 0; m <= maxMes; m++) {
       if (esAnioActual && m > mesActualIdx) {
+        exRow.push(0);
         row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
         subtotalDeudaPorMes[m] += valMXN;
         totalPorMes[m] -= valMXN;
+        exRow.push(-Math.round(valMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;color:var(--accent-red);">-' + fmtInt(valMXN) + '</td>';
       }
     }
+    exRow.push(-Math.round(valMXN));
     row += '<td style="text-align:right;font-weight:700;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(valMXN) + '</td></tr>';
     rows += row;
+    _reportExcelRows.push(exRow);
   });
 
   if (hayDeuda) {
@@ -1810,6 +1862,10 @@ function renderPatrimonioMensualReport(anioParam) {
       else { lastSubDeuda = subtotalDeudaPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(subtotalDeudaPorMes[m]) + '</td>'; }
     }
     rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-red);">-' + fmtInt(lastSubDeuda) + '</td></tr>';
+    var exSubDeuda = ['Subtotal Deuda', ''];
+    for (var m = 0; m <= maxMes; m++) exSubDeuda.push(-Math.round(subtotalDeudaPorMes[m]));
+    exSubDeuda.push(-Math.round(lastSubDeuda));
+    _reportExcelRows.push(exSubDeuda);
   }
 
   // -- TOTAL PATRIMONIO NETO --
@@ -1825,6 +1881,10 @@ function renderPatrimonioMensualReport(anioParam) {
   }
   var lastColor = lastTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
   rows += '<td style="text-align:right;font-size:' + FS_HEAD + ';font-weight:800;color:' + lastColor + ';">' + fmtInt(lastTotal) + '</td></tr>';
+  var exTotal = ['PATRIMONIO NETO', ''];
+  for (var m = 0; m <= maxMes; m++) exTotal.push(Math.round(totalPorMes[m]));
+  exTotal.push(Math.round(lastTotal));
+  _reportExcelRows.push(exTotal);
 
   // Year filter options
   var anioOpts = '';
@@ -1832,16 +1892,21 @@ function renderPatrimonioMensualReport(anioParam) {
     anioOpts += '<option value="' + y + '"' + (y === anio ? ' selected' : '') + '>' + y + '</option>';
   }
 
+  // Store report data for Excel export
+  window._patrimonioReportData = { mesesCortos: mesesCortos, anio: anio, rows: _reportExcelRows };
+
   container.innerHTML =
     '<div class="card">' +
       '<div class="card-header" style="display:flex;align-items:center;gap:12px;justify-content:flex-start;">' +
         '<span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Reporte Mensual de Patrimonio</span>' +
         '<select id="patrimonioReportAnioFilter" class="form-select" style="padding:3px 8px;font-size:11px;min-height:auto;width:80px;" onchange="renderPatrimonioMensualReport(this.value)">' + anioOpts + '</select>' +
+        '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-left:auto;" onclick="exportPatrimonioReportExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>' +
       '</div>' +
       '<div style="overflow-x:auto;">' +
-        '<table class="data-table" style="font-size:' + FS + ';"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' +
+        '<table class="data-table sortable-table" style="font-size:' + FS + ';"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' +
       '</div>' +
     '</div>';
+  setTimeout(function() { _initSortableTables(container); }, 50);
 }
 
 /* ============================================================
@@ -2730,4 +2795,122 @@ function _mostrarDesgloseRendPeriodo(periodo, label) {
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
+}
+
+/* ============================================================
+   DASHBOARD: Export functions (Excel / PDF)
+   ============================================================ */
+
+// Export Reporte Mensual de Patrimonio to Excel
+function exportPatrimonioReportExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Libreria XLSX no cargada.', 'error'); return; }
+  var d = window._patrimonioReportData;
+  if (!d || !d.rows || d.rows.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+  var header = ['Cuenta', 'Mon.'];
+  d.mesesCortos.forEach(function(m) { header.push(m); });
+  header.push('Ultimo');
+  var wsData = [header].concat(d.rows);
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Patrimonio ' + d.anio);
+  XLSX.writeFile(wb, 'reporte_patrimonio_' + d.anio + '.xlsx');
+  showToast('Excel exportado.', 'success');
+}
+
+// Export Rendimientos vs Gastos chart data to Excel
+function exportRendVsGastosExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Libreria XLSX no cargada.', 'error'); return; }
+  var d = window._dashLineData;
+  if (!d || !d.labels || d.labels.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+  var wsData = [['Periodo', 'Rendimientos (MXN)', 'Gastos (MXN)', 'Balance (MXN)']];
+  for (var i = 0; i < d.labels.length; i++) {
+    var r = Math.round(d.rend[i] || 0);
+    var g = Math.round(d.gastos[i] || 0);
+    wsData.push([d.labels[i], r, g, r - g]);
+  }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Rend vs Gastos');
+  XLSX.writeFile(wb, 'rendimientos_vs_gastos_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  showToast('Excel exportado.', 'success');
+}
+
+// Export Rendimientos vs Gastos chart data to PDF
+function exportRendVsGastosPDF() {
+  if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') { showToast('Libreria jsPDF no cargada.', 'error'); return; }
+  var d = window._dashLineData;
+  if (!d || !d.labels || d.labels.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+  var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jspdf.jsPDF;
+  var doc = new jsPDF('l', 'mm', 'letter');
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Panel Financiero MMG', 14, 15);
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+  doc.text('Rendimientos vs Gastos — ' + new Date().toLocaleDateString('es-MX'), 14, 22);
+  var tableData = [];
+  for (var i = 0; i < d.labels.length; i++) {
+    var r = Math.round(d.rend[i] || 0);
+    var g = Math.round(d.gastos[i] || 0);
+    tableData.push([d.labels[i], '$' + r.toLocaleString('es-MX'), '$' + g.toLocaleString('es-MX'), '$' + (r - g).toLocaleString('es-MX')]);
+  }
+  doc.autoTable({
+    startY: 28,
+    head: [['Periodo', 'Rendimientos (MXN)', 'Gastos (MXN)', 'Balance (MXN)']],
+    body: tableData,
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+  });
+  doc.save('rendimientos_vs_gastos_' + new Date().toISOString().slice(0, 10) + '.pdf');
+  showToast('PDF exportado.', 'success');
+}
+
+// Export Evolucion del Patrimonio chart data to Excel
+function exportEvolucionPatrimonioExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Libreria XLSX no cargada.', 'error'); return; }
+  var d = window._dashBarData;
+  if (!d || !d.labels || d.labels.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+  var wsData = [['Periodo', 'Patrimonio (MXN)']];
+  for (var i = 0; i < d.labels.length; i++) {
+    var val = d.data[i] != null ? Math.round(d.data[i]) : '';
+    wsData.push([d.labels[i], val]);
+  }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Evolucion Patrimonio');
+  XLSX.writeFile(wb, 'evolucion_patrimonio_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  showToast('Excel exportado.', 'success');
+}
+
+// Export Evolucion del Patrimonio chart data to PDF
+function exportEvolucionPatrimonioPDF() {
+  if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') { showToast('Libreria jsPDF no cargada.', 'error'); return; }
+  var d = window._dashBarData;
+  if (!d || !d.labels || d.labels.length === 0) { showToast('No hay datos para exportar.', 'warning'); return; }
+  var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jspdf.jsPDF;
+  var doc = new jsPDF('l', 'mm', 'letter');
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Panel Financiero MMG', 14, 15);
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+  doc.text('Evolucion del Patrimonio — ' + new Date().toLocaleDateString('es-MX'), 14, 22);
+  var tableData = [];
+  for (var i = 0; i < d.labels.length; i++) {
+    var val = d.data[i] != null ? Math.round(d.data[i]) : 0;
+    tableData.push([d.labels[i], '$' + val.toLocaleString('es-MX')]);
+  }
+  doc.autoTable({
+    startY: 28,
+    head: [['Periodo', 'Patrimonio (MXN)']],
+    body: tableData,
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: { 1: { halign: 'right', cellWidth: 50 } }
+  });
+  doc.save('evolucion_patrimonio_' + new Date().toISOString().slice(0, 10) + '.pdf');
+  showToast('PDF exportado.', 'success');
 }
