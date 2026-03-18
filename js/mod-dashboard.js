@@ -1173,7 +1173,7 @@ function renderDashboard() {
             if (!tooltipEl) {
               tooltipEl = document.createElement('div');
               tooltipEl.id = 'dashBarTooltip';
-              tooltipEl.style.cssText = 'position:absolute;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
+              tooltipEl.style.cssText = 'position:fixed;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
               document.body.appendChild(tooltipEl);
             }
             var tooltipModel = context.tooltip;
@@ -1191,13 +1191,16 @@ function renderDashboard() {
             tooltipEl.innerHTML = html;
             var pos = chart.canvas.getBoundingClientRect();
             var tooltipWidth = tooltipEl.offsetWidth || 200;
-            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
-            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
-            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
+            // Horizontal: center on caret, clamp inside chart
+            var leftPos = pos.left + tooltipModel.caretX - tooltipWidth / 2;
+            if (leftPos < pos.left + 5) leftPos = pos.left + 5;
+            if (leftPos + tooltipWidth > pos.right - 5) leftPos = pos.right - tooltipWidth - 5;
+            // Vertical: place inside chart area, 40px from top of chart
+            var topPos = pos.top + 40;
             tooltipEl.style.opacity = '1';
             tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = pos.top + window.pageYOffset + tooltipModel.caretY - 10 + 'px';
-            tooltipEl.style.transform = 'translate(-50%, -100%)';
+            tooltipEl.style.top = topPos + 'px';
+            tooltipEl.style.transform = 'none';
           },
         },
       },
@@ -1332,7 +1335,7 @@ function renderDashboard() {
             if (!tooltipEl) {
               tooltipEl = document.createElement('div');
               tooltipEl.id = 'dashLineTooltip';
-              tooltipEl.style.cssText = 'position:absolute;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
+              tooltipEl.style.cssText = 'position:fixed;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
               document.body.appendChild(tooltipEl);
             }
             var tooltipModel = context.tooltip;
@@ -1353,15 +1356,18 @@ function renderDashboard() {
             html += '<div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</div>';
             tooltipEl.innerHTML = html;
             var pos = chart.canvas.getBoundingClientRect();
+            var tooltipHeight = tooltipEl.offsetHeight || 100;
             var tooltipWidth = tooltipEl.offsetWidth || 200;
-            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
-            // Keep tooltip inside chart bounds
-            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
-            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
+            // Horizontal: center on caret, clamp inside chart
+            var leftPos = pos.left + tooltipModel.caretX - tooltipWidth / 2;
+            if (leftPos < pos.left + 5) leftPos = pos.left + 5;
+            if (leftPos + tooltipWidth > pos.right - 5) leftPos = pos.right - tooltipWidth - 5;
+            // Vertical: place inside chart area, 40px from top of chart
+            var topPos = pos.top + 40;
             tooltipEl.style.opacity = '1';
             tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = pos.top + window.pageYOffset + tooltipModel.caretY - 10 + 'px';
-            tooltipEl.style.transform = 'translate(-50%, -100%)';
+            tooltipEl.style.top = topPos + 'px';
+            tooltipEl.style.transform = 'none';
           },
         },
       },
