@@ -183,9 +183,9 @@ function renderDashboard() {
 
   // Calculate months between first data and now
   let monthsDiff = (currentDate.getFullYear() - firstPatDate.getFullYear()) * 12 + (currentDate.getMonth() - firstPatDate.getMonth());
-  // Cap at 24 months
-  const numBarMonths = Math.min(Math.max(monthsDiff + 1, 1), 24);
-  const barStartDate = new Date(anioActual, mesActual - (numBarMonths - 1), 1);
+  // Always show 24 months
+  const numBarMonths = 24;
+  const barStartDate = new Date(anioActual, mesActual - 23, 1);
 
   const barLabels = [];
   const barData = [];
@@ -259,7 +259,7 @@ function renderDashboard() {
       });
       barData.push(totalMes);
     } else {
-      barData.push(null);
+      barData.push(0);
     }
   }
 
@@ -823,11 +823,11 @@ function renderDashboard() {
         <div class="card-header" style="flex-shrink:0;">
           <span class="card-title"><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--accent-amber);"></i>Distribucion por Tipo</span>
           <div style="display:flex;gap:4px;margin-left:auto;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashDonutChart','distribucion_tipo')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashDonutChart','Distribucion por Tipo')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportChartAsImage('dashDonutChart','distribucion_tipo')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashDonutChart','Distribucion por Tipo')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
         </div>
-        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:195px;max-height:195px;">
+        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:340px;max-height:340px;">
           <canvas id="dashDonutChart"></canvas>
         </div>
         <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 8px;margin-top:10px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
@@ -840,10 +840,10 @@ function renderDashboard() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos</span>
           <div style="display:flex;gap:4px;margin-left:auto;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashLineChart','rendimientos_vs_gastos')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashLineChart','Rendimientos vs Gastos')" title="Imprimir"><i class="fas fa-print"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportRendVsGastosExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportRendVsGastosPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportChartAsImage('dashLineChart','rendimientos_vs_gastos')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashLineChart','Rendimientos vs Gastos')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportRendVsGastosExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportRendVsGastosPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
         <div style="position:relative;height:300px;">
@@ -858,13 +858,10 @@ function renderDashboard() {
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
           <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
           <div style="display:flex;gap:4px;margin-left:auto;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('dashBarChart','evolucion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('dashBarChart','Evolucion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportEvolucionPatrimonioExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportEvolucionPatrimonioPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
-            <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editarHistorialPatrimonio()">
-              <i class="fas fa-edit"></i> Editar Historial
-            </button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportChartAsImage('dashBarChart','evolucion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashBarChart','Evolucion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportEvolucionPatrimonioExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportEvolucionPatrimonioPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
         <div style="position:relative;height:320px;">
@@ -1078,9 +1075,15 @@ function renderDashboard() {
             html += '<div style="margin-top:4px;font-size:15px;">' + formatCurrencyInt(val, 'MXN') + ' <span style="color:rgba(255,255,255,0.6);">(' + pct + '%)</span></div>';
             tooltipEl.innerHTML = html;
             var pos = chart.canvas.getBoundingClientRect();
+            var tooltipWidth = tooltipEl.offsetWidth || 180;
+            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
+            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
+            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
+            var topPos = pos.top + window.pageYOffset + tooltipModel.caretY - 10;
+            if (topPos < pos.top + window.pageYOffset) topPos = pos.top + window.pageYOffset + 10;
             tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = pos.left + window.pageXOffset + tooltipModel.caretX + 'px';
-            tooltipEl.style.top = pos.top + window.pageYOffset + tooltipModel.caretY - 10 + 'px';
+            tooltipEl.style.left = leftPos + 'px';
+            tooltipEl.style.top = topPos + 'px';
             tooltipEl.style.transform = 'translate(-50%, -100%)';
           },
         },
@@ -1127,7 +1130,6 @@ function renderDashboard() {
         borderRadius: 4,
         barPercentage: _barPct,
         categoryPercentage: _barCatPct,
-        skipNull: true,
       }],
     },
     options: {
@@ -1158,6 +1160,8 @@ function renderDashboard() {
         legend: { display: false },
         tooltip: {
           enabled: false,
+          mode: 'index',
+          intersect: false,
           external: function(context) {
             var tooltipEl = document.getElementById('dashBarTooltip');
             if (!tooltipEl) {
@@ -1167,17 +1171,12 @@ function renderDashboard() {
               document.body.appendChild(tooltipEl);
             }
             var tooltipModel = context.tooltip;
-            if (tooltipModel.opacity === 0) {
+            if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints || tooltipModel.dataPoints.length === 0) {
               tooltipEl.style.opacity = '0';
               return;
             }
+            var dataIndex = tooltipModel.dataPoints[0].dataIndex;
             var chart = context.chart;
-            var xScale = chart.scales.x;
-            var canvasPos = Chart.helpers.getRelativePosition(tooltipModel, chart);
-            var dataIndex = xScale.getValueForPixel(canvasPos.x);
-            dataIndex = Math.round(dataIndex);
-            if (dataIndex < 0) dataIndex = 0;
-            if (dataIndex >= chart.data.labels.length) dataIndex = chart.data.labels.length - 1;
             var label = chart.data.labels[dataIndex];
             var val = chart.data.datasets[0].data[dataIndex];
             if (val == null) { tooltipEl.style.opacity = '0'; return; }
@@ -1185,8 +1184,12 @@ function renderDashboard() {
             html += '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px;"></span>Patrimonio: ' + formatCurrencyInt(val, 'MXN') + '</div>';
             tooltipEl.innerHTML = html;
             var pos = chart.canvas.getBoundingClientRect();
+            var tooltipWidth = tooltipEl.offsetWidth || 200;
+            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
+            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
+            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
             tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = pos.left + window.pageXOffset + tooltipModel.caretX + 'px';
+            tooltipEl.style.left = leftPos + 'px';
             tooltipEl.style.top = pos.top + window.pageYOffset + tooltipModel.caretY - 10 + 'px';
             tooltipEl.style.transform = 'translate(-50%, -100%)';
           },
@@ -1208,8 +1211,8 @@ function renderDashboard() {
   const firstRGPeriodo = sortedRGPeriodos.length > 0 ? sortedRGPeriodos[0] : `${anioActual}-01`;
   const firstRGDate = new Date(parseInt(firstRGPeriodo.split('-')[0]), parseInt(firstRGPeriodo.split('-')[1]) - 1, 1);
   let rgMonthsDiff = (currentDate.getFullYear() - firstRGDate.getFullYear()) * 12 + (currentDate.getMonth() - firstRGDate.getMonth());
-  const numLineMonths = Math.min(Math.max(rgMonthsDiff + 1, 1), 24);
-  const lineStartDate = new Date(anioActual, mesActual - (numLineMonths - 1), 1);
+  const numLineMonths = 24;
+  const lineStartDate = new Date(anioActual, mesActual - 23, 1);
 
   const lineLabels = [];
   const rendData = [];
@@ -1315,6 +1318,8 @@ function renderDashboard() {
         },
         tooltip: {
           enabled: false,
+          mode: 'index',
+          intersect: false,
           external: function(context) {
             var tooltipEl = document.getElementById('dashLineTooltip');
             if (!tooltipEl) {
@@ -1324,18 +1329,12 @@ function renderDashboard() {
               document.body.appendChild(tooltipEl);
             }
             var tooltipModel = context.tooltip;
-            if (tooltipModel.opacity === 0) {
+            if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints || tooltipModel.dataPoints.length === 0) {
               tooltipEl.style.opacity = '0';
               return;
             }
-            // Use the x-scale to find the correct data index from cursor position
+            var dataIndex = tooltipModel.dataPoints[0].dataIndex;
             var chart = context.chart;
-            var xScale = chart.scales.x;
-            var canvasPos = Chart.helpers.getRelativePosition(tooltipModel, chart);
-            var dataIndex = xScale.getValueForPixel(canvasPos.x);
-            dataIndex = Math.round(dataIndex);
-            if (dataIndex < 0) dataIndex = 0;
-            if (dataIndex >= chart.data.labels.length) dataIndex = chart.data.labels.length - 1;
             var label = chart.data.labels[dataIndex];
             var rend = chart.data.datasets[0].data[dataIndex] || 0;
             var gasto = chart.data.datasets[1].data[dataIndex] || 0;
@@ -1347,8 +1346,13 @@ function renderDashboard() {
             html += '<div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</div>';
             tooltipEl.innerHTML = html;
             var pos = chart.canvas.getBoundingClientRect();
+            var tooltipWidth = tooltipEl.offsetWidth || 200;
+            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
+            // Keep tooltip inside chart bounds
+            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
+            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
             tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = pos.left + window.pageXOffset + tooltipModel.caretX + 'px';
+            tooltipEl.style.left = leftPos + 'px';
             tooltipEl.style.top = pos.top + window.pageYOffset + tooltipModel.caretY - 10 + 'px';
             tooltipEl.style.transform = 'translate(-50%, -100%)';
           },
@@ -1634,7 +1638,11 @@ function renderPatrimonioMensualReport(anioParam) {
   // Excel export data collector
   var _reportExcelRows = [];
 
+  // Total columns: Cuenta + Mon. + 12 months + Ultimo = 15
+  var totalCols = numMeses + 3;
+
   // -- Cuentas activas (orden alfabetico) --
+  rows += '<tr><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-blue);padding:10px 8px 4px;border-bottom:2px solid var(--accent-blue);background:rgba(59,130,246,0.03);"><i class="fas fa-university" style="margin-right:6px;"></i>CUENTAS</td></tr>';
   var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var subtotalCuentasPorMes = new Array(numMeses).fill(0);
 
@@ -1694,6 +1702,9 @@ function renderPatrimonioMensualReport(anioParam) {
   _reportExcelRows.push(exSubCuentas);
 
   // -- Propiedades (orden alfabetico) --
+  if (propiedades.filter(function(p) { return p.activa !== false; }).length > 0) {
+    rows += '<tr><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-cyan,#06b6d4);padding:10px 8px 4px;border-bottom:2px solid var(--accent-cyan,#06b6d4);background:rgba(6,182,212,0.03);"><i class="fas fa-building" style="margin-right:6px;"></i>PROPIEDADES</td></tr>';
+  }
   var propActivas = propiedades.filter(function(p) { return p.activa !== false; }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var subtotalPropPorMes = new Array(numMeses).fill(0);
   propActivas.forEach(function(prop) {
@@ -1733,6 +1744,9 @@ function renderPatrimonioMensualReport(anioParam) {
   }
 
   // -- Préstamos otorgados (orden alfabetico) --
+  if (prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; }).length > 0) {
+    rows += '<tr><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-green);padding:10px 8px 4px;border-bottom:2px solid var(--accent-green);background:rgba(16,185,129,0.03);"><i class="fas fa-hand-holding-usd" style="margin-right:6px;"></i>PRESTAMOS OTORGADOS</td></tr>';
+  }
   var prestOtorgados = prestamos.filter(function(p) { return p.tipo === 'otorgado' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var subtotalOtorgPorMes = new Array(numMeses).fill(0);
   prestOtorgados.forEach(function(p) {
@@ -1773,6 +1787,10 @@ function renderPatrimonioMensualReport(anioParam) {
   }
 
   // -- Deuda (préstamos recibidos + preventa de propiedades, orden alfabetico) --
+  var _hayDeudaCheck = prestamos.filter(function(p) { return (p.tipo === 'recibido' || p.tipo === 'preventa') && p.estado !== 'pagado'; }).length > 0 || propiedades.filter(function(pr) { return pr.tipo === 'preventa' && (pr.mensualidades_total - (pr.mensualidades_pagadas || 0)) > 0; }).length > 0;
+  if (_hayDeudaCheck) {
+    rows += '<tr><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-red);padding:10px 8px 4px;border-bottom:2px solid var(--accent-red);background:rgba(239,68,68,0.03);"><i class="fas fa-credit-card" style="margin-right:6px;"></i>DEUDA</td></tr>';
+  }
   var prestRecibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventasPrest = prestamos.filter(function(p) { return p.tipo === 'preventa' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventasProp = propiedades.filter(function(pr) {
@@ -1900,7 +1918,7 @@ function renderPatrimonioMensualReport(anioParam) {
       '<div class="card-header" style="display:flex;align-items:center;gap:12px;justify-content:flex-start;">' +
         '<span class="card-title"><i class="fas fa-table" style="margin-right:8px;color:var(--accent-blue);"></i>Reporte Mensual de Patrimonio</span>' +
         '<select id="patrimonioReportAnioFilter" class="form-select" style="padding:3px 8px;font-size:11px;min-height:auto;width:80px;" onchange="renderPatrimonioMensualReport(this.value)">' + anioOpts + '</select>' +
-        '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-left:auto;" onclick="exportPatrimonioReportExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>' +
+        '<button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;margin-left:auto;" onclick="exportPatrimonioReportExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>' +
       '</div>' +
       '<div style="overflow-x:auto;">' +
         '<table class="data-table sortable-table" style="font-size:' + FS + ';"><thead>' + thead + '</thead><tbody>' + rows + '</tbody></table>' +
@@ -2683,11 +2701,12 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   // -- Total Patrimonio Neto --
   var patrimonioNeto = totalCuentas + totalPropiedades + totalOtorgados - totalDeuda;
   html += '<div style="padding:16px;border-radius:10px;background:var(--bg-base);margin-top:16px;">' +
-    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:14px;">' +
-    '<div style="color:var(--text-primary);">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalCuentas, 'MXN') + '</div>' +
-    (totalPropiedades > 0 ? '<div style="color:var(--text-primary);">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</div>' : '') +
-    (totalOtorgados > 0 ? '<div style="color:var(--text-primary);">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</div>' : '') +
-    (totalDeuda > 0 ? '<div style="color:var(--text-primary);">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</div>' : '') +
+    '<div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Resumen</div>' +
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:16px;">' +
+    '<div style="color:var(--text-primary);font-weight:600;">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalCuentas, 'MXN') + '</div>' +
+    (totalPropiedades > 0 ? '<div style="color:var(--text-primary);font-weight:600;">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</div>' : '') +
+    (totalOtorgados > 0 ? '<div style="color:var(--text-primary);font-weight:600;">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</div>' : '') +
+    (totalDeuda > 0 ? '<div style="color:var(--text-primary);font-weight:600;">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</div>' : '') +
     '</div>' +
     '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:800;">' +
     '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrencyInt(patrimonioNeto, 'MXN') + '</span>' +
