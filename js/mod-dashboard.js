@@ -183,9 +183,9 @@ function renderDashboard() {
 
   // Calculate months between first data and now
   let monthsDiff = (currentDate.getFullYear() - firstPatDate.getFullYear()) * 12 + (currentDate.getMonth() - firstPatDate.getMonth());
-  // Always show 24 months
+  // Always show Jan current-1 to Dec current (24 months)
   const numBarMonths = 24;
-  const barStartDate = new Date(anioActual, mesActual - 23, 1);
+  const barStartDate = new Date(anioActual - 1, 0, 1);
 
   const barLabels = [];
   const barData = [];
@@ -265,7 +265,11 @@ function renderDashboard() {
 
   // For the current month, always use the live patrimonio calculation
   // (matches the desglose de patrimonio total and account balances)
-  barData[barData.length - 1] = patrimonioTotal;
+  // Find current month index in the 24-month range (Jan prev year to Dec current year)
+  var _curMonthIdx = mesActual + 12; // months since Jan of previous year
+  if (_curMonthIdx >= 0 && _curMonthIdx < barData.length) {
+    barData[_curMonthIdx] = patrimonioTotal;
+  }
 
   // (Filters removed — dashboard always shows current data)
 
@@ -827,10 +831,12 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashDonutChart','Distribucion por Tipo')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
         </div>
-        <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:340px;max-height:340px;">
-          <canvas id="dashDonutChart"></canvas>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;">
+          <div style="position:relative;width:100%;max-width:340px;aspect-ratio:1/1;">
+            <canvas id="dashDonutChart"></canvas>
+          </div>
+          <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 0;margin-top:12px;border-top:1px solid var(--border-color);width:100%;"></div>
         </div>
-        <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 8px;margin-top:10px;border-top:1px solid var(--border-color);flex-shrink:0;"></div>
       </div>
     </div>
 
@@ -1211,8 +1217,9 @@ function renderDashboard() {
   const firstRGPeriodo = sortedRGPeriodos.length > 0 ? sortedRGPeriodos[0] : `${anioActual}-01`;
   const firstRGDate = new Date(parseInt(firstRGPeriodo.split('-')[0]), parseInt(firstRGPeriodo.split('-')[1]) - 1, 1);
   let rgMonthsDiff = (currentDate.getFullYear() - firstRGDate.getFullYear()) * 12 + (currentDate.getMonth() - firstRGDate.getMonth());
+  // Always show Jan current-1 to Dec current (24 months)
   const numLineMonths = 24;
-  const lineStartDate = new Date(anioActual, mesActual - 23, 1);
+  const lineStartDate = new Date(anioActual - 1, 0, 1);
 
   const lineLabels = [];
   const rendData = [];
