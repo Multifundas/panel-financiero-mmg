@@ -1143,10 +1143,15 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
       onClick: function(evt, elements, chart) {
-        if (!elements || elements.length === 0) return;
-        var idx = elements[0].index;
+        // Convert click position to data index using getValueForPixel (handles DPR internally)
+        var canvasPos = Chart.helpers.getRelativePosition(evt, chart);
+        var xAxis = chart.scales.x;
+        var rawIdx = xAxis.getValueForPixel(canvasPos.x);
+        var idx = Math.round(rawIdx);
+        if (idx < 0) idx = 0;
+        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
+        console.log('[BAR CLICK] canvasPos.x=' + canvasPos.x + ', rawIdx=' + rawIdx + ', idx=' + idx + ', label=' + chart.data.labels[idx] + ', periodo=' + (window._dashBarPeriodos||[])[idx]);
         var label = chart.data.labels[idx];
         var val = chart.data.datasets[0].data[idx];
         var infoEl = document.getElementById('dashBarClickInfo');
@@ -1157,7 +1162,7 @@ function renderDashboard() {
             '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
             '</div>';
         }
-        var per = window._dashBarPeriodos[idx];
+        var per = (window._dashBarPeriodos||[])[idx];
         if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
       },
       scales: {
@@ -1272,10 +1277,15 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
       onClick: function(evt, elements, chart) {
-        if (!elements || elements.length === 0) return;
-        var idx = elements[0].index;
+        // Convert click position to data index using getValueForPixel (handles DPR internally)
+        var canvasPos = Chart.helpers.getRelativePosition(evt, chart);
+        var xAxis = chart.scales.x;
+        var rawIdx = xAxis.getValueForPixel(canvasPos.x);
+        var idx = Math.round(rawIdx);
+        if (idx < 0) idx = 0;
+        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
+        console.log('[LINE CLICK] canvasPos.x=' + canvasPos.x + ', rawIdx=' + rawIdx + ', idx=' + idx + ', label=' + chart.data.labels[idx]);
         var label = chart.data.labels[idx];
         var rend = chart.data.datasets[0].data[idx] || 0;
         var gasto = chart.data.datasets[1].data[idx] || 0;
