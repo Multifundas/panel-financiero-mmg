@@ -1143,28 +1143,8 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      onClick: function(evt) {
-        var chart = window._charts.dashBar;
-        var canvasRect = chart.canvas.getBoundingClientRect();
-        var mouseX = evt.native ? evt.native.clientX - canvasRect.left : (evt.x || 0);
-        var xScale = chart.scales.x;
-        var idx = Math.round(xScale.getValueForPixel(mouseX));
-        if (idx < 0) idx = 0;
-        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
-        var label = chart.data.labels[idx];
-        var val = chart.data.datasets[0].data[idx];
-        // Show info bar
-        var infoEl = document.getElementById('dashBarClickInfo');
-        if (infoEl) {
-          infoEl.style.display = 'block';
-          infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-            '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
-            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
-            '</div>';
-        }
-        // Also open desglose modal
-        var per = window._dashBarPeriodos[idx];
-        if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
+      onClick: function() {
+        // onClick handled via native canvas listener below
       },
       scales: {
         x: {
@@ -1185,6 +1165,35 @@ function renderDashboard() {
         tooltip: { enabled: false },
       },
     },
+  });
+
+  // Native click listener for bar chart (bypasses Chart.js event abstraction)
+  document.getElementById('dashBarChart').addEventListener('click', function(e) {
+    var chart = window._charts.dashBar;
+    if (!chart) return;
+    var rect = chart.canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var xScale = chart.scales.x;
+    // Get pixel positions for each label and find closest
+    var closestIdx = 0;
+    var closestDist = Infinity;
+    for (var i = 0; i < chart.data.labels.length; i++) {
+      var labelX = xScale.getPixelForValue(i);
+      var dist = Math.abs(x - labelX);
+      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+    }
+    var label = chart.data.labels[closestIdx];
+    var val = chart.data.datasets[0].data[closestIdx];
+    var infoEl = document.getElementById('dashBarClickInfo');
+    if (infoEl) {
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
+        '</div>';
+    }
+    var per = window._dashBarPeriodos[closestIdx];
+    if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[closestIdx]);
   });
 
   // -- 3. Line: Rendimientos vs Gastos (start from first data, max 24 months) --
@@ -1278,29 +1287,8 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      onClick: function(evt) {
-        var chart = window._charts.dashLine;
-        var canvasRect = chart.canvas.getBoundingClientRect();
-        var mouseX = evt.native ? evt.native.clientX - canvasRect.left : (evt.x || 0);
-        var xScale = chart.scales.x;
-        var idx = Math.round(xScale.getValueForPixel(mouseX));
-        if (idx < 0) idx = 0;
-        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
-        var label = chart.data.labels[idx];
-        var rend = chart.data.datasets[0].data[idx] || 0;
-        var gasto = chart.data.datasets[1].data[idx] || 0;
-        var balance = rend - gasto;
-        var sign = balance >= 0 ? '+' : '';
-        var infoEl = document.getElementById('dashLineClickInfo');
-        if (infoEl) {
-          infoEl.style.display = 'block';
-          infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-            '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
-            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
-            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
-            '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
-            '</div>';
-        }
+      onClick: function() {
+        // onClick handled via native canvas listener below
       },
       scales: {
         x: {
@@ -1325,6 +1313,38 @@ function renderDashboard() {
         tooltip: { enabled: false },
       },
     },
+  });
+
+  // Native click listener for line chart (bypasses Chart.js event abstraction)
+  document.getElementById('dashLineChart').addEventListener('click', function(e) {
+    var chart = window._charts.dashLine;
+    if (!chart) return;
+    var rect = chart.canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var xScale = chart.scales.x;
+    // Get pixel positions for each label and find closest
+    var closestIdx = 0;
+    var closestDist = Infinity;
+    for (var i = 0; i < chart.data.labels.length; i++) {
+      var labelX = xScale.getPixelForValue(i);
+      var dist = Math.abs(x - labelX);
+      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+    }
+    var label = chart.data.labels[closestIdx];
+    var rend = chart.data.datasets[0].data[closestIdx] || 0;
+    var gasto = chart.data.datasets[1].data[closestIdx] || 0;
+    var balance = rend - gasto;
+    var sign = balance >= 0 ? '+' : '';
+    var infoEl = document.getElementById('dashLineClickInfo');
+    if (infoEl) {
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
+        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
+        '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
+        '</div>';
+    }
   });
 
   // -- 4. Deuda Donut: Breakdown by source --
