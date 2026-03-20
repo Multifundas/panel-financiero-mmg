@@ -852,6 +852,7 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportRendVsGastosPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
+        <div id="dashLineClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:0 16px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;"></div>
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
         </div>
@@ -870,6 +871,7 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportEvolucionPatrimonioPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
+        <div id="dashBarClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:0 16px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;"></div>
         <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
         </div>
@@ -1141,9 +1143,23 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      onClick: function(evt, elements) {
-        if (elements.length > 0) {
-          var idx = elements[0].index;
+      onClick: function(evt) {
+        var chart = window._charts.dashBar;
+        var points = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+        if (points.length > 0) {
+          var idx = points[0].index;
+          var label = chart.data.labels[idx];
+          var val = chart.data.datasets[0].data[idx];
+          // Show info bar
+          var infoEl = document.getElementById('dashBarClickInfo');
+          if (infoEl) {
+            infoEl.style.display = 'block';
+            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+              '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
+              '</div>';
+          }
+          // Also open desglose modal
           var per = window._dashBarPeriodos[idx];
           if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
         }
@@ -1164,27 +1180,7 @@ function renderDashboard() {
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          enabled: true,
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(15,23,42,0.95)',
-          titleFont: { size: 14, weight: '700', family: "'Plus Jakarta Sans'" },
-          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
-          padding: 12,
-          cornerRadius: 8,
-          displayColors: true,
-          boxWidth: 10,
-          boxHeight: 10,
-          usePointStyle: true,
-          callbacks: {
-            label: function(ctx) {
-              var val = ctx.parsed.y;
-              if (val == null) return null;
-              return ' Patrimonio: ' + formatCurrencyInt(val, 'MXN');
-            },
-          },
-        },
+        tooltip: { enabled: false },
       },
     },
   });
@@ -1280,12 +1276,26 @@ function renderDashboard() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      onClick: function(evt, elements) {
-        if (elements.length > 0) {
-          var idx = elements[0].index;
-          var per = window._dashLinePeriodos[idx];
-          if (per) _mostrarDesgloseRendGastoPeriodo(per, lineLabels[idx]);
+      onClick: function(evt) {
+        var chart = window._charts.dashLine;
+        var points = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+        if (points.length > 0) {
+          var idx = points[0].index;
+          var label = chart.data.labels[idx];
+          var rend = chart.data.datasets[0].data[idx] || 0;
+          var gasto = chart.data.datasets[1].data[idx] || 0;
+          var balance = rend - gasto;
+          var sign = balance >= 0 ? '+' : '';
+          var infoEl = document.getElementById('dashLineClickInfo');
+          if (infoEl) {
+            infoEl.style.display = 'block';
+            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+              '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
+              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
+              '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
+              '</div>';
+          }
         }
       },
       scales: {
@@ -1308,35 +1318,7 @@ function renderDashboard() {
         legend: {
           labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
-        tooltip: {
-          enabled: true,
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(15,23,42,0.95)',
-          titleFont: { size: 14, weight: '700', family: "'Plus Jakarta Sans'" },
-          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
-          footerFont: { size: 13, weight: '600', family: "'Plus Jakarta Sans'" },
-          padding: 12,
-          cornerRadius: 8,
-          displayColors: true,
-          boxWidth: 10,
-          boxHeight: 10,
-          usePointStyle: true,
-          callbacks: {
-            label: function(ctx) {
-              var val = ctx.parsed.y || 0;
-              return ' ' + ctx.dataset.label + ': ' + formatCurrencyInt(val, 'MXN');
-            },
-            footer: function(items) {
-              if (!items || items.length < 2) return '';
-              var rend = items[0].parsed.y || 0;
-              var gasto = items[1].parsed.y || 0;
-              var balance = rend - gasto;
-              var sign = balance >= 0 ? '+' : '';
-              return 'Balance: ' + sign + formatCurrencyInt(balance, 'MXN');
-            },
-          },
-        },
+        tooltip: { enabled: false },
       },
     },
   });
