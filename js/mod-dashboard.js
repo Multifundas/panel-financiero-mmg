@@ -1145,24 +1145,26 @@ function renderDashboard() {
       maintainAspectRatio: false,
       onClick: function(evt) {
         var chart = window._charts.dashBar;
-        var points = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
-        if (points.length > 0) {
-          var idx = points[0].index;
-          var label = chart.data.labels[idx];
-          var val = chart.data.datasets[0].data[idx];
-          // Show info bar
-          var infoEl = document.getElementById('dashBarClickInfo');
-          if (infoEl) {
-            infoEl.style.display = 'block';
-            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-              '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
-              '</div>';
-          }
-          // Also open desglose modal
-          var per = window._dashBarPeriodos[idx];
-          if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
+        var canvasRect = chart.canvas.getBoundingClientRect();
+        var mouseX = evt.native ? evt.native.clientX - canvasRect.left : (evt.x || 0);
+        var xScale = chart.scales.x;
+        var idx = Math.round(xScale.getValueForPixel(mouseX));
+        if (idx < 0) idx = 0;
+        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
+        var label = chart.data.labels[idx];
+        var val = chart.data.datasets[0].data[idx];
+        // Show info bar
+        var infoEl = document.getElementById('dashBarClickInfo');
+        if (infoEl) {
+          infoEl.style.display = 'block';
+          infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+            '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
+            '</div>';
         }
+        // Also open desglose modal
+        var per = window._dashBarPeriodos[idx];
+        if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
       },
       scales: {
         x: {
@@ -1278,24 +1280,26 @@ function renderDashboard() {
       maintainAspectRatio: false,
       onClick: function(evt) {
         var chart = window._charts.dashLine;
-        var points = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
-        if (points.length > 0) {
-          var idx = points[0].index;
-          var label = chart.data.labels[idx];
-          var rend = chart.data.datasets[0].data[idx] || 0;
-          var gasto = chart.data.datasets[1].data[idx] || 0;
-          var balance = rend - gasto;
-          var sign = balance >= 0 ? '+' : '';
-          var infoEl = document.getElementById('dashLineClickInfo');
-          if (infoEl) {
-            infoEl.style.display = 'block';
-            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-              '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
-              '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
-              '</div>';
-          }
+        var canvasRect = chart.canvas.getBoundingClientRect();
+        var mouseX = evt.native ? evt.native.clientX - canvasRect.left : (evt.x || 0);
+        var xScale = chart.scales.x;
+        var idx = Math.round(xScale.getValueForPixel(mouseX));
+        if (idx < 0) idx = 0;
+        if (idx >= chart.data.labels.length) idx = chart.data.labels.length - 1;
+        var label = chart.data.labels[idx];
+        var rend = chart.data.datasets[0].data[idx] || 0;
+        var gasto = chart.data.datasets[1].data[idx] || 0;
+        var balance = rend - gasto;
+        var sign = balance >= 0 ? '+' : '';
+        var infoEl = document.getElementById('dashLineClickInfo');
+        if (infoEl) {
+          infoEl.style.display = 'block';
+          infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+            '<span style="font-weight:700;font-size:15px;">' + label + '</span>' +
+            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
+            '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
+            '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
+            '</div>';
         }
       },
       scales: {
