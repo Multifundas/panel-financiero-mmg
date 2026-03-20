@@ -1172,13 +1172,14 @@ function renderDashboard() {
     var chart = window._charts.dashBar;
     if (!chart) return;
     var rect = chart.canvas.getBoundingClientRect();
-    var x = e.clientX - rect.left;
-    var xScale = chart.scales.x;
+    var scaleX = chart.canvas.width / rect.width;
+    var x = (e.clientX - rect.left) * scaleX;
+    var xAxis = chart.scales.x;
     // Get pixel positions for each label and find closest
     var closestIdx = 0;
     var closestDist = Infinity;
     for (var i = 0; i < chart.data.labels.length; i++) {
-      var labelX = xScale.getPixelForValue(i);
+      var labelX = xAxis.getPixelForValue(i);
       var dist = Math.abs(x - labelX);
       if (dist < closestDist) { closestDist = dist; closestIdx = i; }
     }
@@ -1320,13 +1321,14 @@ function renderDashboard() {
     var chart = window._charts.dashLine;
     if (!chart) return;
     var rect = chart.canvas.getBoundingClientRect();
-    var x = e.clientX - rect.left;
-    var xScale = chart.scales.x;
+    var scaleX = chart.canvas.width / rect.width;
+    var x = (e.clientX - rect.left) * scaleX;
+    var xAxis = chart.scales.x;
     // Get pixel positions for each label and find closest
     var closestIdx = 0;
     var closestDist = Infinity;
     for (var i = 0; i < chart.data.labels.length; i++) {
-      var labelX = xScale.getPixelForValue(i);
+      var labelX = xAxis.getPixelForValue(i);
       var dist = Math.abs(x - labelX);
       if (dist < closestDist) { closestDist = dist; closestIdx = i; }
     }
