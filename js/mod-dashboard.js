@@ -1165,42 +1165,24 @@ function renderDashboard() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          enabled: false,
+          enabled: true,
           mode: 'index',
           intersect: false,
-          external: function(context) {
-            var tooltipEl = document.getElementById('dashBarTooltip');
-            if (!tooltipEl) {
-              tooltipEl = document.createElement('div');
-              tooltipEl.id = 'dashBarTooltip';
-              tooltipEl.style.cssText = 'position:fixed;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
-              document.body.appendChild(tooltipEl);
-            }
-            var tooltipModel = context.tooltip;
-            if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints || tooltipModel.dataPoints.length === 0) {
-              tooltipEl.style.opacity = '0';
-              return;
-            }
-            var dataIndex = tooltipModel.dataPoints[0].dataIndex;
-            var chart = context.chart;
-            var label = chart.data.labels[dataIndex];
-            var val = chart.data.datasets[0].data[dataIndex];
-            if (val == null) { tooltipEl.style.opacity = '0'; return; }
-            var html = '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">' + label + '</div>';
-            html += '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px;"></span>Patrimonio: ' + formatCurrencyInt(val, 'MXN') + '</div>';
-            tooltipEl.innerHTML = html;
-            var pos = chart.canvas.getBoundingClientRect();
-            var tooltipWidth = tooltipEl.offsetWidth || 200;
-            // Horizontal: center on caret, clamp inside chart
-            var leftPos = pos.left + tooltipModel.caretX - tooltipWidth / 2;
-            if (leftPos < pos.left + 5) leftPos = pos.left + 5;
-            if (leftPos + tooltipWidth > pos.right - 5) leftPos = pos.right - tooltipWidth - 5;
-            // Vertical: place inside chart area, 40px from top of chart
-            var topPos = pos.top + 40;
-            tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = topPos + 'px';
-            tooltipEl.style.transform = 'none';
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleFont: { size: 14, weight: '700', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: true,
+          boxWidth: 10,
+          boxHeight: 10,
+          usePointStyle: true,
+          callbacks: {
+            label: function(ctx) {
+              var val = ctx.parsed.y;
+              if (val == null) return null;
+              return ' Patrimonio: ' + formatCurrencyInt(val, 'MXN');
+            },
           },
         },
       },
@@ -1327,47 +1309,32 @@ function renderDashboard() {
           labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
         tooltip: {
-          enabled: false,
+          enabled: true,
           mode: 'index',
           intersect: false,
-          external: function(context) {
-            var tooltipEl = document.getElementById('dashLineTooltip');
-            if (!tooltipEl) {
-              tooltipEl = document.createElement('div');
-              tooltipEl.id = 'dashLineTooltip';
-              tooltipEl.style.cssText = 'position:fixed;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
-              document.body.appendChild(tooltipEl);
-            }
-            var tooltipModel = context.tooltip;
-            if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints || tooltipModel.dataPoints.length === 0) {
-              tooltipEl.style.opacity = '0';
-              return;
-            }
-            var dataIndex = tooltipModel.dataPoints[0].dataIndex;
-            var chart = context.chart;
-            var label = chart.data.labels[dataIndex];
-            var rend = chart.data.datasets[0].data[dataIndex] || 0;
-            var gasto = chart.data.datasets[1].data[dataIndex] || 0;
-            var balance = rend - gasto;
-            var sign = balance >= 0 ? '+' : '';
-            var html = '<div style="font-weight:700;font-size:15px;margin-bottom:6px;">' + label + '</div>';
-            html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;"></span> Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</div>';
-            html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span> Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</div>';
-            html += '<div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</div>';
-            tooltipEl.innerHTML = html;
-            var pos = chart.canvas.getBoundingClientRect();
-            var tooltipHeight = tooltipEl.offsetHeight || 100;
-            var tooltipWidth = tooltipEl.offsetWidth || 200;
-            // Horizontal: center on caret, clamp inside chart
-            var leftPos = pos.left + tooltipModel.caretX - tooltipWidth / 2;
-            if (leftPos < pos.left + 5) leftPos = pos.left + 5;
-            if (leftPos + tooltipWidth > pos.right - 5) leftPos = pos.right - tooltipWidth - 5;
-            // Vertical: place inside chart area, 40px from top of chart
-            var topPos = pos.top + 40;
-            tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = topPos + 'px';
-            tooltipEl.style.transform = 'none';
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleFont: { size: 14, weight: '700', family: "'Plus Jakarta Sans'" },
+          bodyFont: { size: 13, family: "'Plus Jakarta Sans'" },
+          footerFont: { size: 13, weight: '600', family: "'Plus Jakarta Sans'" },
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: true,
+          boxWidth: 10,
+          boxHeight: 10,
+          usePointStyle: true,
+          callbacks: {
+            label: function(ctx) {
+              var val = ctx.parsed.y || 0;
+              return ' ' + ctx.dataset.label + ': ' + formatCurrencyInt(val, 'MXN');
+            },
+            footer: function(items) {
+              if (!items || items.length < 2) return '';
+              var rend = items[0].parsed.y || 0;
+              var gasto = items[1].parsed.y || 0;
+              var balance = rend - gasto;
+              var sign = balance >= 0 ? '+' : '';
+              return 'Balance: ' + sign + formatCurrencyInt(balance, 'MXN');
+            },
           },
         },
       },
