@@ -856,7 +856,7 @@ function renderDashboard() {
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
         </div>
-        <div id="dashLineMonthBtns" style="display:flex;flex-wrap:wrap;gap:4px;padding:10px 16px 12px;border-top:1px solid var(--border-color);justify-content:center;"></div>
+        <div id="dashLineMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
 
@@ -876,7 +876,7 @@ function renderDashboard() {
         <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
         </div>
-        <div id="dashBarMonthBtns" style="display:flex;flex-wrap:wrap;gap:4px;padding:10px 16px 12px;border-top:1px solid var(--border-color);justify-content:center;"></div>
+        <div id="dashBarMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
 
@@ -1166,17 +1166,23 @@ function renderDashboard() {
     },
   });
 
-  // -- Bar chart month buttons (replaces unreliable canvas click) --
-  (function() {
+  // -- Bar chart month buttons aligned to chart x-axis --
+  function _renderBarMonthBtns() {
+    var chart = window._charts.dashBar;
     var btnContainer = document.getElementById('dashBarMonthBtns');
-    if (!btnContainer) return;
+    if (!chart || !btnContainer) return;
     btnContainer.innerHTML = '';
+    var xAxis = chart.scales.x;
+
     for (var i = 0; i < barLabels.length; i++) {
       (function(idx) {
+        // getPixelForValue returns px from canvas left edge (CSS space)
+        // canvas and btnContainer share same parent card width, so left = px directly
+        var leftPos = xAxis.getPixelForValue(idx);
         var btn = document.createElement('button');
         btn.textContent = barLabels[idx];
         btn.className = 'dash-month-btn';
-        btn.style.cssText = 'padding:4px 8px;font-size:11px;font-family:inherit;border:1px solid var(--border-color);border-radius:6px;background:var(--card-bg);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;font-weight:600;line-height:1.2;';
+        btn.style.cssText = 'position:absolute;top:4px;padding:2px 1px;font-size:9px;font-family:inherit;border:1px solid var(--border-color);border-radius:4px;background:var(--card-bg);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;font-weight:600;line-height:1.2;transform:translateX(-50%);white-space:nowrap;left:' + leftPos + 'px;';
         btn.addEventListener('mouseenter', function() {
           if (!this.classList.contains('active')) { this.style.background = 'var(--accent-blue)'; this.style.color = '#fff'; this.style.borderColor = 'var(--accent-blue)'; }
         });
@@ -1184,14 +1190,12 @@ function renderDashboard() {
           if (!this.classList.contains('active')) { this.style.background = 'var(--card-bg)'; this.style.color = 'var(--text-secondary)'; this.style.borderColor = 'var(--border-color)'; }
         });
         btn.addEventListener('click', function() {
-          // Remove active from siblings
           btnContainer.querySelectorAll('.dash-month-btn').forEach(function(b) {
             b.classList.remove('active');
             b.style.background = 'var(--card-bg)'; b.style.color = 'var(--text-secondary)'; b.style.borderColor = 'var(--border-color)';
           });
           this.classList.add('active');
           this.style.background = 'var(--accent-blue)'; this.style.color = '#fff'; this.style.borderColor = 'var(--accent-blue)';
-          // Show info bar
           var val = barData[idx];
           var infoEl = document.getElementById('dashBarClickInfo');
           if (infoEl) {
@@ -1201,14 +1205,18 @@ function renderDashboard() {
               '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
               '</div>';
           }
-          // Open desglose
           var per = barPeriodos[idx];
           if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
         });
         btnContainer.appendChild(btn);
       })(i);
     }
-  })();
+  }
+  // Render after a short delay so chart layout is finalized
+  setTimeout(_renderBarMonthBtns, 100);
+  // Re-align on window resize
+  window._dashBarBtnResize = function() { setTimeout(_renderBarMonthBtns, 50); };
+  window.addEventListener('resize', window._dashBarBtnResize);
 
   // -- 3. Line: Rendimientos vs Gastos (start from first data, max 24 months) --
   // Find earliest period with rendimiento or gasto data
@@ -1326,17 +1334,21 @@ function renderDashboard() {
     },
   });
 
-  // -- Line chart month buttons (replaces unreliable canvas click) --
-  (function() {
+  // -- Line chart month buttons aligned to chart x-axis --
+  function _renderLineMonthBtns() {
+    var chart = window._charts.dashLine;
     var btnContainer = document.getElementById('dashLineMonthBtns');
-    if (!btnContainer) return;
+    if (!chart || !btnContainer) return;
     btnContainer.innerHTML = '';
+    var xAxis = chart.scales.x;
+
     for (var i = 0; i < lineLabels.length; i++) {
       (function(idx) {
+        var leftPos = xAxis.getPixelForValue(idx);
         var btn = document.createElement('button');
         btn.textContent = lineLabels[idx];
         btn.className = 'dash-month-btn';
-        btn.style.cssText = 'padding:4px 8px;font-size:11px;font-family:inherit;border:1px solid var(--border-color);border-radius:6px;background:var(--card-bg);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;font-weight:600;line-height:1.2;';
+        btn.style.cssText = 'position:absolute;top:4px;padding:2px 1px;font-size:9px;font-family:inherit;border:1px solid var(--border-color);border-radius:4px;background:var(--card-bg);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;font-weight:600;line-height:1.2;transform:translateX(-50%);white-space:nowrap;left:' + leftPos + 'px;';
         btn.addEventListener('mouseenter', function() {
           if (!this.classList.contains('active')) { this.style.background = 'var(--accent-green)'; this.style.color = '#fff'; this.style.borderColor = 'var(--accent-green)'; }
         });
@@ -1344,14 +1356,12 @@ function renderDashboard() {
           if (!this.classList.contains('active')) { this.style.background = 'var(--card-bg)'; this.style.color = 'var(--text-secondary)'; this.style.borderColor = 'var(--border-color)'; }
         });
         btn.addEventListener('click', function() {
-          // Remove active from siblings
           btnContainer.querySelectorAll('.dash-month-btn').forEach(function(b) {
             b.classList.remove('active');
             b.style.background = 'var(--card-bg)'; b.style.color = 'var(--text-secondary)'; b.style.borderColor = 'var(--border-color)';
           });
           this.classList.add('active');
           this.style.background = 'var(--accent-green)'; this.style.color = '#fff'; this.style.borderColor = 'var(--accent-green)';
-          // Show info bar
           var rend = rendData[idx] || 0;
           var gasto = gastosData[idx] || 0;
           var balance = rend - gasto;
@@ -1370,7 +1380,10 @@ function renderDashboard() {
         btnContainer.appendChild(btn);
       })(i);
     }
-  })();
+  }
+  setTimeout(_renderLineMonthBtns, 100);
+  window._dashLineBtnResize = function() { setTimeout(_renderLineMonthBtns, 50); };
+  window.addEventListener('resize', window._dashLineBtnResize);
 
   // -- 4. Deuda Donut: Breakdown by source --
   if (totalDeuda > 0 && deudaDonutData.length > 0) {
