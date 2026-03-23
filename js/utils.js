@@ -310,9 +310,6 @@ function _initSortableTables(root) {
       if (!firstSortable) firstSortable = th;
 
       th.addEventListener('click', function() {
-        var tbody = table.querySelector('tbody');
-        if (!tbody) return;
-        var rows = Array.from(tbody.querySelectorAll('tr'));
         var currentDir = th.getAttribute('data-sort-dir') || 'none';
         var newDir = currentDir === 'asc' ? 'desc' : 'asc';
 
@@ -330,24 +327,60 @@ function _initSortableTables(root) {
           icon.style.opacity = '1';
         }
 
-        rows.sort(function(a, b) {
-          var cellA = a.cells[colIdx];
-          var cellB = b.cells[colIdx];
-          if (!cellA || !cellB) return 0;
-          var txtA = cellA.textContent.trim();
-          var txtB = cellB.textContent.trim();
+        // Sort each tbody independently (multi-section tables use separate tbodies)
+        var tbodies = table.querySelectorAll('tbody');
+        tbodies.forEach(function(tbody) {
+          var allRows = Array.from(tbody.querySelectorAll('tr'));
 
-          // Try numeric comparison (strip currency symbols, commas)
-          var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
-          var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
-          if (!isNaN(numA) && !isNaN(numB)) {
-            return newDir === 'asc' ? numA - numB : numB - numA;
+          // Separate fixed rows (section headers, subtotals) from sortable data rows
+          // Fixed rows keep their position; only data rows between them get sorted
+          var segments = []; // array of { fixed: tr|null, dataRows: [tr...] }
+          var currentSegment = { fixed: null, dataRows: [] };
+
+          allRows.forEach(function(row) {
+            if (row.getAttribute('data-sort-fixed') === 'true') {
+              // Save current segment if it has data rows
+              if (currentSegment.dataRows.length > 0 || currentSegment.fixed) {
+                segments.push(currentSegment);
+              }
+              currentSegment = { fixed: row, dataRows: [] };
+            } else {
+              currentSegment.dataRows.push(row);
+            }
+          });
+          // Push last segment
+          if (currentSegment.dataRows.length > 0 || currentSegment.fixed) {
+            segments.push(currentSegment);
           }
-          // Fallback: string comparison
-          return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
-        });
 
-        rows.forEach(function(row) { tbody.appendChild(row); });
+          // Sort data rows within each segment
+          var sortFn = function(a, b) {
+            var cellA = a.cells[colIdx];
+            var cellB = b.cells[colIdx];
+            if (!cellA || !cellB) return 0;
+            var txtA = cellA.textContent.trim();
+            var txtB = cellB.textContent.trim();
+
+            // Try numeric comparison (strip currency symbols, commas)
+            var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
+            var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
+            if (!isNaN(numA) && !isNaN(numB)) {
+              return newDir === 'asc' ? numA - numB : numB - numA;
+            }
+            // Fallback: string comparison
+            return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
+          };
+
+          segments.forEach(function(seg) {
+            seg.dataRows.sort(sortFn);
+          });
+
+          // Re-append all rows in correct order
+          segments.forEach(function(seg) {
+            if (seg.fixed) tbody.appendChild(seg.fixed);
+            seg.dataRows.forEach(function(row) { tbody.appendChild(row); });
+          });
+        });
       });
     });
 
