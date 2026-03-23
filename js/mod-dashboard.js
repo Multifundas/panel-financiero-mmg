@@ -835,6 +835,7 @@ function renderDashboard() {
           <div style="position:relative;width:100%;max-width:340px;aspect-ratio:1/1;">
             <canvas id="dashDonutChart"></canvas>
           </div>
+          <div id="dashPieClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:10px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;text-align:center;width:100%;max-width:340px;"></div>
           <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 0;margin-top:12px;border-top:1px solid var(--border-color);width:100%;"></div>
         </div>
       </div>
@@ -1054,49 +1055,27 @@ function renderDashboard() {
       layout: {
         padding: { top: 10, bottom: 10, left: 10, right: 10 },
       },
+      onClick: function(evt, elements, chart) {
+        if (!elements || elements.length === 0) return;
+        var dataIndex = elements[0].index;
+        var label = chart.data.labels[dataIndex];
+        var val = chart.data.datasets[0].data[dataIndex];
+        var total = chart.data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
+        var pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
+        var bgColor = chart.data.datasets[0].backgroundColor[dataIndex];
+        var infoEl = document.getElementById('dashPieClickInfo');
+        if (infoEl) {
+          infoEl.style.display = 'block';
+          infoEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:8px;">' +
+            '<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:' + bgColor + ';"></span>' +
+            '<span style="font-weight:700;">' + label + '</span>' +
+            '<span style="margin-left:4px;">' + formatCurrencyInt(val, 'MXN') + ' <span style="color:rgba(255,255,255,0.6);">(' + pct + '%)</span></span>' +
+            '</div>';
+        }
+      },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          enabled: false,
-          external: function(context) {
-            var tooltipEl = document.getElementById('dashPieTooltip');
-            if (!tooltipEl) {
-              tooltipEl = document.createElement('div');
-              tooltipEl.id = 'dashPieTooltip';
-              tooltipEl.style.cssText = 'position:absolute;pointer-events:none;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;padding:12px 16px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;z-index:9999;transition:opacity 0.15s ease;white-space:nowrap;';
-              document.body.appendChild(tooltipEl);
-            }
-            var tooltipModel = context.tooltip;
-            if (tooltipModel.opacity === 0 || !tooltipModel.dataPoints || tooltipModel.dataPoints.length === 0) {
-              tooltipEl.style.opacity = '0';
-              return;
-            }
-            var dp = tooltipModel.dataPoints[0];
-            var dataIndex = dp.dataIndex;
-            var chart = context.chart;
-            var label = chart.data.labels[dataIndex];
-            var val = chart.data.datasets[0].data[dataIndex];
-            var total = chart.data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
-            var pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
-            var bgColor = chart.data.datasets[0].backgroundColor[dataIndex];
-            var html = '<div style="display:flex;align-items:center;gap:8px;">';
-            html += '<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:' + bgColor + ';"></span>';
-            html += '<span style="font-weight:700;">' + label + '</span></div>';
-            html += '<div style="margin-top:4px;font-size:15px;">' + formatCurrencyInt(val, 'MXN') + ' <span style="color:rgba(255,255,255,0.6);">(' + pct + '%)</span></div>';
-            tooltipEl.innerHTML = html;
-            var pos = chart.canvas.getBoundingClientRect();
-            var tooltipWidth = tooltipEl.offsetWidth || 180;
-            var leftPos = pos.left + window.pageXOffset + tooltipModel.caretX;
-            if (leftPos - tooltipWidth / 2 < pos.left) leftPos = pos.left + tooltipWidth / 2 + 5;
-            if (leftPos + tooltipWidth / 2 > pos.right) leftPos = pos.right - tooltipWidth / 2 - 5;
-            var topPos = pos.top + window.pageYOffset + tooltipModel.caretY - 10;
-            if (topPos < pos.top + window.pageYOffset) topPos = pos.top + window.pageYOffset + 10;
-            tooltipEl.style.opacity = '1';
-            tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = topPos + 'px';
-            tooltipEl.style.transform = 'translate(-50%, -100%)';
-          },
-        },
+        tooltip: { enabled: false },
       },
     },
   });
@@ -1910,7 +1889,48 @@ function renderPatrimonioMensualReport(anioParam) {
     _reportExcelRows.push(exSubDeuda);
   }
 
-  // -- TOTAL PATRIMONIO NETO --
+  // -- RESUMEN section --
+  rows += '<tr><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--text-primary);padding:10px 8px 4px;border-bottom:2px solid var(--border-color);background:rgba(59,130,246,0.03);"><i class="fas fa-clipboard-list" style="margin-right:6px;"></i>RESUMEN</td></tr>';
+
+  // Subtotal Cuentas row in resumen
+  rows += '<tr style="background:rgba(59,130,246,0.04);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.04);z-index:1;font-size:' + FS + ';font-weight:600;color:var(--accent-blue);">Cuentas</td><td></td>';
+  for (var m = 0; m <= maxMes; m++) {
+    if (subtotalCuentasPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
+    else { rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-blue);">' + fmtInt(subtotalCuentasPorMes[m]) + '</td>'; }
+  }
+  rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;color:var(--accent-blue);">' + fmtInt(lastSubCuentas) + '</td></tr>';
+
+  // Subtotal Propiedades row in resumen
+  if (propActivas.length > 0) {
+    rows += '<tr style="background:rgba(6,182,212,0.04);"><td style="position:sticky;left:0;background:rgba(6,182,212,0.04);z-index:1;font-size:' + FS + ';font-weight:600;color:var(--accent-cyan,#06b6d4);">+ Propiedades</td><td></td>';
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalPropPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
+      else { rows += '<td style="text-align:right;font-size:' + FS + ';">' + fmtInt(subtotalPropPorMes[m]) + '</td>'; }
+    }
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;">' + fmtInt(lastSubProp) + '</td></tr>';
+  }
+
+  // Subtotal Otorgados row in resumen
+  if (prestOtorgados.length > 0) {
+    rows += '<tr style="background:rgba(132,204,22,0.04);"><td style="position:sticky;left:0;background:rgba(132,204,22,0.04);z-index:1;font-size:' + FS + ';font-weight:600;color:var(--accent-green);">+ Prestamos Otorgados</td><td></td>';
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalOtorgPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
+      else { rows += '<td style="text-align:right;font-size:' + FS + ';">' + fmtInt(subtotalOtorgPorMes[m]) + '</td>'; }
+    }
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;">' + fmtInt(lastSubOtorg) + '</td></tr>';
+  }
+
+  // Subtotal Deuda row in resumen
+  if (hayDeuda) {
+    rows += '<tr style="background:rgba(239,68,68,0.04);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.04);z-index:1;font-size:' + FS + ';font-weight:600;color:var(--accent-red);">- Deuda</td><td></td>';
+    for (var m = 0; m <= maxMes; m++) {
+      if (subtotalDeudaPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
+      else { rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(subtotalDeudaPorMes[m]) + '</td>'; }
+    }
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;color:var(--accent-red);">-' + fmtInt(lastSubDeuda) + '</td></tr>';
+  }
+
+  // PATRIMONIO NETO row
   rows += '<tr style="font-weight:800;border-top:2px solid var(--border-color);background:rgba(59,130,246,0.08);"><td style="position:sticky;left:0;background:rgba(59,130,246,0.08);z-index:1;font-size:' + FS_HEAD + ';color:var(--text-primary);">PATRIMONIO NETO</td><td></td>';
   var lastTotal = 0;
   for (var m = 0; m <= maxMes; m++) {
@@ -2569,10 +2589,11 @@ function mostrarDesgloseGastos() {
     return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrencyInt(mv.monto, mon) + '</td></tr>';
   }).join('');
 
-  var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2" style="font-weight:700;">TOTAL</td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td></tr>';
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + totalRow + '</tbody></table>' +
     (gastos.length > 20 ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">Mostrando 20 de ' + gastos.length + ' gastos</div>' : '');
 
-  openModal('Desglose: Gastos del Periodo', html);
+  openModal('Desglose de Gastos Del Periodo', html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -2725,14 +2746,14 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
   // -- Total Patrimonio Neto --
   var patrimonioNeto = totalCuentas + totalPropiedades + totalOtorgados - totalDeuda;
   html += '<div style="padding:16px;border-radius:10px;background:var(--bg-base);margin-top:16px;">' +
-    '<div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Resumen</div>' +
-    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:16px;">' +
+    '<div style="font-size:14px;font-weight:800;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Resumen</div>' +
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:14px;">' +
     '<div style="color:var(--text-primary);font-weight:600;">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalCuentas, 'MXN') + '</div>' +
     (totalPropiedades > 0 ? '<div style="color:var(--text-primary);font-weight:600;">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</div>' : '') +
     (totalOtorgados > 0 ? '<div style="color:var(--text-primary);font-weight:600;">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</div>' : '') +
     (totalDeuda > 0 ? '<div style="color:var(--text-primary);font-weight:600;">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</div>' : '') +
     '</div>' +
-    '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:800;">' +
+    '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:15px;font-weight:800;">' +
     '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrencyInt(patrimonioNeto, 'MXN') + '</span>' +
     '</div></div>';
 

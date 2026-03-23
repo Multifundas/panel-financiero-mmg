@@ -273,16 +273,16 @@ function mostrarDesglosePatrimonio() {
 
   html += '</table>';
 
-  // Total summary
+  // Total summary — RESUMEN
   html += '<div style="padding:16px;border-radius:10px;background:var(--bg-base);margin-top:16px;">';
-  html += '<div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Resumen</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:16px;">';
+  html += '<div style="font-size:14px;font-weight:800;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Resumen</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:14px;">';
   html += '<div style="color:var(--text-primary);font-weight:600;">Cuentas</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(pat.cuentas, 'MXN') + '</div>';
   if (pat.propiedades > 0) html += '<div style="color:var(--text-primary);font-weight:600;">+ Propiedades</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(pat.propiedades, 'MXN') + '</div>';
   if (pat.prestamosOtorgados > 0) html += '<div style="color:var(--text-primary);font-weight:600;">+ Prestamos otorgados</div><div style="text-align:right;font-weight:600;">' + formatCurrencyInt(pat.prestamosOtorgados, 'MXN') + '</div>';
   if (totalDeuda > 0) html += '<div style="color:var(--text-primary);font-weight:600;">- Deuda</div><div style="text-align:right;font-weight:600;color:var(--accent-red);">-' + formatCurrencyInt(totalDeuda, 'MXN') + '</div>';
   html += '</div>';
-  html += '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:800;">';
+  html += '<div style="border-top:2px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:15px;font-weight:800;">';
   html += '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrencyInt(pat.total, 'MXN') + '</span>';
   html += '</div></div>';
 
