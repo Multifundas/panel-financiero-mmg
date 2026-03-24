@@ -252,22 +252,39 @@ function deletePrestamo(id) {
 
 function registrarPago(prestamoId) {
   const prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const prestamo = prestamos.find(p => p.id === prestamoId);
   if (!prestamo) return;
   const hoy = new Date().toISOString().split('T')[0];
+  const cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
+  const cuentaOpciones = cuentasActivas.map(function(c) {
+    var selected = prestamo.cuenta_id === c.id ? 'selected' : '';
+    return '<option value="' + c.id + '" ' + selected + '>' + c.nombre + ' (' + c.moneda + ')</option>';
+  }).join('');
   const formHTML = `
     <form id="formPago" onsubmit="savePago(event, '${prestamoId}')">
       <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">
         <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
         <div style="font-size:14px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
       </div>
-      <div class="form-group"><label class="form-label">Monto del Pago *</label>
-        <input type="number" id="pagoMonto" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label class="form-label">Fecha *</label>
-        <input type="date" id="pagoFecha" class="form-input" required value="${hoy}"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Monto del Pago *</label>
+          <input type="number" id="pagoMonto" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>
+        <div class="form-group"><label class="form-label">Fecha *</label>
+          <input type="date" id="pagoFecha" class="form-input" required value="${hoy}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Cuenta Destino</label>
+        <select id="pagoCuentaDestino" class="form-select">
+          <option value="">Sin cuenta asociada</option>
+          ${cuentaOpciones}
+        </select>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Cuenta donde se recibe o paga el dinero</div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripcion</label>
+        <input type="text" id="pagoDescripcion" class="form-input" placeholder="Descripcion del pago..." value=""></div>
       <div class="form-group"><label class="form-label">Notas</label>
         <textarea id="pagoNotas" class="form-input" rows="2" style="resize:vertical;" placeholder="Notas del pago..."></textarea></div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Registrar Pago</button>
       </div>
@@ -286,22 +303,27 @@ function savePago(event, prestamoId) {
   const monto = parseFloat(document.getElementById('pagoMonto').value) || 0;
   const fecha = document.getElementById('pagoFecha').value;
   const notas = document.getElementById('pagoNotas').value.trim();
+  const cuentaDestinoId = document.getElementById('pagoCuentaDestino') ? document.getElementById('pagoCuentaDestino').value : '';
+  const descripcion = document.getElementById('pagoDescripcion') ? document.getElementById('pagoDescripcion').value.trim() : '';
   if (monto <= 0 || !fecha) { showToast('Por favor completa todos los campos obligatorios.', 'warning'); return; }
 
   if (!prestamo.pagos) prestamo.pagos = [];
-  prestamo.pagos.push({ id: uuid(), fecha: fecha, monto: monto, notas: notas });
+  prestamo.pagos.push({ id: uuid(), fecha: fecha, monto: monto, notas: notas, descripcion: descripcion, cuenta_destino_id: cuentaDestinoId || null });
   prestamo.saldo_pendiente -= monto;
   if (prestamo.saldo_pendiente <= 0) { prestamo.saldo_pendiente = 0; prestamo.estado = 'pagado'; }
   prestamos[pIdx] = prestamo;
 
-  if (prestamo.cuenta_id) {
-    const ctaIdx = cuentas.findIndex(c => c.id === prestamo.cuenta_id);
+  // Use cuenta_destino from form if provided, otherwise fall back to prestamo.cuenta_id
+  var cuentaMovId = cuentaDestinoId || prestamo.cuenta_id;
+  if (cuentaMovId) {
+    const ctaIdx = cuentas.findIndex(c => c.id === cuentaMovId);
     if (ctaIdx !== -1) {
+      var movDescripcion = descripcion || ('Pago de prestamo ' + (prestamo.tipo === 'otorgado' ? '- ' : 'a - ') + prestamo.persona);
       if (prestamo.tipo === 'otorgado') {
-        movimientos.push({ id: uuid(), cuenta_id: prestamo.cuenta_id, tipo: 'ingreso', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: 'Pago de prestamo - ' + prestamo.persona, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId, created: new Date().toISOString() });
+        movimientos.push({ id: uuid(), cuenta_id: cuentaMovId, tipo: 'ingreso', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: movDescripcion, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId + (notas ? '\n' + notas : ''), created: new Date().toISOString() });
         cuentas[ctaIdx].saldo += monto;
       } else if (prestamo.tipo === 'recibido') {
-        movimientos.push({ id: uuid(), cuenta_id: prestamo.cuenta_id, tipo: 'gasto', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: 'Pago de prestamo a - ' + prestamo.persona, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId, created: new Date().toISOString() });
+        movimientos.push({ id: uuid(), cuenta_id: cuentaMovId, tipo: 'gasto', monto: monto, moneda: prestamo.moneda || cuentas[ctaIdx].moneda, categoria_id: null, descripcion: movDescripcion, fecha: fecha, notas: 'Prestamo ID: ' + prestamoId + (notas ? '\n' + notas : ''), created: new Date().toISOString() });
         cuentas[ctaIdx].saldo -= monto;
       }
       saveData(STORAGE_KEYS.cuentas, cuentas);
@@ -423,6 +445,7 @@ function verHistorialPagos(prestamoId) {
       return '<tr>' +
         '<td>' + (p.fecha ? formatDate(p.fecha) : '\u2014') + '</td>' +
         '<td>' + tipoBadge + '</td>' +
+        '<td style="color:var(--text-primary);font-size:14px;">' + (p.descripcion || '\u2014') + '</td>' +
         '<td style="text-align:right;color:' + montoColor + ';font-weight:600;">' + montoPrefix + formatCurrencyInt(p.monto, moneda) + '</td>' +
         '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
         '<td style="color:var(--text-muted);font-size:14px;">' + (p.notas || '\u2014') + '</td>' +
@@ -433,7 +456,7 @@ function verHistorialPagos(prestamoId) {
     rows.reverse();
 
     tablaPagos = '<div style="overflow-x:auto;"><table class="data-table sortable-table"><thead><tr>' +
-      '<th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Saldo</th><th>Notas</th>' +
+      '<th>Fecha</th><th>Tipo</th><th>Descripcion</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Saldo</th><th>Notas</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
 
     // Summary row

@@ -1,37 +1,35 @@
+// Global filter state for persistence across renders
+var _movFilterState = null;
+
+function _saveMovFilterState() {
+  var ids = ['filterMovDesde', 'filterMovHasta', 'filterMovAnio', 'filterMovMes', 'filterMovTipo', 'filterMovCuenta', 'filterMovSearch'];
+  var state = {};
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) state[id] = el.value;
+  });
+  _movFilterState = state;
+}
+
+function _restoreMovFilterState() {
+  if (!_movFilterState) return false;
+  var restored = false;
+  for (var id in _movFilterState) {
+    var el = document.getElementById(id);
+    if (el && _movFilterState[id] !== undefined) {
+      el.value = _movFilterState[id];
+      restored = true;
+    }
+  }
+  _movFilterState = null;
+  return restored;
+}
+
 function renderMovimientos() {
   const el = document.getElementById('module-movimientos');
 
   // -- Load data --
-  const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  const categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
-  const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
-
-  // -- Lookup maps --
-  const cuentaMap = {};
-  cuentas.forEach(c => { cuentaMap[c.id] = c; });
-  const catMap = {};
-  categorias.forEach(cat => { catMap[cat.id] = cat.nombre; });
-
-  // -- Summary totals (all movimientos, converted to MXN, excluding transfers) --
-  let totalIngresos = 0;
-  let totalGastos = 0;
-  let totalRendimientos = 0;
-  movimientos.forEach(m => {
-    if (m.transferencia_id) return; // Exclude transfers from totals
-    const cuenta = cuentaMap[m.cuenta_id];
-    const moneda = cuenta ? cuenta.moneda : 'MXN';
-    const montoMXN = toMXN(m.monto, moneda, tiposCambio);
-    if (m.tipo === 'ingreso') totalIngresos += montoMXN;
-    else if (m.tipo === 'gasto') totalGastos += montoMXN;
-  });
-  // Calculate rendimientos from cierres mensuales
-  const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
-  rendimientos.forEach(r => {
-    const rc = cuentaMap[r.cuenta_id];
-    totalRendimientos += toMXN(r.rendimiento_monto || 0, rc ? rc.moneda : 'MXN', tiposCambio);
-  });
-  const balance = totalIngresos + totalRendimientos - totalGastos;
 
   // -- Cuenta options for filter --
   const cuentasActivas = cuentas.filter(c => c.activa !== false);
@@ -39,44 +37,8 @@ function renderMovimientos() {
     .map(c => `<option value="${c.id}">${c.nombre}</option>`)
     .join('');
 
-  // -- Render HTML --
+  // -- Render HTML: Filters FIRST, then KPIs, then table --
   el.innerHTML = `
-    <!-- KPI Cards -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
-      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('ingreso')">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:17px;"></i>
-          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
-        </div>
-        <div id="movSumIngresos" style="font-size:22px;font-weight:800;color:var(--accent-green);margin-top:4px;">${formatCurrencyInt(totalIngresos, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
-      </div>
-      <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('rendimiento')">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:17px;"></i>
-          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
-        </div>
-        <div id="movSumRendimientos" style="font-size:22px;font-weight:800;color:var(--accent-amber);margin-top:4px;">${formatCurrencyInt(totalRendimientos, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
-      </div>
-      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('gasto')">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:17px;"></i>
-          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
-        </div>
-        <div id="movSumGastos" style="font-size:22px;font-weight:800;color:var(--accent-red);margin-top:4px;">${formatCurrencyInt(totalGastos, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
-      </div>
-      <div class="card" style="border-left:3px solid ${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};padding:12px 16px;margin-bottom:0;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-balance-scale" style="color:${balance >= 0 ? 'var(--accent-blue)' : 'var(--accent-amber)'};font-size:17px;"></i>
-          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
-        </div>
-        <div id="movSumBalance" style="font-size:22px;font-weight:800;color:${balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:4px;">${(balance >= 0 ? '+' : '') + formatCurrencyInt(balance, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
-      </div>
-    </div>
-
     <!-- Barra de Filtros -->
     <div class="card" style="margin-bottom:12px;padding:10px 16px;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -135,6 +97,50 @@ function renderMovimientos() {
       </div>
     </div>
 
+    <!-- KPI Cards (5 cards: Ingresos, Rendimientos, Gastos, Transferencias, Balance) -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;">
+      <div class="card" style="border-left:3px solid var(--accent-green);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('ingreso')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-arrow-down" style="color:var(--accent-green);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
+        </div>
+        <div id="movSumIngresos" style="font-size:22px;font-weight:800;color:var(--accent-green);margin-top:4px;">$0</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('rendimiento')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-percentage" style="color:var(--accent-amber);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
+        </div>
+        <div id="movSumRendimientos" style="font-size:22px;font-weight:800;color:var(--accent-amber);margin-top:4px;">$0</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('gasto')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-arrow-up" style="color:var(--accent-red);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
+        </div>
+        <div id="movSumGastos" style="font-size:22px;font-weight:800;color:var(--accent-red);margin-top:4px;">$0</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-purple);padding:12px 16px;margin-bottom:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-exchange-alt" style="color:var(--accent-purple);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Transferencias</span>
+        </div>
+        <div id="movSumTransferencias" style="font-size:22px;font-weight:800;color:var(--accent-purple);margin-top:4px;">$0</div>
+        <div id="movSumTransCount" style="font-size:12px;color:var(--text-muted);margin-top:2px;">0 transferencias</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-blue);padding:12px 16px;margin-bottom:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-balance-scale" style="color:var(--accent-blue);font-size:17px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
+        </div>
+        <div id="movSumBalance" style="font-size:22px;font-weight:800;color:var(--accent-green);margin-top:4px;">$0</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
+      </div>
+    </div>
+
     <!-- Tabla de Movimientos -->
     <div class="card" style="padding:8px 12px;">
       <div style="overflow-x:auto;">
@@ -158,12 +164,14 @@ function renderMovimientos() {
     </div>
   `;
 
-  // Set default year filter to current year and month to current month
-  var nowMov = new Date();
-  var elAnio = document.getElementById('filterMovAnio');
-  if (elAnio) elAnio.value = String(nowMov.getFullYear());
-  var elMesDef = document.getElementById('filterMovMes');
-  if (elMesDef) elMesDef.value = String(nowMov.getMonth() + 1).padStart(2, '0');
+  // Restore previous filter state if available, otherwise default to current month
+  if (!_restoreMovFilterState()) {
+    var nowMov = new Date();
+    var elAnio = document.getElementById('filterMovAnio');
+    if (elAnio) elAnio.value = String(nowMov.getFullYear());
+    var elMesDef = document.getElementById('filterMovMes');
+    if (elMesDef) elMesDef.value = String(nowMov.getMonth() + 1).padStart(2, '0');
+  }
 
   // Apply filters and populate table
   filterMovimientos();
@@ -176,13 +184,15 @@ function renderMovimientos() {
 function filterMovimientos() {
   const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  const categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  const categoriasGasto = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  const categoriasIngreso = loadData(STORAGE_KEYS.categorias_ingreso) || [];
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
   const cuentaMap = {};
   cuentas.forEach(c => { cuentaMap[c.id] = c; });
-  const catMap = {};
-  categorias.forEach(cat => { catMap[cat.id] = cat.nombre; });
+  const catMap = { 'inter_cuentas': 'Inter cuentas' };
+  categoriasGasto.forEach(cat => { catMap[cat.id] = cat.nombre; });
+  categoriasIngreso.forEach(cat => { catMap[cat.id] = cat.nombre; });
 
   // Read filter values
   const fDesde = document.getElementById('filterMovDesde') ? document.getElementById('filterMovDesde').value : '';
@@ -223,22 +233,48 @@ function filterMovimientos() {
   // Sort by date descending
   filtered.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
-  // Update summary cards with filtered totals (excluding transfers)
+  // Update summary cards with filtered totals
   let sumIngresos = 0;
   let sumGastos = 0;
+  let sumTransferencias = 0;
+  let countTransferencias = 0;
+  var transferenciasVistas = {};
   filtered.forEach(m => {
-    if (m.transferencia_id) return; // Exclude transfers from totals
     const cuenta = cuentaMap[m.cuenta_id];
     const moneda = cuenta ? cuenta.moneda : 'MXN';
     const montoMXN = toMXN(m.monto, moneda, tiposCambio);
-    if (m.tipo === 'ingreso') sumIngresos += montoMXN;
-    else if (m.tipo === 'gasto') sumGastos += montoMXN;
+    if (m.transferencia_id) {
+      // Count unique transfers (each transfer has 2 movimientos with same transferencia_id)
+      if (!transferenciasVistas[m.transferencia_id]) {
+        transferenciasVistas[m.transferencia_id] = true;
+        countTransferencias++;
+        // Use the gasto side (origin) as the transfer amount
+        if (m.tipo === 'gasto') sumTransferencias += montoMXN;
+      } else {
+        if (m.tipo === 'gasto') sumTransferencias += montoMXN;
+      }
+    } else {
+      if (m.tipo === 'ingreso') sumIngresos += montoMXN;
+      else if (m.tipo === 'gasto') sumGastos += montoMXN;
+    }
   });
-  // Rendimientos from cierres
+  // Rendimientos from cierres - filtered by same date filters
   const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
   let sumRendimientos = 0;
   rendimientos.forEach(r => {
+    // Apply date filters to rendimientos
+    if (fAnio && r.fecha) {
+      var rYear = r.fecha.substring(0, 4);
+      if (rYear !== fAnio) return;
+    }
+    if (fMes && fMes !== 'todos' && r.fecha) {
+      var rMonth = r.fecha.substring(5, 7);
+      if (rMonth !== fMes) return;
+    }
+    if (fDesde && r.fecha && r.fecha < fDesde) return;
+    if (fHasta && r.fecha && r.fecha > fHasta) return;
     const frc = cuentaMap[r.cuenta_id];
+    if (fCuenta && r.cuenta_id !== fCuenta) return;
     sumRendimientos += toMXN(r.rendimiento_monto || 0, frc ? frc.moneda : 'MXN', tiposCambio);
   });
   const sumBalance = sumIngresos + sumRendimientos - sumGastos;
@@ -247,9 +283,13 @@ function filterMovimientos() {
   const elGastos = document.getElementById('movSumGastos');
   const elRendimientos = document.getElementById('movSumRendimientos');
   const elBalance = document.getElementById('movSumBalance');
+  const elTransferencias = document.getElementById('movSumTransferencias');
+  const elTransCount = document.getElementById('movSumTransCount');
   if (elIngresos) elIngresos.textContent = formatCurrencyInt(sumIngresos, 'MXN');
   if (elRendimientos) elRendimientos.textContent = formatCurrencyInt(sumRendimientos, 'MXN');
   if (elGastos) elGastos.textContent = formatCurrencyInt(sumGastos, 'MXN');
+  if (elTransferencias) elTransferencias.textContent = formatCurrencyInt(sumTransferencias, 'MXN');
+  if (elTransCount) elTransCount.textContent = countTransferencias + ' transferencia' + (countTransferencias !== 1 ? 's' : '');
   if (elBalance) {
     elBalance.textContent = (sumBalance >= 0 ? '+' : '') + formatCurrencyInt(sumBalance, 'MXN');
     elBalance.style.color = sumBalance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
@@ -270,11 +310,22 @@ function filterMovimientos() {
     return;
   }
 
+  // Calculate total for TOTAL row
+  var totalMontoMXN = 0;
+  filtered.forEach(function(m) {
+    var cuenta = cuentaMap[m.cuenta_id];
+    var moneda = cuenta ? cuenta.moneda : 'MXN';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    if (m.transferencia_id) return; // Exclude transfers from total
+    if (m.tipo === 'ingreso') totalMontoMXN += montoMXN;
+    else if (m.tipo === 'gasto') totalMontoMXN -= montoMXN;
+  });
+
   tbody.innerHTML = filtered.map(m => {
     const cuenta = cuentaMap[m.cuenta_id];
     const cuentaNombre = cuenta ? cuenta.nombre : 'Desconocida';
     const moneda = cuenta ? cuenta.moneda : 'MXN';
-    const catNombre = m.tipo === 'gasto' && m.categoria_id ? (catMap[m.categoria_id] || '\u2014') : '\u2014';
+    const catNombre = m.categoria_id ? (catMap[m.categoria_id] || '\u2014') : '\u2014';
 
     // Badge for tipo
     const esTransferencia = !!m.transferencia_id;
@@ -306,14 +357,18 @@ function filterMovimientos() {
           </button>
         </td>
       </tr>`;
-  }).join('');
+  }).join('') + '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);background:var(--bg-base);">' +
+    '<td></td><td colspan="5" style="font-weight:700;color:var(--text-primary);">TOTAL (' + filtered.length + ' movimientos)</td>' +
+    '<td style="text-align:right;font-weight:800;color:' + (totalMontoMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + (totalMontoMXN >= 0 ? '+' : '') + formatCurrencyInt(totalMontoMXN, 'MXN') + '</td>' +
+    '<td></td></tr>';
 }
 
 /* -- Open modal to create or edit a movimiento -- */
 function editMovimiento(id) {
   const movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  const categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  const categoriasGasto = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  const categoriasIngreso = loadData(STORAGE_KEYS.categorias_ingreso) || [];
 
   // If editing, find existing movimiento
   let mov = null;
@@ -332,8 +387,14 @@ function editMovimiento(id) {
       return `<option value="${c.id}" ${selected}>${c.nombre} (${c.moneda})</option>`;
     }).join('');
 
-  // Build categoria options
-  const catOpciones = categorias.map(cat => {
+  // Build categoria options sorted alphabetically
+  const catGastoSorted = categoriasGasto.slice().sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
+  const catIngresoSorted = categoriasIngreso.slice().sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
+  const catGastoOpciones = catGastoSorted.map(cat => {
+    const selected = mov && mov.categoria_id === cat.id ? 'selected' : '';
+    return `<option value="${cat.id}" ${selected}>${cat.nombre}</option>`;
+  }).join('');
+  const catIngresoOpciones = catIngresoSorted.map(cat => {
     const selected = mov && mov.categoria_id === cat.id ? 'selected' : '';
     return `<option value="${cat.id}" ${selected}>${cat.nombre}</option>`;
   }).join('');
@@ -348,6 +409,10 @@ function editMovimiento(id) {
     const selected = mov && mov.propiedad_id === p.id ? 'selected' : '';
     return `<option value="${p.id}" ${selected}>${p.nombre}</option>`;
   }).join('');
+
+  // Store category options for dynamic switching (base64 encoded to avoid HTML issues)
+  window._movCatGastoOpts = catGastoOpciones;
+  window._movCatIngresoOpts = catIngresoOpciones;
 
   const formHTML = `
     <form id="formMovimiento" onsubmit="saveMovimiento(event)">
@@ -383,18 +448,19 @@ function editMovimiento(id) {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Descripcion *</label>
-        <input type="text" id="movDescripcion" class="form-input" required
-               value="${isEdit ? (mov.descripcion || '') : ''}" placeholder="Ej: Pago de nomina">
-      </div>
-
-      <div class="form-group" id="movCategoriaGroup" style="display:${tipoActual === 'gasto' ? 'block' : 'none'};">
-        <label class="form-label">Categoria</label>
-        <select id="movCategoriaId" class="form-select">
-          <option value="">Sin categoria</option>
-          ${catOpciones}
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Descripcion *</label>
+          <input type="text" id="movDescripcion" class="form-input" required
+                 value="${isEdit ? (mov.descripcion || '') : ''}" placeholder="Ej: Pago de nomina">
+        </div>
+        <div class="form-group" id="movCategoriaGroup">
+          <label class="form-label">Categoria</label>
+          <select id="movCategoriaId" class="form-select">
+            <option value="">Sin categoria</option>
+            ${tipoActual === 'gasto' ? catGastoOpciones : catIngresoOpciones}
+          </select>
+        </div>
       </div>
 
       <div class="form-group" id="movPropiedadGroup" style="display:${tipoActual === 'gasto' && propiedades.length > 0 ? 'block' : 'none'};">
@@ -408,11 +474,11 @@ function editMovimiento(id) {
 
       <div class="form-group">
         <label class="form-label">Notas</label>
-        <textarea id="movNotas" class="form-input" rows="3" style="resize:vertical;"
+        <textarea id="movNotas" class="form-input" rows="2" style="resize:vertical;"
                   placeholder="Notas adicionales...">${isEdit && mov.notas ? mov.notas : ''}</textarea>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">
           <i class="fas fa-save"></i> ${isEdit ? 'Guardar Cambios' : 'Crear Movimiento'}
@@ -430,10 +496,15 @@ function editMovimiento(id) {
 /* -- Toggle categoria field based on tipo -- */
 function toggleCategoriaField() {
   const tipoSelect = document.getElementById('movTipo');
-  const catGroup = document.getElementById('movCategoriaGroup');
+  const catSelect = document.getElementById('movCategoriaId');
   const propGroup = document.getElementById('movPropiedadGroup');
-  if (tipoSelect && catGroup) {
-    catGroup.style.display = tipoSelect.value === 'gasto' ? 'block' : 'none';
+  if (tipoSelect && catSelect) {
+    var currentVal = catSelect.value;
+    var opts = tipoSelect.value === 'gasto'
+      ? (window._movCatGastoOpts || '')
+      : (window._movCatIngresoOpts || '');
+    catSelect.innerHTML = '<option value="">Sin categoria</option>' + opts;
+    if (currentVal) catSelect.value = currentVal;
   }
   if (tipoSelect && propGroup) {
     propGroup.style.display = tipoSelect.value === 'gasto' ? 'block' : 'none';
@@ -453,7 +524,7 @@ function saveMovimiento(event) {
   const monto = parseFloat(document.getElementById('movMonto').value) || 0;
   const fecha = document.getElementById('movFecha').value;
   const descripcion = document.getElementById('movDescripcion').value.trim();
-  const categoria_id = tipo === 'gasto' ? (document.getElementById('movCategoriaId').value || null) : null;
+  const categoria_id = document.getElementById('movCategoriaId') ? (document.getElementById('movCategoriaId').value || null) : null;
   const propiedad_id = tipo === 'gasto' && document.getElementById('movPropiedadId') ? (document.getElementById('movPropiedadId').value || null) : null;
   const notas = document.getElementById('movNotas').value.trim();
 
@@ -578,6 +649,7 @@ function saveMovimiento(event) {
   }
 
   closeModal();
+  _saveMovFilterState();
   renderMovimientos();
   updateHeaderPatrimonio();
 }
@@ -647,6 +719,7 @@ function deleteMovimiento(id) {
   }
 
   showToast('Movimiento eliminado exitosamente.' + (contraparte ? ' Contraparte de transferencia tambien eliminada.' : ''), 'info');
+  _saveMovFilterState();
   renderMovimientos();
   updateHeaderPatrimonio();
 }
@@ -1064,6 +1137,7 @@ function aplicarPlantilla(id) {
   openPlantillasRecurrentes();
   // Also refresh the movimientos table behind the modal
   if (typeof renderMovimientos === 'function') {
+    _saveMovFilterState();
     setTimeout(function() { renderMovimientos(); }, 100);
   }
   if (typeof updateHeaderPatrimonio === 'function') {
@@ -1133,6 +1207,7 @@ function aplicarTodasPendientes() {
   showToast(aplicadas + ' plantilla(s) aplicada(s) exitosamente.', 'success');
   openPlantillasRecurrentes();
   if (typeof renderMovimientos === 'function') {
+    _saveMovFilterState();
     setTimeout(function() { renderMovimientos(); }, 100);
   }
   if (typeof updateHeaderPatrimonio === 'function') {
@@ -1174,8 +1249,12 @@ function openTransferenciaModal() {
     '<div class="form-group"><label class="form-label">Monto Destino (calculado)</label>' +
     '<input type="text" id="tmMontoDestino" class="form-input" readonly style="background:var(--bg-base);color:var(--accent-green);font-weight:700;" placeholder="---"></div>' +
     '</div></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
     '<div class="form-group"><label class="form-label">Motivo / Descripcion</label>' +
     '<input type="text" id="tmMotivo" class="form-input" placeholder="Ej: Inversion en CETES"></div>' +
+    '<div class="form-group"><label class="form-label">Categoria</label>' +
+    '<select id="tmCategoria" class="form-select"><option value="inter_cuentas" selected>Inter cuentas</option></select></div>' +
+    '</div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
     '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-exchange-alt"></i> Transferir</button>' +
@@ -1267,6 +1346,7 @@ function executeTransferenciaModal(event) {
     if (!confirmar) return;
   }
 
+  var tmCatVal = document.getElementById('tmCategoria') ? document.getElementById('tmCategoria').value : 'inter_cuentas';
   var transId = uuid();
   transferencias.push({
     id: transId,
@@ -1288,7 +1368,7 @@ function executeTransferenciaModal(event) {
     tipo: 'gasto',
     monto: monto_origen,
     moneda: moneda_origen,
-    categoria_id: null,
+    categoria_id: tmCatVal || null,
     descripcion: 'Transferencia a ' + ctaDestino.nombre + (descripcion ? ' - ' + descripcion : ''),
     fecha: fecha,
     notas: 'Transferencia ID: ' + transId,
@@ -1302,7 +1382,7 @@ function executeTransferenciaModal(event) {
     tipo: 'ingreso',
     monto: monto_destino,
     moneda: moneda_destino,
-    categoria_id: null,
+    categoria_id: tmCatVal || null,
     descripcion: 'Transferencia desde ' + ctaOrigen.nombre + (descripcion ? ' - ' + descripcion : ''),
     fecha: fecha,
     notas: 'Transferencia ID: ' + transId,
@@ -1319,6 +1399,7 @@ function executeTransferenciaModal(event) {
 
   closeModal();
   showToast('Transferencia realizada exitosamente.', 'success');
+  _saveMovFilterState();
   renderMovimientos();
   updateHeaderPatrimonio();
 }
@@ -1490,12 +1571,14 @@ function _exportMovsToPDF(data, titulo) {
 function mostrarDesgloseMovimientos(tipo) {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var categoriasGasto = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var categoriasIngreso = loadData(STORAGE_KEYS.categorias_ingreso) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var cuentaMap = {};
   cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
-  var catMap = {};
-  categorias.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
+  var catMap = { 'inter_cuentas': 'Inter cuentas' };
+  categoriasGasto.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
+  categoriasIngreso.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
 
   var titulo, color, icon, rows;
 
@@ -1607,13 +1690,15 @@ function mostrarDesgloseMovimientos(tipo) {
       var pct = total > 0 ? (entry[1] / total * 100).toFixed(1) : '0.0';
       return '<tr>' +
         '<td style="font-weight:600;color:var(--text-primary);">' + entry[0] + '</td>' +
+        '<td></td>' +
         '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(entry[1], 'MXN') + '</td>' +
         '<td style="text-align:right;color:var(--text-muted);">' + pct + '%</td>' +
+        '<td></td>' +
       '</tr>';
     }).join('');
     catSection = '<div style="margin-top:20px;">' +
       '<h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
-      '<table class="data-table sortable-table"><thead><tr><th>Categoria</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th></tr></thead>' +
+      '<table class="data-table sortable-table"><thead><tr><th>Categoria</th><th style="text-align:center;"></th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th></th></tr></thead>' +
       '<tbody>' + catRows + '</tbody></table></div>';
   }
 

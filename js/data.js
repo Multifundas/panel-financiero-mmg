@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   rendimientos:     'pf_rendimientos',
   transferencias:   'pf_transferencias',
   categorias_gasto: 'pf_categorias_gasto',
+  categorias_ingreso: 'pf_categorias_ingreso',
   instituciones:    'pf_instituciones',
   tipos_cambio:     'pf_tipos_cambio',
   config:           'pf_config',
@@ -292,6 +293,14 @@ function getDefaultCategorias() {
     { id: uuid(), nombre: 'Educacion',                   icono: 'fa-graduation-cap',color: '#a855f7' },
     { id: uuid(), nombre: 'Inversiones',                 icono: 'fa-chart-line',    color: '#f97316' },
     { id: uuid(), nombre: 'Otros',                       icono: 'fa-ellipsis-h',    color: '#94a3b8' },
+  ];
+}
+
+function getDefaultCategoriasIngreso() {
+  return [
+    { id: uuid(), nombre: 'Pagos Terceros',  icono: 'fa-handshake',     color: '#10b981' },
+    { id: uuid(), nombre: 'Reembolsos',       icono: 'fa-undo',          color: '#3b82f6' },
+    { id: uuid(), nombre: 'Otros',            icono: 'fa-ellipsis-h',    color: '#94a3b8' },
   ];
 }
 

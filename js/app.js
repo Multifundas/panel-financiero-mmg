@@ -45,6 +45,7 @@ function initApp() {
     // First run: initialize with default config and empty data (no sample data)
     saveData(STORAGE_KEYS.config,           getDefaultConfig());
     saveData(STORAGE_KEYS.categorias_gasto, getDefaultCategorias());
+    saveData(STORAGE_KEYS.categorias_ingreso, getDefaultCategoriasIngreso());
     saveData(STORAGE_KEYS.instituciones,    getDefaultInstituciones());
     saveData(STORAGE_KEYS.tipos_cambio,     getDefaultTiposCambio());
     console.log('Panel Financiero: configuracion inicial creada.');
@@ -71,6 +72,12 @@ function initApp() {
       }
     });
     if (changed) saveData(STORAGE_KEYS.categorias_gasto, cats);
+  }
+
+  // Migrate: ensure categorias_ingreso exists
+  var catsIng = loadData(STORAGE_KEYS.categorias_ingreso);
+  if (!catsIng || catsIng.length === 0) {
+    saveData(STORAGE_KEYS.categorias_ingreso, getDefaultCategoriasIngreso());
   }
 
   // Apply theme
