@@ -408,6 +408,8 @@ function verHistorialPagos(prestamoId) {
   if (!prestamo) return;
   const pagos = prestamo.pagos || [];
   const moneda = prestamo.moneda || 'MXN';
+  var esOtorgado = prestamo.tipo === 'otorgado';
+  var labelAbono = esOtorgado ? 'Cobro' : 'Abono';
 
   // Calculate totals
   let totalPrestado = 0, totalAbonado = 0;
@@ -416,70 +418,95 @@ function verHistorialPagos(prestamoId) {
     else totalAbonado += p.monto;
   });
 
-  let tablaPagos = '';
-  if (pagos.length === 0) {
-    tablaPagos = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-receipt" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos registrados para este prestamo.</div>';
-  } else {
-    // Sort chronologically (oldest first) to calculate running balance
-    var sorted = [...pagos].sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+  // Initial loan amount (before any additional loans)
+  var montoInicialOriginal = prestamo.monto_original - totalPrestado;
 
-    // Calculate running balance starting from the initial loan amount (monto_original minus all additions)
-    var montoInicialOriginal = prestamo.monto_original - totalPrestado;
-    var saldoRunning = montoInicialOriginal;
-
-    var rows = sorted.map(function(p) {
-      var esAdicional = p.tipo === 'prestamo_adicional';
-      if (esAdicional) {
-        saldoRunning += p.monto;
-      } else {
-        saldoRunning -= p.monto;
-      }
-      if (saldoRunning < 0) saldoRunning = 0;
-
-      var tipoBadge = esAdicional
-        ? '<span class="badge badge-amber" style="font-size:12px;">Prestamo</span>'
-        : '<span class="badge badge-green" style="font-size:12px;">Abono</span>';
-      var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
-      var montoPrefix = esAdicional ? '+' : '-';
-
-      return '<tr>' +
-        '<td>' + (p.fecha ? formatDate(p.fecha) : '\u2014') + '</td>' +
-        '<td>' + tipoBadge + '</td>' +
-        '<td style="color:var(--text-primary);font-size:14px;">' + (p.descripcion || '\u2014') + '</td>' +
-        '<td style="text-align:right;color:' + montoColor + ';font-weight:600;">' + montoPrefix + formatCurrencyInt(p.monto, moneda) + '</td>' +
-        '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
-        '<td style="color:var(--text-muted);font-size:14px;">' + (p.notas || '\u2014') + '</td>' +
-        '</tr>';
+  // Build estado de cuenta: all entries chronologically
+  // Include the original loan as the first entry
+  var allEntries = [];
+  allEntries.push({
+    fecha: prestamo.fecha_inicio || prestamo.created.substring(0, 10),
+    tipo: 'apertura',
+    descripcion: 'Prestamo inicial' + (esOtorgado ? ' a ' : ' de ') + prestamo.persona,
+    cargo: montoInicialOriginal,
+    abono: 0,
+    notas: ''
+  });
+  pagos.forEach(function(p) {
+    var esAdicional = p.tipo === 'prestamo_adicional';
+    allEntries.push({
+      fecha: p.fecha || '',
+      tipo: esAdicional ? 'prestamo_adicional' : 'abono',
+      descripcion: esAdicional ? 'Prestamo adicional' : (p.descripcion || labelAbono),
+      cargo: esAdicional ? p.monto : 0,
+      abono: esAdicional ? 0 : p.monto,
+      notas: p.notas || ''
     });
+  });
 
-    // Reverse to show newest first
-    rows.reverse();
+  // Sort chronologically (oldest first)
+  allEntries.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
-    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table sortable-table"><thead><tr>' +
-      '<th>Fecha</th><th>Tipo</th><th>Descripcion</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Saldo</th><th>Notas</th>' +
-      '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+  // Build rows with running balance
+  var saldoRunning = 0;
+  var rows = allEntries.map(function(e) {
+    saldoRunning += e.cargo - e.abono;
+    if (saldoRunning < 0) saldoRunning = 0;
 
-    // Summary row
-    tablaPagos += '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
-      '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Prestado</div><div style="font-size:18px;font-weight:800;color:var(--accent-amber);">' + formatCurrencyInt(montoInicialOriginal + totalPrestado, moneda) + '</div></div>' +
-      '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonado</div><div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrencyInt(totalAbonado, moneda) + '</div></div>' +
-      '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Actual</div><div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(prestamo.saldo_pendiente, moneda) + '</div></div>' +
-      '</div>';
+    var tipoLabel, tipoBadgeClass;
+    if (e.tipo === 'apertura') { tipoLabel = 'Apertura'; tipoBadgeClass = 'badge-blue'; }
+    else if (e.tipo === 'prestamo_adicional') { tipoLabel = 'Prestamo'; tipoBadgeClass = 'badge-amber'; }
+    else { tipoLabel = labelAbono; tipoBadgeClass = 'badge-green'; }
+
+    var cargoDisplay = e.cargo > 0 ? '<span style="color:var(--accent-amber);font-weight:600;">+' + formatCurrencyInt(e.cargo, moneda) + '</span>' : '';
+    var abonoDisplay = e.abono > 0 ? '<span style="color:var(--accent-green);font-weight:600;">-' + formatCurrencyInt(e.abono, moneda) + '</span>' : '';
+
+    return '<tr>' +
+      '<td>' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
+      '<td><span class="badge ' + tipoBadgeClass + '" style="font-size:12px;">' + tipoLabel + '</span></td>' +
+      '<td style="color:var(--text-primary);">' + e.descripcion + '</td>' +
+      '<td style="text-align:right;">' + cargoDisplay + '</td>' +
+      '<td style="text-align:right;">' + abonoDisplay + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
+      '</tr>';
+  });
+
+  var tablaPagos = '';
+  if (allEntries.length <= 1 && pagos.length === 0) {
+    tablaPagos = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-receipt" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos adicionales registrados para este prestamo.</div>';
+  } else {
+    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:14%;"><col style="width:12%;"><col style="width:28%;"><col style="width:16%;"><col style="width:14%;"><col style="width:16%;"></colgroup><thead><tr>' +
+      '<th>Fecha</th><th>Concepto</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">' + labelAbono + '</th><th style="text-align:right;">Saldo</th>' +
+      '</tr></thead><tbody>' + rows.join('') + '</tbody>' +
+      '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);background:var(--bg-base);">' +
+      '<td colspan="3" style="font-weight:700;">Saldo Final</td>' +
+      '<td style="text-align:right;color:var(--accent-amber);font-weight:700;">' + formatCurrencyInt(montoInicialOriginal + totalPrestado, moneda) + '</td>' +
+      '<td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(totalAbonado, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(prestamo.saldo_pendiente, moneda) + '</td>' +
+      '</tr></tfoot></table></div>';
   }
 
-  const bodyHTML = `
-    <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Persona</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">${prestamo.persona}</div></div>
-        <div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Monto Original</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">${formatCurrencyInt(prestamo.monto_original, moneda)}</div></div>
-        <div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Saldo Pendiente</div><div style="font-size:17px;font-weight:700;color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, moneda)}</div></div>
-        <div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Estado</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">${prestamo.estado.charAt(0).toUpperCase() + prestamo.estado.slice(1)}</div></div>
-      </div>
-    </div>
-    ${tablaPagos}
-    <div style="display:flex;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>`;
-  openModal('Historial de Movimientos', bodyHTML);
-  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+  // Summary cards at top
+  var summaryCards = '<div style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Persona</div><div style="font-size:15px;font-weight:700;color:var(--text-primary);">' + prestamo.persona + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total Prestado</div><div style="font-size:15px;font-weight:700;color:var(--accent-amber);">' + formatCurrencyInt(montoInicialOriginal + totalPrestado, moneda) + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total ' + labelAbono + 's</div><div style="font-size:15px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(totalAbonado, moneda) + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Saldo Pendiente</div><div style="font-size:15px;font-weight:700;color:' + (prestamo.saldo_pendiente > 0 ? 'var(--accent-red)' : 'var(--accent-green)') + ';">' + formatCurrencyInt(prestamo.saldo_pendiente, moneda) + '</div></div>' +
+    '</div>';
+
+  var estadoLabel = prestamo.estado.charAt(0).toUpperCase() + prestamo.estado.slice(1);
+  var estadoBadge = prestamo.estado === 'pagado' ? 'badge-green' : prestamo.estado === 'activo' ? 'badge-blue' : 'badge-amber';
+
+  const bodyHTML = summaryCards +
+    '<div style="margin-bottom:12px;font-size:13px;color:var(--text-muted);">Fecha de inicio: <strong style="color:var(--text-primary);">' + formatDate(prestamo.fecha_inicio || '') + '</strong>' +
+    (prestamo.fecha_vencimiento ? ' &nbsp;|&nbsp; Vencimiento: <strong style="color:var(--text-primary);">' + formatDate(prestamo.fecha_vencimiento) + '</strong>' : '') +
+    ' &nbsp;|&nbsp; Estado: <span class="badge ' + estadoBadge + '" style="font-size:12px;">' + estadoLabel + '</span></div>' +
+    tablaPagos +
+    '<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
+  openModal('Estado de Cuenta — ' + prestamo.persona, bodyHTML);
+  var mc = document.querySelector('.modal-content');
+  if (mc) mc.classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 100);
 }
 
 function checkVencimientos() {

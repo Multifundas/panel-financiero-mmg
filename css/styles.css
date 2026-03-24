@@ -502,7 +502,7 @@
       padding: 28px;
       width: 90%;
       max-width: 540px;
-      max-height: 85vh;
+      max-height: 95vh;
       overflow-y: hidden;
       display: flex;
       flex-direction: column;
@@ -519,6 +519,14 @@
       overflow-y: auto;
       flex: 1;
       min-height: 0;
+    }
+
+    /* Compact form layout inside modals to avoid scroll */
+    #modalBody form .form-group {
+      margin-bottom: 10px;
+    }
+    #modalBody form .form-label {
+      margin-bottom: 3px;
     }
 
     /* Uniform typography for modal desglose tables */

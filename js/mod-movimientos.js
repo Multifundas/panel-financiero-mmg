@@ -244,19 +244,25 @@ function filterMovimientos() {
     const moneda = cuenta ? cuenta.moneda : 'MXN';
     const montoMXN = toMXN(m.monto, moneda, tiposCambio);
     if (m.transferencia_id) {
-      // Count unique transfers (each transfer has 2 movimientos with same transferencia_id)
+      // Each transfer has 2 movimientos (gasto + ingreso) with same transferencia_id
+      // Count each unique transfer only once; use the gasto-side amount as net
       if (!transferenciasVistas[m.transferencia_id]) {
-        transferenciasVistas[m.transferencia_id] = true;
-        countTransferencias++;
-        // Use the gasto side (origin) as the transfer amount
-        if (m.tipo === 'gasto') sumTransferencias += montoMXN;
-      } else {
-        if (m.tipo === 'gasto') sumTransferencias += montoMXN;
+        transferenciasVistas[m.transferencia_id] = { gasto: 0, ingreso: 0, count: 0 };
       }
+      transferenciasVistas[m.transferencia_id].count++;
+      if (m.tipo === 'gasto') transferenciasVistas[m.transferencia_id].gasto = montoMXN;
+      else if (m.tipo === 'ingreso') transferenciasVistas[m.transferencia_id].ingreso = montoMXN;
     } else {
       if (m.tipo === 'ingreso') sumIngresos += montoMXN;
       else if (m.tipo === 'gasto') sumGastos += montoMXN;
     }
+  });
+  // Aggregate transfer totals: count unique transfers, sum gasto-side amounts
+  var tIds = Object.keys(transferenciasVistas);
+  countTransferencias = tIds.length;
+  tIds.forEach(function(tid) {
+    // Use gasto amount if available, otherwise ingreso
+    sumTransferencias += transferenciasVistas[tid].gasto || transferenciasVistas[tid].ingreso;
   });
   // Rendimientos from cierres - filtered by same date filters
   const rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
@@ -1698,11 +1704,11 @@ function mostrarDesgloseMovimientos(tipo) {
     }).join('');
     catSection = '<div style="margin-top:20px;">' +
       '<h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
-      '<table class="data-table sortable-table"><thead><tr><th>Categoria</th><th style="text-align:center;"></th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th></th></tr></thead>' +
+      '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:30%;"><col style="width:15%;"><col style="width:22%;"><col style="width:13%;"><col style="width:20%;"></colgroup><thead><tr><th>Categoria</th><th></th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th></th></tr></thead>' +
       '<tbody>' + catRows + '</tbody></table></div>';
   }
 
-  var html = '<table class="data-table sortable-table"><thead><tr>' +
+  var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:30%;"><col style="width:15%;"><col style="width:22%;"><col style="width:13%;"><col style="width:20%;"></colgroup><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th style="text-align:right;">Saldo Actual</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table>' + catSection;
 
