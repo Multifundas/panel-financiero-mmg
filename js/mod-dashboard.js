@@ -835,7 +835,6 @@ function renderDashboard() {
           <div style="position:relative;width:100%;max-width:340px;aspect-ratio:1/1;">
             <canvas id="dashDonutChart"></canvas>
           </div>
-          <div id="dashPieClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:10px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;text-align:center;width:100%;max-width:340px;"></div>
           <div id="dashDonutLegend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 0;margin-top:12px;border-top:1px solid var(--border-color);width:100%;"></div>
         </div>
       </div>
@@ -853,10 +852,10 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportRendVsGastosPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
-        <div id="dashLineClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:0 16px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;"></div>
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
         </div>
+        <div style="display:flex;justify-content:center;"><div id="dashLineClickInfo" style="display:none;padding:6px 14px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:4px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;white-space:nowrap;"></div></div>
         <div id="dashLineMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
@@ -873,10 +872,10 @@ function renderDashboard() {
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportEvolucionPatrimonioPDF()" title="Exportar PDF"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>
-        <div id="dashBarClickInfo" style="display:none;padding:8px 16px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:0 16px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;"></div>
         <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
         </div>
+        <div style="display:flex;justify-content:center;"><div id="dashBarClickInfo" style="display:none;padding:6px 14px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:4px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;white-space:nowrap;"></div></div>
         <div id="dashBarMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
@@ -1055,24 +1054,6 @@ function renderDashboard() {
       layout: {
         padding: { top: 10, bottom: 10, left: 10, right: 10 },
       },
-      onClick: function(evt, elements, chart) {
-        if (!elements || elements.length === 0) return;
-        var dataIndex = elements[0].index;
-        var label = chart.data.labels[dataIndex];
-        var val = chart.data.datasets[0].data[dataIndex];
-        var total = chart.data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
-        var pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
-        var bgColor = chart.data.datasets[0].backgroundColor[dataIndex];
-        var infoEl = document.getElementById('dashPieClickInfo');
-        if (infoEl) {
-          infoEl.style.display = 'block';
-          infoEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:8px;">' +
-            '<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:' + bgColor + ';"></span>' +
-            '<span style="font-weight:700;">' + label + '</span>' +
-            '<span style="margin-left:4px;">' + formatCurrencyInt(val, 'MXN') + ' <span style="color:rgba(255,255,255,0.6);">(' + pct + '%)</span></span>' +
-            '</div>';
-        }
-      },
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false },
@@ -1178,11 +1159,9 @@ function renderDashboard() {
           var val = barData[idx];
           var infoEl = document.getElementById('dashBarClickInfo');
           if (infoEl) {
-            infoEl.style.display = 'block';
-            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-              '<span style="font-weight:700;font-size:15px;">' + barLabels[idx] + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN') + '</span>' +
-              '</div>';
+            infoEl.style.display = 'inline-block';
+            infoEl.innerHTML = '<span style="font-weight:700;">' + barLabels[idx] + '</span>' +
+              ' &nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-right:3px;"></span>Patrimonio: ' + formatCurrencyInt(val || 0, 'MXN');
           }
           var per = barPeriodos[idx];
           if (per) _mostrarDesglosePatrimonioPeriodo(per, barLabels[idx]);
@@ -1347,13 +1326,11 @@ function renderDashboard() {
           var sign = balance >= 0 ? '+' : '';
           var infoEl = document.getElementById('dashLineClickInfo');
           if (infoEl) {
-            infoEl.style.display = 'block';
-            infoEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
-              '<span style="font-weight:700;font-size:15px;">' + lineLabels[idx] + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Rendimientos: ' + formatCurrencyInt(rend, 'MXN') + '</span>' +
-              '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') + '</span>' +
-              '<span style="font-weight:600;">Balance: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>' +
-              '</div>';
+            infoEl.style.display = 'inline-block';
+            infoEl.innerHTML = '<span style="font-weight:700;">' + lineLabels[idx] + '</span>' +
+              ' &nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:3px;"></span>Rend: ' + formatCurrencyInt(rend, 'MXN') +
+              ' &nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:3px;"></span>Gastos: ' + formatCurrencyInt(gasto, 'MXN') +
+              ' &nbsp;<span style="font-weight:600;">Bal: ' + sign + formatCurrencyInt(balance, 'MXN') + '</span>';
           }
         });
         btnContainer.appendChild(btn);
@@ -1984,7 +1961,8 @@ function mostrarDesgloseRendimiento() {
   var mesActual = now.getMonth();
   var anioActual = now.getFullYear();
   var anioFiltro = anioActual;
-  var periodoLabel = 'del Mes';
+  var _mesesLargosR = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var periodoLabel = _mesesLargosR[mesActual] + ' ' + anioActual;
   var periodosList = [anioActual + '-' + String(mesActual + 1).padStart(2, '0')];
 
   /* Filter rendimientos by period */
@@ -2049,7 +2027,7 @@ function mostrarDesgloseRendimiento() {
   }).join('');
 
   var totalSign = total >= 0 ? '+' : '';
-  rowsHTML += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+  rowsHTML += '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td>Total</td>' +
     '<td></td><td></td>' +
     '<td style="text-align:right;color:var(--accent-amber);">' + totalSign + formatCurrencyInt(total, 'MXN') + '</td>' +
@@ -2062,14 +2040,14 @@ function mostrarDesgloseRendimiento() {
     '</tr></thead><tbody>' + rowsHTML + '</tbody></table>' +
     '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">' +
       '<i class="fas fa-info-circle" style="margin-right:4px;"></i>' +
-      'Rendimientos del periodo filtrado (' + periodoLabel + ' ' + anioFiltro + '). Tasa anual del ultimo cierre.' +
+      'Rendimientos de ' + periodoLabel + '. Tasa anual del ultimo cierre.' +
     '</div>';
 
   if (filteredRend.length === 0) {
     html = '<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-info-circle" style="font-size:20px;margin-bottom:8px;display:block;"></i>No hay rendimientos registrados para este periodo.</div>';
   }
 
-  openModal('Desglose de Rendimiento ' + periodoLabel + ' ' + anioFiltro, html);
+  openModal('Desglose de Rendimiento \u2014 ' + periodoLabel, html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -2568,11 +2546,16 @@ function mostrarDesgloseGastos() {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var cuentaMap = {};
   cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {};
+  categorias.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
 
   /* Always current month */
   var now = new Date();
+  var _mesesLargos = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mesNombre = _mesesLargos[now.getMonth()];
   var fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1);
   var fechaFin = now;
   var fi = fechaInicio.getFullYear()+'-'+String(fechaInicio.getMonth()+1).padStart(2,'0')+'-'+String(fechaInicio.getDate()).padStart(2,'0');
@@ -2586,14 +2569,15 @@ function mostrarDesgloseGastos() {
     var mon = mv.moneda || (cta ? cta.moneda : 'MXN');
     var valMXN = toMXN(mv.monto, mon, tiposCambio);
     total += valMXN;
-    return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrencyInt(mv.monto, mon) + '</td></tr>';
+    var catNombre = mv.categoria_id ? (catMap[mv.categoria_id] || '\u2014') : '\u2014';
+    return '<tr><td style="white-space:nowrap;">' + formatDate(mv.fecha) + '</td><td>' + (mv.descripcion||'') + '</td><td>' + catNombre + '</td><td style="text-align:right;color:var(--accent-red);font-weight:600;">' + formatCurrencyInt(mv.monto, mon) + '</td></tr>';
   }).join('');
 
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2" style="font-weight:700;">TOTAL</td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td></tr>';
-  var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + totalRow + '</tbody></table>' +
+  var totalRow = '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="3" style="font-weight:700;">TOTAL</td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td></tr>';
+  var html = '<table class="data-table sortable-table"><thead><tr><th>Fecha</th><th>Descripcion</th><th>Categoria</th><th style="text-align:right;">Monto</th></tr></thead><tbody>' + rows + totalRow + '</tbody></table>' +
     (gastos.length > 20 ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">Mostrando 20 de ' + gastos.length + ' gastos</div>' : '');
 
-  openModal('Desglose de Gastos Del Periodo', html);
+  openModal('Desglose de Gastos \u2014 ' + mesNombre + ' ' + now.getFullYear(), html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -2632,7 +2616,8 @@ function mostrarDesgloseBalance() {
   '</div>' +
   '<div style="font-size:14px;color:var(--text-primary);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Balance = Rendimientos + Ingresos - Gastos</div>';
 
-  openModal('Desglose: Balance Neto', html);
+  var _mesesLargosB = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal('Balance Neto \u2014 ' + _mesesLargosB[now.getMonth()] + ' ' + now.getFullYear(), html);
 }
 
 /* ============================================================
