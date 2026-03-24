@@ -1702,15 +1702,15 @@ function mostrarDesgloseMovimientos(tipo) {
         '<td></td>' +
       '</tr>';
     }).join('');
-    catSection = '<div style="margin-top:20px;">' +
-      '<h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:10px;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4>' +
-      '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:30%;"><col style="width:15%;"><col style="width:22%;"><col style="width:13%;"><col style="width:20%;"></colgroup><thead><tr><th>Categoria</th><th></th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th></th></tr></thead>' +
-      '<tbody>' + catRows + '</tbody></table></div>';
+    // Section header row inside the same table to guarantee column alignment
+    catSection = '<tr data-sort-fixed="true"><td colspan="5" style="padding-top:24px;padding-bottom:8px;border-bottom:none;"><h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4></td></tr>' +
+      '<tr data-sort-fixed="true" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-muted);"><td>Categoria</td><td></td><td style="text-align:right;">Monto</td><td style="text-align:right;">%</td><td></td></tr>' +
+      catRows;
   }
 
   var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:30%;"><col style="width:15%;"><col style="width:22%;"><col style="width:13%;"><col style="width:20%;"></colgroup><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:center;">Movimientos</th><th style="text-align:right;">Monto</th><th style="text-align:right;">%</th><th style="text-align:right;">Saldo Actual</th>' +
-    '</tr></thead><tbody>' + rows + '</tbody></table>' + catSection;
+    '</tr></thead><tbody>' + rows + catSection + '</tbody></table>';
 
   openModal(titulo, html, { wide: true });
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
