@@ -286,7 +286,9 @@ function mostrarDesglosePatrimonio() {
   html += '<span>Patrimonio Neto</span><span style="color:var(--accent-blue);">' + formatCurrencyInt(pat.total, 'MXN') + '</span>';
   html += '</div></div>';
 
-  openModal('Desglose del Patrimonio Total', html);
+  var _mNow = new Date();
+  var _mNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal('Desglose del Patrimonio Total \u2014 ' + _mNombres[_mNow.getMonth()] + ' ' + _mNow.getFullYear(), html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);

@@ -843,9 +843,10 @@ function renderDashboard() {
     <!-- Rendimientos vs Gastos (full width) — ABOVE patrimonio -->
     <div style="margin-bottom:24px;">
       <div class="card">
-        <div class="card-header">
-          <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos</span>
-          <div style="display:flex;gap:4px;margin-left:auto;">
+        <div class="card-header" style="display:flex;align-items:center;">
+          <span class="card-title" style="white-space:nowrap;"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-green);"></i>Rendimientos vs Gastos</span>
+          <div style="flex:1;display:flex;justify-content:center;"><div id="dashLineClickInfo" style="display:none;padding:4px 12px;background:rgba(15,23,42,0.95);color:#fff;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;white-space:nowrap;"></div></div>
+          <div style="display:flex;gap:4px;">
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportChartAsImage('dashLineChart','rendimientos_vs_gastos')" title="Descargar imagen"><i class="fas fa-download"></i></button>
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashLineChart','Rendimientos vs Gastos')" title="Imprimir"><i class="fas fa-print"></i></button>
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportRendVsGastosExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
@@ -855,7 +856,6 @@ function renderDashboard() {
         <div style="position:relative;height:300px;">
           <canvas id="dashLineChart"></canvas>
         </div>
-        <div style="display:flex;justify-content:center;"><div id="dashLineClickInfo" style="display:none;padding:6px 14px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:4px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;white-space:nowrap;"></div></div>
         <div id="dashLineMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
@@ -863,9 +863,10 @@ function renderDashboard() {
     <!-- Evolucion del Patrimonio (full width, 24 months) -->
     <div style="margin-bottom:24px;">
       <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="card-title"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
-          <div style="display:flex;gap:4px;margin-left:auto;">
+        <div class="card-header" style="display:flex;align-items:center;">
+          <span class="card-title" style="white-space:nowrap;"><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--accent-blue);"></i>Evolucion del Patrimonio</span>
+          <div style="flex:1;display:flex;justify-content:center;"><div id="dashBarClickInfo" style="display:none;padding:4px 12px;background:rgba(15,23,42,0.95);color:#fff;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;white-space:nowrap;"></div></div>
+          <div style="display:flex;gap:4px;">
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportChartAsImage('dashBarChart','evolucion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="printChart('dashBarChart','Evolucion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:17px;" onclick="exportEvolucionPatrimonioExcel()" title="Exportar Excel"><i class="fas fa-file-excel"></i></button>
@@ -875,7 +876,6 @@ function renderDashboard() {
         <div style="position:relative;height:320px;">
           <canvas id="dashBarChart"></canvas>
         </div>
-        <div style="display:flex;justify-content:center;"><div id="dashBarClickInfo" style="display:none;padding:6px 14px;background:rgba(15,23,42,0.95);color:#fff;border-radius:8px;margin:4px 0 0;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;white-space:nowrap;"></div></div>
         <div id="dashBarMonthBtns" style="position:relative;height:30px;margin:0;border-top:1px solid var(--border-color);overflow:hidden;"></div>
       </div>
     </div>
@@ -2482,7 +2482,9 @@ function mostrarDesgloseCuentas(tipo) {
   var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;">' + colgroup + '<thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th>' + extraTh + '</tr></thead><tbody>' +
     rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td><td></td><td></td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td>' + extraTd + '</tr></tfoot></table>';
 
-  openModal('Desglose: ' + tipoLabel, html);
+  var _mNowC = new Date();
+  var _mNombresC = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal(tipoLabel + ' \u2014 ' + _mNombresC[_mNowC.getMonth()] + ' ' + _mNowC.getFullYear(), html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -2508,7 +2510,9 @@ function mostrarDesglosePropiedades() {
   var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:35%;"><col style="width:15%;"><col style="width:25%;"><col style="width:25%;"></colgroup><thead><tr><th>Nombre</th><th>Tipo</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' +
     rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 
-  openModal('Desglose: Propiedades', html);
+  var _mNowP = new Date();
+  var _mNombresP = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal('Propiedades \u2014 ' + _mNombresP[_mNowP.getMonth()] + ' ' + _mNowP.getFullYear(), html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
@@ -2536,7 +2540,9 @@ function mostrarDesglosePrestamos() {
     '<tr style="font-weight:700;"><td style="font-weight:700;">Recibidos</td><td></td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
     '<tr style="font-weight:700;"><td style="font-weight:700;">Neto</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
 
-  openModal('Desglose: Prestamos', html);
+  var _mNowPr = new Date();
+  var _mNombresPr = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal('Prestamos \u2014 ' + _mNombresPr[_mNowPr.getMonth()] + ' ' + _mNowPr.getFullYear(), html);
   var mc = document.querySelector('.modal-content');
   if (mc) mc.classList.add('modal-wide');
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
