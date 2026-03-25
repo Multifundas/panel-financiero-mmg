@@ -2513,9 +2513,7 @@ function mostrarDesgloseCuentas(tipo) {
 
   var _mNowC = new Date();
   var _mNombresC = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  openModal(tipoLabel + ' \u2014 ' + _mNombresC[_mNowC.getMonth()] + ' ' + _mNowC.getFullYear(), html);
-  var mc = document.querySelector('.modal-content');
-  if (mc) mc.classList.add('modal-wide');
+  openModal('Desglose ' + tipoLabel + ' \u2014 ' + _mNombresC[_mNowC.getMonth()] + ' ' + _mNowC.getFullYear(), html, { wide: true });
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
@@ -2541,9 +2539,7 @@ function mostrarDesglosePropiedades() {
 
   var _mNowP = new Date();
   var _mNombresP = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  openModal('Propiedades \u2014 ' + _mNombresP[_mNowP.getMonth()] + ' ' + _mNowP.getFullYear(), html);
-  var mc = document.querySelector('.modal-content');
-  if (mc) mc.classList.add('modal-wide');
+  openModal('Desglose Propiedades \u2014 ' + _mNombresP[_mNowP.getMonth()] + ' ' + _mNowP.getFullYear(), html, { wide: true });
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 
@@ -2571,9 +2567,7 @@ function mostrarDesglosePrestamos() {
 
   var _mNowPr = new Date();
   var _mNombresPr = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  openModal('Prestamos \u2014 ' + _mNombresPr[_mNowPr.getMonth()] + ' ' + _mNowPr.getFullYear(), html);
-  var mc = document.querySelector('.modal-content');
-  if (mc) mc.classList.add('modal-wide');
+  openModal('Desglose Prestamos \u2014 ' + _mNombresPr[_mNowPr.getMonth()] + ' ' + _mNowPr.getFullYear(), html, { wide: true });
   setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 50);
 }
 

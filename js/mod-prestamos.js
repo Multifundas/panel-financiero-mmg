@@ -629,73 +629,76 @@ function _renderEdicionContent() {
   var container = document.getElementById('prestamosEdicionTab');
   if (!container) return;
   var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
-  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
   if (prestamos.length === 0) {
     container.innerHTML = '<div class="card"><div style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-edit" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.4;"></i>No hay prestamos para editar.</div></div>';
     return;
   }
 
-  var opciones = prestamos.map(function(p) {
-    var label = p.persona + ' (' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + ') — ' + formatCurrencyInt(p.saldo_pendiente, p.moneda || 'MXN');
-    return '<option value="' + p.id + '">' + label + '</option>';
+  // Sort: activos first, then by persona
+  var sorted = prestamos.slice().sort(function(a, b) {
+    if (a.estado === 'pagado' && b.estado !== 'pagado') return 1;
+    if (a.estado !== 'pagado' && b.estado === 'pagado') return -1;
+    return (a.persona || '').localeCompare(b.persona || '');
+  });
+
+  var rows = sorted.map(function(p, idx) {
+    var moneda = p.moneda || 'MXN';
+    var tipoBadge = p.tipo === 'otorgado' ? 'badge-green' : 'badge-red';
+    var estadoBadge = p.estado === 'pagado' ? 'badge-blue' : p.estado === 'vencido' ? 'badge-red' : 'badge-green';
+    var numPagos = (p.pagos || []).length;
+    var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
+    return '<tr style="' + zebra + '">' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + (p.persona || '\u2014') + '</td>' +
+      '<td><span class="badge ' + tipoBadge + '" style="font-size:11px;">' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + '</span></td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(p.monto_original, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(p.saldo_pendiente, moneda) + '</td>' +
+      '<td><span class="badge ' + estadoBadge + '" style="font-size:11px;">' + (p.estado || 'activo') + '</span></td>' +
+      '<td style="text-align:center;">' +
+        (numPagos > 0 ? '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_verPagosEdicion(\'' + p.id + '\')" title="Ver pagos (' + numPagos + ')"><i class="fas fa-list-ol"></i> ' + numPagos + '</button>' : '<span style="color:var(--text-muted);font-size:11px;">0</span>') +
+      '</td>' +
+      '<td style="text-align:center;">' +
+        '<button class="btn btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="_editPrestamoModal(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
+        '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="_deletePrestamoEdicion(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+      '</td>' +
+    '</tr>';
   }).join('');
 
-  var html = '<div class="card" style="margin-bottom:16px;">' +
-    '<div class="card-header"><span class="card-title"><i class="fas fa-edit" style="margin-right:8px;color:var(--accent-blue);"></i>Seleccionar Prestamo a Editar</span></div>' +
-    '<div class="form-group" style="margin-bottom:0;">' +
-    '<select id="edicionPrestamoSelect" class="form-select" onchange="_selectPrestamoEdicion(this.value)">' +
-    '<option value="">Seleccionar prestamo...</option>' + opciones +
-    '</select></div></div>' +
-    '<div id="edicionPrestamoDetalle"></div>';
+  var html = '<div class="card">' +
+    '<div style="overflow-x:auto;">' +
+    '<table class="data-table sortable-table" id="tablaEdicionPrestamos">' +
+    '<thead><tr>' +
+      '<th>Persona</th>' +
+      '<th>Tipo</th>' +
+      '<th style="text-align:right;">Monto Original</th>' +
+      '<th style="text-align:right;">Saldo Pendiente</th>' +
+      '<th>Estado</th>' +
+      '<th style="text-align:center;">Pagos</th>' +
+      '<th style="text-align:center;" data-no-sort="true">Acciones</th>' +
+    '</tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div></div>';
 
   container.innerHTML = html;
+  setTimeout(function() { _initSortableTables(container); }, 100);
 }
 
-function _selectPrestamoEdicion(prestamoId) {
-  var detalle = document.getElementById('edicionPrestamoDetalle');
-  if (!detalle || !prestamoId) { if (detalle) detalle.innerHTML = ''; return; }
-
+/* --- Edit prestamo via modal (like movimientos) --- */
+function _editPrestamoModal(prestamoId) {
   var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   var p = prestamos.find(function(x) { return x.id === prestamoId; });
   if (!p) return;
 
+  var moneda = p.moneda || 'MXN';
   var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
   var cuentaOpciones = '<option value="">Sin cuenta vinculada</option>' + cuentasActivas.map(function(c) {
     return '<option value="' + c.id + '" ' + (p.cuenta_id === c.id ? 'selected' : '') + '>' + c.nombre + ' (' + c.moneda + ')</option>';
   }).join('');
 
-  var moneda = p.moneda || 'MXN';
-  var pagos = p.pagos || [];
-
-  // Build payments table
-  var pagosRows = '';
-  if (pagos.length > 0) {
-    var sorted = pagos.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
-    pagosRows = sorted.map(function(pg) {
-      var esAdicional = pg.tipo === 'prestamo_adicional';
-      var tipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:11px;">Prestamo</span>' : '<span class="badge badge-green" style="font-size:11px;">Abono</span>';
-      var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
-      var prefix = esAdicional ? '+' : '-';
-      return '<tr>' +
-        '<td>' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td>' +
-        '<td>' + tipoBadge + '</td>' +
-        '<td style="color:' + montoColor + ';font-weight:600;text-align:right;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td>' +
-        '<td>' + (pg.descripcion || '\u2014') + '</td>' +
-        '<td>' + (pg.notas || '\u2014') + '</td>' +
-        '<td style="text-align:center;">' +
-        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editPagoInline(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
-        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--accent-red);" onclick="_deletePagoEdicion(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
-        '</td></tr>';
-    }).join('');
-  }
-
-  var html = '<div class="card" style="margin-bottom:16px;">' +
-    '<div class="card-header"><span class="card-title"><i class="fas fa-user-edit" style="margin-right:8px;color:var(--accent-blue);"></i>Editar Prestamo</span></div>' +
-    '<form id="formEdicionPrestamo" onsubmit="_saveEdicionPrestamo(event, \'' + prestamoId + '\')">' +
+  var formHTML = '<form id="formEdicionPrestamo" onsubmit="_saveEdicionPrestamo(event, \'' + prestamoId + '\')">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-    '<div class="form-group"><label class="form-label">Persona *</label><input type="text" id="edPersNombre" class="form-input" required value="' + (p.persona || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Persona *</label><input type="text" id="edPersNombre" class="form-input" required value="' + (p.persona || '').replace(/"/g, '&quot;') + '"></div>' +
     '<div class="form-group"><label class="form-label">Tipo</label><select id="edPersTipo" class="form-select"><option value="otorgado" ' + (p.tipo === 'otorgado' ? 'selected' : '') + '>Otorgado</option><option value="recibido" ' + (p.tipo === 'recibido' ? 'selected' : '') + '>Recibido</option></select></div>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
@@ -710,18 +713,11 @@ function _selectPrestamoEdicion(prestamoId) {
     '</div>' +
     '<div class="form-group"><label class="form-label">Notas</label><textarea id="edPersNotas" class="form-input" rows="2" style="resize:vertical;">' + (p.notas || '') + '</textarea></div>' +
     '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar Cambios</button>' +
-    '</div></form></div>' +
-    // Payments table
-    '<div class="card">' +
-    '<div class="card-header"><span class="card-title"><i class="fas fa-list-ol" style="margin-right:8px;color:var(--accent-green);"></i>Pagos / Movimientos Registrados</span>' +
-    '<span class="badge badge-blue" style="font-size:11px;">' + pagos.length + ' registro' + (pagos.length !== 1 ? 's' : '') + '</span></div>' +
-    (pagos.length === 0
-      ? '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;"><i class="fas fa-receipt" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay pagos registrados.</div>'
-      : '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th>Descripcion</th><th>Notas</th><th style="text-align:center;">Acciones</th></tr></thead><tbody>' + pagosRows + '</tbody></table></div>') +
-    '</div>';
+    '</div></form>';
 
-  detalle.innerHTML = html;
+  openModal('Editar Prestamo \u2014 ' + p.persona, formHTML);
 }
 
 function _saveEdicionPrestamo(event, prestamoId) {
@@ -754,8 +750,55 @@ function _saveEdicionPrestamo(event, prestamoId) {
 
   prestamos[idx] = p;
   saveData(STORAGE_KEYS.prestamos, prestamos);
+  closeModal();
   showToast('Prestamo actualizado exitosamente.', 'success');
-  _selectPrestamoEdicion(prestamoId);
+  _renderEdicionContent();
+}
+
+/* --- Delete prestamo from edicion tab --- */
+function _deletePrestamoEdicion(prestamoId) {
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var p = prestamos.find(function(x) { return x.id === prestamoId; });
+  if (!p) return;
+  if (!confirm('\u00BFEliminar el prestamo de "' + p.persona + '" por ' + formatCurrencyInt(p.monto_original, p.moneda || 'MXN') + '?\n\nEsta accion no se puede deshacer.')) return;
+  saveData(STORAGE_KEYS.prestamos, prestamos.filter(function(x) { return x.id !== prestamoId; }));
+  showToast('Prestamo eliminado.', 'success');
+  _renderEdicionContent();
+}
+
+/* --- View payments for a prestamo in modal --- */
+function _verPagosEdicion(prestamoId) {
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var p = prestamos.find(function(x) { return x.id === prestamoId; });
+  if (!p) return;
+  var moneda = p.moneda || 'MXN';
+  var pagos = (p.pagos || []).slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+
+  var pagosRows = pagos.map(function(pg, idx) {
+    var esAdicional = pg.tipo === 'prestamo_adicional';
+    var tipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:11px;">Prestamo</span>' : '<span class="badge badge-green" style="font-size:11px;">Abono</span>';
+    var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
+    var prefix = esAdicional ? '+' : '-';
+    var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
+    return '<tr style="' + zebra + '">' +
+      '<td>' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td>' +
+      '<td>' + tipoBadge + '</td>' +
+      '<td style="color:' + montoColor + ';font-weight:600;text-align:right;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td>' +
+      '<td>' + (pg.descripcion || '\u2014') + '</td>' +
+      '<td style="text-align:center;">' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editPagoInline(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
+      '<button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="_deletePagoEdicion(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+      '</td></tr>';
+  }).join('');
+
+  var html = '<div style="overflow-x:auto;">' +
+    '<table class="data-table sortable-table">' +
+    '<thead><tr><th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th>Descripcion</th><th style="text-align:center;" data-no-sort="true">Acciones</th></tr></thead>' +
+    '<tbody>' + (pagosRows || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No hay pagos registrados.</td></tr>') + '</tbody>' +
+    '</table></div>';
+
+  openModal('Pagos \u2014 ' + p.persona + ' (' + pagos.length + ' registro' + (pagos.length !== 1 ? 's' : '') + ')', html, { wide: true });
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 100);
 }
 
 function _editPagoInline(prestamoId, pagoId) {
@@ -813,7 +856,8 @@ function _savePagoEdit(event, prestamoId, pagoId) {
   saveData(STORAGE_KEYS.prestamos, prestamos);
   closeModal();
   showToast('Pago actualizado.', 'success');
-  _selectPrestamoEdicion(prestamoId);
+  _renderEdicionContent();
+  _verPagosEdicion(prestamoId);
 }
 
 function _deletePagoEdicion(prestamoId, pagoId) {
@@ -838,5 +882,6 @@ function _deletePagoEdicion(prestamoId, pagoId) {
   prestamos[pIdx] = p;
   saveData(STORAGE_KEYS.prestamos, prestamos);
   showToast('Pago eliminado.', 'success');
-  _selectPrestamoEdicion(prestamoId);
+  _renderEdicionContent();
+  _verPagosEdicion(prestamoId);
 }
