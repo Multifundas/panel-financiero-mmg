@@ -54,6 +54,17 @@ function renderPrestamos() {
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
       </div>
     </div>
+    <div class="card" style="margin-bottom:16px;padding:8px 12px;">
+      <div style="display:flex;gap:8px;">
+        <button id="tabPrestamosVista" class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_switchPrestamosTab('vista')">
+          <i class="fas fa-list" style="margin-right:4px;"></i>Vista General
+        </button>
+        <button id="tabPrestamosEdicion" class="btn btn-secondary" style="padding:6px 16px;font-size:13px;" onclick="_switchPrestamosTab('edicion')">
+          <i class="fas fa-edit" style="margin-right:4px;"></i>Edicion
+        </button>
+      </div>
+    </div>
+    <div id="prestamosVistaTab">
     <div class="card" style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -86,7 +97,9 @@ function renderPrestamos() {
           <tbody id="tbodyPrestamos"></tbody>
         </table>
       </div>
-    </div>`;
+    </div>
+    </div>
+    <div id="prestamosEdicionTab" style="display:none;"></div>`;
   filterPrestamos();
   setTimeout(function() { _initSortableTables(el); }, 100);
 }
@@ -584,4 +597,246 @@ function mostrarDesglosePrestamosKpi(tipo) {
 
   openModal(titulo, html, { wide: true });
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+}
+
+/* ============================================================
+   PRESTAMOS — TAB SWITCHING & EDITING
+   ============================================================ */
+var _prestamosCurrentTab = 'vista';
+
+function _switchPrestamosTab(tab) {
+  _prestamosCurrentTab = tab;
+  var vistaTab = document.getElementById('prestamosVistaTab');
+  var edicionTab = document.getElementById('prestamosEdicionTab');
+  var btnVista = document.getElementById('tabPrestamosVista');
+  var btnEdicion = document.getElementById('tabPrestamosEdicion');
+  if (!vistaTab || !edicionTab) return;
+  if (tab === 'vista') {
+    vistaTab.style.display = '';
+    edicionTab.style.display = 'none';
+    if (btnVista) { btnVista.className = 'btn btn-primary'; btnVista.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnEdicion) { btnEdicion.className = 'btn btn-secondary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+  } else {
+    vistaTab.style.display = 'none';
+    edicionTab.style.display = '';
+    if (btnVista) { btnVista.className = 'btn btn-secondary'; btnVista.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnEdicion) { btnEdicion.className = 'btn btn-primary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    _renderEdicionContent();
+  }
+}
+
+function _renderEdicionContent() {
+  var container = document.getElementById('prestamosEdicionTab');
+  if (!container) return;
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+
+  if (prestamos.length === 0) {
+    container.innerHTML = '<div class="card"><div style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-edit" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.4;"></i>No hay prestamos para editar.</div></div>';
+    return;
+  }
+
+  var opciones = prestamos.map(function(p) {
+    var label = p.persona + ' (' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + ') — ' + formatCurrencyInt(p.saldo_pendiente, p.moneda || 'MXN');
+    return '<option value="' + p.id + '">' + label + '</option>';
+  }).join('');
+
+  var html = '<div class="card" style="margin-bottom:16px;">' +
+    '<div class="card-header"><span class="card-title"><i class="fas fa-edit" style="margin-right:8px;color:var(--accent-blue);"></i>Seleccionar Prestamo a Editar</span></div>' +
+    '<div class="form-group" style="margin-bottom:0;">' +
+    '<select id="edicionPrestamoSelect" class="form-select" onchange="_selectPrestamoEdicion(this.value)">' +
+    '<option value="">Seleccionar prestamo...</option>' + opciones +
+    '</select></div></div>' +
+    '<div id="edicionPrestamoDetalle"></div>';
+
+  container.innerHTML = html;
+}
+
+function _selectPrestamoEdicion(prestamoId) {
+  var detalle = document.getElementById('edicionPrestamoDetalle');
+  if (!detalle || !prestamoId) { if (detalle) detalle.innerHTML = ''; return; }
+
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var p = prestamos.find(function(x) { return x.id === prestamoId; });
+  if (!p) return;
+
+  var cuentasActivas = cuentas.filter(function(c) { return c.activa !== false; });
+  var cuentaOpciones = '<option value="">Sin cuenta vinculada</option>' + cuentasActivas.map(function(c) {
+    return '<option value="' + c.id + '" ' + (p.cuenta_id === c.id ? 'selected' : '') + '>' + c.nombre + ' (' + c.moneda + ')</option>';
+  }).join('');
+
+  var moneda = p.moneda || 'MXN';
+  var pagos = p.pagos || [];
+
+  // Build payments table
+  var pagosRows = '';
+  if (pagos.length > 0) {
+    var sorted = pagos.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+    pagosRows = sorted.map(function(pg) {
+      var esAdicional = pg.tipo === 'prestamo_adicional';
+      var tipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:11px;">Prestamo</span>' : '<span class="badge badge-green" style="font-size:11px;">Abono</span>';
+      var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
+      var prefix = esAdicional ? '+' : '-';
+      return '<tr>' +
+        '<td>' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td>' +
+        '<td>' + tipoBadge + '</td>' +
+        '<td style="color:' + montoColor + ';font-weight:600;text-align:right;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td>' +
+        '<td>' + (pg.descripcion || '\u2014') + '</td>' +
+        '<td>' + (pg.notas || '\u2014') + '</td>' +
+        '<td style="text-align:center;">' +
+        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editPagoInline(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
+        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--accent-red);" onclick="_deletePagoEdicion(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+        '</td></tr>';
+    }).join('');
+  }
+
+  var html = '<div class="card" style="margin-bottom:16px;">' +
+    '<div class="card-header"><span class="card-title"><i class="fas fa-user-edit" style="margin-right:8px;color:var(--accent-blue);"></i>Editar Prestamo</span></div>' +
+    '<form id="formEdicionPrestamo" onsubmit="_saveEdicionPrestamo(event, \'' + prestamoId + '\')">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Persona *</label><input type="text" id="edPersNombre" class="form-input" required value="' + (p.persona || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Tipo</label><select id="edPersTipo" class="form-select"><option value="otorgado" ' + (p.tipo === 'otorgado' ? 'selected' : '') + '>Otorgado</option><option value="recibido" ' + (p.tipo === 'recibido' ? 'selected' : '') + '>Recibido</option></select></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Monto Original *</label><input type="number" id="edPersMonto" class="form-input" required step="0.01" min="0.01" value="' + (p.monto_original || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Moneda</label><select id="edPersMoneda" class="form-select"><option value="MXN" ' + (moneda === 'MXN' ? 'selected' : '') + '>MXN</option><option value="USD" ' + (moneda === 'USD' ? 'selected' : '') + '>USD</option><option value="EUR" ' + (moneda === 'EUR' ? 'selected' : '') + '>EUR</option></select></div>' +
+    '<div class="form-group"><label class="form-label">Tasa Interes %</label><input type="number" id="edPersTasa" class="form-input" step="0.01" value="' + (p.tasa_interes || '') + '"></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Fecha Inicio *</label><input type="date" id="edPersFechaInicio" class="form-input" required value="' + (p.fecha_inicio || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Fecha Vencimiento</label><input type="date" id="edPersFechaVenc" class="form-input" value="' + (p.fecha_vencimiento || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Cuenta Vinculada</label><select id="edPersCuenta" class="form-select">' + cuentaOpciones + '</select></div>' +
+    '</div>' +
+    '<div class="form-group"><label class="form-label">Notas</label><textarea id="edPersNotas" class="form-input" rows="2" style="resize:vertical;">' + (p.notas || '') + '</textarea></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar Cambios</button>' +
+    '</div></form></div>' +
+    // Payments table
+    '<div class="card">' +
+    '<div class="card-header"><span class="card-title"><i class="fas fa-list-ol" style="margin-right:8px;color:var(--accent-green);"></i>Pagos / Movimientos Registrados</span>' +
+    '<span class="badge badge-blue" style="font-size:11px;">' + pagos.length + ' registro' + (pagos.length !== 1 ? 's' : '') + '</span></div>' +
+    (pagos.length === 0
+      ? '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;"><i class="fas fa-receipt" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay pagos registrados.</div>'
+      : '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Fecha</th><th>Tipo</th><th style="text-align:right;">Monto</th><th>Descripcion</th><th>Notas</th><th style="text-align:center;">Acciones</th></tr></thead><tbody>' + pagosRows + '</tbody></table></div>') +
+    '</div>';
+
+  detalle.innerHTML = html;
+}
+
+function _saveEdicionPrestamo(event, prestamoId) {
+  event.preventDefault();
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var idx = prestamos.findIndex(function(p) { return p.id === prestamoId; });
+  if (idx === -1) { showToast('Prestamo no encontrado.', 'error'); return; }
+
+  var p = prestamos[idx];
+  p.persona = document.getElementById('edPersNombre').value.trim();
+  p.tipo = document.getElementById('edPersTipo').value;
+  p.monto_original = parseFloat(document.getElementById('edPersMonto').value) || 0;
+  p.moneda = document.getElementById('edPersMoneda').value;
+  p.tasa_interes = parseFloat(document.getElementById('edPersTasa').value) || 0;
+  p.fecha_inicio = document.getElementById('edPersFechaInicio').value;
+  p.fecha_vencimiento = document.getElementById('edPersFechaVenc').value;
+  p.cuenta_id = document.getElementById('edPersCuenta').value || null;
+  p.notas = document.getElementById('edPersNotas').value.trim();
+
+  // Recalculate saldo_pendiente
+  var pagos = p.pagos || [];
+  var totalAbonos = 0, totalAdicionales = 0;
+  pagos.forEach(function(pg) {
+    if (pg.tipo === 'prestamo_adicional') totalAdicionales += pg.monto;
+    else totalAbonos += pg.monto;
+  });
+  p.saldo_pendiente = p.monto_original + totalAdicionales - totalAbonos;
+  if (p.saldo_pendiente <= 0) { p.saldo_pendiente = 0; p.estado = 'pagado'; }
+  else if (p.estado === 'pagado') { p.estado = 'activo'; }
+
+  prestamos[idx] = p;
+  saveData(STORAGE_KEYS.prestamos, prestamos);
+  showToast('Prestamo actualizado exitosamente.', 'success');
+  _selectPrestamoEdicion(prestamoId);
+}
+
+function _editPagoInline(prestamoId, pagoId) {
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var p = prestamos.find(function(x) { return x.id === prestamoId; });
+  if (!p) return;
+  var pago = (p.pagos || []).find(function(pg) { return pg.id === pagoId; });
+  if (!pago) return;
+  var moneda = p.moneda || 'MXN';
+  var esAdicional = pago.tipo === 'prestamo_adicional';
+
+  var formHTML = '<form id="formEditPago" onsubmit="_savePagoEdit(event, \'' + prestamoId + '\', \'' + pagoId + '\')">' +
+    '<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:var(--bg-base);">' +
+    '<div style="font-size:13px;color:var(--text-muted);">Tipo: <strong style="color:var(--text-primary);">' + (esAdicional ? 'Prestamo Adicional' : 'Abono/Pago') + '</strong></div></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Monto *</label><input type="number" id="editPagoMonto" class="form-input" required step="0.01" min="0.01" value="' + pago.monto + '"></div>' +
+    '<div class="form-group"><label class="form-label">Fecha *</label><input type="date" id="editPagoFecha" class="form-input" required value="' + (pago.fecha || '') + '"></div>' +
+    '</div>' +
+    '<div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="editPagoDesc" class="form-input" value="' + (pago.descripcion || '') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Notas</label><textarea id="editPagoNotas" class="form-input" rows="2" style="resize:vertical;">' + (pago.notas || '') + '</textarea></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
+    '</div></form>';
+
+  openModal('Editar Pago — ' + formatCurrencyInt(pago.monto, moneda), formHTML);
+}
+
+function _savePagoEdit(event, prestamoId, pagoId) {
+  event.preventDefault();
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var pIdx = prestamos.findIndex(function(x) { return x.id === prestamoId; });
+  if (pIdx === -1) return;
+
+  var p = prestamos[pIdx];
+  var pgIdx = (p.pagos || []).findIndex(function(pg) { return pg.id === pagoId; });
+  if (pgIdx === -1) return;
+
+  p.pagos[pgIdx].monto = parseFloat(document.getElementById('editPagoMonto').value) || 0;
+  p.pagos[pgIdx].fecha = document.getElementById('editPagoFecha').value;
+  p.pagos[pgIdx].descripcion = document.getElementById('editPagoDesc').value.trim();
+  p.pagos[pgIdx].notas = document.getElementById('editPagoNotas').value.trim();
+
+  // Recalculate saldo
+  var totalAbonos = 0, totalAdicionales = 0;
+  p.pagos.forEach(function(pg) {
+    if (pg.tipo === 'prestamo_adicional') totalAdicionales += pg.monto;
+    else totalAbonos += pg.monto;
+  });
+  p.saldo_pendiente = p.monto_original + totalAdicionales - totalAbonos;
+  if (p.saldo_pendiente <= 0) { p.saldo_pendiente = 0; p.estado = 'pagado'; }
+  else if (p.estado === 'pagado') { p.estado = 'activo'; }
+
+  prestamos[pIdx] = p;
+  saveData(STORAGE_KEYS.prestamos, prestamos);
+  closeModal();
+  showToast('Pago actualizado.', 'success');
+  _selectPrestamoEdicion(prestamoId);
+}
+
+function _deletePagoEdicion(prestamoId, pagoId) {
+  if (!confirm('¿Eliminar este pago? Esta accion no se puede deshacer.')) return;
+  var prestamos = loadData(STORAGE_KEYS.prestamos) || [];
+  var pIdx = prestamos.findIndex(function(x) { return x.id === prestamoId; });
+  if (pIdx === -1) return;
+
+  var p = prestamos[pIdx];
+  p.pagos = (p.pagos || []).filter(function(pg) { return pg.id !== pagoId; });
+
+  // Recalculate saldo
+  var totalAbonos = 0, totalAdicionales = 0;
+  p.pagos.forEach(function(pg) {
+    if (pg.tipo === 'prestamo_adicional') totalAdicionales += pg.monto;
+    else totalAbonos += pg.monto;
+  });
+  p.saldo_pendiente = p.monto_original + totalAdicionales - totalAbonos;
+  if (p.saldo_pendiente <= 0) { p.saldo_pendiente = 0; p.estado = 'pagado'; }
+  else if (p.estado === 'pagado') { p.estado = 'activo'; }
+
+  prestamos[pIdx] = p;
+  saveData(STORAGE_KEYS.prestamos, prestamos);
+  showToast('Pago eliminado.', 'success');
+  _selectPrestamoEdicion(prestamoId);
 }

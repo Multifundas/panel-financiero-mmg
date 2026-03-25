@@ -202,6 +202,7 @@ function renderDashboard() {
     cuentaHistSorted[c.id] = hist;
   });
 
+  var deudaHistorica = loadData(STORAGE_KEYS.deuda_historica) || [];
   for (let i = 0; i < numBarMonths; i++) {
     const dt = new Date(barStartDate.getFullYear(), barStartDate.getMonth() + i, 1);
     const mLabel = mesNombre(dt.getMonth()).substring(0, 3) + ' ' + dt.getFullYear().toString().slice(-2);
@@ -257,6 +258,12 @@ function renderDashboard() {
         const pendiente = Math.max(0, (pr.valor_compra || 0) - pagado);
         totalMes -= toMXN(pendiente, pr.moneda || 'MXN', tiposCambio, per);
       });
+      // Subtract deuda historica for this month
+      deudaHistorica.forEach(function(d) {
+        if (d.anio === dt.getFullYear() && d.mes === (dt.getMonth() + 1)) {
+          totalMes -= toMXN(d.monto || 0, d.moneda || 'MXN', tiposCambio, per);
+        }
+      });
       barData.push(totalMes);
     } else {
       barData.push(0);
@@ -269,6 +276,10 @@ function renderDashboard() {
   var _curMonthIdx = mesActual + 12; // months since Jan of previous year
   if (_curMonthIdx >= 0 && _curMonthIdx < barData.length) {
     barData[_curMonthIdx] = patrimonioTotal;
+  }
+  // Nullify future months so they don't display misleading carry-forward data
+  for (var _fi = _curMonthIdx + 1; _fi < barData.length; _fi++) {
+    barData[_fi] = null;
   }
 
   // (Filters removed — dashboard always shows current data)
@@ -350,6 +361,24 @@ function renderDashboard() {
           tipoLabel: 'Preventa',
           tipoIcon: 'fa-building',
           monto: prMontoInfo,
+          ...alerta,
+        });
+      }
+    }
+  });
+
+  // Check seguros activos
+  var seguros = loadData(STORAGE_KEYS.seguros) || [];
+  seguros.forEach(function(s) {
+    if (s.activo !== false && s.fecha_vencimiento) {
+      var alerta = calcularAlerta(s.fecha_vencimiento);
+      if (alerta) {
+        var tipoSeguroLabels = { vida: 'Vida', gastos_medicos: 'Gastos Medicos', autos: 'Autos', casa: 'Casa', otro: 'Otro' };
+        alertasVencimiento.push({
+          nombre: (s.aseguradora || 'Seguro') + ' — ' + (tipoSeguroLabels[s.tipo] || s.tipo),
+          tipoLabel: 'Seguro',
+          tipoIcon: 'fa-shield-alt',
+          monto: 'Prima: ' + formatCurrencyInt(s.monto_prima || 0, s.moneda || 'MXN') + (s.numero_poliza ? '<br>Poliza: ' + s.numero_poliza : ''),
           ...alerta,
         });
       }

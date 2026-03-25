@@ -19,6 +19,9 @@ const STORAGE_KEYS = {
   metas:                 'pf_metas',
   ingresos_futuros:      'pf_ingresos_futuros',
   tipos_cambio_historico: 'pf_tipos_cambio_historico',
+  deuda_historica:        'pf_deuda_historica',
+  gastos_historicos:      'pf_gastos_historicos',
+  seguros:               'pf_seguros',
 };
 
 /* ---------- In-memory cache ---------- */

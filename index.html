@@ -137,6 +137,16 @@
           <span>Ingresos Futuros</span>
         </a>
 
+        <div class="nav-section-label">Otros</div>
+        <a class="nav-item" data-module="deuda" onclick="navigateTo('deuda')">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Deuda Historica</span>
+        </a>
+        <a class="nav-item" data-module="seguros" onclick="navigateTo('seguros')">
+          <i class="fas fa-shield-alt"></i>
+          <span>Seguros</span>
+        </a>
+
         <div class="nav-section-label">Analisis</div>
         <a class="nav-item" data-module="rendimientos" onclick="navigateTo('rendimientos')">
           <i class="fas fa-chart-line"></i>
@@ -226,6 +236,8 @@
         <div id="module-metas" class="module-section"></div>
         <div id="module-simulador" class="module-section"></div>
         <div id="module-configuracion" class="module-section"></div>
+        <div id="module-deuda" class="module-section"></div>
+        <div id="module-seguros" class="module-section"></div>
       </div>
     </div>
   </div>
@@ -310,6 +322,8 @@
   <script src="js/mod-ai-assistant.js"></script>
   <script src="js/mod-pdf-import.js"></script>
   <script src="js/mod-ingresos-futuros.js"></script>
+  <script src="js/mod-deuda.js"></script>
+  <script src="js/mod-seguros.js"></script>
   <script src="js/manual.js"></script>
   <script src="js/app.js"></script>
 </body>

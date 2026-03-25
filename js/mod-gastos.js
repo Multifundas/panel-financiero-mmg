@@ -265,16 +265,25 @@ function renderGastos() {
   // All gastos (excluding transfers)
   const gastos = movimientos.filter(m => m.tipo === 'gasto' && !m.transferencia_id);
 
+  // Load gastos historicos for integration
+  const gastosHistoricos = loadData(STORAGE_KEYS.gastos_historicos) || [];
+
   // Selected month gastos
   const gastosDelMes = gastos.filter(m => {
     const f = new Date(m.fecha);
     return f.getMonth() === mesActual && f.getFullYear() === anioActual;
   });
 
-  const totalMes = gastosDelMes.reduce((s, m) => {
+  var totalMes = gastosDelMes.reduce((s, m) => {
     const cta = cuentaMap[m.cuenta_id];
     return s + toMXN(m.monto, cta ? cta.moneda : 'MXN', tiposCambio);
   }, 0);
+  // Add gastos historicos for selected month
+  gastosHistoricos.forEach(function(gh) {
+    if (gh.anio === anioActual && gh.mes === (mesActual + 1)) {
+      totalMes += toMXN(gh.monto || 0, gh.moneda || 'MXN', tiposCambio);
+    }
+  });
 
   // Build presupuesto section HTML
   const presupuestoHTML = _buildPresupuestoSection(categorias, catMap, movimientos, cuentaMap, tiposCambio);
@@ -426,6 +435,13 @@ function renderGastos() {
     const montoMXN = toMXN(m.monto, cta ? cta.moneda : 'MXN', tiposCambio);
     catTotals[catId] = (catTotals[catId] || 0) + montoMXN;
   });
+  // Add gastos historicos for selected month to donut
+  gastosHistoricos.forEach(function(gh) {
+    if (gh.anio === selAnio && gh.mes === (selMes + 1)) {
+      var ghCatId = gh.categoria_id || 'sin_cat';
+      catTotals[ghCatId] = (catTotals[ghCatId] || 0) + toMXN(gh.monto || 0, gh.moneda || 'MXN', tiposCambio);
+    }
+  });
 
   const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6'];
   const donutLabels = [];
@@ -492,17 +508,24 @@ function renderGastos() {
     });
   }
 
-  // Get unique categories from gastos
+  // Get unique categories from gastos + gastos historicos
   const uniqueCats = {};
   gastos.forEach(m => {
     const catId = m.categoria_id || 'sin_cat';
     const cat = catMap[catId];
     uniqueCats[catId] = cat ? cat.nombre : 'Sin Categoria';
   });
+  gastosHistoricos.forEach(gh => {
+    const ghCatId = gh.categoria_id || 'sin_cat';
+    if (!uniqueCats[ghCatId]) {
+      const cat = catMap[ghCatId];
+      uniqueCats[ghCatId] = cat ? cat.nombre : 'Sin Categoria';
+    }
+  });
 
   const barDatasets = Object.entries(uniqueCats).map(([catId, catName], idx) => {
     const data = last12.map(m => {
-      return gastos
+      var total = gastos
         .filter(g => {
           const f = new Date(g.fecha);
           const gCatId = g.categoria_id || 'sin_cat';
@@ -512,6 +535,14 @@ function renderGastos() {
           const cta = cuentaMap[g.cuenta_id];
           return s + toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
         }, 0);
+      // Add gastos historicos for the same month+category
+      gastosHistoricos.forEach(function(gh) {
+        var ghCatId = gh.categoria_id || 'sin_cat';
+        if (ghCatId === catId && gh.anio === m.year && gh.mes === (m.month + 1)) {
+          total += toMXN(gh.monto || 0, gh.moneda || 'MXN', tiposCambio);
+        }
+      });
+      return total;
     });
     return {
       label: catName,

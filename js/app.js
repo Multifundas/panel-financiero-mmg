@@ -80,6 +80,11 @@ function initApp() {
     saveData(STORAGE_KEYS.categorias_ingreso, getDefaultCategoriasIngreso());
   }
 
+  // Migrate: ensure new modules data exists
+  if (!loadData(STORAGE_KEYS.deuda_historica)) saveData(STORAGE_KEYS.deuda_historica, []);
+  if (!loadData(STORAGE_KEYS.gastos_historicos)) saveData(STORAGE_KEYS.gastos_historicos, []);
+  if (!loadData(STORAGE_KEYS.seguros)) saveData(STORAGE_KEYS.seguros, []);
+
   // Apply theme
   var config2 = loadData(STORAGE_KEYS.config) || {};
   if (typeof applyTheme === 'function') {

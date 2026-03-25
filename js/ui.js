@@ -16,6 +16,8 @@ const moduleTitles = {
   simulador:      'Simulador de Inversiones',
   configuracion:  'Configuracion',
   ingresos_futuros: 'Ingresos Futuros',
+  deuda:            'Deuda Historica',
+  seguros:          'Seguros',
 };
 
 function navigateTo(moduleId) {
@@ -50,6 +52,8 @@ function navigateTo(moduleId) {
     simulador:      renderSimulador,
     configuracion:  renderConfiguracion,
     ingresos_futuros: typeof renderIngresosFuturos === 'function' ? renderIngresosFuturos : function(){},
+    deuda:            typeof renderDeuda === 'function' ? renderDeuda : function(){},
+    seguros:          typeof renderSeguros === 'function' ? renderSeguros : function(){},
   };
   if (renderFns[moduleId]) renderFns[moduleId]();
 

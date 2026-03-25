@@ -37,8 +37,20 @@ function renderMovimientos() {
     .map(c => `<option value="${c.id}">${c.nombre}</option>`)
     .join('');
 
-  // -- Render HTML: Filters FIRST, then KPIs, then table --
+  // -- Render HTML: Tabs, then Filters, KPIs, table --
   el.innerHTML = `
+    <!-- Tab Bar -->
+    <div class="card" style="margin-bottom:12px;padding:8px 12px;">
+      <div style="display:flex;gap:8px;">
+        <button id="tabMovActuales" class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_switchMovTab('actuales')">
+          <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Movimientos
+        </button>
+        <button id="tabMovHistoricos" class="btn btn-secondary" style="padding:6px 16px;font-size:13px;" onclick="_switchMovTab('historicos')">
+          <i class="fas fa-history" style="margin-right:4px;"></i>Historicos
+        </button>
+      </div>
+    </div>
+    <div id="movActualesTab">
     <!-- Barra de Filtros -->
     <div class="card" style="margin-bottom:12px;padding:10px 16px;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -162,6 +174,8 @@ function renderMovimientos() {
         </table>
       </div>
     </div>
+    </div><!-- end movActualesTab -->
+    <div id="movHistoricosTab" style="display:none;"></div>
   `;
 
   // Restore previous filter state if available, otherwise default to current month
@@ -1767,4 +1781,234 @@ function exportarMovsFiltradosExcel() {
   XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
   XLSX.writeFile(wb, 'movimientos_filtrados.xlsx');
   showToast('Excel exportado con ' + filtered.length + ' movimientos');
+}
+
+/* ============================================================
+   GASTOS HISTORICOS — TAB SWITCHING & CAPTURE
+   ============================================================ */
+var _movCurrentTab = 'actuales';
+
+function _switchMovTab(tab) {
+  _movCurrentTab = tab;
+  var actualesTab = document.getElementById('movActualesTab');
+  var historicosTab = document.getElementById('movHistoricosTab');
+  var btnActuales = document.getElementById('tabMovActuales');
+  var btnHistoricos = document.getElementById('tabMovHistoricos');
+  if (!actualesTab || !historicosTab) return;
+  if (tab === 'actuales') {
+    actualesTab.style.display = '';
+    historicosTab.style.display = 'none';
+    if (btnActuales) { btnActuales.className = 'btn btn-primary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnHistoricos) { btnHistoricos.className = 'btn btn-secondary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+  } else {
+    actualesTab.style.display = 'none';
+    historicosTab.style.display = '';
+    if (btnActuales) { btnActuales.className = 'btn btn-secondary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnHistoricos) { btnHistoricos.className = 'btn btn-primary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    _renderGastosHistoricos();
+  }
+}
+
+function _renderGastosHistoricos() {
+  var container = document.getElementById('movHistoricosTab');
+  if (!container) return;
+  var gastosHist = loadData(STORAGE_KEYS.gastos_historicos) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catMap = {};
+  categorias.forEach(function(c) { catMap[c.id] = c.nombre; });
+
+  // Year filter options
+  var years = {};
+  var cy = new Date().getFullYear();
+  years[cy] = true;
+  gastosHist.forEach(function(g) { if (g.anio) years[g.anio] = true; });
+  var yearsList = Object.keys(years).sort().reverse();
+  var yearOpts = yearsList.map(function(y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+
+  // Get selected year
+  var selYear = parseInt(document.getElementById('ghFilterAnio') ? document.getElementById('ghFilterAnio').value : cy);
+  if (!selYear) selYear = cy;
+
+  var filtered = gastosHist.filter(function(g) { return g.anio === selYear; });
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Calculate KPIs
+  var totalAnual = 0;
+  var mesesConDatos = 0;
+  filtered.forEach(function(g) { totalAnual += (g.monto || 0); });
+  var mesesSet = {};
+  filtered.forEach(function(g) { mesesSet[g.mes] = true; });
+  mesesConDatos = Object.keys(mesesSet).length;
+  var promMensual = mesesConDatos > 0 ? totalAnual / mesesConDatos : 0;
+
+  // Group by month
+  var byMonth = {};
+  filtered.forEach(function(g) {
+    if (!byMonth[g.mes]) byMonth[g.mes] = [];
+    byMonth[g.mes].push(g);
+  });
+
+  // Build month grid (4 x 3)
+  var gridCells = '';
+  for (var m = 1; m <= 12; m++) {
+    var entries = byMonth[m] || [];
+    var monthTotal = 0;
+    entries.forEach(function(e) { monthTotal += (e.monto || 0); });
+    var hasData = entries.length > 0;
+    var catNames = entries.map(function(e) { return catMap[e.categoria_id] || 'Sin cat.'; }).join(', ');
+    gridCells += '<div style="background:var(--bg-base);border:1px solid var(--border-color);border-radius:10px;padding:12px;cursor:pointer;transition:border-color 0.2s;" onclick="_editGastoHistorico(null,' + selYear + ',' + m + ')" onmouseover="this.style.borderColor=\'var(--accent-blue)\'" onmouseout="this.style.borderColor=\'var(--border-color)\'">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">' + meses[m-1] + '</div>' +
+      (hasData
+        ? '<div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(monthTotal, 'MXN') + '</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + catNames + '">' + entries.length + ' registro' + (entries.length !== 1 ? 's' : '') + '</div>'
+        : '<div style="font-size:14px;color:var(--text-muted);opacity:0.5;">Sin datos</div>' +
+          '<div style="font-size:20px;color:var(--accent-blue);margin-top:2px;"><i class="fas fa-plus-circle"></i></div>') +
+      '</div>';
+  }
+
+  // Build detail table
+  var detailRows = '';
+  filtered.sort(function(a, b) { return (a.mes - b.mes) || (a.descripcion || '').localeCompare(b.descripcion || ''); });
+  filtered.forEach(function(g) {
+    detailRows += '<tr>' +
+      '<td>' + meses[(g.mes || 1) - 1] + '</td>' +
+      '<td>' + (catMap[g.categoria_id] || 'Sin categoria') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(g.monto || 0, g.moneda || 'MXN') + '</td>' +
+      '<td>' + (g.moneda || 'MXN') + '</td>' +
+      '<td>' + (g.descripcion || '\u2014') + '</td>' +
+      '<td style="text-align:center;">' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editGastoHistorico(\'' + g.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--accent-red);" onclick="_deleteGastoHistorico(\'' + g.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+      '</td></tr>';
+  });
+
+  container.innerHTML =
+    // Filter bar
+    '<div class="card" style="margin-bottom:12px;padding:10px 16px;">' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+    '<select id="ghFilterAnio" class="form-select" style="padding:5px 8px;font-size:12px;min-height:auto;width:90px;" onchange="_renderGastosHistoricos()">' + yearOpts + '</select>' +
+    '<div style="flex:1;"></div>' +
+    '<button class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_editGastoHistorico(null)"><i class="fas fa-plus" style="margin-right:4px;"></i>Nuevo Gasto Historico</button>' +
+    '</div></div>' +
+    // KPIs
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">' +
+    '<div class="card" style="border-left:3px solid var(--accent-red);">' +
+    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total ' + selYear + '</div>' +
+    '<div style="font-size:22px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(totalAnual, 'MXN') + '</div></div>' +
+    '<div class="card" style="border-left:3px solid var(--accent-amber);">' +
+    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Promedio Mensual</div>' +
+    '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + formatCurrencyInt(promMensual, 'MXN') + '</div></div>' +
+    '<div class="card" style="border-left:3px solid var(--accent-blue);">' +
+    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Meses con Datos</div>' +
+    '<div style="font-size:22px;font-weight:800;color:var(--accent-blue);">' + mesesConDatos + ' de 12</div></div>' +
+    '</div>' +
+    // Month grid
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">' + gridCells + '</div>' +
+    // Detail table
+    '<div class="card">' +
+    '<div class="card-header"><span class="card-title"><i class="fas fa-list" style="margin-right:8px;color:var(--accent-red);"></i>Detalle Gastos Historicos ' + selYear + '</span></div>' +
+    (filtered.length === 0
+      ? '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-history" style="font-size:28px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay gastos historicos para ' + selYear + '.</div>'
+      : '<div style="overflow-x:auto;"><table class="data-table sortable-table"><thead><tr><th>Mes</th><th>Categoria</th><th style="text-align:right;">Monto</th><th>Moneda</th><th>Descripcion</th><th style="text-align:center;">Acciones</th></tr></thead><tbody>' + detailRows + '</tbody></table></div>') +
+    '</div>';
+
+  // Set year filter value
+  var selEl = document.getElementById('ghFilterAnio');
+  if (selEl) selEl.value = String(selYear);
+}
+
+function _editGastoHistorico(id, anio, mes) {
+  var gastosHist = loadData(STORAGE_KEYS.gastos_historicos) || [];
+  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var existing = id ? gastosHist.find(function(g) { return g.id === id; }) : null;
+
+  var cy = new Date().getFullYear();
+  var defaultAnio = anio || (existing ? existing.anio : cy);
+  var defaultMes = mes || (existing ? existing.mes : new Date().getMonth() + 1);
+
+  var catOpciones = categorias.sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); }).map(function(c) {
+    var sel = existing && existing.categoria_id === c.id ? 'selected' : '';
+    return '<option value="' + c.id + '" ' + sel + '>' + c.nombre + '</option>';
+  }).join('');
+
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mesOpts = meses.map(function(n, i) {
+    var sel = (i + 1) === defaultMes ? 'selected' : '';
+    return '<option value="' + (i + 1) + '" ' + sel + '>' + n + '</option>';
+  }).join('');
+
+  var anioOpts = '';
+  for (var y = cy; y >= cy - 10; y--) {
+    anioOpts += '<option value="' + y + '" ' + (y === defaultAnio ? 'selected' : '') + '>' + y + '</option>';
+  }
+
+  var formHTML = '<form id="formGastoHist" onsubmit="_saveGastoHistorico(event)">' +
+    '<input type="hidden" id="ghId" value="' + (existing ? existing.id : '') + '">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Año *</label><select id="ghAnio" class="form-select" required>' + anioOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Mes *</label><select id="ghMes" class="form-select" required>' + mesOpts + '</select></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div class="form-group"><label class="form-label">Monto *</label><input type="number" id="ghMonto" class="form-input" required step="0.01" min="0.01" value="' + (existing ? existing.monto : '') + '" placeholder="0.00"></div>' +
+    '<div class="form-group"><label class="form-label">Moneda</label><select id="ghMoneda" class="form-select"><option value="MXN" ' + (existing && existing.moneda === 'MXN' || !existing ? 'selected' : '') + '>MXN</option><option value="USD" ' + (existing && existing.moneda === 'USD' ? 'selected' : '') + '>USD</option><option value="EUR" ' + (existing && existing.moneda === 'EUR' ? 'selected' : '') + '>EUR</option></select></div>' +
+    '</div>' +
+    '<div class="form-group"><label class="form-label">Categoria</label><select id="ghCategoria" class="form-select"><option value="">Sin categoria</option>' + catOpciones + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="ghDescripcion" class="form-input" value="' + (existing ? (existing.descripcion || '') : '') + '" placeholder="Descripcion del gasto..."></div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">' +
+    '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
+    '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>' + (existing ? 'Guardar Cambios' : 'Crear Gasto') + '</button>' +
+    '</div></form>';
+
+  openModal(existing ? 'Editar Gasto Historico' : 'Nuevo Gasto Historico', formHTML);
+}
+
+function _saveGastoHistorico(event) {
+  event.preventDefault();
+  var gastosHist = loadData(STORAGE_KEYS.gastos_historicos) || [];
+  var id = document.getElementById('ghId').value;
+  var anio = parseInt(document.getElementById('ghAnio').value);
+  var mes = parseInt(document.getElementById('ghMes').value);
+  var monto = parseFloat(document.getElementById('ghMonto').value) || 0;
+  var moneda = document.getElementById('ghMoneda').value;
+  var categoria_id = document.getElementById('ghCategoria').value || null;
+  var descripcion = document.getElementById('ghDescripcion').value.trim();
+
+  if (!anio || !mes || monto <= 0) { showToast('Completa los campos obligatorios.', 'warning'); return; }
+
+  if (id) {
+    var idx = gastosHist.findIndex(function(g) { return g.id === id; });
+    if (idx !== -1) {
+      gastosHist[idx].anio = anio;
+      gastosHist[idx].mes = mes;
+      gastosHist[idx].monto = monto;
+      gastosHist[idx].moneda = moneda;
+      gastosHist[idx].categoria_id = categoria_id;
+      gastosHist[idx].descripcion = descripcion;
+    }
+  } else {
+    gastosHist.push({
+      id: uuid(),
+      anio: anio,
+      mes: mes,
+      monto: monto,
+      moneda: moneda,
+      categoria_id: categoria_id,
+      descripcion: descripcion,
+      created: new Date().toISOString()
+    });
+  }
+
+  saveData(STORAGE_KEYS.gastos_historicos, gastosHist);
+  closeModal();
+  showToast(id ? 'Gasto historico actualizado.' : 'Gasto historico creado.', 'success');
+  _renderGastosHistoricos();
+}
+
+function _deleteGastoHistorico(id) {
+  if (!confirm('¿Eliminar este gasto historico?')) return;
+  var gastosHist = loadData(STORAGE_KEYS.gastos_historicos) || [];
+  gastosHist = gastosHist.filter(function(g) { return g.id !== id; });
+  saveData(STORAGE_KEYS.gastos_historicos, gastosHist);
+  showToast('Gasto historico eliminado.', 'info');
+  _renderGastosHistoricos();
 }
