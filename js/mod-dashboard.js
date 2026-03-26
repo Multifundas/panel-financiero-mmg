@@ -1796,15 +1796,19 @@ function renderPatrimonioMensualReport(anioParam) {
   }
 
   // -- Deuda (préstamos recibidos + preventa de propiedades, orden alfabetico) --
-  var _hayDeudaCheck = prestamos.filter(function(p) { return (p.tipo === 'recibido' || p.tipo === 'preventa') && p.estado !== 'pagado'; }).length > 0 || propiedades.filter(function(pr) { return pr.tipo === 'preventa' && (pr.mensualidades_total - (pr.mensualidades_pagadas || 0)) > 0; }).length > 0;
-  if (_hayDeudaCheck) {
-    rows += '<tr data-sort-fixed="true"><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-red);padding:10px 8px 4px;border-bottom:2px solid var(--accent-red);background:rgba(239,68,68,0.03);"><i class="fas fa-credit-card" style="margin-right:6px;"></i>DEUDA</td></tr>';
-  }
   var prestRecibidos = prestamos.filter(function(p) { return p.tipo === 'recibido' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventasPrest = prestamos.filter(function(p) { return p.tipo === 'preventa' && p.estado !== 'pagado'; }).sort(function(a, b) { return (a.persona || '').localeCompare(b.persona || ''); });
   var preventasProp = propiedades.filter(function(pr) {
-    return pr.tipo === 'preventa' && (pr.mensualidades_total - (pr.mensualidades_pagadas || 0)) > 0;
+    if (pr.tipo !== 'preventa') return false;
+    var eng = pr.enganche || 0;
+    var pag = eng + ((pr.mensualidades_pagadas || 0) * (pr.monto_mensualidad || 0));
+    var pend = Math.max(0, (pr.valor_compra || 0) - pag);
+    return pend > 0;
   }).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
+  var _hayDeudaCheck = (prestRecibidos.length > 0 || preventasPrest.length > 0 || preventasProp.length > 0);
+  if (_hayDeudaCheck) {
+    rows += '<tr data-sort-fixed="true"><td colspan="' + totalCols + '" style="font-weight:800;font-size:' + FS_HEAD + ';color:var(--accent-red);padding:10px 8px 4px;border-bottom:2px solid var(--accent-red);background:rgba(239,68,68,0.03);"><i class="fas fa-credit-card" style="margin-right:6px;"></i>DEUDA</td></tr>';
+  }
 
   var subtotalDeudaPorMes = new Array(numMeses).fill(0);
   var hayDeuda = (prestRecibidos.length > 0 || preventasPrest.length > 0 || preventasProp.length > 0);
