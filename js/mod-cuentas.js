@@ -334,9 +334,9 @@ function mostrarDesgloseCuentas(tipoCuenta) {
     '<td></td><td></td>' +
     '</tr></tfoot></table>';
 
-  openModal(titulo, html);
-  var mc = document.getElementById('modalContent');
-  if (mc) mc.classList.add('modal-wide');
+  var _mNowCtas = new Date();
+  var _mNombresCtas = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  openModal(titulo + ' \u2014 ' + _mNombresCtas[_mNowCtas.getMonth()] + ' ' + _mNowCtas.getFullYear(), html, { wide: true });
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 
