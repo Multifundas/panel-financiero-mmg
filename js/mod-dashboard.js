@@ -1933,11 +1933,12 @@ function renderPatrimonioMensualReport(anioParam) {
   // Subtotal Deuda row in resumen
   if (hayDeuda) {
     rows += '<tr data-sort-fixed="true" style="background:rgba(239,68,68,0.04);"><td style="position:sticky;left:0;background:rgba(239,68,68,0.04);z-index:1;font-size:' + FS + ';font-weight:600;color:var(--accent-red);">- Deuda</td><td></td>';
+    var lastResumenDeuda = 0;
     for (var m = 0; m <= maxMes; m++) {
       if (subtotalDeudaPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
-      else { rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(subtotalDeudaPorMes[m]) + '</td>'; }
+      else { lastResumenDeuda = subtotalDeudaPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-red);">-' + fmtInt(subtotalDeudaPorMes[m]) + '</td>'; }
     }
-    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;color:var(--accent-red);">-' + fmtInt(lastSubDeuda) + '</td></tr>';
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:700;color:var(--accent-red);">-' + fmtInt(lastResumenDeuda) + '</td></tr>';
   }
 
   // PATRIMONIO NETO row

@@ -1249,7 +1249,7 @@ function editCierreHistorial(cuentaId, idx) {
     '<input type="number" id="editCierreRendPctAnual" class="form-input" step="0.01" value="' + (h.rendimiento_pct_anual || 0).toFixed(2) + '" readonly style="opacity:0.7;"></div>' +
     '</div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
-    '<button type="button" class="btn btn-secondary" onclick="verHistorialCuenta(\'' + cuentaId + '\')">Cancelar</button>' +
+    '<button type="button" class="btn btn-secondary" onclick="' + (_estadoCuentaId === cuentaId ? 'verEstadoCuenta(\'' + cuentaId + '\')' : 'verHistorialCuenta(\'' + cuentaId + '\')') + '">Cancelar</button>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>' +
     '</div></form>';
 
@@ -1308,7 +1308,12 @@ function saveEditCierre(event, cuentaId, idx) {
   }
 
   showToast('Cierre actualizado.', 'success');
-  verHistorialCuenta(cuentaId);
+  // Refresh: if called from Estado de Cuenta, re-open it; otherwise show Historial
+  if (_estadoCuentaId === cuentaId) {
+    verEstadoCuenta(cuentaId);
+  } else {
+    verHistorialCuenta(cuentaId);
+  }
   if (typeof renderCuentas === 'function') renderCuentas();
   if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
 }
@@ -1352,7 +1357,12 @@ function deleteCierreHistorial(cuentaId, idx) {
   }
 
   showToast('Cierre eliminado.', 'info');
-  verHistorialCuenta(cuentaId);
+  // Refresh: if called from Estado de Cuenta, re-open it; otherwise show Historial
+  if (_estadoCuentaId === cuentaId) {
+    verEstadoCuenta(cuentaId);
+  } else {
+    verHistorialCuenta(cuentaId);
+  }
   if (typeof renderCuentas === 'function') renderCuentas();
   if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
 }
@@ -1441,7 +1451,7 @@ function filterEstadoCuenta() {
   });
 
   // Add cierres as informational markers (no cargo/abono, just saldo snapshot)
-  historial.forEach(function(h) {
+  historial.forEach(function(h, hIdx) {
     var sInicio = h.saldo_inicio != null ? h.saldo_inicio : 0;
     var sFinal = h.saldo_final != null ? h.saldo_final : h.saldo;
     var rendPctAnual = h.rendimiento_pct_anual || 0;
@@ -1458,7 +1468,8 @@ function filterEstadoCuenta() {
       notas: '',
       origen: 'Cierre',
       esCierre: true,
-      cierreSaldoFinal: sFinal
+      cierreSaldoFinal: sFinal,
+      historialIdx: hIdx
     });
   });
 
@@ -1507,6 +1518,7 @@ function filterEstadoCuenta() {
     '<td></td>' +
     '<td></td>' +
     '<td style="text-align:right;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(saldoInicial, moneda) + '</td>' +
+    '<td></td>' +
     '</tr>';
 
   // Build table rows for movements and cierre markers
@@ -1514,12 +1526,15 @@ function filterEstadoCuenta() {
     // Cierre rows: informational marker, resets running balance to cierre saldo
     if (e.esCierre) {
       saldoRunning = e.cierreSaldoFinal;
+      var cierreAcc = '<button class="btn btn-secondary" style="padding:3px 7px;font-size:11px;margin-right:3px;" onclick="editCierreHistorial(\'' + cuentaId + '\',' + e.historialIdx + ')" title="Editar cierre"><i class="fas fa-pen"></i></button>' +
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:11px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + e.historialIdx + ')" title="Eliminar cierre"><i class="fas fa-trash"></i></button>';
       return '<tr style="background:rgba(59,130,246,0.08);border-top:2px solid rgba(59,130,246,0.3);border-bottom:2px solid rgba(59,130,246,0.3);">' +
         '<td style="white-space:nowrap;font-weight:700;color:var(--accent-blue);">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
         '<td style="font-size:14px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
         '<td></td>' +
         '<td></td>' +
         '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
+        '<td style="text-align:center;white-space:nowrap;">' + cierreAcc + '</td>' +
         '</tr>';
     }
 
@@ -1545,6 +1560,7 @@ function filterEstadoCuenta() {
       '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +
       '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abono + '</td>' +
       '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
+      '<td></td>' +
       '</tr>';
   });
 
@@ -1571,7 +1587,7 @@ function filterEstadoCuenta() {
 
   var html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
     '<table class="data-table" style="min-width:0;"><thead><tr>' +
-    '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th>' +
+    '<th style="white-space:nowrap;">Fecha</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">Abono</th><th style="text-align:right;">Saldo</th><th style="text-align:center;width:80px;"></th>' +
     '</tr></thead><tbody>' + filaInicial + rows.join('') + '</tbody></table></div>' +
     '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:' + (esInversion ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr') + ';gap:12px;">' +
     '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo de Apertura</div><div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(saldoInicial, moneda) + '</div></div>' +
