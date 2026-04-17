@@ -601,6 +601,7 @@ function renderRendMensualReport() {
 
   // Build rows
   var totalPorMes = new Array(12).fill(0);
+  var capitalPorMes = new Array(12).fill(0); // saldo_inicial MXN acumulado por mes, para % consolidado
   var totalGeneral = 0;
   var totalCapitalGeneral = 0;
 
@@ -622,6 +623,8 @@ function renderRendMensualReport() {
         var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
         totalCuenta += rendMXN;
         totalPorMes[m] += rendMXN;
+        // Acumular saldo inicial en MXN para calcular % consolidado del mes
+        capitalPorMes[m] += toMXN(saldoInicial, moneda, tiposCambio);
       }
 
       // Only render cells for visible months
@@ -671,7 +674,11 @@ function renderRendMensualReport() {
     } else {
       var mColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
       var mSign = totalPorMes[m] >= 0 ? '+' : '';
-      totalRow += '<td style="text-align:right;font-size:15px;color:' + mColor + ';">' + mSign + formatCurrencyInt(totalPorMes[m], 'MXN') + '</td>';
+      var mPct = capitalPorMes[m] > 0 ? (totalPorMes[m] / capitalPorMes[m] * 100) : 0;
+      totalRow += '<td style="text-align:right;font-size:15px;color:' + mColor + ';">' +
+        '<div>' + mSign + formatCurrencyInt(totalPorMes[m], 'MXN') + '</div>' +
+        '<div style="font-size:13px;opacity:0.8;">' + mSign + mPct.toFixed(1) + '%</div>' +
+        '</td>';
     }
   }
   var gColor = totalGeneral >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
