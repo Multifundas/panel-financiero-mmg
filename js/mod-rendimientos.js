@@ -641,7 +641,7 @@ function renderRendMensualReport() {
       var sign = rendMontoVis >= 0 ? '+' : '';
       row += '<td style="text-align:right;padding:4px 4px;">' +
         '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:15px;">' + sign + formatCurrencyInt(rendMontoVis, moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + rendPct.toFixed(0) + '%</div>' +
+        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + rendPct.toFixed(1) + '%</div>' +
       '</td>';
     }
 
