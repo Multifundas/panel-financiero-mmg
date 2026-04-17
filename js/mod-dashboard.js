@@ -1206,9 +1206,15 @@ function renderDashboard() {
   window.addEventListener('resize', window._dashBarBtnResize);
 
   // -- 3. Line: Rendimientos vs Gastos (start from first data, max 24 months) --
-  // Find earliest period with rendimiento or gasto data
+  // Find earliest period with rendimiento or gasto data.
+  // Para rendimientos usamos el periodo LOGICO derivado de su fecha: si la fecha
+  // del cierre cae en dia 1, el cierre pertenece al mes anterior.
+  const _rendPeriodo = function(r) {
+    if (r.fecha) return _periodoLogicoCierre(r.fecha);
+    return r.periodo || '';
+  };
   const allRendGastoPeriodos = new Set();
-  rendimientos.forEach(r => { if (r.periodo) allRendGastoPeriodos.add(r.periodo); });
+  rendimientos.forEach(r => { var p = _rendPeriodo(r); if (p) allRendGastoPeriodos.add(p); });
   movimientos.forEach(mv => {
     if (mv.tipo === 'gasto' && !mv.transferencia_id && mv.fecha) {
       allRendGastoPeriodos.add(mv.fecha.substring(0, 7));
@@ -1235,9 +1241,10 @@ function renderDashboard() {
     lineLabels.push(mesNombre(mIdx).substring(0, 3) + ' ' + aIdx.toString().slice(-2));
     linePeriodos.push(per);
 
-    // Rendimientos for this period (using _rendReal for real rendimiento)
+    // Rendimientos for this period (using _rendReal for real rendimiento).
+    // Usa periodo LOGICO del cierre (fecha dia 1 => mes anterior).
     const rMes = rendimientos
-      .filter(r => r.periodo === per)
+      .filter(r => _rendPeriodo(r) === per)
       .reduce((s, r) => {
         const cta = _cuentaMapKpi[r.cuenta_id];
         return s + toMXN(_rendReal(r), cta ? cta.moneda : 'MXN', tiposCambio);
@@ -1611,12 +1618,13 @@ function renderPatrimonioMensualReport(anioParam) {
   var FS = '14px';
   var FS_HEAD = '15px';
 
-  // Pre-sort historial per cuenta
+  // Pre-sort historial per cuenta.
+  // Periodo LOGICO: si la fecha del cierre cae en dia 1, se considera del mes anterior.
   var cuentaHistSorted = {};
   cuentas.forEach(function(c) {
     if (c.activa === false) return;
     var hist = (c.historial_saldos || c.historial_cierres || []).map(function(h) {
-      var p = h.periodo || (h.fecha ? h.fecha.substring(0, 7) : '');
+      var p = h.fecha ? _periodoLogicoCierre(h.fecha) : (h.periodo || '');
       return { saldo_final: h.saldo_final, saldo: h.saldo, _periodo: p, periodo: p };
     });
     cuentaHistSorted[c.id] = hist.slice().sort(function(a, b) { return (a._periodo || a.periodo || '').localeCompare(b._periodo || b.periodo || ''); });
@@ -1665,16 +1673,19 @@ function renderPatrimonioMensualReport(anioParam) {
 
     for (var m = 0; m <= maxMes; m++) {
       var per = anio + '-' + String(m + 1).padStart(2, '0');
-      if (esAnioActual && m === mesActualIdx) {
+      if (esAnioActual && m > mesActualIdx) {
+        // Meses futuros: sin dato
+        exRow.push(0);
+        row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
+      } else if (esAnioActual && m === mesActualIdx) {
+        // Mes actual: saldo vivo (refleja la posicion real hoy, sin depender de cierres)
         subtotalCuentasPorMes[m] += saldoRealMXN;
         totalPorMes[m] += saldoRealMXN;
         lastVal = saldoRealMXN;
         exRow.push(Math.round(saldoRealMXN));
         row += '<td style="text-align:right;font-size:' + FS + ';white-space:nowrap;">' + fmtInt(saldoRealMXN) + '</td>';
-      } else if (esAnioActual && m > mesActualIdx) {
-        exRow.push(0);
-        row += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-muted);white-space:nowrap;">$0</td>';
       } else {
+        // Meses pasados: carry forward del ultimo cierre con periodo <= periodo objetivo
         var cierre = findCarryForward(sortedHist, per);
         if (cierre) {
           var saldo = cierre.saldo_final != null ? cierre.saldo_final : (cierre.saldo || 0);

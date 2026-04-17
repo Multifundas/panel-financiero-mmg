@@ -130,11 +130,27 @@ function formatPct(value, decimals) {
 
 /** Format a date (ISO string or Date) as dd/mm/yyyy */
 function formatDate(d) {
+  // Si es string 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm...', parseamos a mano para
+  // evitar el corrimiento de zona horaria que mete new Date('YYYY-MM-DD')
+  // (que interpreta como UTC y resta horas en huso local negativo).
+  if (typeof d === 'string') {
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  }
   const dt = typeof d === 'string' ? new Date(d) : d;
   const dd = String(dt.getDate()).padStart(2, '0');
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
   const yyyy = dt.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
+}
+
+/**
+ * Periodo de un cierre (YYYY-MM) tomado literal de la fecha capturada.
+ * No se aplica ningun ajuste: si la fecha es 2026-03-31 => marzo;
+ * si es 2026-04-01 => abril. Helper unificado para el dashboard.
+ */
+function _periodoLogicoCierre(fecha) {
+  return (fecha || '').slice(0, 7);
 }
 
 /** Get month name in Spanish */
