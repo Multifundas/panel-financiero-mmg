@@ -660,6 +660,174 @@ function _recalcPrimerCierreYRendimiento(cuenta, nuevoSaldoApertura, nuevaFechaA
   }
 }
 
+/* -- Recalcula TODOS los rendimientos de una cuenta a partir de su historial_saldos.
+   Reconstruye saldo_inicio (encadenado con saldo_final del cierre previo), dias
+   (entre cierres), rendimiento, % y % anual. Sincroniza STORAGE_KEYS.rendimientos.
+   Respeta saldo_final y movimientos_neto capturados manualmente. -- */
+function recalcRendimientosCuenta(cuentaId, opts) {
+  opts = opts || {};
+  var silent = !!opts.silent;
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var ctaIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
+  if (ctaIdx === -1) {
+    if (!silent) showToast('Cuenta no encontrada.', 'error');
+    return false;
+  }
+  var cuenta = cuentas[ctaIdx];
+  if (!Array.isArray(cuenta.historial_saldos) || cuenta.historial_saldos.length === 0) {
+    if (!silent) showToast('La cuenta no tiene cierres en historial.', 'warning');
+    return false;
+  }
+
+  var esDebito = cuenta.tipo === 'debito';
+  var moneda = cuenta.moneda || 'MXN';
+
+  // Ordenar cronologicamente (in-place via copia con indices preservados)
+  var hist = cuenta.historial_saldos;
+  var orderIdx = hist.map(function(_, i) { return i; })
+                     .sort(function(a, b) { return (hist[a].fecha || '').localeCompare(hist[b].fecha || ''); });
+
+  // Saldo y fecha de apertura como base del primer cierre
+  var aperturaSaldo = cuenta.saldo_inicial != null ? cuenta.saldo_inicial : (cuenta.saldo || 0);
+  var aperturaFecha = cuenta.fecha_saldo_inicial || cuenta.created || '';
+
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var cambios = 0;
+  var rendCambios = 0;
+
+  for (var k = 0; k < orderIdx.length; k++) {
+    var i = orderIdx[k];
+    var h = hist[i];
+
+    // saldo_inicio: primer cierre = apertura; siguientes = saldo_final del previo
+    var saldoInicio;
+    var fechaPrev;
+    if (k === 0) {
+      saldoInicio = aperturaSaldo;
+      fechaPrev = aperturaFecha;
+    } else {
+      var prev = hist[orderIdx[k - 1]];
+      saldoInicio = prev.saldo_final != null ? prev.saldo_final : (prev.saldo || 0);
+      fechaPrev = prev.fecha || '';
+    }
+
+    // dias entre fechaPrev y h.fecha
+    var dias = h.dias || 0;
+    if (fechaPrev && h.fecha) {
+      var d1 = new Date(fechaPrev);
+      var d2 = new Date(h.fecha);
+      var diffMs = d2.getTime() - d1.getTime();
+      dias = Math.max(1, Math.round(diffMs / 86400000));
+    }
+
+    // saldo_final y movimientos_neto se respetan tal como estan capturados
+    var saldoFinal = h.saldo_final != null ? h.saldo_final : (h.saldo || 0);
+    var movNeto = h.movimientos_neto || 0;
+    var rendimiento = esDebito ? 0 : (saldoFinal - saldoInicio - movNeto);
+    var rendPct = (!esDebito && saldoInicio > 0) ? ((rendimiento / saldoInicio) * 100) : 0;
+    var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0)
+      ? ((rendimiento / saldoInicio) * (365 / dias) * 100) : rendPct;
+
+    // Detectar si cambia algo
+    if (h.saldo_inicio !== saldoInicio || h.dias !== dias ||
+        h.rendimiento !== rendimiento || h.rendimiento_pct !== rendPct ||
+        h.rendimiento_pct_anual !== rendPctAnual) {
+      cambios++;
+    }
+
+    h.saldo_inicio = saldoInicio;
+    h.dias = dias;
+    h.rendimiento = rendimiento;
+    h.rendimiento_pct = rendPct;
+    h.rendimiento_pct_anual = rendPctAnual;
+    if (h.saldo != null) h.saldo = saldoFinal;
+
+    // Sincronizar registro en STORAGE_KEYS.rendimientos
+    var periodo = (h.fecha || '').slice(0, 7);
+    if (periodo) {
+      var rIdx = rendimientos.findIndex(function(r) {
+        return r.cuenta_id === cuentaId && r.periodo === periodo;
+      });
+      if (rIdx !== -1) {
+        var r = rendimientos[rIdx];
+        if (r.saldo_inicial !== saldoInicio || r.saldo_final !== saldoFinal ||
+            r.rendimiento_monto !== rendimiento || r.rendimiento_pct !== rendPct ||
+            r.rendimiento_pct_anual !== rendPctAnual || r.dias !== dias) {
+          rendCambios++;
+        }
+        rendimientos[rIdx].saldo_inicial = saldoInicio;
+        rendimientos[rIdx].saldo_final = saldoFinal;
+        rendimientos[rIdx].rendimiento_monto = rendimiento;
+        rendimientos[rIdx].rendimiento_pct = rendPct;
+        rendimientos[rIdx].rendimiento_pct_anual = rendPctAnual;
+        rendimientos[rIdx].dias = dias;
+        rendimientos[rIdx].fecha = h.fecha || rendimientos[rIdx].fecha;
+        rendimientos[rIdx].updated = new Date().toISOString();
+      } else {
+        // Crear registro faltante
+        rendimientos.push({
+          id: uuid(),
+          cuenta_id: cuentaId,
+          fecha: h.fecha || '',
+          periodo: periodo,
+          saldo_inicial: saldoInicio,
+          saldo_final: saldoFinal,
+          rendimiento_monto: rendimiento,
+          rendimiento_pct: rendPct,
+          rendimiento_pct_anual: rendPctAnual,
+          dias: dias,
+          tipo: 'Interes',
+          reinvertido: false,
+          notas: 'Recreado por recalcRendimientosCuenta',
+          created: new Date().toISOString(),
+        });
+        rendCambios++;
+      }
+    }
+  }
+
+  // Actualizar saldo de la cuenta al saldo_final del cierre mas reciente
+  var ultimo = hist[orderIdx[orderIdx.length - 1]];
+  if (ultimo) {
+    cuenta.saldo = ultimo.saldo_final != null ? ultimo.saldo_final : (ultimo.saldo || cuenta.saldo);
+  }
+
+  cuentas[ctaIdx] = cuenta;
+  saveData(STORAGE_KEYS.cuentas, cuentas);
+  saveData(STORAGE_KEYS.rendimientos, rendimientos);
+
+  if (!silent) {
+    showToast('Rendimientos recalculados: ' + cambios + ' cierre(s), ' + rendCambios + ' registro(s) de rendimientos.', 'success');
+  }
+
+  // Refresh UIs visibles
+  if (_estadoCuentaId === cuentaId && typeof verEstadoCuenta === 'function') verEstadoCuenta(cuentaId);
+  if (typeof renderCuentas === 'function') renderCuentas();
+  if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
+  var rendModule = document.getElementById('module-rendimientos');
+  if (rendModule && rendModule.offsetParent !== null && typeof renderRendimientos === 'function') {
+    renderRendimientos();
+  }
+  return true;
+}
+
+/* -- Wrapper con confirmacion para recalcRendimientosCuenta -- */
+function confirmarRecalcRendimientos(cuentaId) {
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) return;
+  var n = Array.isArray(cuenta.historial_saldos) ? cuenta.historial_saldos.length : 0;
+  var msg = 'Recalcular rendimientos de "' + cuenta.nombre + '"?\n\n' +
+    'Se reconstruiran los siguientes campos para los ' + n + ' cierre(s) de esta cuenta:\n' +
+    '- saldo_inicio (encadenado: saldo_final del cierre previo, o apertura si es el primero)\n' +
+    '- dias (entre fechas de cierres consecutivos)\n' +
+    '- rendimiento, % y % anual\n\n' +
+    'Se respetan saldo_final y movimientos_neto capturados.\n' +
+    'Tambien se sincronizan los registros del modulo Rendimientos.';
+  if (!confirm(msg)) return;
+  recalcRendimientosCuenta(cuentaId);
+}
+
 /* -- Save (create or update) a cuenta -- */
 function saveCuenta(event) {
   event.preventDefault();
@@ -1491,6 +1659,7 @@ function verEstadoCuenta(cuentaId) {
     '<option value="">Todos</option><option value="ingreso">Abonos</option><option value="gasto">Cargos</option></select>' +
     '<input type="text" id="edoCtaSearch" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:180px;" placeholder="Buscar..." oninput="filterEstadoCuenta()">' +
     '<div style="margin-left:auto;display:flex;gap:6px;">' +
+    '<button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="confirmarRecalcRendimientos(\'' + cuentaId + '\')" title="Recalcular rendimientos desde historial_saldos"><i class="fas fa-sync-alt" style="margin-right:4px;"></i>Recalcular</button>' +
     '<button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;" onclick="exportarEdoCuentaExcel()" title="Exportar Excel"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
     '<button class="btn btn-secondary" style="padding:5px 10px;font-size:14px;border-color:var(--accent-red);color:var(--accent-red);" onclick="exportarEdoCuentaPDF()" title="Exportar PDF"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
     '</div>' +
