@@ -619,7 +619,12 @@ function renderRendMensualReport() {
       if (regs.length > 0) {
         var rendMonto = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
         var saldoInicial = regs[0].saldo_inicial || 0;
-        if (m === 0 || capitalInicial === 0) capitalInicial = saldoInicial;
+        // Tomar como capital inicial el primer mes con cierre real (no placeholder).
+        // Se considera placeholder un saldo_inicial trivial (<= 1) y sin rendimiento.
+        // Asi evitamos que un registro inicial de tipo {saldo_inicio: 0/1, rendimiento: 0}
+        // distorsione el % consolidado del anio (caso PVB MECG: 9439/1 = 943900%).
+        var esCierreReal = (saldoInicial > 1) || (rendMonto !== 0);
+        if (capitalInicial === 0 && esCierreReal) capitalInicial = saldoInicial;
         var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
         totalCuenta += rendMXN;
         totalPorMes[m] += rendMXN;
