@@ -1756,10 +1756,13 @@ function filterEstadoCuenta() {
   // Sort chronologically (oldest first) to calculate running balance
   filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
-  // Saldo de apertura: primer registro historico con valor > 0
+  // Saldo de apertura: preferir los campos explicitos de la cuenta (fecha_saldo_inicial,
+  // saldo_inicial). Solo caer en _getSaldoApertura (que infiere desde historial) si
+  // esos campos no estan definidos. Esto evita que el EDC muestre la fecha del primer
+  // cierre en lugar de la fecha real de apertura ingresada por el usuario.
   var apertura = _getSaldoApertura(cuenta);
-  var saldoInicial = apertura.saldo;
-  var fechaSaldoInicial = apertura.fecha;
+  var saldoInicial = (cuenta.saldo_inicial != null) ? cuenta.saldo_inicial : apertura.saldo;
+  var fechaSaldoInicial = cuenta.fecha_saldo_inicial || apertura.fecha;
 
   // Calculate totals from filtered movements (exclude cierres)
   var sumIngresos = 0, sumGastos = 0;
@@ -1920,14 +1923,15 @@ function _buildEdoCuentaData() {
   filtered.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
 
   var aperturaExport = _getSaldoApertura(cuenta);
-  var saldoInicial = aperturaExport.saldo;
+  var saldoInicial = (cuenta.saldo_inicial != null) ? cuenta.saldo_inicial : aperturaExport.saldo;
+  var fechaAperturaExport = cuenta.fecha_saldo_inicial || aperturaExport.fecha;
   var saldoRunning = saldoInicial;
   var sumIngresos = 0, sumGastos = 0;
 
   // Build rows array with running balance
   var rows = [];
   // First row: Saldo de Apertura
-  rows.push({ fecha: aperturaExport.fecha, descripcion: 'Saldo de Apertura', cargo: '', abono: '', saldo: saldoInicial, esCierre: false, esApertura: true });
+  rows.push({ fecha: fechaAperturaExport, descripcion: 'Saldo de Apertura', cargo: '', abono: '', saldo: saldoInicial, esCierre: false, esApertura: true });
 
   filtered.forEach(function(e) {
     if (e.esCierre) {
