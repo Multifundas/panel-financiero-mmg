@@ -400,12 +400,12 @@ function editCuenta(id) {
         <div class="form-group">
           <label class="form-label">Saldo de Apertura *</label>
           <input type="number" id="cuentaSaldo" class="form-input" required step="0.01" min="0"
-                 value="${isEdit ? _getSaldoApertura(cuenta).saldo : ''}" placeholder="0.00">
+                 value="${isEdit ? (cuenta.saldo_inicial != null ? cuenta.saldo_inicial : _getSaldoApertura(cuenta).saldo) : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
           <label class="form-label">Fecha de Apertura</label>
           <input type="date" id="cuentaFechaSaldoInicial" class="form-input"
-                 value="${isEdit ? _getSaldoApertura(cuenta).fecha : ''}">
+                 value="${isEdit ? (cuenta.fecha_saldo_inicial || cuenta.created || '').slice(0, 10) : ''}">
         </div>
         <div class="form-group" id="rendimientoGroup" style="display:${(isEdit && cuenta.tipo === 'inversion') || (!isEdit) ? 'block' : 'none'};">
           <label class="form-label" id="rendimientoLabel">Rendimiento Anual (%)</label>
