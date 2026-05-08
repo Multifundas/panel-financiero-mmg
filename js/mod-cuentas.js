@@ -594,6 +594,72 @@ function agregarFilaRentaVar() {
   tbody.appendChild(tr);
 }
 
+/* -- Recalcula el primer cierre del historial cuando cambia saldo/fecha de apertura
+   y propaga los cambios al registro de rendimientos asociado a ese periodo. -- */
+function _recalcPrimerCierreYRendimiento(cuenta, nuevoSaldoApertura, nuevaFechaApertura) {
+  if (!cuenta || !Array.isArray(cuenta.historial_saldos) || cuenta.historial_saldos.length === 0) return;
+
+  // Encontrar el indice del cierre cronologicamente mas antiguo
+  var oldestIdx = -1;
+  var oldestFecha = '';
+  for (var i = 0; i < cuenta.historial_saldos.length; i++) {
+    var f = cuenta.historial_saldos[i].fecha || '';
+    if (oldestIdx === -1 || f < oldestFecha) {
+      oldestIdx = i;
+      oldestFecha = f;
+    }
+  }
+  if (oldestIdx === -1) return;
+
+  var h = cuenta.historial_saldos[oldestIdx];
+  var esDebito = cuenta.tipo === 'debito';
+
+  // Actualizar saldo_inicio del primer cierre con el nuevo saldo de apertura
+  h.saldo_inicio = nuevoSaldoApertura;
+
+  // Recalcular dias entre fecha de apertura y fecha del primer cierre
+  if (nuevaFechaApertura && h.fecha) {
+    var dApertura = new Date(nuevaFechaApertura);
+    var dCierre = new Date(h.fecha);
+    var diffMs = dCierre.getTime() - dApertura.getTime();
+    var dias = Math.max(1, Math.round(diffMs / 86400000));
+    h.dias = dias;
+  }
+
+  // Recalcular rendimiento usando movimientos_neto si existe
+  var sFinal = h.saldo_final != null ? h.saldo_final : (h.saldo || 0);
+  var movNeto = h.movimientos_neto || 0;
+  var rendimiento = esDebito ? 0 : (sFinal - h.saldo_inicio - movNeto);
+  var rendPct = (!esDebito && h.saldo_inicio > 0) ? ((rendimiento / h.saldo_inicio) * 100) : 0;
+  var rendPctAnual = (!esDebito && h.saldo_inicio > 0 && h.dias > 0)
+    ? ((rendimiento / h.saldo_inicio) * (365 / h.dias) * 100) : rendPct;
+
+  h.rendimiento = rendimiento;
+  h.rendimiento_pct = rendPct;
+  h.rendimiento_pct_anual = rendPctAnual;
+  // Mantener compat con campo "saldo" si existe
+  if (h.saldo != null) h.saldo = sFinal;
+
+  // Actualizar el registro correspondiente en STORAGE_KEYS.rendimientos
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+  var periodo = (h.fecha || '').slice(0, 7);
+  if (periodo) {
+    var rIdx = rendimientos.findIndex(function(r) {
+      return r.cuenta_id === cuenta.id && r.periodo === periodo;
+    });
+    if (rIdx !== -1) {
+      rendimientos[rIdx].saldo_inicial = h.saldo_inicio;
+      rendimientos[rIdx].saldo_final = sFinal;
+      rendimientos[rIdx].rendimiento_monto = rendimiento;
+      rendimientos[rIdx].rendimiento_pct = rendPct;
+      rendimientos[rIdx].rendimiento_pct_anual = rendPctAnual;
+      rendimientos[rIdx].dias = h.dias || 0;
+      rendimientos[rIdx].updated = new Date().toISOString();
+      saveData(STORAGE_KEYS.rendimientos, rendimientos);
+    }
+  }
+}
+
 /* -- Save (create or update) a cuenta -- */
 function saveCuenta(event) {
   event.preventDefault();
@@ -621,14 +687,19 @@ function saveCuenta(event) {
     ? (parseFloat(document.getElementById('cuentaPagareTasa').value) || 0) : 0;
 
   // Renta variable fields
-  let historial_saldos = [];
+  // historial_saldos solo se construye desde el form cuando el subtipo es 'renta_variable'
+  // (es el unico caso donde la UI muestra una tabla editable de historial).
+  // Para los demas subtipos NO se debe sobrescribir el historial_saldos existente:
+  // los cierres mensuales viven ahi y se pierden si se asigna [].
+  let historial_saldos_form = null; // null = no hay datos del form, preservar lo existente
   if (subtipo === 'renta_variable') {
+    historial_saldos_form = [];
     const rvRows = document.querySelectorAll('#tablaRentaVarHistorial tbody tr');
     rvRows.forEach(tr => {
       const fecha = tr.querySelector('.rv-fecha') ? tr.querySelector('.rv-fecha').value : '';
       const saldoVal = parseFloat(tr.querySelector('.rv-saldo') ? tr.querySelector('.rv-saldo').value : 0) || 0;
       if (fecha && saldoVal > 0) {
-        historial_saldos.push({ fecha: fecha, saldo: saldoVal });
+        historial_saldos_form.push({ fecha: fecha, saldo: saldoVal });
       }
     });
   }
@@ -650,7 +721,10 @@ function saveCuenta(event) {
       cuentas[idx].institucion_id = institucion_id;
       // Allow editing saldo_inicial; recalculate saldo if needed
       var oldSaldoInicial = cuentas[idx].saldo_inicial != null ? cuentas[idx].saldo_inicial : cuentas[idx].saldo;
-      if (saldo !== oldSaldoInicial) {
+      var oldFechaSaldoInicial = cuentas[idx].fecha_saldo_inicial || '';
+      var saldoInicialChanged = (saldo !== oldSaldoInicial);
+      var fechaInicialChanged = (fecha_saldo_inicial && fecha_saldo_inicial !== oldFechaSaldoInicial);
+      if (saldoInicialChanged) {
         var diff = saldo - oldSaldoInicial;
         cuentas[idx].saldo_inicial = saldo;
         cuentas[idx].saldo = (cuentas[idx].saldo || 0) + diff;
@@ -661,9 +735,23 @@ function saveCuenta(event) {
       cuentas[idx].pagare_fecha_inicio = pagare_fecha_inicio;
       cuentas[idx].pagare_fecha_termino = pagare_fecha_termino;
       cuentas[idx].pagare_tasa = pagare_tasa;
-      cuentas[idx].historial_saldos = historial_saldos;
+      // Solo sobreescribir historial_saldos cuando el form lo provee (renta_variable).
+      // En cualquier otro caso preservamos el historial existente (cierres mensuales).
+      if (historial_saldos_form !== null) {
+        cuentas[idx].historial_saldos = historial_saldos_form;
+      } else if (!Array.isArray(cuentas[idx].historial_saldos)) {
+        cuentas[idx].historial_saldos = [];
+      }
       cuentas[idx].notas = notas;
       cuentas[idx].updated = new Date().toISOString();
+
+      // Si cambio saldo_inicial o fecha_saldo_inicial en una cuenta de inversion,
+      // recalcular el PRIMER cierre del historial (que depende de esos valores) y
+      // actualizar el registro de rendimientos asociado a ese periodo.
+      if (tipo === 'inversion' && (saldoInicialChanged || fechaInicialChanged) &&
+          Array.isArray(cuentas[idx].historial_saldos) && cuentas[idx].historial_saldos.length > 0) {
+        _recalcPrimerCierreYRendimiento(cuentas[idx], saldo, fecha_saldo_inicial || oldFechaSaldoInicial);
+      }
     }
     saveData(STORAGE_KEYS.cuentas, cuentas);
     showToast('Cuenta actualizada exitosamente.', 'success');
@@ -683,7 +771,7 @@ function saveCuenta(event) {
       pagare_fecha_inicio: pagare_fecha_inicio,
       pagare_fecha_termino: pagare_fecha_termino,
       pagare_tasa: pagare_tasa,
-      historial_saldos: historial_saldos,
+      historial_saldos: historial_saldos_form || [],
       notas: notas,
       activa: true,
       created: new Date().toISOString(),
@@ -696,6 +784,12 @@ function saveCuenta(event) {
   closeModal();
   renderCuentas();
   updateHeaderPatrimonio();
+  // Si el modulo de rendimientos esta visible, refrescarlo para reflejar
+  // los recalculos del primer cierre.
+  var rendModule = document.getElementById('module-rendimientos');
+  if (rendModule && rendModule.offsetParent !== null && typeof renderRendimientos === 'function') {
+    renderRendimientos();
+  }
 }
 
 /* -- Delete a cuenta permanently -- */
