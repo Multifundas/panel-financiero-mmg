@@ -552,6 +552,29 @@ function filterRendimientos() {
   }).join('');
 }
 
+/* -- Preserva filtros activos, re-renderiza el modulo y los restaura -- */
+function _rendRefreshPreservingFilters() {
+  var fCuenta  = (document.getElementById('filterRendCuenta')  || {}).value || '';
+  var fAnio    = (document.getElementById('filterRendAnio')    || {}).value || '';
+  var fMes     = (document.getElementById('filterRendMes')     || {}).value;
+  var fPeriodo = (document.getElementById('filterRendPeriodo') || {}).value || '';
+  if (fMes === undefined) fMes = '';
+
+  renderRendimientos();
+
+  var elCuenta  = document.getElementById('filterRendCuenta');
+  var elAnio    = document.getElementById('filterRendAnio');
+  var elMes     = document.getElementById('filterRendMes');
+  var elPeriodo = document.getElementById('filterRendPeriodo');
+  if (elCuenta)  elCuenta.value  = fCuenta;
+  if (elAnio)    elAnio.value    = fAnio;
+  if (elMes)     elMes.value     = fMes;
+  if (elPeriodo) elPeriodo.value = fPeriodo;
+
+  filterRendimientos();
+  renderRendMensualReport();
+}
+
 /* -- Reporte Mensual de Rendimiento por Cuenta (12 meses del año seleccionado) -- */
 var _rendMensualSort = { col: null, dir: 'desc' };
 
@@ -924,7 +947,7 @@ function saveRendimiento(event) {
   }
 
   closeModal();
-  renderRendimientos();
+  _rendRefreshPreservingFilters();
   updateHeaderPatrimonio();
 }
 
@@ -954,7 +977,7 @@ function deleteRendimiento(id) {
   saveData(STORAGE_KEYS.rendimientos, newRendimientos);
 
   showToast('Rendimiento eliminado exitosamente.', 'info');
-  renderRendimientos();
+  _rendRefreshPreservingFilters();
   updateHeaderPatrimonio();
 }
 
