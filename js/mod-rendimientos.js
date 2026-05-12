@@ -606,7 +606,7 @@ function renderRendMensualReport() {
 
   // Sort arrow indicator
   function sortArrow(col) {
-    if (_rendMensualSort.col !== col) return '<span style="opacity:0.25;font-size:11px;margin-left:2px;">&#8597;</span>';
+    if (_rendMensualSort.col !== col) return '<span style="font-size:11px;margin-left:2px;">&#8597;</span>';
     return _rendMensualSort.dir === 'asc'
       ? '<span style="font-size:11px;margin-left:2px;">&#8593;</span>'
       : '<span style="font-size:11px;margin-left:2px;">&#8595;</span>';
