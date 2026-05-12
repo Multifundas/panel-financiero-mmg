@@ -553,6 +553,18 @@ function filterRendimientos() {
 }
 
 /* -- Reporte Mensual de Rendimiento por Cuenta (12 meses del año seleccionado) -- */
+var _rendMensualSort = { col: null, dir: 'desc' };
+
+function sortRendMensual(col) {
+  if (_rendMensualSort.col === col) {
+    _rendMensualSort.dir = _rendMensualSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _rendMensualSort.col = col;
+    _rendMensualSort.dir = 'desc';
+  }
+  renderRendMensualReport();
+}
+
 function renderRendMensualReport() {
   var container = document.getElementById('rendMensualReportContainer');
   if (!container) return;
@@ -592,26 +604,35 @@ function renderRendMensualReport() {
     mesesVisibles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // all
   }
 
-  // Build header
-  var thead = '<tr><th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Cuenta</th>';
-  for (var mi = 0; mi < mesesVisibles.length; mi++) {
-    thead += '<th style="text-align:right;min-width:80px;">' + mesesCortos[mesesVisibles[mi]] + '</th>';
+  // Sort arrow indicator
+  function sortArrow(col) {
+    if (_rendMensualSort.col !== col) return '<span style="opacity:0.25;font-size:11px;margin-left:2px;">&#8597;</span>';
+    return _rendMensualSort.dir === 'asc'
+      ? '<span style="font-size:11px;margin-left:2px;">&#8593;</span>'
+      : '<span style="font-size:11px;margin-left:2px;">&#8595;</span>';
   }
-  thead += '<th style="text-align:right;min-width:100px;font-weight:800;">Total</th></tr>';
 
-  // Build rows
+  // Build header
+  var thead = '<tr>' +
+    '<th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>';
+  for (var mi = 0; mi < mesesVisibles.length; mi++) {
+    var colId = 'mes_' + mesesVisibles[mi];
+    thead += '<th style="text-align:right;min-width:80px;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'' + colId + '\')">' + mesesCortos[mesesVisibles[mi]] + sortArrow(colId) + '</th>';
+  }
+  thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th></tr>';
+
+  // Compute row data
   var totalPorMes = new Array(12).fill(0);
-  var capitalPorMes = new Array(12).fill(0); // saldo_inicial MXN acumulado por mes, para % consolidado
+  var capitalPorMes = new Array(12).fill(0);
   var totalGeneral = 0;
   var totalCapitalGeneral = 0;
 
-  var rows = cuentasInversion.map(function(cta) {
+  var rowData = cuentasInversion.map(function(cta) {
     var moneda = cta.moneda || 'MXN';
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:15px;">' + cta.nombre + '</td>';
     var totalCuenta = 0;
     var capitalInicial = 0;
+    var monthValues = [];
 
-    // Calculate all months for totals, but only render visible ones
     for (var m = 0; m < 12; m++) {
       var periodo = anio + '-' + String(m + 1).padStart(2, '0');
       var regs = rendimientos.filter(function(r) { return r.cuenta_id === cta.id && r.periodo === periodo; });
@@ -628,45 +649,70 @@ function renderRendMensualReport() {
         var rendMXN = toMXN(rendMonto, moneda, tiposCambio);
         totalCuenta += rendMXN;
         totalPorMes[m] += rendMXN;
-        // Acumular saldo inicial en MXN para calcular % consolidado del mes
         capitalPorMes[m] += toMXN(saldoInicial, moneda, tiposCambio);
+        var rendPct = saldoInicial > 0 ? (rendMonto / saldoInicial) * 100 : 0;
+        monthValues[m] = { hasData: true, rendMonto: rendMonto, rendMXN: rendMXN, rendPct: rendPct };
+      } else {
+        monthValues[m] = { hasData: false };
       }
-
-      // Only render cells for visible months
-      if (mesesVisibles.indexOf(m) === -1) continue;
-
-      if (regs.length === 0) {
-        row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
-        continue;
-      }
-
-      var rendMontoVis = regs.reduce(function(s, r) { return s + _rendReal(r); }, 0);
-      var rendPct = 0;
-      var saldoInicialVis = regs[0].saldo_inicial || 0;
-      if (saldoInicialVis > 0) rendPct = (rendMontoVis / saldoInicialVis) * 100;
-
-      var color = rendMontoVis >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-      var sign = rendMontoVis >= 0 ? '+' : '';
-      row += '<td style="text-align:right;padding:4px 4px;">' +
-        '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:15px;">' + sign + formatCurrencyInt(rendMontoVis, moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + rendPct.toFixed(1) + '%</div>' +
-      '</td>';
     }
 
-    // Cumulative percentage for the year
     var capitalInicialMXN = toMXN(capitalInicial, moneda, tiposCambio);
     totalCapitalGeneral += capitalInicialMXN;
     var cumPct = capitalInicialMXN > 0 ? (totalCuenta / capitalInicialMXN * 100) : 0;
-    var cumPctSign = cumPct >= 0 ? '+' : '';
-
     totalGeneral += totalCuenta;
-    var totalColor = totalCuenta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-    var totalSign = totalCuenta >= 0 ? '+' : '';
+
+    return { cta: cta, moneda: moneda, monthValues: monthValues, totalCuenta: totalCuenta, cumPct: cumPct };
+  });
+
+  // Sort rows
+  var sortCol = _rendMensualSort.col;
+  var sortDir = _rendMensualSort.dir;
+  if (sortCol !== null) {
+    rowData.sort(function(a, b) {
+      var va, vb;
+      if (sortCol === 'cuenta') {
+        return sortDir === 'asc'
+          ? a.cta.nombre.localeCompare(b.cta.nombre)
+          : b.cta.nombre.localeCompare(a.cta.nombre);
+      } else if (sortCol === 'total') {
+        va = a.totalCuenta; vb = b.totalCuenta;
+      } else if (sortCol.indexOf('mes_') === 0) {
+        var mi = parseInt(sortCol.slice(4));
+        va = a.monthValues[mi].hasData ? a.monthValues[mi].rendMXN : -Infinity;
+        vb = b.monthValues[mi].hasData ? b.monthValues[mi].rendMXN : -Infinity;
+      }
+      return sortDir === 'asc' ? va - vb : vb - va;
+    });
+  }
+
+  // Render rows from sorted data
+  var rows = rowData.map(function(d) {
+    var cta = d.cta;
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:15px;">' + cta.nombre + '</td>';
+
+    for (var mi = 0; mi < mesesVisibles.length; mi++) {
+      var m = mesesVisibles[mi];
+      var mv = d.monthValues[m];
+      if (!mv.hasData) {
+        row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+        continue;
+      }
+      var color = mv.rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var sign = mv.rendMonto >= 0 ? '+' : '';
+      row += '<td style="text-align:right;padding:4px 4px;">' +
+        '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:15px;">' + sign + formatCurrencyInt(mv.rendMonto, d.moneda) + '</div>' +
+        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + mv.rendPct.toFixed(1) + '%</div>' +
+      '</td>';
+    }
+
+    var cumPctSign = d.cumPct >= 0 ? '+' : '';
+    var totalColor = d.totalCuenta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var totalSign = d.totalCuenta >= 0 ? '+' : '';
     row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';font-size:15px;">' +
-      '<div>' + totalSign + formatCurrencyInt(totalCuenta, 'MXN') + '</div>' +
-      '<div style="font-size:13px;opacity:0.8;">' + cumPctSign + cumPct.toFixed(1) + '%</div>' +
-    '</td>';
-    row += '</tr>';
+      '<div>' + totalSign + formatCurrencyInt(d.totalCuenta, 'MXN') + '</div>' +
+      '<div style="font-size:13px;opacity:0.8;">' + cumPctSign + d.cumPct.toFixed(1) + '%</div>' +
+    '</td></tr>';
     return row;
   }).join('');
 
