@@ -1305,13 +1305,13 @@ function renderDashboard() {
       maintainAspectRatio: false,
       scales: {
         x: {
-          ticks: { color: chartFontColor, font: { size: numLineMonths > 18 ? 8 : 10, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
+          ticks: { color: chartFontColor, font: { size: numLineMonths > 18 ? 11 : 12, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
           grid: { display: false },
         },
         y: {
           ticks: {
             color: chartFontColor,
-            font: { size: 10, family: "'Plus Jakarta Sans'" },
+            font: { size: 12, family: "'Plus Jakarta Sans'" },
             stepSize: 150000,
             callback: function(val) { return '$' + (val / 1000).toFixed(0) + 'k'; },
           },
@@ -1321,7 +1321,7 @@ function renderDashboard() {
       },
       plugins: {
         legend: {
-          labels: { color: chartFontColor, padding: 16, font: { size: 12, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
+          labels: { color: chartFontColor, padding: 16, font: { size: 13, family: "'Plus Jakarta Sans'" }, usePointStyle: true },
         },
         tooltip: { enabled: false },
       },
