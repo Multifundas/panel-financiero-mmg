@@ -721,20 +721,20 @@ function renderRendMensualReport() {
         row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
         continue;
       }
-      var color = mv.rendMonto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var color = mv.rendMonto >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var sign = mv.rendMonto >= 0 ? '+' : '';
       row += '<td style="text-align:right;padding:4px 4px;">' +
         '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:15px;">' + sign + formatCurrencyInt(mv.rendMonto, d.moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + mv.rendPct.toFixed(1) + '%</div>' +
+        '<div style="color:' + color + ';font-size:13px;opacity:0.8;">' + sign + mv.rendPct.toFixed(2) + '%</div>' +
       '</td>';
     }
 
     var cumPctSign = d.cumPct >= 0 ? '+' : '';
-    var totalColor = d.totalCuenta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var totalColor = d.totalCuenta >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var totalSign = d.totalCuenta >= 0 ? '+' : '';
     row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';font-size:15px;">' +
       '<div>' + totalSign + formatCurrencyInt(d.totalCuenta, 'MXN') + '</div>' +
-      '<div style="font-size:13px;opacity:0.8;">' + cumPctSign + d.cumPct.toFixed(1) + '%</div>' +
+      '<div style="font-size:13px;opacity:0.8;">' + cumPctSign + d.cumPct.toFixed(2) + '%</div>' +
     '</td></tr>';
     return row;
   }).join('');
@@ -746,22 +746,22 @@ function renderRendMensualReport() {
     if (totalPorMes[m] === 0) {
       totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
     } else {
-      var mColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var mColor = totalPorMes[m] >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var mSign = totalPorMes[m] >= 0 ? '+' : '';
       var mPct = capitalPorMes[m] > 0 ? (totalPorMes[m] / capitalPorMes[m] * 100) : 0;
       totalRow += '<td style="text-align:right;font-size:15px;color:' + mColor + ';">' +
         '<div>' + mSign + formatCurrencyInt(totalPorMes[m], 'MXN') + '</div>' +
-        '<div style="font-size:13px;opacity:0.8;">' + mSign + mPct.toFixed(1) + '%</div>' +
+        '<div style="font-size:13px;opacity:0.8;">' + mSign + mPct.toFixed(2) + '%</div>' +
         '</td>';
     }
   }
-  var gColor = totalGeneral >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var gColor = totalGeneral >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   var gSign = totalGeneral >= 0 ? '+' : '';
   var gCumPct = totalCapitalGeneral > 0 ? (totalGeneral / totalCapitalGeneral * 100) : 0;
   var gCumSign = gCumPct >= 0 ? '+' : '';
   totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';font-size:15px;">' +
     '<div>' + gSign + formatCurrencyInt(totalGeneral, 'MXN') + '</div>' +
-    '<div style="font-size:13px;opacity:0.8;">' + gCumSign + gCumPct.toFixed(1) + '%</div>' +
+    '<div style="font-size:13px;opacity:0.8;">' + gCumSign + gCumPct.toFixed(2) + '%</div>' +
   '</td></tr>';
 
   if (cuentasInversion.length === 0) {
