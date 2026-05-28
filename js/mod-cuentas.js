@@ -1797,9 +1797,10 @@ function filterEstadoCuenta() {
         '<button class="btn btn-danger" style="padding:3px 7px;font-size:11px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + e.historialIdx + ')" title="Eliminar cierre"><i class="fas fa-trash"></i></button>';
       var cargoCierre = rendMontoCierre < 0 ? formatCurrencyInt(Math.abs(rendMontoCierre), moneda) : '';
       var abonoCierre = rendMontoCierre > 0 ? formatCurrencyInt(rendMontoCierre, moneda) : '';
+      var rendLabel = rendMontoCierre > 0 ? ' \u2014 Rendimiento' : (rendMontoCierre < 0 ? ' \u2014 P\u00e9rdida' : '');
       return '<tr style="background:rgba(59,130,246,0.08);border-top:2px solid rgba(59,130,246,0.3);border-bottom:2px solid rgba(59,130,246,0.3);">' +
         '<td style="white-space:nowrap;font-weight:700;color:var(--accent-blue);">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
-        '<td style="font-size:14px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + '</td>' +
+        '<td style="font-size:14px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + rendLabel + '</td>' +
         '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargoCierre + '</td>' +
         '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abonoCierre + '</td>' +
         '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
@@ -1940,7 +1941,8 @@ function _buildEdoCuentaData() {
     if (e.esCierre) {
       var rendMontoPdf = e.cierreSaldoFinal - saldoRunning;
       saldoRunning = e.cierreSaldoFinal;
-      rows.push({ fecha: e.fecha, descripcion: e.descripcion, cargo: rendMontoPdf < 0 ? Math.abs(rendMontoPdf) : '', abono: rendMontoPdf > 0 ? rendMontoPdf : '', saldo: saldoRunning, esCierre: true });
+      var rendLabelPdf = rendMontoPdf > 0 ? ' — Rendimiento' : (rendMontoPdf < 0 ? ' — Pérdida' : '');
+      rows.push({ fecha: e.fecha, descripcion: e.descripcion + rendLabelPdf, cargo: rendMontoPdf < 0 ? Math.abs(rendMontoPdf) : '', abono: rendMontoPdf > 0 ? rendMontoPdf : '', saldo: saldoRunning, esCierre: true });
     } else {
       var cargo = '', abono = '';
       if (e.tipo === 'gasto') { cargo = e.monto; saldoRunning -= e.monto; sumGastos += e.monto; }
