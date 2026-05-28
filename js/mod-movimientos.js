@@ -312,7 +312,7 @@ function filterMovimientos() {
   if (elTransCount) elTransCount.textContent = countTransferencias + ' transferencia' + (countTransferencias !== 1 ? 's' : '');
   if (elBalance) {
     elBalance.textContent = (sumBalance >= 0 ? '+' : '') + formatCurrencyInt(sumBalance, 'MXN');
-    elBalance.style.color = sumBalance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    elBalance.style.color = sumBalance >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   }
 
   // Build table rows
@@ -354,7 +354,7 @@ function filterMovimientos() {
 
     // Monto formatting with sign and color
     const signo = m.tipo === 'ingreso' ? '+' : '-';
-    const montoColor = esTransferencia ? 'var(--accent-purple)' : (m.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)');
+    const montoColor = esTransferencia ? 'var(--accent-purple)' : (m.tipo === 'ingreso' ? 'var(--text-primary)' : 'var(--accent-red)');
 
     // Property link badge
     const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:11px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
@@ -379,7 +379,7 @@ function filterMovimientos() {
       </tr>`;
   }).join('') + '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);background:var(--bg-base);">' +
     '<td></td><td colspan="5" style="font-weight:700;color:var(--text-primary);">TOTAL (' + filtered.length + ' movimientos)</td>' +
-    '<td style="text-align:right;font-weight:800;color:' + (totalMontoMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + (totalMontoMXN >= 0 ? '+' : '') + formatCurrencyInt(totalMontoMXN, 'MXN') + '</td>' +
+    '<td style="text-align:right;font-weight:800;color:' + (totalMontoMXN >= 0 ? 'var(--text-primary)' : 'var(--accent-red)') + ';">' + (totalMontoMXN >= 0 ? '+' : '') + formatCurrencyInt(totalMontoMXN, 'MXN') + '</td>' +
     '<td></td></tr>';
 }
 

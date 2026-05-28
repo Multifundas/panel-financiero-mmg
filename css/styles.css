@@ -404,7 +404,7 @@
     }
 
     .data-table thead th {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
@@ -416,7 +416,7 @@
 
     .data-table tbody td {
       padding: 12px 14px;
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-primary);
       border-bottom: 1px solid rgba(51,65,85,0.5);
     }
@@ -427,15 +427,15 @@
 
     /* Consistent font sizing for desglose/modal tables */
     .modal-content .data-table thead th {
-      font-size: 12px;
+      font-size: 13px;
     }
     .modal-content .data-table tbody td {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-primary);
     }
     .modal-content .data-table tfoot td,
     .modal-content .data-table tfoot tr td {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--text-primary);
     }

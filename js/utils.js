@@ -279,7 +279,7 @@ function getInputNumericValue(inputOrId) {
 /** Return inline style color for a number (red if negative, green if positive, muted if zero) */
 function colorNum(val) {
   if (val < 0) return 'color:var(--accent-red);';
-  if (val > 0) return 'color:var(--accent-green);';
+  if (val > 0) return 'color:var(--text-primary);';
   return 'color:var(--text-muted);';
 }
 

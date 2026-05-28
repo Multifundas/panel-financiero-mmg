@@ -989,7 +989,7 @@ function renderDashboard() {
           </thead>
           <tbody>
             ${topRendAcum.map(r => {
-              const color = r.monto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+              const color = r.monto >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
               const signo = r.monto >= 0 ? '+' : '';
               return `<tr>
                 <td style="font-weight:600;color:var(--text-primary);">${r.nombre}</td>
@@ -1534,7 +1534,7 @@ function renderResumenComparativo() {
     var diff = val1 - val2;
     var pct = val2 !== 0 ? ((diff / Math.abs(val2)) * 100) : (val1 !== 0 ? 100 : 0);
     var isGood = positiveIsGood ? diff >= 0 : diff <= 0;
-    var color = diff === 0 ? 'var(--text-muted)' : (isGood ? 'var(--accent-green)' : 'var(--accent-red)');
+    var color = diff === 0 ? 'var(--text-muted)' : (isGood ? 'var(--text-primary)' : 'var(--accent-red)');
     var icon = '';
     if (diff !== 0) {
       if (positiveIsGood) {
@@ -1797,9 +1797,9 @@ function renderPatrimonioMensualReport(anioParam) {
     var lastSubOtorg = 0;
     for (var m = 0; m <= maxMes; m++) {
       if (subtotalOtorgPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
-      else { lastSubOtorg = subtotalOtorgPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--accent-green);">' + fmtInt(subtotalOtorgPorMes[m]) + '</td>'; }
+      else { lastSubOtorg = subtotalOtorgPorMes[m]; rows += '<td style="text-align:right;font-size:' + FS + ';color:var(--text-primary);">' + fmtInt(subtotalOtorgPorMes[m]) + '</td>'; }
     }
-    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--accent-green);">' + fmtInt(lastSubOtorg) + '</td></tr>';
+    rows += '<td style="text-align:right;font-size:' + FS + ';font-weight:800;color:var(--text-primary);">' + fmtInt(lastSubOtorg) + '</td></tr>';
     var exSubOtorg = ['Subtotal Otorgados', ''];
     for (var m = 0; m <= maxMes; m++) exSubOtorg.push(Math.round(subtotalOtorgPorMes[m]));
     exSubOtorg.push(Math.round(lastSubOtorg));
@@ -1959,11 +1959,11 @@ function renderPatrimonioMensualReport(anioParam) {
     if (totalPorMes[m] === 0) { rows += '<td style="text-align:right;color:var(--text-muted);font-size:' + FS + ';">$0</td>'; }
     else {
       lastTotal = totalPorMes[m];
-      var tColor = totalPorMes[m] >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var tColor = totalPorMes[m] >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       rows += '<td style="text-align:right;font-size:' + FS_HEAD + ';color:' + tColor + ';">' + fmtInt(totalPorMes[m]) + '</td>';
     }
   }
-  var lastColor = lastTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var lastColor = lastTotal >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   rows += '<td style="text-align:right;font-size:' + FS_HEAD + ';font-weight:800;color:' + lastColor + ';">' + fmtInt(lastTotal) + '</td></tr>';
   var exTotal = ['PATRIMONIO NETO', ''];
   for (var m = 0; m <= maxMes; m++) exTotal.push(Math.round(totalPorMes[m]));
@@ -2056,9 +2056,9 @@ function mostrarDesgloseRendimiento() {
 
   var rowsHTML = entries.map(function(r) {
     var peso = sumPesos > 0 ? ((r.valMXN / sumPesos) * 100).toFixed(1) : '0.0';
-    var rendColor = r.monto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var rendColor = r.monto >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var rendSign = r.montoOrig >= 0 ? '+' : '';
-    var tasaColor = r.tasaAnual >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var tasaColor = r.tasaAnual >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var tc = r.moneda !== 'MXN' ? getTipoCambio(r.moneda) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
     return '<tr>' +
@@ -2228,7 +2228,7 @@ function _buildUltimos15Dias(movimientos, tiposCambio) {
 
   var gastosDiff = gastosPrev > 0 ? ((gastosRecientes - gastosPrev) / gastosPrev * 100) : 0;
   var gastosDiffSign = gastosDiff > 0 ? '+' : '';
-  var gastosDiffColor = gastosDiff > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+  var gastosDiffColor = gastosDiff > 0 ? 'var(--accent-red)' : 'var(--text-primary)';
 
   return `
     <div class="card" style="margin-bottom:0;padding:10px 14px;">
@@ -2238,7 +2238,7 @@ function _buildUltimos15Dias(movimientos, tiposCambio) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <div>
           <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent-green);">+${formatCurrencyInt(ingresosRecientes, 'MXN')}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);">+${formatCurrencyInt(ingresosRecientes, 'MXN')}</div>
         </div>
         <div>
           <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</div>
@@ -2504,7 +2504,7 @@ function mostrarDesgloseCuentas(tipo) {
         var ultimoCierre = hist.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
         if (ultimoCierre.rendimiento_pct_anual != null) tasaAnual = ultimoCierre.rendimiento_pct_anual;
       }
-      var tasaColor = tasaAnual >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var tasaColor = tasaAnual >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var tasaSign = tasaAnual >= 0 ? '+' : '';
       var tasaDisplay = (tasaAnual !== 0) ? tasaSign + tasaAnual.toFixed(2) + '%' : '\u2014';
       return '<tr>' +
@@ -2577,7 +2577,7 @@ function mostrarDesglosePrestamos() {
   }).join('');
 
   var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:35%;"><col style="width:15%;"><col style="width:25%;"><col style="width:25%;"></colgroup><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
-    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Otorgados</td><td></td><td></td><td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Otorgados</td><td></td><td></td><td style="text-align:right;color:var(--text-primary);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
     '<tr style="font-weight:700;"><td style="font-weight:700;">Recibidos</td><td></td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
     '<tr style="font-weight:700;"><td style="font-weight:700;">Neto</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
 
@@ -2654,10 +2654,10 @@ function mostrarDesgloseBalance() {
   var balance = rendPeriodo + ingresos - gastos;
 
   var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Rendimientos</div><div style="font-size:20px;font-weight:800;color:var(--accent-green);">+' + formatCurrencyInt(rendPeriodo, 'MXN') + '</div></div>' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Ingresos</div><div style="font-size:20px;font-weight:800;color:var(--accent-green);">+' + formatCurrencyInt(ingresos, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Rendimientos</div><div style="font-size:20px;font-weight:800;color:var(--text-primary);">+' + formatCurrencyInt(rendPeriodo, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Ingresos</div><div style="font-size:20px;font-weight:800;color:var(--text-primary);">+' + formatCurrencyInt(ingresos, 'MXN') + '</div></div>' +
     '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Gastos</div><div style="font-size:20px;font-weight:800;color:var(--accent-red);">-' + formatCurrencyInt(gastos, 'MXN') + '</div></div>' +
-    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Balance Neto</div><div style="font-size:20px;font-weight:800;color:' + (balance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + formatCurrencyInt(balance, 'MXN') + '</div></div>' +
+    '<div style="background:var(--bg-base);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:13px;color:var(--text-primary);text-transform:uppercase;margin-bottom:4px;">Balance Neto</div><div style="font-size:20px;font-weight:800;color:' + (balance >= 0 ? 'var(--text-primary)' : 'var(--accent-red)') + ';">' + formatCurrencyInt(balance, 'MXN') + '</div></div>' +
   '</div>' +
   '<div style="font-size:14px;color:var(--text-primary);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Balance = Rendimientos + Ingresos - Gastos</div>';
 
@@ -2728,7 +2728,7 @@ function _mostrarDesglosePatrimonioPeriodo(periodo, label) {
       totalPropiedades += valMXN;
       html += '<tr><td colspan="2" style="font-weight:600;">' + pr.nombre + '</td><td><span class="badge badge-amber" style="font-size:12px;">' + (pr.tipo === 'preventa' ? 'Preventa' : 'Terminada') + '</span></td><td colspan="2" style="text-align:right;">' + formatCurrencyInt(pr.valor_actual || pr.valor_compra, pr.moneda || 'MXN') + '</td><td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
     });
-    html += '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2" style="font-weight:700;">Subtotal Propiedades</td><td></td><td colspan="2"></td><td style="text-align:right;color:var(--accent-green);font-weight:700;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</td></tr>';
+    html += '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td colspan="2" style="font-weight:700;">Subtotal Propiedades</td><td></td><td colspan="2"></td><td style="text-align:right;color:var(--text-primary);font-weight:700;">' + formatCurrencyInt(totalPropiedades, 'MXN') + '</td></tr>';
     html += '</tbody>';
   }
 
@@ -2812,7 +2812,7 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
     var montoReal = _rendReal(r);
     var valMXN = toMXN(montoReal, moneda, tiposCambio, periodo);
     rendTotal += valMXN;
-    var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var color = valMXN >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
     rendRows.push('<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>');
@@ -2832,7 +2832,7 @@ function _mostrarDesgloseRendGastoPeriodo(periodo, label) {
   });
 
   var html = '';
-  html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:8px;"><i class="fas fa-chart-line" style="margin-right:6px;"></i>Rendimientos: <span style="font-size:17px;">' + formatCurrencyInt(rendTotal, 'MXN') + '</span></div>';
+  html += '<div style="margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;"><i class="fas fa-chart-line" style="margin-right:6px;color:var(--accent-green);"></i>Rendimientos: <span style="font-size:17px;">' + formatCurrencyInt(rendTotal, 'MXN') + '</span></div>';
   if (rendRows.length > 0) {
     html += '<table class="data-table sortable-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rendRows.join('') + '</tbody></table>';
   } else {
@@ -2871,13 +2871,13 @@ function _mostrarDesgloseRendPeriodo(periodo, label) {
     var montoReal = _rendReal(r);
     var valMXN = toMXN(montoReal, moneda, tiposCambio, periodo);
     total += valMXN;
-    var color = valMXN >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    var color = valMXN >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var tc = moneda !== 'MXN' ? getTipoCambio(moneda, periodo) : null;
     var tcDisplay = tc ? tc.toFixed(2) : '\u2014';
     return '<tr><td style="font-weight:600;">' + nombre + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(montoReal, moneda) + '</td><td style="text-align:center;color:var(--text-primary);font-size:10px;font-weight:600;">' + tcDisplay + '</td><td style="text-align:right;font-weight:600;color:' + color + ';">' + formatCurrencyInt(valMXN, 'MXN') + '</td></tr>';
   }).join('');
 
-  var totalColor = total >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var totalColor = total >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   var html = '<table class="data-table sortable-table"><thead><tr><th>Cuenta</th><th style="text-align:right;">Monto Original</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
     '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td>Total</td><td></td><td></td><td style="text-align:right;color:' + totalColor + ';">' + formatCurrencyInt(total, 'MXN') + '</td></tr></tfoot></table>';
 

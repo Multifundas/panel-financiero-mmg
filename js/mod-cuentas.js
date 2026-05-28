@@ -218,7 +218,7 @@ function filterCuentas() {
     const rendimiento = rendAnualCalc !== 0
       ? (rendAnualCalc >= 0 ? '+' : '') + Number(rendAnualCalc).toFixed(2) + '%'
       : '\u2014';
-    const rendColor = rendAnualCalc > 0 ? 'var(--accent-green)' : rendAnualCalc < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
+    const rendColor = rendAnualCalc > 0 ? 'var(--text-primary)' : rendAnualCalc < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
 
     // Subtipo display
     let subtipoHTML = '\u2014';
@@ -312,7 +312,7 @@ function mostrarDesgloseCuentas(tipoCuenta) {
       if (ultCierre.rendimiento_pct_anual != null) rendAnual = ultCierre.rendimiento_pct_anual;
     }
     var rendHTML = rendAnual !== 0
-      ? '<span style="color:' + (rendAnual > 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';font-weight:600;">' + (rendAnual >= 0 ? '+' : '') + Number(rendAnual).toFixed(2) + '%</span>'
+      ? '<span style="color:' + (rendAnual > 0 ? 'var(--text-primary)' : 'var(--accent-red)') + ';font-weight:600;">' + (rendAnual >= 0 ? '+' : '') + Number(rendAnual).toFixed(2) + '%</span>'
       : '<span style="color:var(--text-muted);">\u2014</span>';
 
     return '<tr>' +
@@ -1161,7 +1161,7 @@ function recalcCierreRendimiento(inputEl) {
     if (inputEl.value === '') {
       cell.innerHTML = '<span style="color:var(--text-muted);">\u2014</span>';
     } else {
-      var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var color = rend >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var sign = rend >= 0 ? '+' : '';
       cell.innerHTML = '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrencyInt(rend, 'MXN') + '</span>' +
         '<br><span style="font-size:13px;color:' + color + ';">' + sign + rendPct.toFixed(2) + '% en ' + dias + 'd</span>' +
@@ -1401,7 +1401,7 @@ function verHistorialCuenta(cuentaId) {
       var rendPct = h.rendimiento_pct != null ? h.rendimiento_pct : (sInicio > 0 ? ((rend / sInicio) * 100) : 0);
       var dias = h.dias || 0;
       var rendPctAnual = h.rendimiento_pct_anual != null ? h.rendimiento_pct_anual : (sInicio > 0 && dias > 0 ? ((rend / sInicio) * (365 / dias) * 100) : rendPct);
-      var rendColor = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      var rendColor = rend >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var rendSign = rend >= 0 ? '+' : '';
       // Fecha legible: "Ene 2026 (30d)"
       var fechaLabel = '\u2014';
@@ -1474,7 +1474,7 @@ function verHistorialCuenta(cuentaId) {
   var bodyHTML = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
     '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
-    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
     '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Registros</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + historial.length + ' mes' + (historial.length !== 1 ? 'es' : '') + '</div></div>' +
     '</div></div>' +
     tablaHTML +
@@ -1650,7 +1650,7 @@ function verEstadoCuenta(cuentaId) {
     '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Cuenta</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + cuenta.nombre + '</div></div>' +
     '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Institucion</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + instNombre + '</div></div>' +
     '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Moneda</div><div style="font-size:17px;font-weight:700;color:var(--accent-blue);">' + moneda + '</div></div>' +
-    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Saldo Actual</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(_calcSaldoReal(cuenta), moneda) + '</div></div>' +
     '</div></div>' +
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">' +
     '<input type="date" id="edoCtaDesde" class="form-input" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:150px;" onchange="filterEstadoCuenta()" placeholder="Desde">' +
@@ -1802,7 +1802,7 @@ function filterEstadoCuenta() {
         '<td style="white-space:nowrap;font-weight:700;color:var(--accent-blue);">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
         '<td style="font-size:14px;font-weight:700;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:6px;"></i>' + e.descripcion + rendLabel + '</td>' +
         '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargoCierre + '</td>' +
-        '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abonoCierre + '</td>' +
+        '<td style="text-align:right;color:var(--text-primary);font-weight:600;">' + abonoCierre + '</td>' +
         '<td style="text-align:right;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
         '<td style="text-align:center;white-space:nowrap;">' + cierreAcc + '</td>' +
         '</tr>';
@@ -1828,7 +1828,7 @@ function filterEstadoCuenta() {
       '<td style="white-space:nowrap;">' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
       '<td style="font-size:14px;">' + e.descripcion + origenBadge + '</td>' +
       '<td style="text-align:right;color:var(--accent-red);font-weight:600;">' + cargo + '</td>' +
-      '<td style="text-align:right;color:var(--accent-green);font-weight:600;">' + abono + '</td>' +
+      '<td style="text-align:right;color:var(--text-primary);font-weight:600;">' + abono + '</td>' +
       '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(saldoRunning, moneda) + '</td>' +
       '<td></td>' +
       '</tr>';
@@ -1849,7 +1849,7 @@ function filterEstadoCuenta() {
   var rendHTML = esInversion
     ? '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
       '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
-      (rendMonto ? '<div style="font-size:14px;color:var(--accent-green);font-weight:700;">Ultimo cierre: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
+      (rendMonto ? '<div style="font-size:14px;color:var(--text-primary);font-weight:700;">Ultimo cierre: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
       (rendEstimadoMensual > 0 ? '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrencyInt(rendEstimadoMensual, moneda) + '/mes</div>' : '') +
       (rendFuente ? '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Cierre: ' + rendFuente + '</div>' : '') +
       '</div>'
@@ -1862,7 +1862,7 @@ function filterEstadoCuenta() {
     '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);display:grid;grid-template-columns:' + (esInversion ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr') + ';gap:12px;">' +
     '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo de Apertura</div><div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(saldoInicial, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Cargos</div><div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(sumGastos, moneda) + '</div></div>' +
-    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrencyInt(sumIngresos, moneda) + '</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Total Abonos</div><div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrencyInt(sumIngresos, moneda) + '</div></div>' +
     '<div style="text-align:center;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Saldo Final</div><div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(saldoFinal, moneda) + '</div></div>' +
     rendHTML +
     '</div>';
@@ -2409,7 +2409,7 @@ function recalcCapturaHistorica(mes) {
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
   var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
-  var color = rend >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  var color = rend >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   var sign = rend >= 0 ? '+' : '';
   cell.innerHTML =
     '<span style="color:' + color + ';font-weight:600;">' + sign + formatCurrencyInt(rend, cuenta.moneda) + '</span>' +
