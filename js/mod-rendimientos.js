@@ -641,6 +641,15 @@ function renderRendMensualReport() {
     mesesVisibles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // all
   }
 
+  // Simplified capital formatter: $7,580,000 → $7.58 M
+  function fmtCapitalSimple(val, moneda) {
+    var prefix = moneda === 'USD' ? 'US$' : (moneda === 'EUR' ? '€' : '$');
+    var abs = Math.abs(val);
+    if (abs >= 1000000) return prefix + (val / 1000000).toFixed(2) + ' M';
+    if (abs >= 1000)    return prefix + Math.round(val / 1000) + ' K';
+    return prefix + Math.round(val);
+  }
+
   // Sort arrow indicator
   function sortArrow(col) {
     if (_rendMensualSort.col !== col) return '<span style="font-size:11px;margin-left:2px;">&#8597;</span>';
@@ -651,7 +660,8 @@ function renderRendMensualReport() {
 
   // Build header
   var thead = '<tr>' +
-    '<th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>';
+    '<th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>' +
+    '<th style="text-align:right;min-width:90px;cursor:pointer;user-select:none;white-space:nowrap;" onclick="sortRendMensual(\'capital\')">Capital' + sortArrow('capital') + '</th>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
     var m = mesesVisibles[mi];
     var colMonto = 'mes_' + m;
@@ -709,9 +719,11 @@ function renderRendMensualReport() {
     var cumPct = capitalInicialMXN > 0 ? (totalCuenta / capitalInicialMXN * 100) : 0;
     var mesesConDatos = monthValues.filter(function(mv) { return mv && mv.hasData; }).length;
     var anualizadoPct = (mesesConDatos > 0 && capitalInicialMXN > 0) ? (cumPct * (12 / mesesConDatos)) : 0;
+    var capitalActual = _calcSaldoReal(cta);
+    var capitalActualMXN = toMXN(capitalActual, moneda, tiposCambio);
     totalGeneral += totalCuenta;
 
-    return { cta: cta, moneda: moneda, monthValues: monthValues, totalCuenta: totalCuenta, cumPct: cumPct, anualizadoPct: anualizadoPct, mesesConDatos: mesesConDatos };
+    return { cta: cta, moneda: moneda, monthValues: monthValues, totalCuenta: totalCuenta, cumPct: cumPct, anualizadoPct: anualizadoPct, mesesConDatos: mesesConDatos, capitalActual: capitalActual, capitalActualMXN: capitalActualMXN };
   });
 
   // Sort rows
@@ -730,6 +742,8 @@ function renderRendMensualReport() {
         va = a.cumPct; vb = b.cumPct;
       } else if (sortCol === 'anualizado') {
         va = a.anualizadoPct; vb = b.anualizadoPct;
+      } else if (sortCol === 'capital') {
+        va = a.capitalActualMXN; vb = b.capitalActualMXN;
       } else if (sortCol.indexOf('mes_pct_') === 0) {
         var mi = parseInt(sortCol.slice(8));
         va = a.monthValues[mi] && a.monthValues[mi].hasData ? a.monthValues[mi].rendPct : -Infinity;
@@ -746,7 +760,8 @@ function renderRendMensualReport() {
   // Render rows from sorted data
   var rows = rowData.map(function(d) {
     var cta = d.cta;
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:16px;">' + cta.nombre + '</td>';
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:16px;">' + cta.nombre + '</td>' +
+      '<td style="text-align:right;font-size:15px;font-weight:600;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(d.capitalActual, d.moneda) + '</td>';
 
     for (var mi = 0; mi < mesesVisibles.length; mi++) {
       var m = mesesVisibles[mi];
@@ -783,7 +798,9 @@ function renderRendMensualReport() {
   }).join('');
 
   // Total row
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:15px;">Total</td>';
+  var totalCapitalActualMXN = rowData.reduce(function(s, d) { return s + d.capitalActualMXN; }, 0);
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:15px;">Total</td>' +
+    '<td style="text-align:right;font-size:15px;font-weight:700;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(totalCapitalActualMXN, 'MXN') + '</td>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
     var m = mesesVisibles[mi];
     if (totalPorMes[m] === 0) {
