@@ -1892,3 +1892,64 @@
     page-break-inside: avoid !important;
   }
 }
+
+/* ── Imprimir Reporte Mensual de Rendimientos ── */
+@media print {
+  body.printing-rend-mensual {
+    --bg-base: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #94a3b8;
+    --border-subtle: #e2e8f0;
+    background: #fff !important;
+  }
+
+  body.printing-rend-mensual .sidebar,
+  body.printing-rend-mensual .main-header { display: none !important; }
+
+  body.printing-rend-mensual .app-layout { display: block !important; }
+
+  body.printing-rend-mensual .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body.printing-rend-mensual [id^="module-"]:not(#module-rendimientos) { display: none !important; }
+
+  body.printing-rend-mensual #module-rendimientos { padding: 5mm !important; background: #fff !important; }
+  body.printing-rend-mensual #module-rendimientos .card { display: none !important; }
+  body.printing-rend-mensual #rendMensualCard { display: block !important; background: #fff !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+  body.printing-rend-mensual #rendMensualCard .btn { display: none !important; }
+  body.printing-rend-mensual #rendMensualCard .card-header { margin-bottom: 4mm; }
+
+  body.printing-rend-mensual .data-table { font-size: 7pt !important; width: 100% !important; }
+  body.printing-rend-mensual .data-table thead th {
+    font-size: 6.5pt !important;
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    padding: 3px 4px !important;
+    position: static !important;
+    white-space: nowrap;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.printing-rend-mensual .data-table thead th div { font-size: 6.5pt !important; }
+  body.printing-rend-mensual .data-table thead th span { display: none !important; }
+  body.printing-rend-mensual .data-table tbody td {
+    font-size: 7pt !important;
+    padding: 2px 4px !important;
+    position: static !important;
+    white-space: nowrap;
+    color: #1e293b;
+  }
+  body.printing-rend-mensual .data-table tbody td div { font-size: 7pt !important; line-height: 1.25; }
+  body.printing-rend-mensual .data-table tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

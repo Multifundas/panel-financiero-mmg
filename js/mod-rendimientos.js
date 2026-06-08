@@ -135,7 +135,7 @@ function renderRendimientos() {
     </div>
 
     <!-- 1. Reporte Mensual de Rendimiento por Cuenta -->
-    <div class="card" style="margin-bottom:16px;">
+    <div class="card" id="rendMensualCard" style="margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
           <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
@@ -1248,6 +1248,21 @@ function _doPrintRendMensual() {
   var overlay = document.querySelector('[data-print-overlay]');
   if (overlay) overlay.remove();
 
+  // Inject @page legal landscape and print from main page (avoids popup centering issue)
+  var pageStyle = document.createElement('style');
+  pageStyle.id = '_rend-page-style';
+  pageStyle.textContent = '@media print { @page { size: legal landscape; margin: 5mm; } }';
+  document.head.appendChild(pageStyle);
+
+  document.body.classList.add('printing-rend-mensual');
+  window.print();
+  document.body.classList.remove('printing-rend-mensual');
+
+  var injected = document.getElementById('_rend-page-style');
+  if (injected) injected.remove();
+}
+
+function _doPrintRendMensual_unused() {
   var container = document.getElementById('rendMensualReportContainer');
   if (!container) return;
 
