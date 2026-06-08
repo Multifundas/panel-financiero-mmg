@@ -645,12 +645,28 @@ function renderGastosMensualReport() {
   for (var mi = 0; mi < 12; mi++) {
     thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
   }
-  thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th></tr>';
+  thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
+  thead += '<th style="text-align:right;min-width:70px;font-weight:800;">%</th></tr>';
 
-  // Build rows
+  // Pre-calculate amounts per category per month in a single pass
   var totalPorMes = new Array(12).fill(0);
   var totalGeneral = 0;
+  var montosPorCatMes = {};
+  catIds.forEach(function(catId) { montosPorCatMes[catId] = new Array(12).fill(0); });
 
+  gastos.forEach(function(g) {
+    var f = new Date(g.fecha);
+    if (f.getFullYear() !== anio) return;
+    var catId = g.categoria_id || 'sin_cat';
+    if (!montosPorCatMes[catId]) return;
+    var cta = cuentaMap[g.cuenta_id];
+    var monto = toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
+    montosPorCatMes[catId][f.getMonth()] += monto;
+    totalPorMes[f.getMonth()] += monto;
+    totalGeneral += monto;
+  });
+
+  // Build rows
   var rows = catIds.map(function(catId) {
     var cat = catMap[catId];
     var catNombre = cat ? cat.nombre : 'Sin Categoria';
@@ -661,23 +677,9 @@ function renderGastosMensualReport() {
       '<i class="fas ' + catIcono + '" style="color:' + catColor + ';margin-right:6px;font-size:12px;"></i>' + catNombre + '</td>';
 
     var totalCat = 0;
-
     for (var m = 0; m < 12; m++) {
-      var montoMes = 0;
-      gastos.forEach(function(g) {
-        var f = new Date(g.fecha);
-        if (f.getFullYear() === anio && f.getMonth() === m) {
-          var gCat = g.categoria_id || 'sin_cat';
-          if (gCat === catId) {
-            var cta = cuentaMap[g.cuenta_id];
-            montoMes += toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
-          }
-        }
-      });
-
+      var montoMes = montosPorCatMes[catId][m];
       totalCat += montoMes;
-      totalPorMes[m] += montoMes;
-
       if (montoMes === 0) {
         row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
       } else {
@@ -686,9 +688,10 @@ function renderGastosMensualReport() {
       }
     }
 
-    totalGeneral += totalCat;
+    var pct = totalGeneral > 0 ? (totalCat / totalGeneral * 100) : 0;
     row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
       '<span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</span></td>';
+    row += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
     row += '</tr>';
     return row;
   }).join('');
@@ -703,7 +706,8 @@ function renderGastosMensualReport() {
         '<span style="font-size:14px;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalPorMes[mi], 'MXN') + '</span></td>';
     }
   }
-  totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td></tr>';
+  totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>';
+  totalRow += '<td style="text-align:right;font-size:14px;font-weight:800;color:var(--text-muted);">100%</td></tr>';
 
   container.innerHTML =
     '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
