@@ -171,7 +171,19 @@ function renderRendimientos() {
 
     <!-- 3. Tabla Detalle de Rendimientos -->
     <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">Detalle de Rendimientos</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">Detalle de Rendimientos</h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select id="filterDetalleRendCuenta" class="form-select" style="font-size:13px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos()">
+            <option value="">Todas las cuentas</option>
+            ${cuentaFilterOpts}
+          </select>
+          <select id="filterDetalleRendAnio" class="form-select" style="font-size:13px;padding:5px 8px;min-height:auto;width:84px;" onchange="filterRendimientos()">
+            <option value="">Todos los años</option>
+            ${aniosOpts}
+          </select>
+        </div>
+      </div>
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaRendimientos" style="font-size:14px;">
           <thead>
@@ -418,8 +430,10 @@ function filterRendimientos() {
   const cuentaMap = {};
   cuentas.forEach(c => { cuentaMap[c.id] = c; });
 
-  const fCuenta = document.getElementById('filterRendCuenta') ? document.getElementById('filterRendCuenta').value : '';
-  const fAnio = document.getElementById('filterRendAnio') ? document.getElementById('filterRendAnio').value : '';
+  const _elDetCuenta = document.getElementById('filterDetalleRendCuenta');
+  const _elDetAnio   = document.getElementById('filterDetalleRendAnio');
+  const fCuenta = _elDetCuenta ? _elDetCuenta.value : (document.getElementById('filterRendCuenta') ? document.getElementById('filterRendCuenta').value : '');
+  const fAnio   = _elDetAnio   ? _elDetAnio.value   : (document.getElementById('filterRendAnio')   ? document.getElementById('filterRendAnio').value   : '');
   const fMes = document.getElementById('filterRendMes') ? document.getElementById('filterRendMes').value : '';
   const fPeriodo = document.getElementById('filterRendPeriodo') ? document.getElementById('filterRendPeriodo').value : '';
 
