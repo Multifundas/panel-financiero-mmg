@@ -639,8 +639,16 @@ function renderRendMensualReport() {
   var thead = '<tr>' +
     '<th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
-    var colId = 'mes_' + mesesVisibles[mi];
-    thead += '<th style="text-align:right;min-width:80px;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'' + colId + '\')">' + mesesCortos[mesesVisibles[mi]] + sortArrow(colId) + '</th>';
+    var m = mesesVisibles[mi];
+    var colMonto = 'mes_' + m;
+    var colPct   = 'mes_pct_' + m;
+    thead += '<th style="text-align:right;min-width:80px;user-select:none;white-space:nowrap;">' +
+      '<div style="color:var(--text-muted);font-size:11px;margin-bottom:3px;">' + mesesCortos[m] + '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:6px;">' +
+        '<span style="cursor:pointer;font-size:11px;color:' + (_rendMensualSort.col === colMonto ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colMonto + '\')">$' + sortArrow(colMonto) + '</span>' +
+        '<span style="cursor:pointer;font-size:11px;color:' + (_rendMensualSort.col === colPct ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colPct + '\')">%' + sortArrow(colPct) + '</span>' +
+      '</div>' +
+    '</th>';
   }
   thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th>';
   thead += '<th style="text-align:right;min-width:80px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'pct\')">% Acum.' + sortArrow('pct') + '</th></tr>';
@@ -703,10 +711,14 @@ function renderRendMensualReport() {
         va = a.totalCuenta; vb = b.totalCuenta;
       } else if (sortCol === 'pct') {
         va = a.cumPct; vb = b.cumPct;
+      } else if (sortCol.indexOf('mes_pct_') === 0) {
+        var mi = parseInt(sortCol.slice(8));
+        va = a.monthValues[mi] && a.monthValues[mi].hasData ? a.monthValues[mi].rendPct : -Infinity;
+        vb = b.monthValues[mi] && b.monthValues[mi].hasData ? b.monthValues[mi].rendPct : -Infinity;
       } else if (sortCol.indexOf('mes_') === 0) {
         var mi = parseInt(sortCol.slice(4));
-        va = a.monthValues[mi].hasData ? a.monthValues[mi].rendMXN : -Infinity;
-        vb = b.monthValues[mi].hasData ? b.monthValues[mi].rendMXN : -Infinity;
+        va = a.monthValues[mi] && a.monthValues[mi].hasData ? a.monthValues[mi].rendMXN : -Infinity;
+        vb = b.monthValues[mi] && b.monthValues[mi].hasData ? b.monthValues[mi].rendMXN : -Infinity;
       }
       return sortDir === 'asc' ? va - vb : vb - va;
     });
