@@ -171,8 +171,8 @@ function renderRendimientos() {
 
     <!-- 3. Tabla Detalle de Rendimientos -->
     <div class="card" style="margin-bottom:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-        <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">Detalle de Rendimientos</h3>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);white-space:nowrap;">Detalle de Rendimientos</h3>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <select id="filterDetalleRendCuenta" class="form-select" style="font-size:13px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos()">
             <option value="">Todas las cuentas</option>
