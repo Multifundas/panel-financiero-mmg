@@ -643,10 +643,10 @@ function renderRendMensualReport() {
     var colMonto = 'mes_' + m;
     var colPct   = 'mes_pct_' + m;
     thead += '<th style="text-align:right;min-width:80px;user-select:none;white-space:nowrap;">' +
-      '<div style="color:var(--text-muted);font-size:13px;font-weight:700;margin-bottom:4px;">' + mesesCortos[m] + '</div>' +
+      '<div style="color:var(--text-muted);font-size:15px;font-weight:700;margin-bottom:4px;">' + mesesCortos[m] + '</div>' +
       '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
-        '<span style="cursor:pointer;font-size:13px;color:' + (_rendMensualSort.col === colMonto ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colMonto + '\')">$' + sortArrow(colMonto) + '</span>' +
-        '<span style="cursor:pointer;font-size:13px;color:' + (_rendMensualSort.col === colPct ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colPct + '\')">%' + sortArrow(colPct) + '</span>' +
+        '<span style="cursor:pointer;font-size:15px;color:' + (_rendMensualSort.col === colMonto ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colMonto + '\')">$' + sortArrow(colMonto) + '</span>' +
+        '<span style="cursor:pointer;font-size:15px;color:' + (_rendMensualSort.col === colPct ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colPct + '\')">%' + sortArrow(colPct) + '</span>' +
       '</div>' +
     '</th>';
   }
