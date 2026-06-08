@@ -1309,9 +1309,9 @@ function _doPrintRendMensual() {
     '<span>Impreso: ' + fecha + ' &nbsp;&middot;&nbsp; Cifras en MXN salvo indicación contraria</span></div>' +
     '</body></html>';
 
-  // Use hidden iframe — el iframe imprime su propio documento sin problemas de centrado
+  // Use hidden iframe — tamaño completo para que width:100% en el doc funcione correctamente
   var iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:none;visibility:hidden;';
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:100vw;height:100vh;border:none;';
   document.body.appendChild(iframe);
 
   var iDoc = iframe.contentDocument || iframe.contentWindow.document;
