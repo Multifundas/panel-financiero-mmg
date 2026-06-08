@@ -1281,10 +1281,10 @@ function _doPrintRendMensual() {
     '<meta charset="UTF-8">' +
     '<title>Rendimiento Mensual ' + anio + '</title>' +
     '<style>' +
-    '@page { size: legal landscape; margin: 5mm 6mm; }' +
-    'html, body { margin: 0; padding: 0; }' +
-    '* { box-sizing: border-box; }' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; }' +
+    '@page { size: legal landscape; margin: 0; }' +
+    '* { box-sizing: border-box; margin: 0; padding: 0; }' +
+    'html { margin: 0; padding: 0; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; margin: 0; padding: 5mm 6mm; }' +
     '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; margin-bottom: 6px; }' +
     '.report-header h2 { font-size: 10pt; font-weight: 800; color: #0f172a; }' +
     '.report-header .meta { font-size: 7pt; color: #64748b; text-align: right; line-height: 1.5; }' +
