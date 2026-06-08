@@ -642,7 +642,8 @@ function renderRendMensualReport() {
     var colId = 'mes_' + mesesVisibles[mi];
     thead += '<th style="text-align:right;min-width:80px;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'' + colId + '\')">' + mesesCortos[mesesVisibles[mi]] + sortArrow(colId) + '</th>';
   }
-  thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th></tr>';
+  thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th>';
+  thead += '<th style="text-align:right;min-width:80px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'pct\')">% Acum.' + sortArrow('pct') + '</th></tr>';
 
   // Compute row data
   var totalPorMes = new Array(12).fill(0);
@@ -700,6 +701,8 @@ function renderRendMensualReport() {
           : b.cta.nombre.localeCompare(a.cta.nombre);
       } else if (sortCol === 'total') {
         va = a.totalCuenta; vb = b.totalCuenta;
+      } else if (sortCol === 'pct') {
+        va = a.cumPct; vb = b.cumPct;
       } else if (sortCol.indexOf('mes_') === 0) {
         var mi = parseInt(sortCol.slice(4));
         va = a.monthValues[mi].hasData ? a.monthValues[mi].rendMXN : -Infinity;
@@ -732,9 +735,12 @@ function renderRendMensualReport() {
     var cumPctSign = d.cumPct >= 0 ? '+' : '-';
     var totalColor = d.totalCuenta >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     var totalSign = d.totalCuenta >= 0 ? '+' : '-';
+    var pctColor = d.cumPct >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
     row += '<td style="text-align:right;font-weight:700;color:' + totalColor + ';font-size:16px;">' +
       '<div>' + totalSign + formatCurrencyInt(Math.abs(d.totalCuenta), 'MXN') + '</div>' +
-      '<div style="font-size:14px;opacity:0.8;">' + cumPctSign + Math.abs(d.cumPct).toFixed(2) + '%</div>' +
+    '</td>';
+    row += '<td style="text-align:right;font-size:16px;font-weight:700;color:' + pctColor + ';">' +
+      cumPctSign + Math.abs(d.cumPct).toFixed(2) + '%' +
     '</td></tr>';
     return row;
   }).join('');
@@ -759,9 +765,12 @@ function renderRendMensualReport() {
   var gSign = totalGeneral >= 0 ? '+' : '-';
   var gCumPct = totalCapitalGeneral > 0 ? (totalGeneral / totalCapitalGeneral * 100) : 0;
   var gCumSign = gCumPct >= 0 ? '+' : '-';
+  var gPctColor = gCumPct >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
   totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';font-size:16px;">' +
     '<div>' + gSign + formatCurrencyInt(Math.abs(totalGeneral), 'MXN') + '</div>' +
-    '<div style="font-size:14px;opacity:0.8;">' + gCumSign + Math.abs(gCumPct).toFixed(2) + '%</div>' +
+  '</td>';
+  totalRow += '<td style="text-align:right;font-weight:800;font-size:16px;color:' + gPctColor + ';">' +
+    gCumSign + Math.abs(gCumPct).toFixed(2) + '%' +
   '</td></tr>';
 
   if (cuentasInversion.length === 0) {
