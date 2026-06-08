@@ -1227,11 +1227,12 @@ function printRendMensualReport() {
       '<div style="background:rgba(245,158,11,0.12);border:1px solid var(--accent-amber);border-radius:10px;padding:18px 20px;margin-bottom:26px;">' +
         '<div style="display:flex;align-items:flex-start;gap:14px;">' +
           '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:22px;margin-top:2px;flex-shrink:0;"></i>' +
-          '<div style="font-size:15px;color:var(--text-primary);line-height:1.8;">' +
-            '<strong style="font-size:16px;">Antes de imprimir, configura tu impresora:</strong><br>' +
+          '<div style="font-size:15px;color:var(--text-primary);line-height:1.9;">' +
+            '<strong style="font-size:16px;">En el diálogo de impresión que se abrirá:</strong><br>' +
             '&nbsp;&nbsp;• Tamaño de papel: <strong>Oficio / Legal (8.5&quot; × 14&quot;)</strong><br>' +
             '&nbsp;&nbsp;• Orientación: <strong>Horizontal (Landscape)</strong><br>' +
-            '&nbsp;&nbsp;• Márgenes: <strong>Mínimos o Ninguno</strong>' +
+            '&nbsp;&nbsp;• Márgenes: <strong>Mínimos o Ninguno</strong><br>' +
+            '&nbsp;&nbsp;• En <em>Más opciones</em>: desactiva <strong>Encabezados y pies de página</strong>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1280,24 +1281,27 @@ function _doPrintRendMensual() {
     '<meta charset="UTF-8">' +
     '<title>Rendimiento Mensual ' + anio + '</title>' +
     '<style>' +
-    '@page { size: legal landscape; margin: 8mm 10mm; }' +
-    '* { box-sizing: border-box; margin: 0; padding: 0; }' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 8pt; color: #1e293b; background: #fff; }' +
-    '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-bottom: 8px; }' +
-    '.report-header h2 { font-size: 12pt; font-weight: 800; color: #0f172a; }' +
-    '.report-header .meta { font-size: 7.5pt; color: #64748b; text-align: right; }' +
-    'table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }' +
-    'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 7pt; font-weight: 700; padding: 4px 5px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
-    'thead th:first-child, thead th:nth-child(2) { text-align: left; }' +
-    'tbody td { padding: 3px 5px; border-bottom: 1px solid #e2e8f0; font-size: 7.5pt; white-space: nowrap; }' +
-    'tbody td div { line-height: 1.3; }' +
+    '@page { size: legal landscape; margin: 5mm 6mm; }' +
+    'html, body { margin: 0; padding: 0; }' +
+    '* { box-sizing: border-box; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; }' +
+    '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; margin-bottom: 6px; }' +
+    '.report-header h2 { font-size: 10pt; font-weight: 800; color: #0f172a; }' +
+    '.report-header .meta { font-size: 7pt; color: #64748b; text-align: right; line-height: 1.5; }' +
+    'table { width: 100%; border-collapse: collapse; table-layout: auto; }' +
+    'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 6.5pt; font-weight: 700; padding: 3px 4px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+    'thead th:first-child { text-align: left; min-width: 90pt; }' +
+    'thead th:nth-child(2) { text-align: right; }' +
+    'tbody td { padding: 2px 4px; border-bottom: 1px solid #e2e8f0; font-size: 7pt; white-space: nowrap; text-align: right; }' +
+    'tbody td:first-child { text-align: left; font-weight: 600; }' +
+    'tbody td div { line-height: 1.25; }' +
     'tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
-    'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; font-size: 8pt; }' +
-    '.footer { margin-top: 8px; font-size: 7pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 4px; display: flex; justify-content: space-between; }' +
+    'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; font-size: 7.5pt; }' +
+    '.footer { margin-top: 5px; font-size: 6.5pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
     '</style></head><body>' +
     '<div class="report-header">' +
-      '<h2>Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +
-      '<div class="meta">Panel Financiero MMG &nbsp;&middot;&nbsp; ' + fecha + '</div>' +
+      '<h2>&#x1F4C8; Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +
+      '<div class="meta">Panel Financiero MMG &nbsp;&middot;&nbsp; ' + fecha + '<br>Papel: Oficio/Legal &nbsp;|&nbsp; Orientación: Horizontal</div>' +
     '</div>' +
     tableHTML +
     '<div class="footer">' +
