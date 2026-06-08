@@ -1353,18 +1353,24 @@ function _doPrintRendMensual() {
     '}';
   document.head.appendChild(ps);
 
-  window.print();
+  function restoreDOM() {
+    if (sidebarEl)  sidebarEl.style.display  = savedSidebarD;
+    if (headerEl)   headerEl.style.display   = savedHeaderD;
+    if (mainEl)   { mainEl.style.marginLeft  = savedMainML; mainEl.style.padding = savedMainPad; }
+    if (moduleEl)   moduleEl.innerHTML = savedModHTML;
+    var psEl = document.getElementById('_rend-print-ps');
+    if (psEl) psEl.remove();
+    renderRendMensualReport();
+    setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 150);
+  }
 
-  // Restaurar DOM
-  if (sidebarEl)  sidebarEl.style.display  = savedSidebarD;
-  if (headerEl)   headerEl.style.display   = savedHeaderD;
-  if (mainEl)   { mainEl.style.marginLeft  = savedMainML; mainEl.style.padding = savedMainPad; }
-  if (moduleEl)   moduleEl.innerHTML = savedModHTML;
-  var psEl = document.getElementById('_rend-print-ps');
-  if (psEl) psEl.remove();
+  window.addEventListener('afterprint', function onAfterPrint() {
+    window.removeEventListener('afterprint', onAfterPrint);
+    restoreDOM();
+  });
 
-  renderRendMensualReport();
-  setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 150);
+  // Esperar a que el browser renderice los cambios del DOM antes de imprimir
+  setTimeout(function() { window.print(); }, 300);
 }
 
 function _doPrintRendMensual_unused() {
