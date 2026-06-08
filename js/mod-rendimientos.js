@@ -1309,21 +1309,62 @@ function _doPrintRendMensual() {
     '<span>Impreso: ' + fecha + ' &nbsp;&middot;&nbsp; Cifras en MXN salvo indicación contraria</span></div>' +
     '</body></html>';
 
-  // Use hidden iframe — tamaño completo para que width:100% en el doc funcione correctamente
-  var iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:100vw;height:100vh;border:none;';
-  document.body.appendChild(iframe);
+  // Manipular DOM principal directamente — evita cualquier problema de centrado de popup/iframe
+  var sidebarEl  = document.querySelector('.sidebar');
+  var headerEl   = document.querySelector('.main-header');
+  var mainEl     = document.querySelector('.main-content');
+  var moduleEl   = document.getElementById('module-rendimientos');
 
-  var iDoc = iframe.contentDocument || iframe.contentWindow.document;
-  iDoc.open();
-  iDoc.write(printHTML);
-  iDoc.close();
+  var savedSidebarD  = sidebarEl  ? sidebarEl.style.display  : '';
+  var savedHeaderD   = headerEl   ? headerEl.style.display   : '';
+  var savedMainML    = mainEl     ? mainEl.style.marginLeft   : '';
+  var savedMainPad   = mainEl     ? mainEl.style.padding      : '';
+  var savedModHTML   = moduleEl   ? moduleEl.innerHTML        : '';
 
-  setTimeout(function() {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-    setTimeout(function() { document.body.removeChild(iframe); }, 1000);
-  }, 400);
+  if (sidebarEl)  sidebarEl.style.display  = 'none';
+  if (headerEl)   headerEl.style.display   = 'none';
+  if (mainEl)   { mainEl.style.marginLeft  = '0'; mainEl.style.padding = '0'; }
+  if (moduleEl)   moduleEl.innerHTML =
+    '<div style="padding:5mm;font-family:\'Segoe UI\',Arial,sans-serif;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin-bottom:6px;">' +
+        '<div style="font-size:10pt;font-weight:800;color:#0f172a;">Rendimiento Mensual por Cuenta — ' + anio + '</div>' +
+        '<div style="font-size:7pt;color:#64748b;">' + fecha + ' · Panel Financiero MMG</div>' +
+      '</div>' +
+      tableHTML +
+      '<div style="margin-top:5px;font-size:6.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
+        '<span>Panel Financiero MMG</span><span>Cifras en MXN salvo indicación contraria</span>' +
+      '</div>' +
+    '</div>';
+
+  var ps = document.createElement('style');
+  ps.id = '_rend-print-ps';
+  ps.textContent =
+    '@media print{' +
+      '@page{size:legal landscape;margin:0;}' +
+      'html,body{margin:0!important;padding:0!important;background:#fff!important;}' +
+      '.main-content{margin:0!important;padding:0!important;}' +
+      '#module-rendimientos{padding:0!important;background:#fff!important;}' +
+      'table{font-size:7pt!important;width:100%!important;border-collapse:collapse!important;}' +
+      'thead th{font-size:6.5pt!important;background:#1e293b!important;color:#f1f5f9!important;' +
+        'padding:3px 4px!important;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+      'tbody td{font-size:7pt!important;padding:2px 4px!important;border-bottom:1px solid #e2e8f0!important;color:#1e293b!important;}' +
+      'tbody td div{font-size:7pt!important;line-height:1.25;}' +
+      'tbody tr:nth-child(even){background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    '}';
+  document.head.appendChild(ps);
+
+  window.print();
+
+  // Restaurar DOM
+  if (sidebarEl)  sidebarEl.style.display  = savedSidebarD;
+  if (headerEl)   headerEl.style.display   = savedHeaderD;
+  if (mainEl)   { mainEl.style.marginLeft  = savedMainML; mainEl.style.padding = savedMainPad; }
+  if (moduleEl)   moduleEl.innerHTML = savedModHTML;
+  var psEl = document.getElementById('_rend-print-ps');
+  if (psEl) psEl.remove();
+
+  renderRendMensualReport();
+  setTimeout(function() { _initSortableTables(document.getElementById('module-rendimientos')); }, 150);
 }
 
 function _doPrintRendMensual_unused() {
