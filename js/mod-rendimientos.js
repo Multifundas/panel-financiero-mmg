@@ -665,7 +665,8 @@ function renderRendMensualReport() {
     '</th>';
   }
   thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th>';
-  thead += '<th style="text-align:right;min-width:80px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'pct\')">% Acum.' + sortArrow('pct') + '</th></tr>';
+  thead += '<th style="text-align:right;min-width:80px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'pct\')">% Acum.' + sortArrow('pct') + '</th>';
+  thead += '<th style="text-align:right;min-width:90px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'anualizado\')">Anualizado' + sortArrow('anualizado') + '</th></tr>';
 
   // Compute row data
   var totalPorMes = new Array(12).fill(0);
@@ -706,9 +707,11 @@ function renderRendMensualReport() {
     var capitalInicialMXN = toMXN(capitalInicial, moneda, tiposCambio);
     totalCapitalGeneral += capitalInicialMXN;
     var cumPct = capitalInicialMXN > 0 ? (totalCuenta / capitalInicialMXN * 100) : 0;
+    var mesesConDatos = monthValues.filter(function(mv) { return mv && mv.hasData; }).length;
+    var anualizadoPct = (mesesConDatos > 0 && capitalInicialMXN > 0) ? (cumPct * (12 / mesesConDatos)) : 0;
     totalGeneral += totalCuenta;
 
-    return { cta: cta, moneda: moneda, monthValues: monthValues, totalCuenta: totalCuenta, cumPct: cumPct };
+    return { cta: cta, moneda: moneda, monthValues: monthValues, totalCuenta: totalCuenta, cumPct: cumPct, anualizadoPct: anualizadoPct, mesesConDatos: mesesConDatos };
   });
 
   // Sort rows
@@ -725,6 +728,8 @@ function renderRendMensualReport() {
         va = a.totalCuenta; vb = b.totalCuenta;
       } else if (sortCol === 'pct') {
         va = a.cumPct; vb = b.cumPct;
+      } else if (sortCol === 'anualizado') {
+        va = a.anualizadoPct; vb = b.anualizadoPct;
       } else if (sortCol.indexOf('mes_pct_') === 0) {
         var mi = parseInt(sortCol.slice(8));
         va = a.monthValues[mi] && a.monthValues[mi].hasData ? a.monthValues[mi].rendPct : -Infinity;
@@ -767,6 +772,12 @@ function renderRendMensualReport() {
     '</td>';
     row += '<td style="text-align:right;font-size:16px;font-weight:700;color:' + pctColor + ';">' +
       cumPctSign + Math.abs(d.cumPct).toFixed(2) + '%' +
+    '</td>';
+    var annColor = d.anualizadoPct >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
+    var annSign  = d.anualizadoPct >= 0 ? '+' : '-';
+    var annDisplay = d.mesesConDatos > 0 ? annSign + Math.abs(d.anualizadoPct).toFixed(2) + '%' : '—';
+    row += '<td style="text-align:right;font-size:16px;font-weight:700;color:' + annColor + ';opacity:0.85;">' +
+      annDisplay +
     '</td></tr>';
     return row;
   }).join('');
@@ -792,11 +803,18 @@ function renderRendMensualReport() {
   var gCumPct = totalCapitalGeneral > 0 ? (totalGeneral / totalCapitalGeneral * 100) : 0;
   var gCumSign = gCumPct >= 0 ? '+' : '-';
   var gPctColor = gCumPct >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
+  var gMesesConDatos = rowData.length > 0 ? Math.round(rowData.reduce(function(s, d) { return s + d.mesesConDatos; }, 0) / rowData.filter(function(d) { return d.mesesConDatos > 0; }).length) : 0;
+  var gAnualizadoPct = (gMesesConDatos > 0 && totalCapitalGeneral > 0) ? (gCumPct * (12 / gMesesConDatos)) : 0;
+  var gAnnColor = gAnualizadoPct >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
+  var gAnnSign  = gAnualizadoPct >= 0 ? '+' : '-';
   totalRow += '<td style="text-align:right;font-weight:800;color:' + gColor + ';font-size:16px;">' +
     '<div>' + gSign + formatCurrencyInt(Math.abs(totalGeneral), 'MXN') + '</div>' +
   '</td>';
   totalRow += '<td style="text-align:right;font-weight:800;font-size:16px;color:' + gPctColor + ';">' +
     gCumSign + Math.abs(gCumPct).toFixed(2) + '%' +
+  '</td>';
+  totalRow += '<td style="text-align:right;font-weight:800;font-size:16px;color:' + gAnnColor + ';opacity:0.85;">' +
+    gAnnSign + Math.abs(gAnualizadoPct).toFixed(2) + '%' +
   '</td></tr>';
 
   if (cuentasInversion.length === 0) {
