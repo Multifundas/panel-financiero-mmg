@@ -694,7 +694,7 @@ function renderGastosMensualReport() {
   }).join('');
 
   // Total row
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">Total</td>';
+  var totalRow = '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">Total</td>';
   for (var mi = 0; mi < 12; mi++) {
     if (totalPorMes[mi] === 0) {
       totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
