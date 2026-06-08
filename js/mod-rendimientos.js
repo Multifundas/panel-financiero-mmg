@@ -1219,25 +1219,25 @@ function printRendMensualReport() {
   overlay.setAttribute('data-print-overlay', '1');
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML =
-    '<div style="background:var(--bg-card);border-radius:12px;padding:24px 28px;max-width:420px;width:90%;border:1px solid var(--border-color);">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
-        '<i class="fas fa-print" style="font-size:20px;color:var(--accent-blue);"></i>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--text-primary);">Imprimir Reporte de Rendimientos</div>' +
+    '<div style="background:var(--bg-card);border-radius:14px;padding:32px 36px;max-width:540px;width:92%;border:1px solid var(--border-color);box-shadow:0 20px 60px rgba(0,0,0,0.5);">' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">' +
+        '<i class="fas fa-print" style="font-size:26px;color:var(--accent-blue);"></i>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--text-primary);">Imprimir Reporte de Rendimientos</div>' +
       '</div>' +
-      '<div style="background:rgba(245,158,11,0.12);border:1px solid var(--accent-amber);border-radius:8px;padding:14px 16px;margin-bottom:20px;">' +
-        '<div style="display:flex;align-items:flex-start;gap:10px;">' +
-          '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:16px;margin-top:2px;flex-shrink:0;"></i>' +
-          '<div style="font-size:13px;color:var(--text-primary);line-height:1.6;">' +
-            '<strong>Antes de imprimir, configura tu impresora:</strong><br>' +
-            '&nbsp;• Tamaño de papel: <strong>Oficio / Legal (8.5&quot; × 14&quot;)</strong><br>' +
-            '&nbsp;• Orientación: <strong>Horizontal (Landscape)</strong><br>' +
-            '&nbsp;• Márgenes: <strong>Mínimos o Ninguno</strong>' +
+      '<div style="background:rgba(245,158,11,0.12);border:1px solid var(--accent-amber);border-radius:10px;padding:18px 20px;margin-bottom:26px;">' +
+        '<div style="display:flex;align-items:flex-start;gap:14px;">' +
+          '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:22px;margin-top:2px;flex-shrink:0;"></i>' +
+          '<div style="font-size:15px;color:var(--text-primary);line-height:1.8;">' +
+            '<strong style="font-size:16px;">Antes de imprimir, configura tu impresora:</strong><br>' +
+            '&nbsp;&nbsp;• Tamaño de papel: <strong>Oficio / Legal (8.5&quot; × 14&quot;)</strong><br>' +
+            '&nbsp;&nbsp;• Orientación: <strong>Horizontal (Landscape)</strong><br>' +
+            '&nbsp;&nbsp;• Márgenes: <strong>Mínimos o Ninguno</strong>' +
           '</div>' +
         '</div>' +
       '</div>' +
-      '<div style="display:flex;justify-content:flex-end;gap:10px;">' +
-        '<button onclick="document.querySelector(\'[data-print-overlay]\').remove()" class="btn btn-secondary" style="padding:7px 16px;font-size:13px;">Cancelar</button>' +
-        '<button onclick="_doPrintRendMensual()" class="btn btn-primary" style="padding:7px 16px;font-size:13px;"><i class="fas fa-print" style="margin-right:6px;"></i>Continuar e Imprimir</button>' +
+      '<div style="display:flex;justify-content:flex-end;gap:12px;">' +
+        '<button onclick="document.querySelector(\'[data-print-overlay]\').remove()" class="btn btn-secondary" style="padding:10px 22px;font-size:15px;">Cancelar</button>' +
+        '<button onclick="_doPrintRendMensual()" class="btn btn-primary" style="padding:10px 22px;font-size:15px;"><i class="fas fa-print" style="margin-right:8px;"></i>Continuar e Imprimir</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(overlay);
