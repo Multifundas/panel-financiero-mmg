@@ -1248,18 +1248,82 @@ function _doPrintRendMensual() {
   var overlay = document.querySelector('[data-print-overlay]');
   if (overlay) overlay.remove();
 
-  // Inject @page legal landscape and print from main page (avoids popup centering issue)
-  var pageStyle = document.createElement('style');
-  pageStyle.id = '_rend-page-style';
-  pageStyle.textContent = '@media print { @page { size: legal landscape; margin: 5mm; } }';
-  document.head.appendChild(pageStyle);
+  var container = document.getElementById('rendMensualReportContainer');
+  if (!container) return;
 
-  document.body.classList.add('printing-rend-mensual');
-  window.print();
-  document.body.classList.remove('printing-rend-mensual');
+  var anioEl = document.getElementById('filterRendAnio');
+  var anio = anioEl ? anioEl.value : new Date().getFullYear();
+  var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
-  var injected = document.getElementById('_rend-page-style');
-  if (injected) injected.remove();
+  var tableHTML = container.innerHTML
+    .replace(/var\(--text-primary\)/g, '#1e293b')
+    .replace(/var\(--text-secondary\)/g, '#1e293b')
+    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--accent-red\)/g, '#dc2626')
+    .replace(/var\(--accent-blue\)/g, '#2563eb')
+    .replace(/var\(--accent-green\)/g, '#16a34a')
+    .replace(/var\(--bg-card\)/g, '#ffffff')
+    .replace(/var\(--bg-base\)/g, '#f8fafc')
+    .replace(/var\(--border-color\)/g, '#94a3b8')
+    .replace(/var\(--border-subtle\)/g, '#cbd5e1')
+    .replace(/<span[^>]*>&#8597;<\/span>/g, '')
+    .replace(/<span[^>]*>&#8593;<\/span>/g, '')
+    .replace(/<span[^>]*>&#8595;<\/span>/g, '')
+    .replace(/onclick="[^"]*"/g, '')
+    .replace(/cursor:\s*pointer;?/g, '')
+    .replace(/user-select:\s*none;?/g, '')
+    .replace(/position:\s*sticky[^;]*;/g, '')
+    .replace(/z-index:\s*\d+;?/g, '')
+    .replace(/font-size:\s*[\d.]+px;?/g, '')
+    .replace(/min-width:\s*[\d.]+px;?/g, '')
+    .replace(/left:\s*0;?/g, '')
+    .replace(/opacity:\s*[\d.]+;?/g, '');
+
+  var printHTML = '<!DOCTYPE html><html><head>' +
+    '<meta charset="UTF-8">' +
+    '<title>Rendimiento Mensual ' + anio + '</title>' +
+    '<style>' +
+    '@page { size: legal landscape; margin: 5mm; }' +
+    'html, body { margin: 0; padding: 0; width: 100%; }' +
+    '* { box-sizing: border-box; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; padding: 0; }' +
+    '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; margin-bottom: 6px; }' +
+    '.report-header h2 { font-size: 10pt; font-weight: 800; color: #0f172a; }' +
+    '.report-header .meta { font-size: 7pt; color: #64748b; text-align: right; line-height: 1.5; }' +
+    'table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 7pt !important; }' +
+    'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 6.5pt !important; font-weight: 700; padding: 3px 4px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+    'thead th:first-child { text-align: left; }' +
+    'tbody td { padding: 2px 4px; border-bottom: 1px solid #e2e8f0; font-size: 7pt !important; white-space: nowrap; text-align: right; }' +
+    'tbody td:first-child { text-align: left; font-weight: 600; }' +
+    'tbody td div { line-height: 1.25; font-size: 7pt !important; }' +
+    'tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+    'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; }' +
+    '.footer { margin-top: 5px; font-size: 6.5pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
+    '</style></head><body>' +
+    '<div class="report-header">' +
+      '<h2>Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +
+      '<div class="meta">Panel Financiero MMG &nbsp;&middot;&nbsp; ' + fecha + '</div>' +
+    '</div>' +
+    tableHTML +
+    '<div class="footer"><span>Panel Financiero MMG</span>' +
+    '<span>Impreso: ' + fecha + ' &nbsp;&middot;&nbsp; Cifras en MXN salvo indicación contraria</span></div>' +
+    '</body></html>';
+
+  // Use hidden iframe — el iframe imprime su propio documento sin problemas de centrado
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
+
+  var iDoc = iframe.contentDocument || iframe.contentWindow.document;
+  iDoc.open();
+  iDoc.write(printHTML);
+  iDoc.close();
+
+  setTimeout(function() {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(function() { document.body.removeChild(iframe); }, 1000);
+  }, 400);
 }
 
 function _doPrintRendMensual_unused() {
