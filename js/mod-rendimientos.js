@@ -136,9 +136,14 @@ function renderRendimientos() {
 
     <!-- 1. Reporte Mensual de Rendimiento por Cuenta -->
     <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
-        <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
-      </h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
+          <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
+        </h3>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;" onclick="printRendMensualReport()">
+          <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
+        </button>
+      </div>
       <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
     </div>
 
@@ -1204,4 +1209,102 @@ function mostrarDesgloseRendAnioFiltrado() {
   }
 
   _mostrarDesgloseRendPeriodo(filtroFn, titulo, 'var(--accent-blue)');
+}
+
+/* ============================================================
+   IMPRIMIR REPORTE MENSUAL DE RENDIMIENTOS
+   ============================================================ */
+function printRendMensualReport() {
+  var overlay = document.createElement('div');
+  overlay.setAttribute('data-print-overlay', '1');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:var(--bg-card);border-radius:12px;padding:24px 28px;max-width:420px;width:90%;border:1px solid var(--border-color);">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+        '<i class="fas fa-print" style="font-size:20px;color:var(--accent-blue);"></i>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text-primary);">Imprimir Reporte de Rendimientos</div>' +
+      '</div>' +
+      '<div style="background:rgba(245,158,11,0.12);border:1px solid var(--accent-amber);border-radius:8px;padding:14px 16px;margin-bottom:20px;">' +
+        '<div style="display:flex;align-items:flex-start;gap:10px;">' +
+          '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:16px;margin-top:2px;flex-shrink:0;"></i>' +
+          '<div style="font-size:13px;color:var(--text-primary);line-height:1.6;">' +
+            '<strong>Antes de imprimir, configura tu impresora:</strong><br>' +
+            '&nbsp;• Tamaño de papel: <strong>Oficio / Legal (8.5&quot; × 14&quot;)</strong><br>' +
+            '&nbsp;• Orientación: <strong>Horizontal (Landscape)</strong><br>' +
+            '&nbsp;• Márgenes: <strong>Mínimos o Ninguno</strong>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;">' +
+        '<button onclick="document.querySelector(\'[data-print-overlay]\').remove()" class="btn btn-secondary" style="padding:7px 16px;font-size:13px;">Cancelar</button>' +
+        '<button onclick="_doPrintRendMensual()" class="btn btn-primary" style="padding:7px 16px;font-size:13px;"><i class="fas fa-print" style="margin-right:6px;"></i>Continuar e Imprimir</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+}
+
+function _doPrintRendMensual() {
+  var overlay = document.querySelector('[data-print-overlay]');
+  if (overlay) overlay.remove();
+
+  var container = document.getElementById('rendMensualReportContainer');
+  if (!container) return;
+
+  var anioEl = document.getElementById('filterRendAnio');
+  var anio = anioEl ? anioEl.value : new Date().getFullYear();
+  var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  // Clone and clean up: replace CSS vars → print colors, remove sort arrows & interactivity
+  var tableHTML = container.innerHTML
+    .replace(/var\(--text-primary\)/g, '#1e293b')
+    .replace(/var\(--text-secondary\)/g, '#1e293b')
+    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--accent-red\)/g, '#dc2626')
+    .replace(/var\(--accent-blue\)/g, '#2563eb')
+    .replace(/var\(--accent-green\)/g, '#16a34a')
+    .replace(/var\(--bg-card\)/g, '#ffffff')
+    .replace(/var\(--bg-base\)/g, '#f8fafc')
+    .replace(/var\(--border-color\)/g, '#94a3b8')
+    .replace(/var\(--border-subtle\)/g, '#cbd5e1')
+    .replace(/<span[^>]*>&#8597;<\/span>/g, '')
+    .replace(/<span[^>]*>&#8593;<\/span>/g, '')
+    .replace(/<span[^>]*>&#8595;<\/span>/g, '')
+    .replace(/onclick="[^"]*"/g, '')
+    .replace(/cursor:\s*pointer;?/g, '')
+    .replace(/user-select:\s*none;?/g, '')
+    .replace(/position:\s*sticky[^;]*;/g, '')
+    .replace(/z-index:\s*\d+;?/g, '');
+
+  var win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html><head>' +
+    '<meta charset="UTF-8">' +
+    '<title>Rendimiento Mensual ' + anio + '</title>' +
+    '<style>' +
+    '@page { size: legal landscape; margin: 8mm 10mm; }' +
+    '* { box-sizing: border-box; margin: 0; padding: 0; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 8pt; color: #1e293b; background: #fff; }' +
+    '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-bottom: 8px; }' +
+    '.report-header h2 { font-size: 12pt; font-weight: 800; color: #0f172a; }' +
+    '.report-header .meta { font-size: 7.5pt; color: #64748b; text-align: right; }' +
+    'table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }' +
+    'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 7pt; font-weight: 700; padding: 4px 5px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+    'thead th:first-child, thead th:nth-child(2) { text-align: left; }' +
+    'tbody td { padding: 3px 5px; border-bottom: 1px solid #e2e8f0; font-size: 7.5pt; white-space: nowrap; }' +
+    'tbody td div { line-height: 1.3; }' +
+    'tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+    'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; font-size: 8pt; }' +
+    '.footer { margin-top: 8px; font-size: 7pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 4px; display: flex; justify-content: space-between; }' +
+    '</style></head><body>' +
+    '<div class="report-header">' +
+      '<h2>Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +
+      '<div class="meta">Panel Financiero MMG &nbsp;&middot;&nbsp; ' + fecha + '</div>' +
+    '</div>' +
+    tableHTML +
+    '<div class="footer">' +
+      '<span>Panel Financiero MMG</span>' +
+      '<span>Impreso: ' + fecha + ' &nbsp;&middot;&nbsp; Cifras en MXN salvo indicación contraria</span>' +
+    '</div>' +
+    '</body></html>');
+  win.document.close();
+  setTimeout(function() { win.print(); }, 350);
 }
