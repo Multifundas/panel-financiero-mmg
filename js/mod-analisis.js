@@ -40,6 +40,8 @@ function renderAnalisis() {
     return '<option value="' + y + '"' + (y === anioSel ? ' selected' : '') + '>' + y + '</option>';
   }).join('');
 
+  var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
+
   // Filter movimientos for selected year, excluding transfers
   var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -72,6 +74,28 @@ function renderAnalisis() {
       catGastoTot[cNom] = (catGastoTot[cNom] || 0) + mxn;
     }
   });
+
+  // Add rendimientos as income
+  var totalRend = 0;
+  rendimientos.forEach(function(r) {
+    if (!r.periodo) return;
+    if (r.periodo.substring(0, 4) !== String(anioSel)) return;
+    var mes = parseInt(r.periodo.substring(5, 7));
+    if (isNaN(mes) || mes < 1 || mes > 12) return;
+    var cuenta = cuentaMap[r.cuenta_id];
+    var moneda = cuenta ? cuenta.moneda : 'MXN';
+    var rend   = typeof _rendReal === 'function' ? _rendReal(r) : ((r.saldo_final || 0) - (r.saldo_inicial || 0) - (r.movimientos_neto || 0));
+    var rendMXN = toMXN(rend, moneda, tiposCambio);
+    if (rendMXN > 0) {
+      byMes[mes].ing += rendMXN;
+      totalIng += rendMXN;
+      totalRend += rendMXN;
+    } else if (rendMXN < 0) {
+      byMes[mes].gto += Math.abs(rendMXN);
+      totalGto += Math.abs(rendMXN);
+    }
+  });
+  if (totalRend > 0) catIngresoTot['Rendimientos'] = (catIngresoTot['Rendimientos'] || 0) + totalRend;
 
   var totalBal = totalIng - totalGto;
   var tasaAhorro = totalIng > 0 ? (totalBal / totalIng * 100) : 0;
