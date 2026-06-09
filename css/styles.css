@@ -140,12 +140,12 @@
     }
 
     .nav-section-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: var(--text-muted);
-      padding: 8px 12px 3px;
+      padding: 9px 12px 4px;
       white-space: nowrap;
       transition: opacity var(--transition-fast);
     }
@@ -157,8 +157,8 @@
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 7px 12px;
+      gap: 11px;
+      padding: 8px 14px;
       border-radius: var(--radius-sm);
       color: var(--text-secondary);
       cursor: pointer;
@@ -191,14 +191,14 @@
     }
 
     .nav-item i {
-      width: 18px;
+      width: 20px;
       text-align: center;
-      font-size: 15px;
+      font-size: 16px;
       flex-shrink: 0;
     }
 
     .nav-item span {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       transition: opacity var(--transition-fast);
     }
