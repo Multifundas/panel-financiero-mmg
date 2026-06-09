@@ -1312,7 +1312,7 @@ function _doPrintRendMensual() {
   // Manipular DOM principal directamente — evita cualquier problema de centrado de popup/iframe
   var sidebarEl  = document.querySelector('.sidebar');
   var headerEl   = document.querySelector('.main-header');
-  var mainEl     = document.querySelector('.main-content');
+  var mainEl     = document.querySelector('.main-area');
   var moduleEl   = document.getElementById('module-rendimientos');
 
   var savedSidebarD  = sidebarEl  ? sidebarEl.style.display  : '';
@@ -1344,7 +1344,7 @@ function _doPrintRendMensual() {
       'body>*{display:none!important;}' +
       '.app-layout{display:flex!important;}' +
       '.sidebar{display:none!important;}' +
-      '.main-content{display:block!important;margin:0!important;padding:0!important;}' +
+      '.main-area{display:block!important;margin:0!important;padding:0!important;}' +
       '.main-header{display:none!important;}' +
       '#module-rendimientos{display:block!important;padding:0!important;background:#fff!important;}' +
       'table{font-size:7pt!important;width:100%!important;border-collapse:collapse!important;}' +
