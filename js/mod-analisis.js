@@ -47,7 +47,7 @@ function renderAnalisis() {
                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   var byMes = {};
-  for (var i = 1; i <= 12; i++) byMes[i] = { ing: 0, gto: 0 };
+  for (var i = 1; i <= 12; i++) byMes[i] = { ing: 0, rend: 0, gto: 0 };
 
   var catGastoTot = {};
   var catIngresoTot = {};
@@ -87,7 +87,7 @@ function renderAnalisis() {
     var rend   = typeof _rendReal === 'function' ? _rendReal(r) : ((r.saldo_final || 0) - (r.saldo_inicial || 0) - (r.movimientos_neto || 0));
     var rendMXN = toMXN(rend, moneda, tiposCambio);
     if (rendMXN > 0) {
-      byMes[mes].ing += rendMXN;
+      byMes[mes].rend += rendMXN;
       totalIng += rendMXN;
       totalRend += rendMXN;
     } else if (rendMXN < 0) {
@@ -95,7 +95,7 @@ function renderAnalisis() {
       totalGto += Math.abs(rendMXN);
     }
   });
-  if (totalRend > 0) catIngresoTot['Rendimientos'] = (catIngresoTot['Rendimientos'] || 0) + totalRend;
+  if (totalRend !== 0) catIngresoTot['Rendimientos'] = (catIngresoTot['Rendimientos'] || 0) + totalRend;
 
   var totalBal = totalIng - totalGto;
   var tasaAhorro = totalIng > 0 ? (totalBal / totalIng * 100) : 0;
@@ -111,16 +111,20 @@ function renderAnalisis() {
   var rowsMes = '';
   for (var m2 = 1; m2 <= 12; m2++) {
     var ing  = byMes[m2].ing;
+    var rend = byMes[m2].rend;
     var gto  = byMes[m2].gto;
-    var bal  = ing - gto;
-    var pct  = ing > 0 ? (bal / ing * 100) : 0;
-    if (ing > 0 || gto > 0) mesesConDatos++;
-    var balStyle = bal >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
-    var pctStyle = pct >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
+    var bal  = ing + rend - gto;
+    var ingTot = ing + rend;
+    var pct  = ingTot > 0 ? (bal / ingTot * 100) : 0;
+    if (ing > 0 || rend > 0 || gto > 0) mesesConDatos++;
+    var balStyle  = bal  >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
+    var pctStyle  = pct  >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
+    var rendStyle = rend >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
     rowsMes +=
       '<tr>' +
         '<td style="text-align:left;font-weight:600;">' + meses[m2-1] + '</td>' +
         '<td>' + formatCurrencyInt(ing, 'MXN') + '</td>' +
+        '<td style="' + rendStyle + '">' + (rend >= 0 ? '+' : '') + formatCurrencyInt(rend, 'MXN') + '</td>' +
         '<td>' + formatCurrencyInt(gto, 'MXN') + '</td>' +
         '<td style="' + balStyle + 'font-weight:700;">' + (bal >= 0 ? '+' : '') + formatCurrencyInt(bal, 'MXN') + '</td>' +
         '<td style="' + pctStyle + '">' + pct.toFixed(1) + '%</td>' +
@@ -128,12 +132,15 @@ function renderAnalisis() {
   }
 
   // Totals row
+  var totalIngSinRend = totalIng - totalRend;
   var balTotStyle = totalBal >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
   var pctTotStyle = tasaAhorro >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
+  var rendTotStyle = totalRend >= 0 ? 'color:var(--text-primary);' : 'color:var(--accent-red);';
   rowsMes +=
     '<tr data-sort-fixed="true" style="font-weight:800;border-top:2px solid var(--border-color);background:var(--bg-base);">' +
       '<td style="text-align:left;">TOTAL ' + anioSel + '</td>' +
-      '<td>' + formatCurrencyInt(totalIng, 'MXN') + '</td>' +
+      '<td>' + formatCurrencyInt(totalIngSinRend, 'MXN') + '</td>' +
+      '<td style="' + rendTotStyle + '">' + (totalRend >= 0 ? '+' : '') + formatCurrencyInt(totalRend, 'MXN') + '</td>' +
       '<td>' + formatCurrencyInt(totalGto, 'MXN') + '</td>' +
       '<td style="' + balTotStyle + 'font-weight:800;">' + (totalBal >= 0 ? '+' : '') + formatCurrencyInt(totalBal, 'MXN') + '</td>' +
       '<td style="' + pctTotStyle + 'font-weight:800;">' + tasaAhorro.toFixed(1) + '%</td>' +
@@ -229,6 +236,7 @@ function renderAnalisis() {
           '<thead><tr>' +
             '<th style="text-align:left;">Mes</th>' +
             '<th>Ingresos</th>' +
+            '<th>Rendimientos</th>' +
             '<th>Gastos</th>' +
             '<th>Balance</th>' +
             '<th>% Ahorro</th>' +
@@ -281,9 +289,10 @@ function renderAnalisis() {
     if (!ctx) return;
     if (_analisisChart) { _analisisChart.destroy(); _analisisChart = null; }
     var labMeses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var dataIng = [], dataGto = [];
+    var dataIng = [], dataRend = [], dataGto = [];
     for (var m3 = 1; m3 <= 12; m3++) {
       dataIng.push(Math.round(byMes[m3].ing));
+      dataRend.push(Math.round(byMes[m3].rend));
       dataGto.push(Math.round(byMes[m3].gto));
     }
     _analisisChart = new Chart(ctx, {
@@ -291,8 +300,9 @@ function renderAnalisis() {
       data: {
         labels: labMeses,
         datasets: [
-          { label: 'Ingresos',  data: dataIng, backgroundColor: 'rgba(37,99,235,0.7)',  borderColor: '#2563eb', borderWidth: 1 },
-          { label: 'Gastos',    data: dataGto, backgroundColor: 'rgba(220,38,38,0.65)', borderColor: '#dc2626', borderWidth: 1 }
+          { label: 'Ingresos',      data: dataIng,  backgroundColor: 'rgba(37,99,235,0.7)',   borderColor: '#2563eb', borderWidth: 1 },
+          { label: 'Rendimientos',  data: dataRend, backgroundColor: 'rgba(16,185,129,0.7)',  borderColor: '#10b981', borderWidth: 1 },
+          { label: 'Gastos',        data: dataGto,  backgroundColor: 'rgba(220,38,38,0.65)',  borderColor: '#dc2626', borderWidth: 1 }
         ]
       },
       options: {
