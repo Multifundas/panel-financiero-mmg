@@ -18,6 +18,7 @@ const moduleTitles = {
   ingresos_futuros: 'Ingresos Futuros',
   deuda:            'Deuda Historica',
   seguros:          'Seguros',
+  analisis:         'Análisis de Ingresos y Gastos',
 };
 
 function navigateTo(moduleId) {
@@ -54,6 +55,7 @@ function navigateTo(moduleId) {
     ingresos_futuros: typeof renderIngresosFuturos === 'function' ? renderIngresosFuturos : function(){},
     deuda:            typeof renderDeuda === 'function' ? renderDeuda : function(){},
     seguros:          typeof renderSeguros === 'function' ? renderSeguros : function(){},
+    analisis:         typeof renderAnalisis === 'function' ? renderAnalisis : function(){},
   };
   if (renderFns[moduleId]) renderFns[moduleId]();
 
