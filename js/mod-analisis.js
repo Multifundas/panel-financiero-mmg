@@ -2,8 +2,6 @@
    MOD-ANALISIS  —  Análisis de Ingresos y Gastos
    ============================================================ */
 
-var _analisisChart = null;
-var _analisisCatChart = null;
 
 function renderAnalisis() {
   var el = document.getElementById('module-analisis');
@@ -214,37 +212,23 @@ function renderAnalisis() {
            'Balance / Ingresos') +
     '</div>' +
 
-    // Chart + monthly table side by side
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
-
-      // Chart card
-      '<div class="card" style="padding:16px;">' +
-        '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
-          '<i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent-blue);"></i>' +
-          'Ingresos vs Gastos — ' + anioSel +
-        '</h3>' +
-        '<canvas id="analisisBarChart" height="200"></canvas>' +
-      '</div>' +
-
-      // Monthly table card
-      '<div class="card" style="padding:16px;overflow-x:auto;">' +
-        '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
-          '<i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>' +
-          'Resumen Mensual' +
-        '</h3>' +
-        '<table class="data-table" style="width:100%;font-size:13px;">' +
-          '<thead><tr>' +
-            '<th style="text-align:left;">Mes</th>' +
-            '<th>Ingresos</th>' +
-            '<th>Rendimientos</th>' +
-            '<th>Gastos</th>' +
-            '<th>Balance</th>' +
-            '<th>% Ahorro</th>' +
-          '</tr></thead>' +
-          '<tbody>' + rowsMes + '</tbody>' +
-        '</table>' +
-      '</div>' +
-
+    // Monthly table full width
+    '<div class="card" style="padding:16px;overflow-x:auto;margin-bottom:20px;">' +
+      '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
+        '<i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>' +
+        'Resumen Mensual' +
+      '</h3>' +
+      '<table class="data-table" style="width:100%;font-size:13px;">' +
+        '<thead><tr>' +
+          '<th style="text-align:left;">Mes</th>' +
+          '<th>Ingresos</th>' +
+          '<th>Rendimientos</th>' +
+          '<th>Gastos</th>' +
+          '<th>Balance</th>' +
+          '<th>% Ahorro</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rowsMes + '</tbody>' +
+      '</table>' +
     '</div>' +
 
     // Categories side by side
@@ -282,54 +266,6 @@ function renderAnalisis() {
 
     '</div>' +
     '</div>';
-
-  // Render Chart.js bar chart
-  setTimeout(function() {
-    var ctx = document.getElementById('analisisBarChart');
-    if (!ctx) return;
-    if (_analisisChart) { _analisisChart.destroy(); _analisisChart = null; }
-    var labMeses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var dataIng = [], dataRend = [], dataGto = [];
-    for (var m3 = 1; m3 <= 12; m3++) {
-      dataIng.push(Math.round(byMes[m3].ing));
-      dataRend.push(Math.round(byMes[m3].rend));
-      dataGto.push(Math.round(byMes[m3].gto));
-    }
-    _analisisChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labMeses,
-        datasets: [
-          { label: 'Ingresos',      data: dataIng,  backgroundColor: 'rgba(37,99,235,0.7)',   borderColor: '#2563eb', borderWidth: 1 },
-          { label: 'Rendimientos',  data: dataRend, backgroundColor: 'rgba(16,185,129,0.7)',  borderColor: '#10b981', borderWidth: 1 },
-          { label: 'Gastos',        data: dataGto,  backgroundColor: 'rgba(220,38,38,0.65)',  borderColor: '#dc2626', borderWidth: 1 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: 'top', labels: { font: { size: 12 } } },
-          tooltip: {
-            callbacks: {
-              label: function(ctx2) {
-                return ctx2.dataset.label + ': $' + ctx2.parsed.y.toLocaleString('es-MX', { maximumFractionDigits: 0 });
-              }
-            }
-          }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: {
-            ticks: {
-              font: { size: 11 },
-              callback: function(v) { return '$' + (v/1000).toFixed(0) + 'K'; }
-            }
-          }
-        }
-      }
-    });
-  }, 50);
 
   // Init sortable tables
   setTimeout(function() { _initSortableTables(el); }, 80);
