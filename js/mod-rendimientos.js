@@ -1340,10 +1340,13 @@ function _doPrintRendMensual() {
   ps.id = '_rend-print-ps';
   ps.textContent =
     '@media print{' +
-      '@page{size:legal landscape;margin:0;}' +
-      'html,body{margin:0!important;padding:0!important;background:#fff!important;}' +
-      '.main-content{margin:0!important;padding:0!important;}' +
-      '#module-rendimientos{padding:0!important;background:#fff!important;}' +
+      '@page{size:13.4in 8.5in;margin:5mm;}' +
+      'body>*{display:none!important;}' +
+      '.app-layout{display:flex!important;}' +
+      '.sidebar{display:none!important;}' +
+      '.main-content{display:block!important;margin:0!important;padding:0!important;}' +
+      '.main-header{display:none!important;}' +
+      '#module-rendimientos{display:block!important;padding:0!important;background:#fff!important;}' +
       'table{font-size:7pt!important;width:100%!important;border-collapse:collapse!important;}' +
       'thead th{font-size:6.5pt!important;background:#1e293b!important;color:#f1f5f9!important;' +
         'padding:3px 4px!important;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
