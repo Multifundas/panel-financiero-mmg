@@ -372,6 +372,9 @@ function renderGastos() {
             ${aniosOpts}
           </select>
         </div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;margin-left:auto;" onclick="printGastosMensualReport()">
+          <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
+        </button>
       </div>
       <div id="gastosMensualReportContainer" style="overflow-x:auto;"></div>
     </div>
@@ -968,4 +971,95 @@ function mostrarDetalleGastoCatAnio(anio, catId) {
 
   openModal(catNombre + ' - Ano ' + anio, html, {wide: true});
   setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
+}
+
+/* ============================================================
+   IMPRIMIR REPORTE MENSUAL DE GASTOS
+   ============================================================ */
+function printGastosMensualReport() {
+  var container = document.getElementById('gastosMensualReportContainer');
+  if (!container) return;
+
+  var anioEl = document.getElementById('filterGastosMensualAnio');
+  var anio = anioEl ? anioEl.value : new Date().getFullYear();
+  var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  var tableHTML = container.innerHTML
+    .replace(/var\(--text-primary\)/g, '#1e293b')
+    .replace(/var\(--text-secondary\)/g, '#1e293b')
+    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--accent-red\)/g, '#dc2626')
+    .replace(/var\(--accent-blue\)/g, '#2563eb')
+    .replace(/var\(--accent-green\)/g, '#16a34a')
+    .replace(/var\(--bg-card\)/g, '#ffffff')
+    .replace(/var\(--bg-base\)/g, '#f8fafc')
+    .replace(/var\(--border-color\)/g, '#94a3b8')
+    .replace(/var\(--border-subtle\)/g, '#cbd5e1')
+    .replace(/onclick="[^"]*"/g, '')
+    .replace(/cursor:\s*pointer;?/g, '')
+    .replace(/position:\s*sticky[^;]*;/g, '')
+    .replace(/z-index:\s*\d+;?/g, '')
+    .replace(/font-size:\s*[\d.]+px;?/g, '')
+    .replace(/min-width:\s*[\d.]+px;?/g, '');
+
+  var sidebarEl = document.querySelector('.sidebar');
+  var headerEl  = document.querySelector('.main-header');
+  var mainEl    = document.querySelector('.main-area');
+  var moduleEl  = document.getElementById('module-gastos');
+
+  var savedSidebarD = sidebarEl ? sidebarEl.style.display : '';
+  var savedHeaderD  = headerEl  ? headerEl.style.display  : '';
+  var savedMainML   = mainEl    ? mainEl.style.marginLeft : '';
+  var savedMainPad  = mainEl    ? mainEl.style.padding    : '';
+  var savedModHTML  = moduleEl  ? moduleEl.innerHTML      : '';
+
+  if (sidebarEl) sidebarEl.style.display = 'none';
+  if (headerEl)  headerEl.style.display  = 'none';
+  if (mainEl)  { mainEl.style.marginLeft = '0'; mainEl.style.padding = '0'; }
+  if (moduleEl) moduleEl.innerHTML =
+    '<div style="padding:5mm;font-family:\'Segoe UI\',Arial,sans-serif;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #dc2626;padding-bottom:4px;margin-bottom:6px;">' +
+        '<div style="font-size:10pt;font-weight:800;color:#0f172a;">Reporte Mensual de Gastos — ' + anio + '</div>' +
+        '<div style="font-size:7pt;color:#64748b;">' + fecha + ' · Panel Financiero MMG</div>' +
+      '</div>' +
+      tableHTML +
+      '<div style="margin-top:5px;font-size:6.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
+        '<span>Panel Financiero MMG</span><span>Cifras en MXN salvo indicación contraria</span>' +
+      '</div>' +
+    '</div>';
+
+  var ps = document.createElement('style');
+  ps.id = '_gastos-print-ps';
+  ps.textContent =
+    '@media print{' +
+      '@page{size:13.4in 8.5in;margin:5mm;}' +
+      'body>*{display:none!important;}' +
+      '.app-layout{display:flex!important;}' +
+      '.sidebar{display:none!important;}' +
+      '.main-area{display:block!important;margin:0!important;padding:0!important;}' +
+      '.main-header{display:none!important;}' +
+      '#module-gastos{display:block!important;padding:0!important;background:#fff!important;}' +
+      'table{font-size:7pt!important;width:100%!important;border-collapse:collapse!important;}' +
+      'thead th{font-size:6.5pt!important;background:#1e293b!important;color:#f1f5f9!important;padding:3px 4px!important;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+      'tbody td{font-size:7pt!important;padding:2px 4px!important;border-bottom:1px solid #e2e8f0!important;}' +
+      'tbody tr:nth-child(even){background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    '}';
+  document.head.appendChild(ps);
+
+  function restoreDOM() {
+    if (sidebarEl) sidebarEl.style.display = savedSidebarD;
+    if (headerEl)  headerEl.style.display  = savedHeaderD;
+    if (mainEl)  { mainEl.style.marginLeft = savedMainML; mainEl.style.padding = savedMainPad; }
+    if (moduleEl)  moduleEl.innerHTML = savedModHTML;
+    var psEl = document.getElementById('_gastos-print-ps');
+    if (psEl) psEl.remove();
+    renderGastos();
+  }
+
+  window.addEventListener('afterprint', function onAfterPrint() {
+    window.removeEventListener('afterprint', onAfterPrint);
+    restoreDOM();
+  });
+
+  setTimeout(function() { window.print(); }, 300);
 }
