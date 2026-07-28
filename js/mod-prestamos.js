@@ -257,8 +257,23 @@ function savePrestamo(event) {
     saveData(STORAGE_KEYS.prestamos, prestamos);
     showToast('Prestamo actualizado exitosamente.', 'success');
   } else {
-    prestamos.push({ id: uuid(), tipo: tipo, persona: persona, monto_original: monto_original, moneda: moneda, tasa_interes: tasa_interes, fecha_inicio: fecha_inicio, fecha_vencimiento: fecha_vencimiento, saldo_pendiente: monto_original, pagos: [], estado: 'activo', cuenta_id: cuenta_id, notas: notas, created: new Date().toISOString() });
+    var newId = uuid();
+    prestamos.push({ id: newId, tipo: tipo, persona: persona, monto_original: monto_original, moneda: moneda, tasa_interes: tasa_interes, fecha_inicio: fecha_inicio, fecha_vencimiento: fecha_vencimiento, saldo_pendiente: monto_original, pagos: [], estado: 'activo', cuenta_id: cuenta_id, notas: notas, created: new Date().toISOString() });
     saveData(STORAGE_KEYS.prestamos, prestamos);
+    if (cuenta_id) {
+      var cuentasP = loadData(STORAGE_KEYS.cuentas) || [];
+      var movimientosP = loadData(STORAGE_KEYS.movimientos) || [];
+      var ctaIdx = cuentasP.findIndex(function(c) { return c.id === cuenta_id; });
+      if (ctaIdx !== -1) {
+        var movDesc = tipo === 'otorgado' ? 'Prestamo otorgado a ' + persona : 'Prestamo recibido de ' + persona;
+        var movTipo = tipo === 'otorgado' ? 'gasto' : 'ingreso';
+        movimientosP.push({ id: uuid(), cuenta_id: cuenta_id, tipo: movTipo, monto: monto_original, moneda: moneda, categoria_id: null, descripcion: movDesc, fecha: fecha_inicio, notas: 'Prestamo ID: ' + newId + (notas ? '\n' + notas : ''), created: new Date().toISOString() });
+        if (tipo === 'otorgado') cuentasP[ctaIdx].saldo -= monto_original;
+        else cuentasP[ctaIdx].saldo += monto_original;
+        saveData(STORAGE_KEYS.cuentas, cuentasP);
+        saveData(STORAGE_KEYS.movimientos, movimientosP);
+      }
+    }
     showToast('Prestamo creado exitosamente.', 'success');
   }
   closeModal();
