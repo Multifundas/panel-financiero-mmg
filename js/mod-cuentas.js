@@ -1133,7 +1133,7 @@ function cierreMensual() {
     '<div style="margin-bottom:16px;">' +
     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;">' +
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos del periodo y se anualiza segun los dias transcurridos.</div>' +
-    '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-base);border-radius:8px;border:1px solid var(--border-subtle);">' +
+    '<div style="display:flex;align-items:center;gap:12px;padding:16px 18px;background:var(--bg-base);border-radius:8px;border:1px solid var(--border-subtle);">' +
     '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);"></i>' +
     '<span style="font-size:13px;font-weight:600;color:var(--text-primary);">Aplicar misma fecha a todas:</span>' +
     '<input type="date" id="cierreGlobalFecha" class="form-input" value="' + fechaGlobal + '" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:160px;" ' +
