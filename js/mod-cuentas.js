@@ -1079,16 +1079,37 @@ function _calcMovimientosNetos(cuentaId, desdeExcl) {
   return { ingresos: ingresos, gastos: gastos, neto: ingresos - gastos };
 }
 
+function _getNextCierreDefault(ultimoCierre) {
+  var nextDate;
+  if (ultimoCierre) {
+    var d = new Date(ultimoCierre + 'T00:00:00');
+    // \u00daltimo d\u00eda del mes siguiente al \u00faltimo cierre
+    nextDate = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+  } else {
+    // Sin cierres previos: \u00faltimo d\u00eda del mes actual
+    var now = new Date();
+    nextDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+  return nextDate.getFullYear() + '-' +
+         String(nextDate.getMonth() + 1).padStart(2, '0') + '-' +
+         String(nextDate.getDate()).padStart(2, '0');
+}
+
 function cierreMensual() {
   const cuentas = loadData(STORAGE_KEYS.cuentas) || [];
   const activas = cuentas.filter(c => c.activa !== false);
   if (activas.length === 0) { showToast('No hay cuentas activas.', 'warning'); return; }
 
-  var hoy = new Date();
-  var fechaHoy = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  // Fecha global sugerida: pr\u00f3ximo cierre l\u00f3gico de la cuenta con cierre m\u00e1s reciente
+  var fechaGlobal = activas.reduce(function(max, c) {
+    var uc = _getUltimoCierre(c);
+    var sugerida = _getNextCierreDefault(uc);
+    return sugerida > max ? sugerida : max;
+  }, '');
 
   var filas = activas.map(function(c) {
     var ultimoCierre = _getUltimoCierre(c);
+    var fechaDefault = _getNextCierreDefault(ultimoCierre);
     var saldoInicioPeriodo = _getSaldoInicioCierre(c);
     var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
     var esDebito = c.tipo === 'debito';
@@ -1102,7 +1123,7 @@ function cierreMensual() {
       '<br>' + ultCierreLabel +
       (esDebito ? '' : '<br><span style="font-size:12px;color:var(--text-muted);">Movs: +' + formatCurrencyInt(movNetos.ingresos, c.moneda) + ' / -' + formatCurrencyInt(movNetos.gastos, c.moneda) + '</span>') + '</td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);white-space:nowrap;">' + formatCurrencyInt(saldoInicioPeriodo, c.moneda) + '</td>' +
-      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaHoy + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
+      '<td><input type="date" class="form-input cierre-fecha" data-cuenta-id="' + c.id + '" value="' + fechaDefault + '" style="padding:5px 8px;font-size:13px;min-height:auto;" onchange="recalcCierreRendimientoByDate(this)"></td>' +
       '<td><input type="number" class="form-input cierre-saldo-final" data-cuenta-id="' + c.id + '" data-tipo="' + c.tipo + '" data-saldo-inicio="' + saldoInicioPeriodo + '" data-mov-neto="' + movNetos.neto + '" data-fecha-ultimo-cierre="' + ultimoCierre + '" step="0.01" min="0" placeholder="Saldo final" style="padding:5px 8px;font-size:13px;min-width:110px;min-height:auto;" oninput="recalcCierreRendimiento(this)"></td>' +
       rendCell +
       '</tr>';
@@ -1110,8 +1131,15 @@ function cierreMensual() {
 
   var formHTML = '<form id="formCierreMensual" onsubmit="saveCierreMensual(event)">' +
     '<div style="margin-bottom:16px;">' +
-    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;">' +
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>Ingresa la fecha y saldo final de cada cuenta. El rendimiento se calcula descontando los movimientos del periodo y se anualiza segun los dias transcurridos.</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-base);border-radius:8px;border:1px solid var(--border-subtle);">' +
+    '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);"></i>' +
+    '<span style="font-size:13px;font-weight:600;color:var(--text-primary);">Aplicar misma fecha a todas:</span>' +
+    '<input type="date" id="cierreGlobalFecha" class="form-input" value="' + fechaGlobal + '" style="padding:5px 8px;font-size:13px;min-height:auto;max-width:160px;" ' +
+    'onchange="document.querySelectorAll(\'.cierre-fecha\').forEach(function(el){el.value=this.value;el.dispatchEvent(new Event(\'change\'));}.bind(this))">' +
+    '<span style="font-size:12px;color:var(--text-muted);">Cambia la fecha de todas las cuentas a la vez</span>' +
+    '</div>' +
     '</div>' +
     '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="data-table" style="min-width:0;"><thead><tr>' +
     '<th>Cuenta</th><th style="text-align:right;">Saldo Inicial</th><th>Fecha</th><th>Saldo Final</th><th style="text-align:right;">Rendimiento</th>' +
