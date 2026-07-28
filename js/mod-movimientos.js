@@ -358,13 +358,14 @@ function filterMovimientos() {
 
     // Property link badge
     const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:11px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
+    const prestamoBadge = (m.notas && m.notas.includes('Prestamo ID:')) ? '<span class="badge badge-blue" style="font-size:11px;margin-left:6px;"><i class="fas fa-handshake" style="margin-right:2px;"></i>Pr\u00e9stamo</span>' : '';
 
     return `
       <tr>
         <td><input type="checkbox" class="mov-checkbox" value="${m.id}" onchange="onMovCheckboxChange()"></td>
         <td>${formatDate(m.fecha)}</td>
         <td>${catNombre}</td>
-        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}</td>
+        <td style="color:var(--text-primary);font-weight:500;">${m.descripcion || '\u2014'}${propBadge}${prestamoBadge}</td>
         <td>${cuentaNombre}</td>
         <td><span class="badge ${tipoBadgeClass}">${tipoLabel}</span></td>
         <td style="text-align:right;font-weight:600;color:${montoColor};">${signo}${formatCurrencyInt(m.monto, moneda)}</td>
@@ -430,6 +431,18 @@ function editMovimiento(id) {
     return `<option value="${p.id}" ${selected}>${p.nombre}</option>`;
   }).join('');
 
+  // Prestamos activos para vincular
+  var _prestamosActivos = (loadData(STORAGE_KEYS.prestamos) || []).filter(function(p) { return p.estado === 'activo'; });
+  var _existPrestamoId = '';
+  if (isEdit && mov && mov.notas) {
+    var _pm = mov.notas.match(/Prestamo ID: ([a-zA-Z0-9-]+)/);
+    if (_pm) _existPrestamoId = _pm[1];
+  }
+  var prestamoOpciones = _prestamosActivos.map(function(p) {
+    var sel = _existPrestamoId === p.id ? 'selected' : '';
+    return '<option value="' + p.id + '" ' + sel + '>' + p.persona + ' (' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + ') — Saldo: ' + formatCurrencyInt(p.saldo_pendiente, p.moneda || 'MXN') + '</option>';
+  }).join('');
+
   // Store category options for dynamic switching (base64 encoded to avoid HTML issues)
   window._movCatGastoOpts = catGastoOpciones;
   window._movCatIngresoOpts = catIngresoOpciones;
@@ -493,6 +506,15 @@ function editMovimiento(id) {
       </div>
 
       <div class="form-group">
+        <label class="form-label"><i class="fas fa-handshake" style="margin-right:4px;color:var(--accent-teal,#2aa198);"></i>Vincular a Préstamo</label>
+        <select id="movPrestamoId" class="form-select">
+          <option value="">No vincular</option>
+          ${prestamoOpciones}
+        </select>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${_prestamosActivos.length === 0 ? 'No hay préstamos activos registrados' : 'Actualiza el saldo del préstamo automáticamente'}</div>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Notas</label>
         <textarea id="movNotas" class="form-input" rows="2" style="resize:vertical;"
                   placeholder="Notas adicionales...">${isEdit && mov.notas ? mov.notas : ''}</textarea>
@@ -546,7 +568,8 @@ function saveMovimiento(event) {
   const descripcion = document.getElementById('movDescripcion').value.trim();
   const categoria_id = document.getElementById('movCategoriaId') ? (document.getElementById('movCategoriaId').value || null) : null;
   const propiedad_id = tipo === 'gasto' && document.getElementById('movPropiedadId') ? (document.getElementById('movPropiedadId').value || null) : null;
-  const notas = document.getElementById('movNotas').value.trim();
+  let notas = document.getElementById('movNotas').value.trim();
+  const prestamo_id = document.getElementById('movPrestamoId') ? document.getElementById('movPrestamoId').value : '';
 
   if (!cuenta_id || !descripcion || !fecha || monto <= 0) {
     showToast('Por favor completa todos los campos obligatorios.', 'warning');
@@ -635,6 +658,29 @@ function saveMovimiento(event) {
     }
 
     movimientos.push(nuevoMov);
+
+    // If linked to a prestamo, update its record
+    if (prestamo_id) {
+      var _prestamosLink = loadData(STORAGE_KEYS.prestamos) || [];
+      var _pLinkIdx = _prestamosLink.findIndex(function(p) { return p.id === prestamo_id; });
+      if (_pLinkIdx !== -1) {
+        var _pLink = _prestamosLink[_pLinkIdx];
+        if (!_pLink.pagos) _pLink.pagos = [];
+        var _esAdicional = (tipo === 'gasto' && _pLink.tipo === 'otorgado') || (tipo === 'ingreso' && _pLink.tipo === 'recibido');
+        _pLink.pagos.push({ id: uuid(), fecha: fecha, monto: monto, descripcion: descripcion, tipo: _esAdicional ? 'prestamo_adicional' : undefined, cuenta_destino_id: cuenta_id });
+        if (_esAdicional) {
+          _pLink.monto_original += monto;
+          _pLink.saldo_pendiente += monto;
+          if (_pLink.estado === 'pagado') _pLink.estado = 'activo';
+        } else {
+          _pLink.saldo_pendiente = Math.max(0, _pLink.saldo_pendiente - monto);
+          if (_pLink.saldo_pendiente === 0) _pLink.estado = 'pagado';
+        }
+        _prestamosLink[_pLinkIdx] = _pLink;
+        saveData(STORAGE_KEYS.prestamos, _prestamosLink);
+        nuevoMov.notas = (notas ? notas + '\n' : '') + 'Prestamo ID: ' + prestamo_id;
+      }
+    }
 
     // If linked to a property, record the payment and update mensualidades
     if (propiedad_id) {
