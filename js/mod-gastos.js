@@ -262,8 +262,8 @@ function renderGastos() {
     .map(a => `<option value="${a}" ${a === anioActual ? 'selected' : ''}>${a}</option>`)
     .join('');
 
-  // All gastos (excluding transfers)
-  const gastos = movimientos.filter(m => m.tipo === 'gasto' && !m.transferencia_id);
+  // All gastos (excluding transfers and prestamo-linked movements)
+  const gastos = movimientos.filter(m => m.tipo === 'gasto' && !m.transferencia_id && !(m.notas && m.notas.includes('Prestamo ID:')));
 
   // Load gastos historicos for integration
   const gastosHistoricos = loadData(STORAGE_KEYS.gastos_historicos) || [];
@@ -372,6 +372,13 @@ function renderGastos() {
             ${aniosOpts}
           </select>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:14px;font-weight:600;color:var(--text-secondary);">Vista:</label>
+          <select id="filterGastosMensualVista" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:135px;" onchange="renderGastosMensualReport()">
+            <option value="categoria">Por Categoria</option>
+            <option value="descripcion">Por Descripcion</option>
+          </select>
+        </div>
         <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;margin-left:auto;" onclick="printGastosMensualReport()">
           <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
         </button>
@@ -410,6 +417,7 @@ function renderGastos() {
               <th>Descripcion</th>
               <th style="text-align:right;">Monto</th>
               <th style="text-align:right;">Monto (MXN)</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="tbodyGastos"></tbody>
@@ -607,8 +615,8 @@ function renderGastosMensualReport() {
   if (!container) return;
 
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
-  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var cuentas     = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
 
   var cuentaMap = {};
@@ -616,90 +624,141 @@ function renderGastosMensualReport() {
   var catMap = {};
   categorias.forEach(function(cat) { catMap[cat.id] = cat; });
 
-  var fAnioEl = document.getElementById('filterGastosMensualAnio');
-  var anio = fAnioEl ? parseInt(fAnioEl.value) : new Date().getFullYear();
+  var fAnioEl  = document.getElementById('filterGastosMensualAnio');
+  var fVistaEl = document.getElementById('filterGastosMensualVista');
+  var anio  = fAnioEl  ? parseInt(fAnioEl.value)  : new Date().getFullYear();
+  var vista = fVistaEl ? fVistaEl.value           : 'categoria';
 
-  var gastos = movimientos.filter(function(m) { return m.tipo === 'gasto' && !m.transferencia_id; });
+  var gastos = movimientos.filter(function(m) { return m.tipo === 'gasto' && !m.transferencia_id && !(m.notas && m.notas.includes('Prestamo ID:')); });
   var mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  // Collect all categories that have gastos in this year
-  var catsConGastos = {};
-  gastos.forEach(function(m) {
-    var f = new Date(m.fecha);
-    if (f.getFullYear() === anio) {
-      var catId = m.categoria_id || 'sin_cat';
-      catsConGastos[catId] = true;
-    }
-  });
-
-  var catIds = Object.keys(catsConGastos).sort(function(a, b) {
-    var na = catMap[a] ? catMap[a].nombre : 'ZZZ';
-    var nb = catMap[b] ? catMap[b].nombre : 'ZZZ';
-    return na.localeCompare(nb);
-  });
-
-  if (catIds.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay gastos registrados en ' + anio + '.</div>';
-    return;
-  }
-
-  // Build header
-  var thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Categoria</th>';
-  for (var mi = 0; mi < 12; mi++) {
-    thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
-  }
-  thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
-  thead += '<th style="text-align:right;min-width:70px;font-weight:800;">%</th></tr>';
-
-  // Pre-calculate amounts per category per month in a single pass
   var totalPorMes = new Array(12).fill(0);
   var totalGeneral = 0;
-  var montosPorCatMes = {};
-  catIds.forEach(function(catId) { montosPorCatMes[catId] = new Array(12).fill(0); });
+  var rows = '';
+  var thead = '';
 
-  gastos.forEach(function(g) {
-    var f = new Date(g.fecha);
-    if (f.getFullYear() !== anio) return;
-    var catId = g.categoria_id || 'sin_cat';
-    if (!montosPorCatMes[catId]) return;
-    var cta = cuentaMap[g.cuenta_id];
-    var monto = toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
-    montosPorCatMes[catId][f.getMonth()] += monto;
-    totalPorMes[f.getMonth()] += monto;
-    totalGeneral += monto;
-  });
+  if (vista === 'descripcion') {
+    // \u2500\u2500 VISTA POR DESCRIPCI\u00d3N \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    thead = '<tr><th style="min-width:160px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Descripcion</th>';
+    for (var mi = 0; mi < 12; mi++) thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
+    thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
+    thead += '<th style="text-align:right;min-width:70px;font-weight:800;">%</th></tr>';
 
-  // Build rows
-  var rows = catIds.map(function(catId) {
-    var cat = catMap[catId];
-    var catNombre = cat ? cat.nombre : 'Sin Categoria';
-    var catIcono = cat ? cat.icono : 'fa-question';
-    var catColor = cat ? cat.color : '#94a3b8';
+    // Collect unique descriptions with gastos this year
+    var montosPorDescMes = {};
+    gastos.forEach(function(g) {
+      var f = new Date(g.fecha);
+      if (f.getFullYear() !== anio) return;
+      var desc = g.descripcion || 'Sin Descripcion';
+      if (!montosPorDescMes[desc]) montosPorDescMes[desc] = new Array(12).fill(0);
+      var cta = cuentaMap[g.cuenta_id];
+      var monto = toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
+      montosPorDescMes[desc][f.getMonth()] += monto;
+      totalPorMes[f.getMonth()] += monto;
+      totalGeneral += monto;
+    });
 
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
-      '<i class="fas ' + catIcono + '" style="color:' + catColor + ';margin-right:6px;font-size:12px;"></i>' + catNombre + '</td>';
+    var descs = Object.keys(montosPorDescMes).sort(function(a, b) {
+      var totA = montosPorDescMes[a].reduce(function(s, v) { return s + v; }, 0);
+      var totB = montosPorDescMes[b].reduce(function(s, v) { return s + v; }, 0);
+      return totB - totA;
+    });
 
-    var totalCat = 0;
-    for (var m = 0; m < 12; m++) {
-      var montoMes = montosPorCatMes[catId][m];
-      totalCat += montoMes;
-      if (montoMes === 0) {
-        row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
-      } else {
-        row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMesCat(' + anio + ',' + m + ',\'' + catId + '\')">' +
-          '<span style="color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</span></td>';
-      }
+    if (descs.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay gastos registrados en ' + anio + '.</div>';
+      return;
     }
 
-    var pct = totalGeneral > 0 ? (totalCat / totalGeneral * 100) : 0;
-    row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
-      '<span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</span></td>';
-    row += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
-    row += '</tr>';
-    return row;
-  }).join('');
+    rows = descs.map(function(desc) {
+      var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' + desc + '</td>';
+      var totalDesc = 0;
+      for (var m = 0; m < 12; m++) {
+        var montoMes = montosPorDescMes[desc][m];
+        totalDesc += montoMes;
+        if (montoMes === 0) {
+          row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+        } else {
+          var descEsc = desc.replace(/'/g, "\\'");
+          row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMesDesc(' + anio + ',' + m + ',\'' + descEsc + '\')">' +
+            '<span style="color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</span></td>';
+        }
+      }
+      var pct = totalGeneral > 0 ? (totalDesc / totalGeneral * 100) : 0;
+      row += '<td style="text-align:right;"><span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalDesc, 'MXN') + '</span></td>';
+      row += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
+      row += '</tr>';
+      return row;
+    }).join('');
 
-  // Total row
+  } else {
+    // \u2500\u2500 VISTA POR CATEGOR\u00cdA (original) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Categoria</th>';
+    for (var mi = 0; mi < 12; mi++) thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
+    thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
+    thead += '<th style="text-align:right;min-width:70px;font-weight:800;">%</th></tr>';
+
+    var catsConGastos = {};
+    gastos.forEach(function(m) {
+      var f = new Date(m.fecha);
+      if (f.getFullYear() === anio) catsConGastos[m.categoria_id || 'sin_cat'] = true;
+    });
+
+    var catIds = Object.keys(catsConGastos).sort(function(a, b) {
+      var na = catMap[a] ? catMap[a].nombre : 'ZZZ';
+      var nb = catMap[b] ? catMap[b].nombre : 'ZZZ';
+      return na.localeCompare(nb);
+    });
+
+    if (catIds.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>No hay gastos registrados en ' + anio + '.</div>';
+      return;
+    }
+
+    var montosPorCatMes = {};
+    catIds.forEach(function(catId) { montosPorCatMes[catId] = new Array(12).fill(0); });
+
+    gastos.forEach(function(g) {
+      var f = new Date(g.fecha);
+      if (f.getFullYear() !== anio) return;
+      var catId = g.categoria_id || 'sin_cat';
+      if (!montosPorCatMes[catId]) return;
+      var cta = cuentaMap[g.cuenta_id];
+      var monto = toMXN(g.monto, cta ? cta.moneda : 'MXN', tiposCambio);
+      montosPorCatMes[catId][f.getMonth()] += monto;
+      totalPorMes[f.getMonth()] += monto;
+      totalGeneral += monto;
+    });
+
+    rows = catIds.map(function(catId) {
+      var cat = catMap[catId];
+      var catNombre = cat ? cat.nombre : 'Sin Categoria';
+      var catIcono  = cat ? cat.icono  : 'fa-question';
+      var catColor  = cat ? cat.color  : '#94a3b8';
+
+      var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
+        '<i class="fas ' + catIcono + '" style="color:' + catColor + ';margin-right:6px;font-size:12px;"></i>' + catNombre + '</td>';
+
+      var totalCat = 0;
+      for (var m = 0; m < 12; m++) {
+        var montoMes = montosPorCatMes[catId][m];
+        totalCat += montoMes;
+        if (montoMes === 0) {
+          row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+        } else {
+          row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMesCat(' + anio + ',' + m + ',\'' + catId + '\')">' +
+            '<span style="color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</span></td>';
+        }
+      }
+      var pct = totalGeneral > 0 ? (totalCat / totalGeneral * 100) : 0;
+      row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
+        '<span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</span></td>';
+      row += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
+      row += '</tr>';
+      return row;
+    }).join('');
+  }
+
+  // \u2500\u2500 Fila TOTAL (com\u00fan) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   var totalRow = '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">Total</td>';
   for (var mi = 0; mi < 12; mi++) {
     if (totalPorMes[mi] === 0) {
@@ -716,6 +775,56 @@ function renderGastosMensualReport() {
     '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 
   setTimeout(function() { _initSortableTables(container); }, 100);
+}
+
+/* ============================================================
+   DETALLE MODAL: Gasto por Mes + Descripcion
+   ============================================================ */
+function mostrarDetalleGastoMesDesc(anio, mes, desc) {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var cuentas     = loadData(STORAGE_KEYS.cuentas) || [];
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
+  var cuentaMap = {}; cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
+  var catMap = {}; categorias.forEach(function(cat) { catMap[cat.id] = cat; });
+  var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  var gastos = movimientos.filter(function(m) {
+    if (m.tipo !== 'gasto') return false;
+    var f = new Date(m.fecha);
+    return f.getFullYear() === anio && f.getMonth() === mes && (m.descripcion || 'Sin Descripcion') === desc;
+  }).sort(function(a, b) { return b.fecha.localeCompare(a.fecha); });
+
+  var total = 0;
+  var rows = gastos.map(function(m) {
+    var cta = cuentaMap[m.cuenta_id];
+    var ctaNombre = cta ? cta.nombre : 'Desconocida';
+    var moneda = cta ? cta.moneda : 'MXN';
+    var catNombre = catMap[m.categoria_id] ? catMap[m.categoria_id].nombre : 'Sin Categoria';
+    var montoMXN = toMXN(m.monto, moneda, tiposCambio);
+    total += montoMXN;
+    return '<tr>' +
+      '<td>' + formatDate(m.fecha) + '</td>' +
+      '<td>' + catNombre + '</td>' +
+      '<td>' + ctaNombre + '</td>' +
+      '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--accent-red);">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  rows += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td colspan="4" style="text-align:right;">Total:</td>' +
+    '<td style="text-align:right;color:var(--accent-red);">' + formatCurrencyInt(total, 'MXN') + '</td>' +
+  '</tr>';
+
+  var html = gastos.length === 0
+    ? '<div style="text-align:center;padding:30px;color:var(--text-muted);">No hay registros.</div>'
+    : '<table class="data-table sortable-table"><thead><tr>' +
+        '<th>Fecha</th><th>Categoria</th><th>Cuenta</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Monto MXN</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  openModal(desc + ' — ' + mesesNombres[mes] + ' ' + anio, html, {wide: true});
+  setTimeout(function() { _initSortableTables(document.querySelector('.modal-content')); }, 100);
 }
 
 /* ============================================================
@@ -746,7 +855,7 @@ function filterGastosDetalle() {
   var fCuenta = fCuentaEl ? fCuentaEl.value : '';
 
   var gastos = movimientos.filter(function(m) {
-    if (m.tipo !== 'gasto' || m.transferencia_id) return false;
+    if (m.tipo !== 'gasto' || m.transferencia_id || (m.notas && m.notas.includes('Prestamo ID:'))) return false;
     var f = new Date(m.fecha);
     if (fMes !== null && f.getMonth() !== fMes) return false;
     if (fAnio !== null && f.getFullYear() !== fAnio) return false;
@@ -806,13 +915,19 @@ function filterGastosDetalle() {
       '<td>' + (m.descripcion || '-') + '</td>' +
       '<td style="text-align:right;">' + formatCurrencyInt(m.monto, moneda) + '</td>' +
       '<td style="text-align:right;">' + formatCurrencyInt(montoMXN, 'MXN') + '</td>' +
+      '<td style="text-align:center;white-space:nowrap;">' +
+        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;" onclick="editMovimiento(\'' + m.id + '\')" title="Editar movimiento">' +
+          '<i class="fas fa-edit"></i>' +
+        '</button>' +
+      '</td>' +
     '</tr>';
   });
 
   // Grand total row (no category subtotals)
   rowsHTML += '<tr style="background:var(--bg-base);font-weight:800;border-top:2px solid var(--border-color);">' +
-    '<td colspan="5" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>' +
+    '<td colspan="6" style="text-align:right;color:var(--text-primary);font-size:17px;">TOTAL GASTOS:</td>' +
     '<td style="text-align:right;color:var(--accent-red);font-size:17px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>' +
+    '<td></td>' +
   '</tr>';
 
   tbody.innerHTML = rowsHTML;
