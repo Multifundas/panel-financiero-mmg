@@ -1253,5 +1253,5 @@ function printGastosMensualReport() {
     restoreDOM();
   });
 
-  setTimeout(function() { window.print(); }, 300);
+  setTimeout(function() { window.print(); }, 600);
 }
