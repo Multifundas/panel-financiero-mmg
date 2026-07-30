@@ -828,10 +828,10 @@ function renderGastosMensualReport() {
     : '';
 
   container.innerHTML = expandBtnHTML +
-    '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;">' +
+    '<table class="data-table' + (vista === 'categoria' ? '' : ' sortable-table') + '" id="tablaGastosMensual" style="font-size:14px;">' +
     '<thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 
-  setTimeout(function() { _initSortableTables(container); }, 100);
+  if (vista !== 'categoria') setTimeout(function() { _initSortableTables(container); }, 100);
 }
 
 function toggleGastosCatDesc(catId) {
