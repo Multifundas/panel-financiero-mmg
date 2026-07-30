@@ -446,6 +446,8 @@ function editMovimiento(id) {
   // Store category options for dynamic switching (base64 encoded to avoid HTML issues)
   window._movCatGastoOpts = catGastoOpciones;
   window._movCatIngresoOpts = catIngresoOpciones;
+  // Store current description for edit mode pre-selection in dropdown
+  window._movEditDesc = isEdit ? (mov.descripcion || '') : '';
 
   const formHTML = `
     <form id="formMovimiento" onsubmit="saveMovimiento(event)">
@@ -484,12 +486,15 @@ function editMovimiento(id) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
           <label class="form-label">Descripcion *</label>
-          <input type="text" id="movDescripcion" class="form-input" required
-                 value="${isEdit ? (mov.descripcion || '') : ''}" placeholder="Ej: Pago de nomina">
+          <select id="movDescripcionSelect" class="form-select" onchange="onMovDescripcionSelectChange()">
+            <option value="">Cargando...</option>
+          </select>
+          <input type="text" id="movDescripcionNueva" class="form-input" style="margin-top:6px;display:none;"
+                 placeholder="Escribe la nueva descripcion...">
         </div>
         <div class="form-group" id="movCategoriaGroup">
           <label class="form-label">Categoria</label>
-          <select id="movCategoriaId" class="form-select">
+          <select id="movCategoriaId" class="form-select" onchange="toggleCategoriaField();updateMovDescripcionDropdown();">
             <option value="">Sin categoria</option>
             ${tipoActual === 'gasto' ? catGastoOpciones : catIngresoOpciones}
           </select>
@@ -531,8 +536,9 @@ function editMovimiento(id) {
 
   openModal(titulo, formHTML);
 
-  // Ensure categoria field visibility matches tipo
+  // Ensure categoria field visibility matches tipo and populate description dropdown
   toggleCategoriaField();
+  updateMovDescripcionDropdown();
 }
 
 /* -- Toggle categoria field based on tipo -- */
@@ -551,6 +557,59 @@ function toggleCategoriaField() {
   if (tipoSelect && propGroup) {
     propGroup.style.display = tipoSelect.value === 'gasto' ? 'block' : 'none';
   }
+  updateMovDescripcionDropdown();
+}
+
+/* -- Populate description dropdown based on selected category -- */
+function updateMovDescripcionDropdown() {
+  var sel = document.getElementById('movDescripcionSelect');
+  if (!sel) return;
+  var catId = document.getElementById('movCategoriaId') ? document.getElementById('movCategoriaId').value : '';
+  var tipo = document.getElementById('movTipo') ? document.getElementById('movTipo').value : 'gasto';
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var descsMap = {};
+  movimientos.forEach(function(m) {
+    if (!m.descripcion) return;
+    if (m.transferencia_id) return;
+    if (m.notas && m.notas.includes('Prestamo ID:')) return;
+    if (m.tipo !== tipo) return;
+    if (catId && m.categoria_id !== catId) return;
+    descsMap[m.descripcion] = true;
+  });
+  var sortedDescs = Object.keys(descsMap).sort(function(a, b) { return a.localeCompare(b); });
+  var currentDesc = window._movEditDesc || '';
+  var inList = sortedDescs.indexOf(currentDesc) !== -1;
+  var opts = '<option value="">Seleccionar descripcion...</option>';
+  sortedDescs.forEach(function(d) {
+    var isSelected = (currentDesc && currentDesc === d) ? ' selected' : '';
+    opts += '<option value="' + d.replace(/"/g, '&quot;') + '"' + isSelected + '>' + d + '</option>';
+  });
+  opts += '<option value="__nueva__"' + (currentDesc && !inList ? ' selected' : '') + '>-- Nueva descripcion... --</option>';
+  sel.innerHTML = opts;
+  var inputNueva = document.getElementById('movDescripcionNueva');
+  if (inputNueva) {
+    if (currentDesc && !inList) {
+      sel.value = '__nueva__';
+      inputNueva.value = currentDesc;
+      inputNueva.style.display = '';
+    } else {
+      inputNueva.style.display = 'none';
+    }
+  }
+}
+
+/* -- Show/hide nueva descripcion text input -- */
+function onMovDescripcionSelectChange() {
+  var sel = document.getElementById('movDescripcionSelect');
+  var inputNueva = document.getElementById('movDescripcionNueva');
+  if (!sel || !inputNueva) return;
+  if (sel.value === '__nueva__') {
+    inputNueva.style.display = '';
+    inputNueva.focus();
+  } else {
+    inputNueva.style.display = 'none';
+    inputNueva.value = '';
+  }
 }
 
 /* -- Save (create or update) a movimiento -- */
@@ -565,7 +624,15 @@ function saveMovimiento(event) {
   const cuenta_id = document.getElementById('movCuentaId').value;
   const monto = parseFloat(document.getElementById('movMonto').value) || 0;
   const fecha = document.getElementById('movFecha').value;
-  const descripcion = document.getElementById('movDescripcion').value.trim();
+  var _descSel = document.getElementById('movDescripcionSelect');
+  var descripcion = '';
+  if (_descSel) {
+    if (_descSel.value === '__nueva__') {
+      descripcion = (document.getElementById('movDescripcionNueva').value || '').trim();
+    } else {
+      descripcion = _descSel.value.trim();
+    }
+  }
   const categoria_id = document.getElementById('movCategoriaId') ? (document.getElementById('movCategoriaId').value || null) : null;
   const propiedad_id = tipo === 'gasto' && document.getElementById('movPropiedadId') ? (document.getElementById('movPropiedadId').value || null) : null;
   let notas = document.getElementById('movNotas').value.trim();
