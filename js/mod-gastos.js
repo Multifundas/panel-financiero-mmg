@@ -639,13 +639,15 @@ function renderGastosMensualReport() {
 
   if (vista === 'descripcion') {
     // \u2500\u2500 VISTA POR DESCRIPCI\u00d3N \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    thead = '<tr><th style="min-width:160px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Descripcion</th>';
+    thead = '<tr>' +
+      '<th style="min-width:160px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Descripcion</th>' +
+      '<th style="min-width:110px;">Categoria</th>';
     for (var mi = 0; mi < 12; mi++) thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
     thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
     thead += '<th style="text-align:right;min-width:70px;font-weight:800;">%</th></tr>';
 
-    // Collect unique descriptions with gastos this year
     var montosPorDescMes = {};
+    var catsPorDesc = {};
     gastos.forEach(function(g) {
       var f = new Date(g.fecha);
       if (f.getFullYear() !== anio) return;
@@ -656,6 +658,9 @@ function renderGastosMensualReport() {
       montosPorDescMes[desc][f.getMonth()] += monto;
       totalPorMes[f.getMonth()] += monto;
       totalGeneral += monto;
+      var catN = catMap[g.categoria_id] ? catMap[g.categoria_id].nombre : 'Sin Categoria';
+      if (!catsPorDesc[desc]) catsPorDesc[desc] = new Set();
+      catsPorDesc[desc].add(catN);
     });
 
     var descs = Object.keys(montosPorDescMes).sort(function(a, b) {
@@ -670,7 +675,10 @@ function renderGastosMensualReport() {
     }
 
     rows = descs.map(function(desc) {
-      var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' + desc + '</td>';
+      var catLabel = catsPorDesc[desc] ? Array.from(catsPorDesc[desc]).join(', ') : '';
+      var row = '<tr>' +
+        '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' + desc + '</td>' +
+        '<td style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">' + catLabel + '</td>';
       var totalDesc = 0;
       for (var m = 0; m < 12; m++) {
         var montoMes = montosPorDescMes[desc][m];
@@ -691,7 +699,7 @@ function renderGastosMensualReport() {
     }).join('');
 
   } else {
-    // \u2500\u2500 VISTA POR CATEGOR\u00cdA (original) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // \u2500\u2500 VISTA POR CATEGOR\u00cdA con filas expandibles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     thead = '<tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg-card);z-index:1;">Categoria</th>';
     for (var mi = 0; mi < 12; mi++) thead += '<th style="text-align:right;min-width:90px;">' + mesesCortos[mi] + '</th>';
     thead += '<th style="text-align:right;min-width:110px;font-weight:800;">Total</th>';
@@ -715,7 +723,11 @@ function renderGastosMensualReport() {
     }
 
     var montosPorCatMes = {};
-    catIds.forEach(function(catId) { montosPorCatMes[catId] = new Array(12).fill(0); });
+    var descsPorCat = {};
+    catIds.forEach(function(catId) {
+      montosPorCatMes[catId] = new Array(12).fill(0);
+      descsPorCat[catId] = {};
+    });
 
     gastos.forEach(function(g) {
       var f = new Date(g.fecha);
@@ -727,6 +739,9 @@ function renderGastosMensualReport() {
       montosPorCatMes[catId][f.getMonth()] += monto;
       totalPorMes[f.getMonth()] += monto;
       totalGeneral += monto;
+      var desc = g.descripcion || 'Sin Descripcion';
+      if (!descsPorCat[catId][desc]) descsPorCat[catId][desc] = new Array(12).fill(0);
+      descsPorCat[catId][desc][f.getMonth()] += monto;
     });
 
     rows = catIds.map(function(catId) {
@@ -735,7 +750,9 @@ function renderGastosMensualReport() {
       var catIcono  = cat ? cat.icono  : 'fa-question';
       var catColor  = cat ? cat.color  : '#94a3b8';
 
-      var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
+      var catRow = '<tr style="cursor:pointer;" onclick="toggleGastosCatDesc(\'' + catId + '\')">' +
+        '<td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
+        '<span data-cat-toggle="' + catId + '" style="display:inline-block;width:14px;text-align:center;margin-right:6px;font-size:10px;color:var(--text-muted);">&#9658;</span>' +
         '<i class="fas ' + catIcono + '" style="color:' + catColor + ';margin-right:6px;font-size:12px;"></i>' + catNombre + '</td>';
 
       var totalCat = 0;
@@ -743,23 +760,55 @@ function renderGastosMensualReport() {
         var montoMes = montosPorCatMes[catId][m];
         totalCat += montoMes;
         if (montoMes === 0) {
-          row += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
+          catRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
         } else {
-          row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoMesCat(' + anio + ',' + m + ',\'' + catId + '\')">' +
+          catRow += '<td style="text-align:right;cursor:pointer;" onclick="event.stopPropagation();mostrarDetalleGastoMesCat(' + anio + ',' + m + ',\'' + catId + '\')">' +
             '<span style="color:var(--accent-red);font-weight:600;white-space:nowrap;font-size:14px;">' + formatCurrencyInt(montoMes, 'MXN') + '</span></td>';
         }
       }
       var pct = totalGeneral > 0 ? (totalCat / totalGeneral * 100) : 0;
-      row += '<td style="text-align:right;cursor:pointer;" onclick="mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
+      catRow += '<td style="text-align:right;cursor:pointer;" onclick="event.stopPropagation();mostrarDetalleGastoCatAnio(' + anio + ',\'' + catId + '\')">' +
         '<span style="font-weight:700;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalCat, 'MXN') + '</span></td>';
-      row += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
-      row += '</tr>';
-      return row;
+      catRow += '<td style="text-align:right;font-size:14px;font-weight:600;color:var(--text-muted);">' + pct.toFixed(1) + '%</td>';
+      catRow += '</tr>';
+
+      var subRows = '';
+      var descsOrdenadas = Object.keys(descsPorCat[catId]).sort(function(a, b) {
+        var totA = descsPorCat[catId][a].reduce(function(s, v) { return s + v; }, 0);
+        var totB = descsPorCat[catId][b].reduce(function(s, v) { return s + v; }, 0);
+        return totB - totA;
+      });
+      descsOrdenadas.forEach(function(desc) {
+        var subRow = '<tr data-cat-desc="' + catId + '" style="display:none;background:var(--bg-base);">';
+        subRow += '<td style="font-size:13px;color:var(--text-secondary);padding-left:30px;white-space:nowrap;position:sticky;left:0;background:var(--bg-base);z-index:1;">' +
+          '<span style="color:var(--text-muted);margin-right:6px;">&#x2514;</span>' + desc + '</td>';
+        var totalSub = 0;
+        for (var m = 0; m < 12; m++) {
+          var v = descsPorCat[catId][desc][m];
+          totalSub += v;
+          if (v === 0) {
+            subRow += '<td style="text-align:center;color:var(--text-muted);font-size:13px;">\u2014</td>';
+          } else {
+            subRow += '<td style="text-align:right;font-size:13px;color:var(--text-secondary);">' + formatCurrencyInt(v, 'MXN') + '</td>';
+          }
+        }
+        var subPct = totalGeneral > 0 ? (totalSub / totalGeneral * 100) : 0;
+        subRow += '<td style="text-align:right;font-size:13px;font-weight:600;color:var(--text-secondary);">' + formatCurrencyInt(totalSub, 'MXN') + '</td>';
+        subRow += '<td style="text-align:right;font-size:12px;color:var(--text-muted);">' + subPct.toFixed(1) + '%</td>';
+        subRow += '</tr>';
+        subRows += subRow;
+      });
+
+      return catRow + subRows;
     }).join('');
   }
 
-  // \u2500\u2500 Fila TOTAL (com\u00fan) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  var totalRow = '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">Total</td>';
+  // \u2500\u2500 Fila TOTAL (com\u00fan) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  var totalRow = '<tr data-sort-fixed="true" style="font-weight:700;border-top:2px solid var(--border-color);">' +
+    '<td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:14px;">' +
+    (vista === 'categoria' ? '<span style="display:inline-block;width:20px;"></span>' : '') +
+    'Total</td>';
+  if (vista === 'descripcion') totalRow += '<td></td>';
   for (var mi = 0; mi < 12; mi++) {
     if (totalPorMes[mi] === 0) {
       totalRow += '<td style="text-align:center;color:var(--text-muted);">\u2014</td>';
@@ -771,10 +820,38 @@ function renderGastosMensualReport() {
   totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>';
   totalRow += '<td style="text-align:right;font-size:14px;font-weight:800;color:var(--text-muted);">100%</td></tr>';
 
-  container.innerHTML =
-    '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
+  var expandBtnHTML = vista === 'categoria'
+    ? '<div style="display:flex;justify-content:flex-end;margin-bottom:6px;">' +
+      '<button id="gastosCatToggleAll" data-expanded="0" class="btn btn-secondary" style="font-size:12px;padding:4px 10px;" ' +
+      'onclick="var exp=this.getAttribute(\'data-expanded\')===\'0\';toggleAllGastosCatDesc(exp);">' +
+      '<i class="fas fa-expand-alt" style="margin-right:4px;"></i>Expandir todo</button></div>'
+    : '';
+
+  container.innerHTML = expandBtnHTML +
+    '<table class="data-table sortable-table" id="tablaGastosMensual" style="font-size:14px;">' +
+    '<thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 
   setTimeout(function() { _initSortableTables(container); }, 100);
+}
+
+function toggleGastosCatDesc(catId) {
+  var subRows = document.querySelectorAll('[data-cat-desc="' + catId + '"]');
+  var btn = document.querySelector('[data-cat-toggle="' + catId + '"]');
+  var isExpanded = Array.from(subRows).some(function(r) { return r.style.display !== 'none'; });
+  subRows.forEach(function(r) { r.style.display = isExpanded ? 'none' : ''; });
+  if (btn) btn.innerHTML = isExpanded ? '&#9658;' : '&#9660;';
+}
+
+function toggleAllGastosCatDesc(expand) {
+  document.querySelectorAll('[data-cat-desc]').forEach(function(r) { r.style.display = expand ? '' : 'none'; });
+  document.querySelectorAll('[data-cat-toggle]').forEach(function(b) { b.innerHTML = expand ? '&#9660;' : '&#9658;'; });
+  var masterBtn = document.getElementById('gastosCatToggleAll');
+  if (masterBtn) {
+    masterBtn.setAttribute('data-expanded', expand ? '1' : '0');
+    masterBtn.innerHTML = expand
+      ? '<i class="fas fa-compress-alt" style="margin-right:4px;"></i>Retraer todo'
+      : '<i class="fas fa-expand-alt" style="margin-right:4px;"></i>Expandir todo';
+  }
 }
 
 /* ============================================================
