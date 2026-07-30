@@ -379,7 +379,8 @@ function renderGastos() {
             <option value="descripcion">Por Descripcion</option>
           </select>
         </div>
-        <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;margin-left:auto;" onclick="printGastosMensualReport()">
+        <div id="gastosMensualExpandirBtn" style="margin-left:auto;"></div>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;" onclick="printGastosMensualReport()">
           <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
         </button>
       </div>
@@ -820,14 +821,18 @@ function renderGastosMensualReport() {
   totalRow += '<td style="text-align:right;font-weight:800;color:var(--accent-red);font-size:14px;">' + formatCurrencyInt(totalGeneral, 'MXN') + '</td>';
   totalRow += '<td style="text-align:right;font-size:14px;font-weight:800;color:var(--text-muted);">100%</td></tr>';
 
-  var expandBtnHTML = vista === 'categoria'
-    ? '<div style="display:flex;justify-content:flex-end;margin-bottom:6px;">' +
-      '<button id="gastosCatToggleAll" data-expanded="0" class="btn btn-secondary" style="font-size:12px;padding:4px 10px;" ' +
-      'onclick="var exp=this.getAttribute(\'data-expanded\')===\'0\';toggleAllGastosCatDesc(exp);">' +
-      '<i class="fas fa-expand-alt" style="margin-right:4px;"></i>Expandir todo</button></div>'
-    : '';
+  var expandirBtn = document.getElementById('gastosMensualExpandirBtn');
+  if (expandirBtn) {
+    if (vista === 'categoria') {
+      expandirBtn.innerHTML = '<button id="gastosCatToggleAll" data-expanded="0" class="btn btn-secondary" style="font-size:12px;padding:4px 10px;" ' +
+        'onclick="var exp=this.getAttribute(\'data-expanded\')===\'0\';toggleAllGastosCatDesc(exp);">' +
+        '<i class="fas fa-expand-alt" style="margin-right:4px;"></i>Expandir todo</button>';
+    } else {
+      expandirBtn.innerHTML = '';
+    }
+  }
 
-  container.innerHTML = expandBtnHTML +
+  container.innerHTML =
     '<table class="data-table' + (vista === 'categoria' ? '' : ' sortable-table') + '" id="tablaGastosMensual" style="font-size:14px;">' +
     '<thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 
