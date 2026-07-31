@@ -1,4 +1,4 @@
-/* ---------- Live Comma Formatting Helper ---------- */
+﻿/* ---------- Live Comma Formatting Helper ---------- */
 function simFormatCommaInput(el) {
   var cursorPos = el.selectionStart;
   var raw = el.value.replace(/[^0-9.]/g, '');
@@ -147,8 +147,8 @@ function renderSimulador() {
           </div>
           <div id="dur-resumen" style="font-size:18px;font-weight:700;margin-bottom:16px;"></div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('durChart','duracion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('durChart','Duracion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('durChart','duracion_patrimonio')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('durChart','Duracion del Patrimonio')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:320px;">
             <canvas id="durChart"></canvas>
@@ -205,7 +205,7 @@ function renderSimulador() {
             <input type="number" class="form-input" id="inv-inflacion" value="4.5" step="0.1">
           </div>
           <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;padding-bottom:2px;">
-            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <label style="font-size:16px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:8px;cursor:pointer;">
               <input type="checkbox" id="inv-reinversion" checked style="width:18px;height:18px;accent-color:var(--accent-green);cursor:pointer;">
               Reinvertir rendimientos
             </label>
@@ -218,19 +218,19 @@ function renderSimulador() {
       <div id="inv-resultados" style="display:none;">
         <div class="grid-2" style="margin-bottom:24px;">
           <div class="card" style="border-left:3px solid var(--accent-green);">
-            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Monto Final (Nominal)</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Monto Final (Nominal)</div>
             <div id="inv-final-nominal" style="font-size:22px;font-weight:800;color:var(--accent-green);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-blue);">
-            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Monto Final (Real - ajustado por inflacion)</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Monto Final (Real - ajustado por inflacion)</div>
             <div id="inv-final-real" style="font-size:22px;font-weight:800;color:var(--accent-blue);"></div>
           </div>
         </div>
         <div class="card" style="margin-bottom:24px;">
-          <div id="inv-resumen" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;"></div>
+          <div id="inv-resumen" style="font-size:17px;color:var(--text-secondary);margin-bottom:16px;"></div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('invChart','simulador_inversion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('invChart','Simulador de Inversion')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('invChart','simulador_inversion')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('invChart','Simulador de Inversion')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:320px;">
             <canvas id="invChart"></canvas>
@@ -317,7 +317,7 @@ function renderSimulador() {
             </div>
           </div>
           <div style="margin-bottom:20px;padding:16px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-            <div style="font-weight:700;color:var(--text-primary);margin-bottom:12px;">Escenario 3 <span style="font-size:11px;color:var(--text-muted);">(opcional)</span></div>
+            <div style="font-weight:700;color:var(--text-primary);margin-bottom:12px;">Escenario 3 <span style="font-size:13px;color:var(--text-muted);">(opcional)</span></div>
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Nombre</label>
@@ -372,8 +372,8 @@ function renderSimulador() {
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-purple);"></i>Crecimiento Comparado</span>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('compChart','comparacion_escenarios')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('compChart','Crecimiento Comparado')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('compChart','comparacion_escenarios')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('compChart','Crecimiento Comparado')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:340px;">
             <canvas id="compChart"></canvas>
@@ -388,14 +388,14 @@ function renderSimulador() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-bolt" style="margin-right:8px;color:var(--accent-amber);"></i>Simulador de Impacto (What-If)</span>
         </div>
-        <div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary);">
+        <div style="margin-bottom:12px;font-size:16px;color:var(--text-secondary);">
           <i class="fas fa-info-circle" style="margin-right:4px;"></i>
           Puedes agregar <strong>multiples eventos</strong> para simular escenarios combinados (ej: comprar una casa + dejar de pagar renta).
         </div>
         <div id="imp-eventos-container">
           <div class="imp-evento-row" style="padding:12px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);margin-bottom:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <span style="font-weight:600;font-size:13px;color:var(--text-primary);">Evento 1</span>
+              <span style="font-weight:600;font-size:16px;color:var(--text-primary);">Evento 1</span>
             </div>
             <div class="grid-2">
               <div class="form-group" style="margin-bottom:0;">
@@ -423,7 +423,7 @@ function renderSimulador() {
         <div class="grid-2" style="margin-bottom:16px;">
           <div class="form-group">
             <label class="form-label">Rendimiento anual supuesto (%)
-              ${rend12.length > 0 ? '<span style="font-size:11px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
+              ${rend12.length > 0 ? '<span style="font-size:13px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
             </label>
             <input type="number" class="form-input" id="imp-rendimiento" value="${avgRendRedondeado}" step="0.1">
           </div>
@@ -432,7 +432,7 @@ function renderSimulador() {
             <input type="number" class="form-input" id="imp-inflacion" value="4.5" step="0.1">
           </div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">
           <i class="fas fa-info-circle" style="margin-right:4px;"></i>
           <strong>Retiro/Compra:</strong> se resta del patrimonio. <strong>Aumento gasto:</strong> incremento mensual. <strong>Reduccion ingreso:</strong> disminucion mensual. <strong>Reduccion gasto:</strong> ahorro mensual.
         </div>
@@ -443,26 +443,26 @@ function renderSimulador() {
       <div id="imp-resultados" style="display:none;">
         <div class="grid-2" style="margin-bottom:24px;">
           <div class="card" style="border-left:3px solid var(--accent-blue);">
-            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Patrimonio ANTES</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Patrimonio ANTES</div>
             <div id="imp-antes" style="font-size:22px;font-weight:800;color:var(--accent-blue);"></div>
-            <div id="imp-duracion-antes" style="font-size:13px;color:var(--text-secondary);margin-top:6px;"></div>
+            <div id="imp-duracion-antes" style="font-size:16px;color:var(--text-secondary);margin-top:6px;"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-red);">
-            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Patrimonio DESPUES</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Patrimonio DESPUES</div>
             <div id="imp-despues" style="font-size:22px;font-weight:800;color:var(--accent-red);"></div>
-            <div id="imp-duracion-despues" style="font-size:13px;color:var(--text-secondary);margin-top:6px;"></div>
+            <div id="imp-duracion-despues" style="font-size:16px;color:var(--text-secondary);margin-top:6px;"></div>
           </div>
         </div>
         <div class="card" style="margin-bottom:24px;">
-          <div id="imp-detalle" style="font-size:14px;color:var(--text-secondary);"></div>
+          <div id="imp-detalle" style="font-size:17px;color:var(--text-secondary);"></div>
         </div>
         <div class="card">
           <div class="card-header">
             <span class="card-title"><i class="fas fa-chart-area" style="margin-right:8px;color:var(--accent-amber);"></i>Comparacion Antes vs Despues</span>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('impChart','simulador_impacto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('impChart','Comparacion Antes vs Despues')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('impChart','simulador_impacto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('impChart','Comparacion Antes vs Despues')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:320px;">
             <canvas id="impChart"></canvas>
@@ -528,19 +528,19 @@ function renderSimulador() {
       <div id="ic-resultados" style="display:none;">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
           <div class="card" style="border-left:3px solid var(--accent-green);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Monto Final</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Monto Final</div>
             <div id="ic-kpi-final" style="font-size:20px;font-weight:800;color:var(--accent-green);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-blue);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Total Invertido</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Total Invertido</div>
             <div id="ic-kpi-invertido" style="font-size:20px;font-weight:800;color:var(--accent-blue);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-amber);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Intereses Ganados</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Intereses Ganados</div>
             <div id="ic-kpi-intereses" style="font-size:20px;font-weight:800;color:var(--accent-amber);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-purple);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Rendimiento Total</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Rendimiento Total</div>
             <div id="ic-kpi-rendimiento" style="font-size:20px;font-weight:800;color:var(--accent-purple);"></div>
           </div>
         </div>
@@ -549,8 +549,8 @@ function renderSimulador() {
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-green);"></i>Crecimiento del Capital</span>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('icChart','interes_compuesto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('icChart','Crecimiento del Capital')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('icChart','interes_compuesto')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('icChart','Crecimiento del Capital')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:340px;">
             <canvas id="icChart"></canvas>
@@ -585,7 +585,7 @@ function renderSimulador() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-balance-scale-right" style="margin-right:8px;color:var(--accent-amber);"></i>Costo de Oportunidad</span>
         </div>
-        <div style="margin-bottom:16px;font-size:13px;color:var(--text-secondary);">
+        <div style="margin-bottom:16px;font-size:16px;color:var(--text-secondary);">
           <i class="fas fa-lightbulb" style="margin-right:4px;color:var(--accent-amber);"></i>
           Si en vez de gastar ese dinero lo inviertes, <strong>cuanto tendrias en el futuro?</strong>
         </div>
@@ -612,7 +612,7 @@ function renderSimulador() {
           </div>
           <div class="form-group">
             <label class="form-label">Rendimiento anual esperado (%)
-              ${rend12.length > 0 ? '<span style="font-size:11px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
+              ${rend12.length > 0 ? '<span style="font-size:13px;font-weight:400;color:var(--accent-green);margin-left:6px;"><i class="fas fa-chart-line"></i> Promedio 12 meses</span>' : ''}
             </label>
             <input type="number" class="form-input" id="opo-rendimiento" value="${avgRendRedondeado}" step="0.1">
           </div>
@@ -631,19 +631,19 @@ function renderSimulador() {
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
           <div class="card" style="border-left:3px solid var(--accent-green);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Futuro</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Futuro</div>
             <div id="opo-kpi-futuro" style="font-size:20px;font-weight:800;color:var(--accent-green);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-amber);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Costo de Oportunidad</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Costo de Oportunidad</div>
             <div id="opo-kpi-costo" style="font-size:20px;font-weight:800;color:var(--accent-amber);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-blue);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Real (ajustado)</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Valor Real (ajustado)</div>
             <div id="opo-kpi-real" style="font-size:20px;font-weight:800;color:var(--accent-blue);"></div>
           </div>
           <div class="card" style="border-left:3px solid var(--accent-red);">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Total Gastado</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Total Gastado</div>
             <div id="opo-kpi-gastado" style="font-size:20px;font-weight:800;color:var(--accent-red);"></div>
           </div>
         </div>
@@ -652,8 +652,8 @@ function renderSimulador() {
             <span class="card-title"><i class="fas fa-chart-line" style="margin-right:8px;color:var(--accent-amber);"></i>Crecimiento si Inviertes</span>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px;">
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('opoChart','costo_oportunidad')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-            <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('opoChart','Crecimiento si Inviertes')" title="Imprimir"><i class="fas fa-print"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('opoChart','costo_oportunidad')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+            <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('opoChart','Crecimiento si Inviertes')" title="Imprimir"><i class="fas fa-print"></i></button>
           </div>
           <div style="position:relative;height:340px;">
             <canvas id="opoChart"></canvas>
@@ -1223,7 +1223,7 @@ function agregarEventoImpacto() {
   var div = document.createElement('div');
   div.className = 'imp-evento-row';
   div.style.cssText = 'padding:12px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);margin-bottom:10px;';
-  div.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:600;font-size:13px;color:var(--text-primary);">Evento ' + count + '</span><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="this.closest(\'.imp-evento-row\').remove();"><i class="fas fa-trash"></i></button></div><div class="grid-2"><div class="form-group" style="margin-bottom:0;"><label class="form-label">Tipo de evento</label><select class="form-select imp-evento-tipo"><option value="retiro">Retiro de capital</option><option value="compra">Compra grande</option><option value="aumento_gasto">Aumento de gasto mensual</option><option value="reduccion_ingreso">Reduccion de ingreso</option><option value="reduccion_gasto">Reduccion de gasto mensual</option></select></div><div class="form-group" style="margin-bottom:0;"><label class="form-label">Monto (MXN)</label><input type="text" class="form-input sim-money-input imp-evento-monto" value="0" inputmode="decimal" oninput="simFormatCommaInput(this)"></div></div>';
+  div.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:600;font-size:16px;color:var(--text-primary);">Evento ' + count + '</span><button class="btn btn-danger" style="padding:3px 8px;font-size:13px;" onclick="this.closest(\'.imp-evento-row\').remove();"><i class="fas fa-trash"></i></button></div><div class="grid-2"><div class="form-group" style="margin-bottom:0;"><label class="form-label">Tipo de evento</label><select class="form-select imp-evento-tipo"><option value="retiro">Retiro de capital</option><option value="compra">Compra grande</option><option value="aumento_gasto">Aumento de gasto mensual</option><option value="reduccion_ingreso">Reduccion de ingreso</option><option value="reduccion_gasto">Reduccion de gasto mensual</option></select></div><div class="form-group" style="margin-bottom:0;"><label class="form-label">Monto (MXN)</label><input type="text" class="form-input sim-money-input imp-evento-monto" value="0" inputmode="decimal" oninput="simFormatCommaInput(this)"></div></div>';
   container.appendChild(div);
 }
 
@@ -1337,9 +1337,9 @@ function simularImpacto() {
   document.getElementById('imp-detalle').innerHTML = `
     <p style="margin-bottom:8px;font-weight:600;"><i class="fas fa-bolt" style="color:var(--accent-amber);margin-right:8px;"></i>Eventos simulados:</p>
     <ul style="margin:0 0 12px 20px;padding:0;">${eventoResumen}</ul>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Gasto mensual: ${formatCurrency(gastoMensual, 'MXN')} → ${formatCurrency(gastoMensualDespues, 'MXN')}</p>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Ingreso mensual: ${formatCurrency(ingresoMensual, 'MXN')} → ${formatCurrency(ingresoMensualDespues, 'MXN')}</p>
-    <p style="color:var(--text-muted);font-size:13px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Supuestos: rendimiento anual ${(rendAnual * 100).toFixed(1)}%, inflacion ${(inflAnual * 100).toFixed(1)}%.</p>
+    <p style="font-size:16px;color:var(--text-muted);margin-bottom:4px;">Gasto mensual: ${formatCurrency(gastoMensual, 'MXN')} → ${formatCurrency(gastoMensualDespues, 'MXN')}</p>
+    <p style="font-size:16px;color:var(--text-muted);margin-bottom:4px;">Ingreso mensual: ${formatCurrency(ingresoMensual, 'MXN')} → ${formatCurrency(ingresoMensualDespues, 'MXN')}</p>
+    <p style="color:var(--text-muted);font-size:16px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Supuestos: rendimiento anual ${(rendAnual * 100).toFixed(1)}%, inflacion ${(inflAnual * 100).toFixed(1)}%.</p>
   `;
 
   // Generate depletion curves
@@ -1748,7 +1748,7 @@ function calcularOportunidad() {
     var isSelected = e.anos === horizonte;
     return '<tr style="' + (isSelected ? 'background:var(--accent-amber-soft);' : '') + '">' +
       '<td style="font-weight:600;color:var(--text-primary);">' + e.anos + ' ano' + (e.anos > 1 ? 's' : '') +
-        (isSelected ? ' <span class="badge badge-amber" style="font-size:10px;">Seleccionado</span>' : '') + '</td>' +
+        (isSelected ? ' <span class="badge badge-amber" style="font-size:12px;">Seleccionado</span>' : '') + '</td>' +
       '<td style="text-align:right;" class="text-red">' + formatCurrency(e.totalGastado, 'MXN') + '</td>' +
       '<td style="text-align:right;font-weight:600;" class="text-green">' + formatCurrency(e.fv, 'MXN') + '</td>' +
       '<td style="text-align:right;" class="text-amber">' + formatCurrency(e.costoOportunidad, 'MXN') + '</td>' +

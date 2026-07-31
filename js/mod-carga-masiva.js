@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULO CARGA MASIVA  -  Bulk import from Excel (.xlsx)
    ============================================================ */
 
@@ -11,7 +11,7 @@
 function openCargaMasiva() {
   var html =
     '<div style="margin-bottom:20px;">' +
-      '<p style="color:var(--text-secondary);font-size:14px;line-height:1.6;margin-bottom:16px;">' +
+      '<p style="color:var(--text-secondary);font-size:17px;line-height:1.6;margin-bottom:16px;">' +
         'Importa multiples movimientos desde un archivo Excel (.xlsx). ' +
         'Descarga la plantilla, completala con tus datos y subela para validar e importar los movimientos de forma masiva.' +
       '</p>' +
@@ -25,8 +25,8 @@ function openCargaMasiva() {
          ' ondragleave="this.style.borderColor=\'var(--border-color)\'"' +
          ' ondrop="event.preventDefault();this.style.borderColor=\'var(--border-color)\';handleFileUpload({target:{files:event.dataTransfer.files}})">' +
       '<i class="fas fa-file-excel" style="font-size:36px;color:var(--accent-green);display:block;margin-bottom:12px;"></i>' +
-      '<p style="color:var(--text-primary);font-size:15px;font-weight:600;margin-bottom:6px;">Arrastra tu archivo Excel aqui</p>' +
-      '<p style="color:var(--text-muted);font-size:13px;">o haz clic para seleccionar un archivo .xlsx</p>' +
+      '<p style="color:var(--text-primary);font-size:18px;font-weight:600;margin-bottom:6px;">Arrastra tu archivo Excel aqui</p>' +
+      '<p style="color:var(--text-muted);font-size:16px;">o haz clic para seleccionar un archivo .xlsx</p>' +
       '<input type="file" id="bulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFileUpload(event)">' +
     '</label>' +
 
@@ -290,7 +290,7 @@ function displayPreview(result) {
         '<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>' +
         result.invalid.length + ' fila(s) con errores' +
       '</div>' +
-      '<ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text-secondary);">' +
+      '<ul style="margin:0;padding-left:20px;font-size:16px;color:var(--text-secondary);">' +
         result.errors.map(function(e) { return '<li>' + e + '</li>'; }).join('') +
       '</ul>';
   } else {
@@ -311,7 +311,7 @@ function displayPreview(result) {
 
   // ---- Build preview table ----
   var tableHTML =
-    '<table class="data-table" style="font-size:13px;">' +
+    '<table class="data-table" style="font-size:16px;">' +
       '<thead>' +
         '<tr>' +
           '<th style="width:36px;">#</th>' +

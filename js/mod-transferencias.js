@@ -1,4 +1,4 @@
-function renderTransferencias() {
+﻿function renderTransferencias() {
   const el = document.getElementById('module-transferencias');
 
   // -- Load data --
@@ -19,7 +19,7 @@ function renderTransferencias() {
   el.innerHTML = `
     <!-- Formulario de Transferencia -->
     <div class="card" style="margin-bottom:24px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Nueva Transferencia</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Nueva Transferencia</h3>
       <form id="formTransferencia" onsubmit="executeTransferencia(event)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div class="form-group">
@@ -80,7 +80,7 @@ function renderTransferencias() {
 
     <!-- Historial de Transferencias -->
     <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Historial de Transferencias</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Historial de Transferencias</h3>
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaTransferencias">
           <thead>
@@ -117,13 +117,13 @@ function renderTransferencias() {
 
       return `<tr>
         <td>${t.fecha ? formatDate(t.fecha) : '-'}</td>
-        <td>${origenNombre} <span style="color:var(--text-muted);font-size:11px;">(${monedaOrigen})</span></td>
-        <td>${destinoNombre} <span style="color:var(--text-muted);font-size:11px;">(${monedaDestino})</span></td>
+        <td>${origenNombre} <span style="color:var(--text-muted);font-size:13px;">(${monedaOrigen})</span></td>
+        <td>${destinoNombre} <span style="color:var(--text-muted);font-size:13px;">(${monedaDestino})</span></td>
         <td style="text-align:right;color:var(--accent-red);">-${formatCurrency(t.monto_origen, monedaOrigen)}</td>
         <td style="text-align:right;color:var(--accent-green);">+${formatCurrency(t.monto_destino, monedaDestino)}</td>
         <td>${t.descripcion || '-'}</td>
         <td style="text-align:center;">
-          <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteTransferencia('${t.id}')"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="deleteTransferencia('${t.id}')"><i class="fas fa-trash"></i></button>
         </td>
       </tr>`;
     }).join('');

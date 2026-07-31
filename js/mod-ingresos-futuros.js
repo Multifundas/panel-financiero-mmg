@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULE: INGRESOS FUTUROS  -  Pension, Herencia, etc.
    ============================================================ */
 
@@ -26,30 +26,30 @@ function renderIngresosFuturos() {
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-calendar-check" style="color:var(--accent-green);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingreso Mensual Confirmado</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingreso Mensual Confirmado</span>
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--accent-green);">${formatCurrency(totalMensualConf, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Flujo mensual garantizado</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Flujo mensual garantizado</div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-blue);">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-money-check-alt" style="color:var(--accent-blue);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingreso Anual Confirmado</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingreso Anual Confirmado</span>
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--accent-blue);">${formatCurrency(totalAnualConf, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Flujo anual garantizado</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Flujo anual garantizado</div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-amber);">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-gift" style="color:var(--accent-amber);font-size:16px;"></i>
           </div>
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingresos Unicos Pendientes</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Ingresos Unicos Pendientes</span>
         </div>
         <div style="font-size:20px;font-weight:800;color:var(--accent-amber);">${formatCurrency(totalUnicoConf, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Herencias, ventas, seguros</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Herencias, ventas, seguros</div>
       </div>
     </div>
 
@@ -103,15 +103,15 @@ function renderIngresosFuturos() {
     <!-- Cronograma de proximos ingresos -->
     <div class="card" style="margin-top:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:14px;font-weight:700;color:var(--text-primary);"><i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Cronograma de Proximos Ingresos</div>
-        <button class="btn btn-secondary" onclick="openPatrimonioFuturo()" style="padding:6px 12px;font-size:11px;">
+        <div style="font-size:17px;font-weight:700;color:var(--text-primary);"><i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Cronograma de Proximos Ingresos</div>
+        <button class="btn btn-secondary" onclick="openPatrimonioFuturo()" style="padding:6px 12px;font-size:13px;">
           <i class="fas fa-chart-area" style="margin-right:4px;"></i>Patrimonio Futuro
         </button>
       </div>
       <div id="cronogramaIngresosFuturos"></div>
     </div>
 
-    <div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);font-size:12px;color:var(--text-muted);">
+    <div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg-base);font-size:14px;color:var(--text-muted);">
       <i class="fas fa-info-circle" style="margin-right:6px;color:var(--accent-blue);"></i>
       Los ingresos futuros <strong>confirmados</strong> se contemplan en las proyecciones del simulador. Se muestran separados del patrimonio actual.
     </div>`;
@@ -136,7 +136,7 @@ function filterIngresosFuturos() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="fas fa-calendar-plus" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay ingresos futuros registrados.<br><span style="font-size:12px;">Agrega pensiones, herencias u otros ingresos esperados.</span></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="fas fa-calendar-plus" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay ingresos futuros registrados.<br><span style="font-size:14px;">Agrega pensiones, herencias u otros ingresos esperados.</span></td></tr>';
     return;
   }
 
@@ -148,11 +148,11 @@ function filterIngresosFuturos() {
 
   tbody.innerHTML = filtered.map(function(i, idx) {
     var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
-    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:4px;" onclick="editIngresoFuturo(\'' + i.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
-      '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteIngresoFuturo(\'' + i.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="editIngresoFuturo(\'' + i.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
+      '<button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="deleteIngresoFuturo(\'' + i.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
 
     return '<tr style="' + zebra + '">' +
-      '<td style="font-weight:600;color:var(--text-primary);">' + i.concepto + (i.notas ? '<br><span style="font-size:11px;color:var(--text-muted);">' + i.notas.substring(0, 50) + '</span>' : '') + '</td>' +
+      '<td style="font-weight:600;color:var(--text-primary);">' + i.concepto + (i.notas ? '<br><span style="font-size:13px;color:var(--text-muted);">' + i.notas.substring(0, 50) + '</span>' : '') + '</td>' +
       '<td><span class="badge ' + (tipoBadges[i.tipo] || 'badge-blue') + '">' + (tipoLabels[i.tipo] || i.tipo) + '</span></td>' +
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(i.monto, i.moneda || 'MXN') + '</td>' +
       '<td>' + (freqLabels[i.frecuencia] || i.frecuencia) + '</td>' +
@@ -333,7 +333,7 @@ function renderCronogramaIngresos() {
   eventos.sort(function(a, b) { return a.fecha.localeCompare(b.fecha); });
 
   if (eventos.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;"><i class="fas fa-calendar-times" style="font-size:20px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay ingresos programados para los proximos 12 meses.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:14px;"><i class="fas fa-calendar-times" style="font-size:20px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay ingresos programados para los proximos 12 meses.</div>';
     return;
   }
 
@@ -347,12 +347,12 @@ function renderCronogramaIngresos() {
     var diasLabel = diasHasta === 0 ? 'Hoy' : (diasHasta === 1 ? 'Manana' : 'en ' + diasHasta + ' dias');
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-subtle);gap:12px;">' +
       '<div style="display:flex;align-items:center;gap:10px;">' +
-      '<div style="min-width:80px;font-size:12px;color:var(--text-muted);font-weight:600;">' + formatDate(e.fecha) + '</div>' +
-      '<div><div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + e.concepto + '</div>' +
-      '<div style="font-size:10px;color:var(--text-muted);">' + diasLabel + '</div></div></div>' +
+      '<div style="min-width:80px;font-size:14px;color:var(--text-muted);font-weight:600;">' + formatDate(e.fecha) + '</div>' +
+      '<div><div style="font-size:16px;font-weight:600;color:var(--text-primary);">' + e.concepto + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);">' + diasLabel + '</div></div></div>' +
       '<div style="display:flex;align-items:center;gap:8px;">' +
-      '<span class="badge ' + (certezaBadges[e.certeza] || 'badge-blue') + '" style="font-size:9px;">' + (certezaLabels[e.certeza] || '') + '</span>' +
-      '<div style="font-size:14px;font-weight:700;color:var(--accent-green);white-space:nowrap;">+' + formatCurrency(e.monto, e.moneda) + '</div>' +
+      '<span class="badge ' + (certezaBadges[e.certeza] || 'badge-blue') + '" style="font-size:11px;">' + (certezaLabels[e.certeza] || '') + '</span>' +
+      '<div style="font-size:17px;font-weight:700;color:var(--accent-green);white-space:nowrap;">+' + formatCurrency(e.monto, e.moneda) + '</div>' +
       '</div></div>';
   });
   html += '</div>';
@@ -413,13 +413,13 @@ function openPatrimonioFuturo() {
   // Build modal HTML
   var html = '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Patrimonio Actual</div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Patrimonio Actual</div>' +
     '<div style="font-size:18px;font-weight:800;color:var(--accent-blue);">' + formatCurrency(patrimonioActual, 'MXN') + '</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Patrimonio en 12 Meses</div>' +
+    '<div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;">Patrimonio en 12 Meses</div>' +
     '<div style="font-size:18px;font-weight:800;color:var(--accent-green);">' + formatCurrency(meses[meses.length - 1].patrimonioAcum, 'MXN') + '</div></div>' +
     '</div></div>';
 
-  html += '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="font-size:12px;"><thead><tr>' +
+  html += '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="font-size:14px;"><thead><tr>' +
     '<th>Mes</th><th style="text-align:right;">Confirmado</th><th style="text-align:right;">Probable</th><th style="text-align:right;">Posible</th><th style="text-align:right;font-weight:800;">Patrimonio Proyectado</th>' +
     '</tr></thead><tbody>';
 
@@ -435,7 +435,7 @@ function openPatrimonioFuturo() {
 
   html += '</tbody></table></div>';
 
-  html += '<div style="margin-top:12px;padding:10px;border-radius:8px;background:var(--bg-base);font-size:11px;color:var(--text-muted);">' +
+  html += '<div style="margin-top:12px;padding:10px;border-radius:8px;background:var(--bg-base);font-size:13px;color:var(--text-muted);">' +
     '<i class="fas fa-info-circle" style="margin-right:4px;color:var(--accent-blue);"></i>' +
     'Patrimonio proyectado solo incluye ingresos <strong>confirmados</strong>. Los ingresos probables y posibles se muestran como referencia. ' +
     'No incluye rendimientos de inversiones ni gastos futuros.</div>';

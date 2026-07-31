@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULE: METAS FINANCIERAS  -  Financial Goals Tracker
    ============================================================ */
 
@@ -45,7 +45,7 @@ function renderMetas() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-bullseye" style="color:var(--accent-blue);font-size:16px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Metas</span>';
+  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Metas</span>';
   html += '  </div>';
   html += '  <div style="font-size:20px;font-weight:800;color:var(--accent-blue);">' + totalMetas + '</div>';
   html += '</div>';
@@ -55,7 +55,7 @@ function renderMetas() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-check-circle" style="color:var(--accent-green);font-size:16px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Completadas</span>';
+  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Completadas</span>';
   html += '  </div>';
   html += '  <div style="font-size:20px;font-weight:800;color:var(--accent-green);">' + completadas + '</div>';
   html += '</div>';
@@ -65,7 +65,7 @@ function renderMetas() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-spinner" style="color:var(--accent-amber);font-size:16px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">En Progreso</span>';
+  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">En Progreso</span>';
   html += '  </div>';
   html += '  <div style="font-size:20px;font-weight:800;color:var(--accent-amber);">' + enProgreso + '</div>';
   html += '</div>';
@@ -75,7 +75,7 @@ function renderMetas() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-flag-checkered" style="color:var(--accent-purple);font-size:16px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Monto Total Objetivo</span>';
+  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Monto Total Objetivo</span>';
   html += '  </div>';
   html += '  <div style="font-size:20px;font-weight:800;color:var(--accent-purple);">' + formatCurrency(montoTotalObjetivo, 'MXN') + '</div>';
   html += '</div>';
@@ -131,7 +131,7 @@ function filterMetas() {
   if (!container) return;
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="card"><div class="empty-state" style="padding:48px 20px;text-align:center;"><i class="fas fa-bullseye" style="font-size:48px;color:var(--text-muted);opacity:0.3;display:block;margin-bottom:16px;"></i><div style="font-size:16px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">No se encontraron metas</div><div style="font-size:13px;color:var(--text-muted);opacity:0.7;">Crea una nueva meta financiera para empezar a trackear tu progreso.</div></div></div>';
+    container.innerHTML = '<div class="card"><div class="empty-state" style="padding:48px 20px;text-align:center;"><i class="fas fa-bullseye" style="font-size:48px;color:var(--text-muted);opacity:0.3;display:block;margin-bottom:16px;"></i><div style="font-size:16px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">No se encontraron metas</div><div style="font-size:16px;color:var(--text-muted);opacity:0.7;">Crea una nueva meta financiera para empezar a trackear tu progreso.</div></div></div>';
     return;
   }
 
@@ -201,7 +201,7 @@ function filterMetas() {
     cardsHTML += '      <i class="fas ' + catIcon + '" style="color:var(--accent-' + catColor + ');font-size:18px;"></i>';
     cardsHTML += '    </div>';
     cardsHTML += '    <div>';
-    cardsHTML += '      <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">' + meta.nombre + '</div>';
+    cardsHTML += '      <div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">' + meta.nombre + '</div>';
     cardsHTML += '      <div style="display:flex;align-items:center;gap:8px;">';
     cardsHTML += '        <span class="badge badge-' + catColor + '">' + catLabel + '</span>';
     cardsHTML += '        ' + statusBadge;
@@ -213,11 +213,11 @@ function filterMetas() {
     // Amounts row
     cardsHTML += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
     cardsHTML += '  <div>';
-    cardsHTML += '    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual</div>';
+    cardsHTML += '    <div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual</div>';
     cardsHTML += '    <div style="font-size:18px;font-weight:800;color:' + progressColor + ';">' + formatCurrency(meta.monto_actual, moneda) + '</div>';
     cardsHTML += '  </div>';
     cardsHTML += '  <div style="text-align:right;">';
-    cardsHTML += '    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Objetivo</div>';
+    cardsHTML += '    <div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Objetivo</div>';
     cardsHTML += '    <div style="font-size:18px;font-weight:800;color:var(--text-primary);">' + formatCurrency(meta.monto_objetivo, moneda) + '</div>';
     cardsHTML += '  </div>';
     cardsHTML += '</div>';
@@ -225,8 +225,8 @@ function filterMetas() {
     // Progress bar
     cardsHTML += '<div style="margin-bottom:8px;">';
     cardsHTML += '  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
-    cardsHTML += '    <span style="font-size:12px;font-weight:600;color:var(--text-muted);">Progreso</span>';
-    cardsHTML += '    <span style="font-size:13px;font-weight:700;color:' + progressColor + ';">' + pctDisplay + '%</span>';
+    cardsHTML += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);">Progreso</span>';
+    cardsHTML += '    <span style="font-size:16px;font-weight:700;color:' + progressColor + ';">' + pctDisplay + '%</span>';
     cardsHTML += '  </div>';
     cardsHTML += '  <div class="progress-bar" style="height:10px;border-radius:5px;">';
     cardsHTML += '    <div class="progress-bar-fill" style="width:' + pct + '%;background:' + progressColor + ';border-radius:5px;"></div>';
@@ -235,14 +235,14 @@ function filterMetas() {
 
     // Details row
     cardsHTML += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:8px;">';
-    cardsHTML += '  <div style="font-size:12px;color:var(--text-muted);">';
+    cardsHTML += '  <div style="font-size:14px;color:var(--text-muted);">';
     if (restante > 0) {
       cardsHTML += 'Faltan: <strong style="color:var(--text-primary);">' + formatCurrency(restante, moneda) + '</strong>';
     } else {
       cardsHTML += '<strong style="color:var(--accent-green);">Meta alcanzada</strong>';
     }
     cardsHTML += '  </div>';
-    cardsHTML += '  <div style="font-size:12px;color:var(--text-muted);">';
+    cardsHTML += '  <div style="font-size:14px;color:var(--text-muted);">';
     if (meta.fecha_objetivo) {
       cardsHTML += '<i class="fas fa-calendar-alt" style="margin-right:4px;"></i>' + formatDate(meta.fecha_objetivo);
     }
@@ -251,21 +251,21 @@ function filterMetas() {
 
     // Days remaining indicator
     if (diasRestantes) {
-      cardsHTML += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;"><i class="fas fa-clock" style="margin-right:4px;"></i>' + diasRestantes + '</div>';
+      cardsHTML += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;"><i class="fas fa-clock" style="margin-right:4px;"></i>' + diasRestantes + '</div>';
     }
 
     // Notes
     if (meta.notas) {
-      cardsHTML += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;padding:8px;border-radius:6px;background:var(--bg-base);"><i class="fas fa-sticky-note" style="margin-right:6px;opacity:0.5;"></i>' + meta.notas + '</div>';
+      cardsHTML += '<div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;padding:8px;border-radius:6px;background:var(--bg-base);"><i class="fas fa-sticky-note" style="margin-right:6px;opacity:0.5;"></i>' + meta.notas + '</div>';
     }
 
     // Action buttons
     cardsHTML += '<div style="display:flex;gap:8px;border-top:1px solid var(--border-subtle);padding-top:12px;">';
     if (pct < 100) {
-      cardsHTML += '<button class="btn btn-primary" style="flex:1;justify-content:center;padding:8px 12px;font-size:12px;" onclick="aportarMeta(\'' + meta.id + '\')" title="Aportar"><i class="fas fa-plus-circle"></i> Aportar</button>';
+      cardsHTML += '<button class="btn btn-primary" style="flex:1;justify-content:center;padding:8px 12px;font-size:14px;" onclick="aportarMeta(\'' + meta.id + '\')" title="Aportar"><i class="fas fa-plus-circle"></i> Aportar</button>';
     }
-    cardsHTML += '<button class="btn btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="editMeta(\'' + meta.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
-    cardsHTML += '<button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="deleteMeta(\'' + meta.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+    cardsHTML += '<button class="btn btn-secondary" style="padding:8px 12px;font-size:14px;" onclick="editMeta(\'' + meta.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+    cardsHTML += '<button class="btn btn-danger" style="padding:8px 12px;font-size:14px;" onclick="deleteMeta(\'' + meta.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
     cardsHTML += '</div>';
 
     cardsHTML += '</div>';
@@ -428,17 +428,17 @@ function aportarMeta(id) {
 
   // Current status summary
   formHTML += '<div style="margin-bottom:16px;padding:16px;border-radius:10px;background:var(--bg-base);">';
-  formHTML += '  <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px;">' + meta.nombre + '</div>';
+  formHTML += '  <div style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:12px;">' + meta.nombre + '</div>';
   formHTML += '  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
-  formHTML += '    <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Actual</div><div style="font-size:14px;font-weight:700;color:var(--accent-blue);">' + formatCurrency(meta.monto_actual, moneda) + '</div></div>';
-  formHTML += '    <div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Objetivo</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);">' + formatCurrency(meta.monto_objetivo, moneda) + '</div></div>';
+  formHTML += '    <div><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Actual</div><div style="font-size:17px;font-weight:700;color:var(--accent-blue);">' + formatCurrency(meta.monto_actual, moneda) + '</div></div>';
+  formHTML += '    <div style="text-align:right;"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Objetivo</div><div style="font-size:17px;font-weight:700;color:var(--text-primary);">' + formatCurrency(meta.monto_objetivo, moneda) + '</div></div>';
   formHTML += '  </div>';
   formHTML += '  <div class="progress-bar" style="height:8px;border-radius:4px;">';
   formHTML += '    <div class="progress-bar-fill" style="width:' + pct + '%;background:var(--accent-blue);border-radius:4px;"></div>';
   formHTML += '  </div>';
   formHTML += '  <div style="display:flex;justify-content:space-between;margin-top:6px;">';
-  formHTML += '    <span style="font-size:11px;color:var(--text-muted);">' + pct.toFixed(1) + '% completado</span>';
-  formHTML += '    <span style="font-size:11px;color:var(--text-muted);">Faltan: ' + formatCurrency(restante, moneda) + '</span>';
+  formHTML += '    <span style="font-size:13px;color:var(--text-muted);">' + pct.toFixed(1) + '% completado</span>';
+  formHTML += '    <span style="font-size:13px;color:var(--text-muted);">Faltan: ' + formatCurrency(restante, moneda) + '</span>';
   formHTML += '  </div>';
   formHTML += '</div>';
 
@@ -448,7 +448,7 @@ function aportarMeta(id) {
   formHTML += '</div>';
 
   if (restante > 0) {
-    formHTML += '<div style="margin-bottom:16px;"><button type="button" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="document.getElementById(\'aporteMontoInput\').value=' + restante + '">Completar meta (' + formatCurrency(restante, moneda) + ')</button></div>';
+    formHTML += '<div style="margin-bottom:16px;"><button type="button" class="btn btn-secondary" style="font-size:13px;padding:4px 10px;" onclick="document.getElementById(\'aporteMontoInput\').value=' + restante + '">Completar meta (' + formatCurrency(restante, moneda) + ')</button></div>';
   }
 
   formHTML += '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">';

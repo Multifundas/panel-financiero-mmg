@@ -1,4 +1,4 @@
-// Global filter state for persistence across renders
+﻿// Global filter state for persistence across renders
 var _movFilterState = null;
 
 function _saveMovFilterState() {
@@ -42,10 +42,10 @@ function renderMovimientos() {
     <!-- Tab Bar -->
     <div class="card" style="margin-bottom:12px;padding:8px 12px;">
       <div style="display:flex;gap:8px;">
-        <button id="tabMovActuales" class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_switchMovTab('actuales')">
+        <button id="tabMovActuales" class="btn btn-primary" style="padding:6px 16px;font-size:16px;" onclick="_switchMovTab('actuales')">
           <i class="fas fa-exchange-alt" style="margin-right:4px;"></i>Movimientos
         </button>
-        <button id="tabMovHistoricos" class="btn btn-secondary" style="padding:6px 16px;font-size:13px;" onclick="_switchMovTab('historicos')">
+        <button id="tabMovHistoricos" class="btn btn-secondary" style="padding:6px 16px;font-size:16px;" onclick="_switchMovTab('historicos')">
           <i class="fas fa-history" style="margin-right:4px;"></i>Historicos
         </button>
       </div>
@@ -117,7 +117,7 @@ function renderMovimientos() {
           <span style="font-size:18px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Ingresos</span>
         </div>
         <div id="movSumIngresos" style="font-size:31px;font-weight:800;color:var(--accent-green);margin-top:4px;">$0</div>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-amber);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('rendimiento')">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -125,7 +125,7 @@ function renderMovimientos() {
           <span style="font-size:18px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Rendimientos</span>
         </div>
         <div id="movSumRendimientos" style="font-size:31px;font-weight:800;color:var(--accent-amber);margin-top:4px;">$0</div>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-red);padding:12px 16px;cursor:pointer;margin-bottom:0;" onclick="mostrarDesgloseMovimientos('gasto')">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -133,7 +133,7 @@ function renderMovimientos() {
           <span style="font-size:18px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Gastos</span>
         </div>
         <div id="movSumGastos" style="font-size:31px;font-weight:800;color:var(--accent-red);margin-top:4px;">$0</div>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);padding:12px 16px;margin-bottom:0;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -141,7 +141,7 @@ function renderMovimientos() {
           <span style="font-size:18px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Transferencias</span>
         </div>
         <div id="movSumTransferencias" style="font-size:31px;font-weight:800;color:var(--accent-purple);margin-top:4px;">$0</div>
-        <div id="movSumTransCount" style="font-size:15px;color:var(--text-muted);margin-top:2px;">0 transferencias</div>
+        <div id="movSumTransCount" style="font-size:18px;color:var(--text-muted);margin-top:2px;">0 transferencias</div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-blue);padding:12px 16px;margin-bottom:0;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -149,14 +149,14 @@ function renderMovimientos() {
           <span style="font-size:18px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Balance</span>
         </div>
         <div id="movSumBalance" style="font-size:31px;font-weight:800;color:var(--accent-green);margin-top:4px;">$0</div>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Ing + Rend - Gastos</div>
       </div>
     </div>
 
     <!-- Tabla de Movimientos -->
     <div class="card" style="padding:8px 12px;">
       <div style="overflow-x:auto;">
-        <table class="data-table sortable-table" id="tablaMovimientos" style="font-size:14px;">
+        <table class="data-table sortable-table" id="tablaMovimientos" style="font-size:17px;">
           <thead>
             <tr>
               <th style="width:30px;" data-no-sort="true"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
@@ -357,8 +357,8 @@ function filterMovimientos() {
     const montoColor = esTransferencia ? 'var(--accent-purple)' : (m.tipo === 'ingreso' ? 'var(--text-primary)' : 'var(--accent-red)');
 
     // Property link badge
-    const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:11px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
-    const prestamoBadge = (m.notas && m.notas.includes('Prestamo ID:')) ? '<span class="badge badge-blue" style="font-size:11px;margin-left:6px;"><i class="fas fa-handshake" style="margin-right:2px;"></i>Pr\u00e9stamo</span>' : '';
+    const propBadge = m.propiedad_id ? '<span class="badge badge-amber" style="font-size:13px;margin-left:6px;"><i class="fas fa-building" style="margin-right:2px;"></i>Inmueble</span>' : '';
+    const prestamoBadge = (m.notas && m.notas.includes('Prestamo ID:')) ? '<span class="badge badge-blue" style="font-size:13px;margin-left:6px;"><i class="fas fa-handshake" style="margin-right:2px;"></i>Pr\u00e9stamo</span>' : '';
 
     return `
       <tr>
@@ -507,7 +507,7 @@ function editMovimiento(id) {
           <option value="">No asociar</option>
           ${propOpciones}
         </select>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
       </div>
 
       <div class="form-group">
@@ -516,7 +516,7 @@ function editMovimiento(id) {
           <option value="">No vincular</option>
           ${prestamoOpciones}
         </select>
-        <div style="font-size:15px;color:var(--text-muted);margin-top:2px;">${_prestamosActivos.length === 0 ? 'No hay préstamos activos registrados' : 'Actualiza el saldo del préstamo automáticamente'}</div>
+        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">${_prestamosActivos.length === 0 ? 'No hay préstamos activos registrados' : 'Actualiza el saldo del préstamo automáticamente'}</div>
       </div>
 
       <div class="form-group">
@@ -938,7 +938,7 @@ function openPlantillasRecurrentes() {
         '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(p.monto, p.moneda || 'MXN') + '</td>' +
         '<td>' + cuentaNombre + '</td>' +
         '<td>' + _frecuenciaLabel(p.frecuencia) + ' (dia ' + p.dia_periodo + ')</td>' +
-        '<td>' + ultimaApl + (pendiente ? ' <span class="badge badge-amber" style="font-size:11px;margin-left:4px;">Pendiente</span>' : '') + '</td>' +
+        '<td>' + ultimaApl + (pendiente ? ' <span class="badge badge-amber" style="font-size:13px;margin-left:4px;">Pendiente</span>' : '') + '</td>' +
         '<td><span class="badge ' + estadoBadge + '">' + estadoLabel + '</span></td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
           '<button class="btn btn-primary" style="padding:8px 14px;font-size:17px;margin-right:4px;" onclick="aplicarPlantilla(\'' + p.id + '\')" title="Aplicar">' +
@@ -961,8 +961,8 @@ function openPlantillasRecurrentes() {
         <span style="font-size:16px;color:var(--text-muted);">${plantillas.length} plantilla(s) &middot; ${pendientes.length} pendiente(s)</span>
       </div>
       <div style="display:flex;gap:8px;">
-        ${pendientes.length > 0 ? '<button class="btn btn-primary" onclick="aplicarTodasPendientes()" style="font-size:14px;"><i class="fas fa-play-circle" style="margin-right:4px;"></i>Aplicar Todas Pendientes (' + pendientes.length + ')</button>' : ''}
-        <button class="btn btn-primary" onclick="editPlantillaRecurrente(null)" style="font-size:14px;">
+        ${pendientes.length > 0 ? '<button class="btn btn-primary" onclick="aplicarTodasPendientes()" style="font-size:17px;"><i class="fas fa-play-circle" style="margin-right:4px;"></i>Aplicar Todas Pendientes (' + pendientes.length + ')</button>' : ''}
+        <button class="btn btn-primary" onclick="editPlantillaRecurrente(null)" style="font-size:17px;">
           <i class="fas fa-plus" style="margin-right:4px;"></i>Nueva Plantilla
         </button>
       </div>
@@ -1559,8 +1559,8 @@ function onMovCheckboxChange() {
     div.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:var(--accent-blue);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:8px;margin-top:8px;z-index:10;';
     div.innerHTML = '<span id="movSelCount" style="font-weight:700;font-size:16px;">0 seleccionados</span>' +
       '<div style="display:flex;gap:8px;">' +
-      '<button class="btn" onclick="exportarSeleccionExcel()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:14px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
-      '<button class="btn" onclick="exportarSeleccionPDF()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:14px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
+      '<button class="btn" onclick="exportarSeleccionExcel()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:17px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-excel" style="margin-right:4px;"></i>Excel</button>' +
+      '<button class="btn" onclick="exportarSeleccionPDF()" style="background:white;color:var(--accent-blue);padding:6px 14px;font-size:17px;font-weight:600;border:none;border-radius:6px;cursor:pointer;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>PDF</button>' +
       '</div>';
     container.appendChild(div);
     bar = div;
@@ -1831,7 +1831,7 @@ function mostrarDesgloseMovimientos(tipo) {
     }).join('');
     // Section header row inside the same table to guarantee column alignment
     catSection = '<tr data-sort-fixed="true"><td colspan="5" style="padding-top:24px;padding-bottom:8px;border-bottom:none;"><h4 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0;"><i class="fas fa-tags" style="margin-right:6px;color:var(--accent-red);"></i>Por Categoria</h4></td></tr>' +
-      '<tr data-sort-fixed="true" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-muted);"><td>Categoria</td><td></td><td style="text-align:right;">Monto</td><td style="text-align:right;">%</td><td></td></tr>' +
+      '<tr data-sort-fixed="true" style="font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-muted);"><td>Categoria</td><td></td><td style="text-align:right;">Monto</td><td style="text-align:right;">%</td><td></td></tr>' +
       catRows;
   }
 
@@ -1911,13 +1911,13 @@ function _switchMovTab(tab) {
   if (tab === 'actuales') {
     actualesTab.style.display = '';
     historicosTab.style.display = 'none';
-    if (btnActuales) { btnActuales.className = 'btn btn-primary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:13px;'; }
-    if (btnHistoricos) { btnHistoricos.className = 'btn btn-secondary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnActuales) { btnActuales.className = 'btn btn-primary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:16px;'; }
+    if (btnHistoricos) { btnHistoricos.className = 'btn btn-secondary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:16px;'; }
   } else {
     actualesTab.style.display = 'none';
     historicosTab.style.display = '';
-    if (btnActuales) { btnActuales.className = 'btn btn-secondary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:13px;'; }
-    if (btnHistoricos) { btnHistoricos.className = 'btn btn-primary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnActuales) { btnActuales.className = 'btn btn-secondary'; btnActuales.style.cssText = 'padding:6px 16px;font-size:16px;'; }
+    if (btnHistoricos) { btnHistoricos.className = 'btn btn-primary'; btnHistoricos.style.cssText = 'padding:6px 16px;font-size:16px;'; }
     _renderGastosHistoricos();
   }
 }
@@ -1970,11 +1970,11 @@ function _renderGastosHistoricos() {
     var hasData = entries.length > 0;
     var catNames = entries.map(function(e) { return catMap[e.categoria_id] || 'Sin cat.'; }).join(', ');
     gridCells += '<div style="background:var(--bg-base);border:1px solid var(--border-color);border-radius:10px;padding:12px;cursor:pointer;transition:border-color 0.2s;" onclick="_editGastoHistorico(null,' + selYear + ',' + m + ')" onmouseover="this.style.borderColor=\'var(--accent-blue)\'" onmouseout="this.style.borderColor=\'var(--border-color)\'">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">' + meses[m-1] + '</div>' +
+      '<div style="font-size:14px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">' + meses[m-1] + '</div>' +
       (hasData
         ? '<div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(monthTotal, 'MXN') + '</div>' +
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + catNames + '">' + entries.length + ' registro' + (entries.length !== 1 ? 's' : '') + '</div>'
-        : '<div style="font-size:14px;color:var(--text-muted);opacity:0.5;">Sin datos</div>' +
+          '<div style="font-size:13px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + catNames + '">' + entries.length + ' registro' + (entries.length !== 1 ? 's' : '') + '</div>'
+        : '<div style="font-size:17px;color:var(--text-muted);opacity:0.5;">Sin datos</div>' +
           '<div style="font-size:20px;color:var(--accent-blue);margin-top:2px;"><i class="fas fa-plus-circle"></i></div>') +
       '</div>';
   }
@@ -1990,8 +1990,8 @@ function _renderGastosHistoricos() {
       '<td>' + (g.moneda || 'MXN') + '</td>' +
       '<td>' + (g.descripcion || '\u2014') + '</td>' +
       '<td style="text-align:center;">' +
-      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editGastoHistorico(\'' + g.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
-      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--accent-red);" onclick="_deleteGastoHistorico(\'' + g.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;margin-right:4px;" onclick="_editGastoHistorico(\'' + g.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;color:var(--accent-red);" onclick="_deleteGastoHistorico(\'' + g.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
       '</td></tr>';
   });
 
@@ -2001,18 +2001,18 @@ function _renderGastosHistoricos() {
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
     '<select id="ghFilterAnio" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:90px;" onchange="_renderGastosHistoricos()">' + yearOpts + '</select>' +
     '<div style="flex:1;"></div>' +
-    '<button class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_editGastoHistorico(null)"><i class="fas fa-plus" style="margin-right:4px;"></i>Nuevo Gasto Historico</button>' +
+    '<button class="btn btn-primary" style="padding:6px 16px;font-size:16px;" onclick="_editGastoHistorico(null)"><i class="fas fa-plus" style="margin-right:4px;"></i>Nuevo Gasto Historico</button>' +
     '</div></div>' +
     // KPIs
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">' +
     '<div class="card" style="border-left:3px solid var(--accent-red);">' +
-    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total ' + selYear + '</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total ' + selYear + '</div>' +
     '<div style="font-size:31px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(totalAnual, 'MXN') + '</div></div>' +
     '<div class="card" style="border-left:3px solid var(--accent-amber);">' +
-    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Promedio Mensual</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Promedio Mensual</div>' +
     '<div style="font-size:31px;font-weight:800;color:var(--accent-amber);">' + formatCurrencyInt(promMensual, 'MXN') + '</div></div>' +
     '<div class="card" style="border-left:3px solid var(--accent-blue);">' +
-    '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Meses con Datos</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Meses con Datos</div>' +
     '<div style="font-size:31px;font-weight:800;color:var(--accent-blue);">' + mesesConDatos + ' de 12</div></div>' +
     '</div>' +
     // Month grid

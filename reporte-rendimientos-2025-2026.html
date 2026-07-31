@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Análisis de Rendimientos 2025–2026</title>
+  <style>
+    @page {
+      size: Letter;
+      margin: 18mm 18mm 18mm 18mm;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #1e293b;
+      background: #fff;
+      line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .report-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .report-header h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .report-header .subtitle {
+      font-size: 10pt;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .report-header .meta {
+      text-align: right;
+      font-size: 9pt;
+      color: #64748b;
+    }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 20px 0 10px;
+      padding-left: 10px;
+      border-left: 4px solid #3b82f6;
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+      margin-bottom: 16px;
+    }
+    thead th {
+      background: #1e293b;
+      color: #f1f5f9;
+      font-weight: 700;
+      padding: 7px 10px;
+      text-align: left;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    thead th.right { text-align: right; }
+    thead th.center { text-align: center; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:hover { background: #eff6ff; }
+    tbody td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+    tbody td.right { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody td.center { text-align: center; }
+
+    /* ── Value colors ── */
+    .pos  { color: #0f172a; font-weight: 700; }
+    .neg  { color: #ef4444; font-weight: 700; }
+    .muted { color: #64748b; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 8.5pt;
+      font-weight: 700;
+    }
+    .badge-gold   { background: #fef3c7; color: #92400e; }
+    .badge-silver { background: #f1f5f9; color: #334155; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-warn   { background: #fef9c3; color: #854d0e; }
+
+    /* ── Observations ── */
+    .obs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .obs-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .obs-card .obs-title {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .obs-card .obs-body {
+      font-size: 9pt;
+      color: #334155;
+      line-height: 1.5;
+    }
+
+    /* ── Summary KPIs ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .kpi-label { font-size: 8pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+    .kpi-value { font-size: 15pt; font-weight: 800; color: #0f172a; }
+    .kpi-sub   { font-size: 8.5pt; color: #64748b; margin-top: 2px; }
+
+    /* ── Footer ── */
+    .report-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      margin-top: 24px;
+      font-size: 8pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { font-size: 10pt; }
+      .no-print { display: none; }
+      .obs-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── Screen only ── */
+    @media screen {
+      body { max-width: 850px; margin: 32px auto; padding: 24px; background: #f1f5f9; }
+      .page { background: #fff; padding: 28px 32px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+      .print-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.4);
+      }
+      .print-btn:hover { background: #2563eb; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="report-header">
+    <div>
+      <h1>Análisis de Rendimientos</h1>
+      <div class="subtitle">Panel Financiero MMG &nbsp;·&nbsp; Comparativo 2025 vs 2026</div>
+    </div>
+    <div class="meta">
+      <div>Generado: <script>document.write(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}))</script></div>
+      <div>Periodo 2026: enero – mayo (5 meses)</div>
+      <div>Periodo 2025: enero – diciembre (año completo)</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Rendimiento Total 2025</div>
+      <div class="kpi-value pos">$4,069,223</div>
+      <div class="kpi-sub">+6.07% acumulado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Rendimiento Total 2026 YTD</div>
+      <div class="kpi-value pos">$1,693,831</div>
+      <div class="kpi-sub">+3.58% (5 meses) · ~8.6% anualizado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mejor instrumento 2025</div>
+      <div class="kpi-value" style="font-size:12pt;color:#0f172a;">VALUE (MMG)</div>
+      <div class="kpi-sub">+26.83% · $807,536</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mejor instrumento 2026</div>
+      <div class="kpi-value" style="font-size:12pt;color:#0f172a;">VALUE (MMG/MARITZA)</div>
+      <div class="kpi-sub">+7.30% · ~17.5% anualizado</div>
+    </div>
+  </div>
+
+  <!-- Tabla 2025 -->
+  <div class="section-title">Rendimientos 2025 — Año Completo</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cuenta</th>
+        <th class="right">Rendimiento $</th>
+        <th class="right">% Acumulado</th>
+        <th class="center">Clasificación</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="muted">1</td>
+        <td><strong>VALUE (MMG)</strong></td>
+        <td class="right pos">+$807,536</td>
+        <td class="right pos">+26.83%</td>
+        <td class="center"><span class="badge badge-gold">⭐ Mejor</span></td>
+      </tr>
+      <tr>
+        <td class="muted">2</td>
+        <td><strong>VALUE (MARITZA)</strong></td>
+        <td class="right pos">+$678,284</td>
+        <td class="right pos">+22.61%</td>
+        <td class="center"><span class="badge badge-gold">⭐ Excelente</span></td>
+      </tr>
+      <tr>
+        <td class="muted">3</td>
+        <td>BANORTE (NTEMXN MMG)</td>
+        <td class="right pos">+$146,183</td>
+        <td class="right pos">+13.27%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">4</td>
+        <td>BANORTE (PVB MMG)</td>
+        <td class="right pos">+$490,339</td>
+        <td class="right pos">+8.79%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">5</td>
+        <td>BANORTE (MARCELO)</td>
+        <td class="right pos">+$356,558</td>
+        <td class="right pos">+8.36%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">6</td>
+        <td>BANORTE (PVB MECG)</td>
+        <td class="right pos">+$372,785</td>
+        <td class="right pos">+7.46%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">7</td>
+        <td>BANORTE (FERNANDA)</td>
+        <td class="right pos">+$213,399</td>
+        <td class="right pos">+4.39%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">8</td>
+        <td>GBM (DBT-MSD MMG)</td>
+        <td class="right pos">+$69,888</td>
+        <td class="right pos">+3.96%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">9</td>
+        <td>BANORTE (MARITZA)</td>
+        <td class="right pos">+$528,830</td>
+        <td class="right pos">+3.11%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">10</td>
+        <td>GBM (TRADING MMG)</td>
+        <td class="right pos">+$153,750</td>
+        <td class="right pos">+3.07%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">11</td>
+        <td>BANORTE (MESA MMG)</td>
+        <td class="right pos">+$283,998</td>
+        <td class="right pos">+2.87%</td>
+        <td class="center"><span class="badge badge-warn">⚠ Bajo</span></td>
+      </tr>
+      <tr>
+        <td class="muted">12</td>
+        <td>IBC (INVERSION)</td>
+        <td class="right pos">+$36,639</td>
+        <td class="right pos">+2.10%</td>
+        <td class="center"><span class="badge badge-warn">⚠ Bajo</span></td>
+      </tr>
+      <tr>
+        <td class="muted">13</td>
+        <td>BANORTE (MARIANA)</td>
+        <td class="right neg">−$68,966</td>
+        <td class="right neg">−1.42%</td>
+        <td class="center"><span class="badge badge-red">⚠ Pérdida</span></td>
+      </tr>
+      <tr style="background:#f0f9ff;font-weight:700;border-top:2px solid #3b82f6;">
+        <td></td>
+        <td>TOTAL PORTAFOLIO</td>
+        <td class="right pos">+$4,069,223</td>
+        <td class="right pos">+6.07%</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Tabla 2026 -->
+  <div class="section-title">Rendimientos 2026 — Enero a Mayo (YTD)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cuenta</th>
+        <th class="right">Rendimiento $</th>
+        <th class="right">% Acum. YTD</th>
+        <th class="right">% Anualizado est.</th>
+        <th class="center">Clasificación</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="muted">1</td>
+        <td><strong>VALUE (MMG)</strong></td>
+        <td class="right pos">+$351,931</td>
+        <td class="right pos">+7.30%</td>
+        <td class="right pos">~17.5%</td>
+        <td class="center"><span class="badge badge-gold">⭐ Mejor</span></td>
+      </tr>
+      <tr>
+        <td class="muted">2</td>
+        <td><strong>VALUE (MARITZA)</strong></td>
+        <td class="right pos">+$341,742</td>
+        <td class="right pos">+7.30%</td>
+        <td class="right pos">~17.5%</td>
+        <td class="center"><span class="badge badge-gold">⭐ Excelente</span></td>
+      </tr>
+      <tr>
+        <td class="muted">3</td>
+        <td><strong>GBM (DBT-MSD MMG)</strong></td>
+        <td class="right pos">+$87,361</td>
+        <td class="right pos">+4.81%</td>
+        <td class="right pos">~11.5%</td>
+        <td class="center"><span class="badge badge-gold">⭐ Mejora notable</span></td>
+      </tr>
+      <tr>
+        <td class="muted">4</td>
+        <td>BANORTE (PVB MMG)</td>
+        <td class="right pos">+$217,770</td>
+        <td class="right pos">+2.88%</td>
+        <td class="right pos">~6.9%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">5</td>
+        <td>BANORTE (MARCELO)</td>
+        <td class="right pos">+$115,430</td>
+        <td class="right pos">+2.87%</td>
+        <td class="right pos">~6.9%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">6</td>
+        <td>BANORTE (PVB MECG)</td>
+        <td class="right pos">+$194,887</td>
+        <td class="right pos">+2.84%</td>
+        <td class="right pos">~6.8%</td>
+        <td class="center"><span class="badge badge-silver">Bueno</span></td>
+      </tr>
+      <tr>
+        <td class="muted">7</td>
+        <td>IBC (INVERSION)</td>
+        <td class="right pos">+$51,700</td>
+        <td class="right pos">+2.74%</td>
+        <td class="right pos">~6.6%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">8</td>
+        <td>GBM (TRADING MMG)</td>
+        <td class="right pos">+$130,104</td>
+        <td class="right pos">+2.46%</td>
+        <td class="right pos">~5.9%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">9</td>
+        <td>BANORTE (MARITZA)</td>
+        <td class="right pos">+$151,288</td>
+        <td class="right pos">+2.43%</td>
+        <td class="right pos">~5.8%</td>
+        <td class="center"><span class="badge badge-silver">Regular</span></td>
+      </tr>
+      <tr>
+        <td class="muted">10</td>
+        <td>BANORTE (MARIANA)</td>
+        <td class="right pos">+$50,635</td>
+        <td class="right pos">+1.26%</td>
+        <td class="right pos">~3.0%</td>
+        <td class="center"><span class="badge badge-warn">⚠ Bajo</span></td>
+      </tr>
+      <tr>
+        <td class="muted">11</td>
+        <td>BANORTE (NTEMXN MMG)</td>
+        <td class="right pos">+$983</td>
+        <td class="right pos">+0.87%</td>
+        <td class="right pos">~2.1%</td>
+        <td class="center"><span class="badge badge-warn">⚠ Bajo</span></td>
+      </tr>
+      <tr>
+        <td class="muted">12</td>
+        <td>BANORTE (MESA MMG)</td>
+        <td class="right muted">+$0</td>
+        <td class="right muted">+0.00%</td>
+        <td class="right muted">—</td>
+        <td class="center"><span class="badge badge-red">Sin actividad</span></td>
+      </tr>
+      <tr>
+        <td class="muted">13</td>
+        <td>BANORTE (FERNANDA)</td>
+        <td class="right muted">+$0</td>
+        <td class="right muted">+0.00%</td>
+        <td class="right muted">—</td>
+        <td class="center"><span class="badge badge-red">Sin actividad</span></td>
+      </tr>
+      <tr style="background:#f0f9ff;font-weight:700;border-top:2px solid #3b82f6;">
+        <td></td>
+        <td>TOTAL PORTAFOLIO</td>
+        <td class="right pos">+$1,693,831</td>
+        <td class="right pos">+3.58%</td>
+        <td class="right pos">~8.6%</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Observaciones -->
+  <div class="section-title">Observaciones y Recomendaciones</div>
+  <div class="obs-grid">
+    <div class="obs-card">
+      <div class="obs-title">⭐ VALUE lidera con ventaja amplia</div>
+      <div class="obs-body">Las cuentas VALUE (MMG y MARITZA) generan retornos 3–4× superiores al resto del portafolio en ambos años. En 2025 cerraron en +26.83% y +22.61%; en 2026 van camino a ~17.5% anualizado. Son los instrumentos de mayor eficiencia.</div>
+    </div>
+    <div class="obs-card">
+      <div class="obs-title">📈 GBM (DBT-MSD MMG) mejora notablemente</div>
+      <div class="obs-body">Pasó de +3.96% anual en 2025 a un ritmo de ~11.5% anualizado en 2026 (5 meses). Es la tendencia más positiva del portafolio este año y merece seguimiento para confirmar si se mantiene el resto del año.</div>
+    </div>
+    <div class="obs-card">
+      <div class="obs-title">⚠ BANORTE (NTEMXN MMG) se deterioró</div>
+      <div class="obs-body">Pasó de +13.27% en 2025 —el tercer mejor del año— a apenas +0.87% en 2026 YTD (~2.1% anualizado). La caída es notable y amerita investigar si cambió el instrumento, las condiciones o si hay algún problema de registro.</div>
+    </div>
+    <div class="obs-card">
+      <div class="obs-title">⚠ IBC (INVERSION) consistentemente bajo</div>
+      <div class="obs-body">+2.10% en 2025 y +2.74% en 2026, siempre por debajo de la mayoría de cuentas Banorte y muy por debajo de VALUE. Vale evaluar si el capital en este instrumento justifica mantenerse o si conviene redirigirlo.</div>
+    </div>
+    <div class="obs-card">
+      <div class="obs-title">🔴 BANORTE (MESA MMG y FERNANDA) sin rendimiento</div>
+      <div class="obs-body">Ambas cuentas muestran $0 de rendimiento en 2026. Si tienen saldo en reposo, es capital ocioso que podría estar generando retorno. Revisar si es intencional.</div>
+    </div>
+    <div class="obs-card">
+      <div class="obs-title">ℹ BANORTE (MARIANA) — pérdida aclarada</div>
+      <div class="obs-body">El −1.42% de 2025 fue causado por gastos extraordinarios de boda registrados en la cuenta (nov 2025: $732,416), no por pérdida del instrumento. En 2026 la cuenta retoma rendimiento positivo +1.26%.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="report-footer">
+    <span>Panel Financiero MMG &nbsp;·&nbsp; Análisis generado con Claude Sonnet 4.6</span>
+    <span>Datos al 31/05/2026 &nbsp;·&nbsp; Cifras en MXN salvo indicación contraria</span>
+  </div>
+
+</div>
+</body>
+</html>

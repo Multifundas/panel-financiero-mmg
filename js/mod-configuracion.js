@@ -1,4 +1,4 @@
-function renderConfiguracion() {
+﻿function renderConfiguracion() {
   const el = document.getElementById('module-configuracion');
   const config = loadData(STORAGE_KEYS.config) || getDefaultConfig();
   const tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || getDefaultTiposCambio();
@@ -15,13 +15,13 @@ function renderConfiguracion() {
         <input type="text" id="cat-edit-${c.id}" class="form-input" value="${c.nombre}" style="display:none;width:auto;max-width:200px;">
       </td>
       <td style="text-align:center;">
-        <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;margin-right:4px;" onclick="toggleEditCategoria('${c.id}')" title="Editar" id="cat-btn-edit-${c.id}">
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:14px;margin-right:4px;" onclick="toggleEditCategoria('${c.id}')" title="Editar" id="cat-btn-edit-${c.id}">
           <i class="fas fa-pen"></i>
         </button>
-        <button class="btn btn-primary" style="padding:4px 8px;font-size:12px;margin-right:4px;display:none;" onclick="saveCategoria('${c.id}')" id="cat-btn-save-${c.id}">
+        <button class="btn btn-primary" style="padding:4px 8px;font-size:14px;margin-right:4px;display:none;" onclick="saveCategoria('${c.id}')" id="cat-btn-save-${c.id}">
           <i class="fas fa-check"></i>
         </button>
-        <button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="deleteCategoria('${c.id}')" title="Eliminar">
+        <button class="btn btn-danger" style="padding:4px 8px;font-size:14px;" onclick="deleteCategoria('${c.id}')" title="Eliminar">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -35,13 +35,13 @@ function renderConfiguracion() {
         <input type="text" id="inst-edit-${inst.id}" class="form-input" value="${inst.nombre}" style="display:none;width:auto;max-width:200px;">
       </td>
       <td style="text-align:center;">
-        <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;margin-right:4px;" onclick="toggleEditInstitucion('${inst.id}')" title="Editar" id="inst-btn-edit-${inst.id}">
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:14px;margin-right:4px;" onclick="toggleEditInstitucion('${inst.id}')" title="Editar" id="inst-btn-edit-${inst.id}">
           <i class="fas fa-pen"></i>
         </button>
-        <button class="btn btn-primary" style="padding:4px 8px;font-size:12px;margin-right:4px;display:none;" onclick="saveInstitucion('${inst.id}')" id="inst-btn-save-${inst.id}">
+        <button class="btn btn-primary" style="padding:4px 8px;font-size:14px;margin-right:4px;display:none;" onclick="saveInstitucion('${inst.id}')" id="inst-btn-save-${inst.id}">
           <i class="fas fa-check"></i>
         </button>
-        <button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="deleteInstitucion('${inst.id}')" title="Eliminar">
+        <button class="btn btn-danger" style="padding:4px 8px;font-size:14px;" onclick="deleteInstitucion('${inst.id}')" title="Eliminar">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -58,7 +58,7 @@ function renderConfiguracion() {
             <span class="card-title"><i class="fas fa-coins" style="margin-right:8px;color:var(--accent-amber);"></i>Moneda Base</span>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:12px;">Moneda principal para totales</label>
+            <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:14px;">Moneda principal para totales</label>
             <select id="cfgMonedaBase" class="form-select" onchange="saveMonedaBase()">
               <option value="MXN" ${config.moneda_base === 'MXN' ? 'selected' : ''}>MXN - Peso Mexicano</option>
               <option value="USD" ${config.moneda_base === 'USD' ? 'selected' : ''}>USD - Dolar Estadounidense</option>
@@ -73,21 +73,21 @@ function renderConfiguracion() {
           </div>
           <div style="display:flex;align-items:flex-end;gap:12px;">
             <div class="form-group" style="margin-bottom:0;flex:1;">
-              <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:12px;">Inflacion anual (%)</label>
+              <label style="margin-bottom:6px;display:block;color:var(--text-muted);font-size:14px;">Inflacion anual (%)</label>
               <input type="number" id="cfgInflacionAnual" class="form-input" value="${config.inflacion_anual != null ? config.inflacion_anual : 4.5}" step="0.1" min="0" placeholder="4.5">
             </div>
             <button class="btn btn-primary" onclick="saveInflacionAnual()" style="white-space:nowrap;">
               <i class="fas fa-save" style="margin-right:4px;"></i>Guardar
             </button>
           </div>
-          <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">Para calcular rendimiento real en Rendimientos.</p>
+          <p style="margin-top:8px;font-size:13px;color:var(--text-muted);">Para calcular rendimiento real en Rendimientos.</p>
         </div>
       </div>
       <!-- Tipos de Cambio -->
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-exchange-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Tipos de Cambio</span>
-          ${config.ultima_actualizacion_tc ? '<span class="badge" style="background:rgba(16,185,129,0.12);color:var(--accent-green);font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Actualizado: ' + formatTCTimestamp(config.ultima_actualizacion_tc) + '</span>' : ''}
+          ${config.ultima_actualizacion_tc ? '<span class="badge" style="background:rgba(16,185,129,0.12);color:var(--accent-green);font-size:13px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Actualizado: ' + formatTCTimestamp(config.ultima_actualizacion_tc) + '</span>' : ''}
         </div>
         <div style="overflow-x:auto;">
           <table class="data-table">
@@ -122,7 +122,7 @@ function renderConfiguracion() {
           </button>
         </div>
         <div id="tcFetchStatus" style="margin-top:8px;min-height:18px;"></div>
-        <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Puedes ingresar los valores manualmente o consultar tasas desde Internet (open.er-api.com).</p>
+        <p style="margin-top:6px;font-size:14px;color:var(--text-muted);">Puedes ingresar los valores manualmente o consultar tasas desde Internet (open.er-api.com).</p>
       </div>
     </div>
 
@@ -130,20 +130,20 @@ function renderConfiguracion() {
     <div class="card" style="margin-bottom:24px;">
       <div class="card-header">
         <span class="card-title"><i class="fas fa-desktop" style="margin-right:8px;color:var(--accent-purple);"></i>Tamano de Pantalla</span>
-        <span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;" id="cfgZoomActual"></span>
+        <span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);font-size:13px;padding:4px 10px;border-radius:12px;font-weight:600;margin-left:auto;" id="cfgZoomActual"></span>
       </div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">La interfaz se adapta automaticamente al tamano de tu monitor. Ajusta el control si deseas que los elementos se vean mas grandes o mas pequenos.</p>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">La interfaz se adapta automaticamente al tamano de tu monitor. Ajusta el control si deseas que los elementos se vean mas grandes o mas pequenos.</p>
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
-          <i class="fas fa-search-minus" style="color:var(--text-muted);font-size:13px;"></i>
+          <i class="fas fa-search-minus" style="color:var(--text-muted);font-size:16px;"></i>
           <input type="range" id="cfgZoomSlider" class="form-input" style="flex:1;padding:0;cursor:pointer;" min="1200" max="2800" step="50" value="${config.zoom_referencia || 1920}" oninput="previewZoom(this.value)" onchange="saveZoomReferencia(this.value)">
-          <i class="fas fa-search-plus" style="color:var(--text-muted);font-size:13px;"></i>
+          <i class="fas fa-search-plus" style="color:var(--text-muted);font-size:16px;"></i>
         </div>
-        <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="document.getElementById('cfgZoomSlider').value=1920;previewZoom(1920);saveZoomReferencia(1920);">
+        <button class="btn btn-secondary" style="font-size:14px;padding:6px 12px;" onclick="document.getElementById('cfgZoomSlider').value=1920;previewZoom(1920);saveZoomReferencia(1920);">
           <i class="fas fa-undo" style="margin-right:4px;"></i>Restablecer
         </button>
       </div>
-      <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">Mover a la izquierda = elementos mas grandes. Mover a la derecha = elementos mas pequenos. Tu pantalla: <span id="cfgScreenInfo"></span></p>
+      <p style="margin-top:8px;font-size:13px;color:var(--text-muted);">Mover a la izquierda = elementos mas grandes. Mover a la derecha = elementos mas pequenos. Tu pantalla: <span id="cfgScreenInfo"></span></p>
     </div>
 
     <!-- ROW 1b: TC Historico + Categorias + Instituciones (3 columnas) -->
@@ -153,15 +153,15 @@ function renderConfiguracion() {
         <div class="card-header" style="flex-wrap:wrap;gap:8px;">
           <span class="card-title"><i class="fas fa-history" style="margin-right:8px;color:var(--accent-purple);"></i>Historial T/C Mensual</span>
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-            <select id="tcHistYearFilter" class="form-select" style="padding:4px 8px;font-size:12px;min-width:80px;" onchange="renderTCHistoricoTable()">
+            <select id="tcHistYearFilter" class="form-select" style="padding:4px 8px;font-size:14px;min-width:80px;" onchange="renderTCHistoricoTable()">
             </select>
-            <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addTipoCambioHistorico()">
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:16px;" onclick="addTipoCambioHistorico()">
               <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
             </button>
           </div>
         </div>
         <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
-          <table class="data-table sortable-table" id="tablaTCHistorico" style="font-size:12px;">
+          <table class="data-table sortable-table" id="tablaTCHistorico" style="font-size:14px;">
             <thead>
               <tr>
                 <th>Periodo</th>
@@ -177,7 +177,7 @@ function renderConfiguracion() {
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-tags" style="margin-right:8px;color:var(--accent-green);"></i>Categorias de Gasto</span>
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addCategoria()">
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:16px;" onclick="addCategoria()">
             <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
           </button>
         </div>
@@ -199,7 +199,7 @@ function renderConfiguracion() {
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-university" style="margin-right:8px;color:var(--accent-purple);"></i>Instituciones</span>
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="addInstitucion()">
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:16px;" onclick="addInstitucion()">
             <i class="fas fa-plus" style="margin-right:4px;"></i>Agregar
           </button>
         </div>
@@ -225,12 +225,12 @@ function renderConfiguracion() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-file-export" style="margin-right:8px;color:var(--accent-amber);"></i>Exportar / Importar</span>
         </div>
-        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Datos en formato JSON.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Datos en formato JSON.</p>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button class="btn btn-primary" style="font-size:12px;" onclick="exportData()">
+          <button class="btn btn-primary" style="font-size:14px;" onclick="exportData()">
             <i class="fas fa-download" style="margin-right:4px;"></i>Exportar JSON
           </button>
-          <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;text-align:center;">
+          <label class="btn btn-secondary" style="cursor:pointer;font-size:14px;text-align:center;">
             <i class="fas fa-upload" style="margin-right:4px;"></i>Importar JSON
             <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
           </label>
@@ -241,19 +241,19 @@ function renderConfiguracion() {
           <span class="card-title"><i class="fas fa-file-excel" style="margin-right:8px;color:var(--accent-green);"></i>Exportar Reportes</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('cuentas')">
+          <button class="btn btn-secondary" style="font-size:13px;padding:5px 8px;" onclick="exportarExcel('cuentas')">
             <i class="fas fa-university" style="margin-right:3px;"></i>Cuentas
           </button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('movimientos')">
+          <button class="btn btn-secondary" style="font-size:13px;padding:5px 8px;" onclick="exportarExcel('movimientos')">
             <i class="fas fa-exchange-alt" style="margin-right:3px;"></i>Movimientos
           </button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('rendimientos')">
+          <button class="btn btn-secondary" style="font-size:13px;padding:5px 8px;" onclick="exportarExcel('rendimientos')">
             <i class="fas fa-chart-line" style="margin-right:3px;"></i>Rendimientos
           </button>
-          <button class="btn btn-primary" style="font-size:11px;padding:5px 8px;" onclick="exportarExcel('completo')">
+          <button class="btn btn-primary" style="font-size:13px;padding:5px 8px;" onclick="exportarExcel('completo')">
             <i class="fas fa-file-excel" style="margin-right:3px;"></i>Completo
           </button>
-          <button class="btn btn-primary" style="font-size:11px;padding:5px 8px;background:var(--accent-red);border-color:var(--accent-red);" onclick="exportarPDF()">
+          <button class="btn btn-primary" style="font-size:13px;padding:5px 8px;background:var(--accent-red);border-color:var(--accent-red);" onclick="exportarPDF()">
             <i class="fas fa-file-pdf" style="margin-right:3px;"></i>PDF
           </button>
         </div>
@@ -264,15 +264,15 @@ function renderConfiguracion() {
         </div>
         ${getRespaldoIndicadorHTML()}
         <div style="margin-top:8px;padding:6px 8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;">
-          <p style="margin:0;font-size:10px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>Al importar se reemplazan todos los datos.</p>
+          <p style="margin:0;font-size:12px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>Al importar se reemplazan todos los datos.</p>
         </div>
       </div>
       <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-download" style="margin-right:8px;color:var(--accent-blue);"></i>Exportar Respaldo</span>
         </div>
-        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Descarga una copia completa de todos tus datos.</p>
-        <button class="btn btn-primary" style="font-size:12px;" onclick="exportarRespaldo()">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Descarga una copia completa de todos tus datos.</p>
+        <button class="btn btn-primary" style="font-size:14px;" onclick="exportarRespaldo()">
           <i class="fas fa-download" style="margin-right:4px;"></i>Exportar JSON
         </button>
       </div>
@@ -280,8 +280,8 @@ function renderConfiguracion() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-upload" style="margin-right:8px;color:var(--accent-amber);"></i>Importar Respaldo</span>
         </div>
-        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Restaura desde un archivo de respaldo.</p>
-        <label class="btn btn-secondary" style="cursor:pointer;font-size:12px;text-align:center;">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Restaura desde un archivo de respaldo.</p>
+        <label class="btn btn-secondary" style="cursor:pointer;font-size:14px;text-align:center;">
           <i class="fas fa-file-import" style="margin-right:4px;"></i>Seleccionar Archivo
           <input type="file" accept=".json" onchange="importarRespaldo(event)" style="display:none;">
         </label>
@@ -294,7 +294,7 @@ function renderConfiguracion() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-database" style="margin-right:8px;color:var(--accent-blue);"></i>Datos de Ejemplo</span>
         </div>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Reinicia todos los datos a los valores de ejemplo predeterminados.</p>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">Reinicia todos los datos a los valores de ejemplo predeterminados.</p>
         <button class="btn btn-secondary" onclick="if(confirm('Se creara un respaldo antes de restaurar. Continuar?')){exportarRespaldo();resetSampleData();}">
           <i class="fas fa-undo" style="margin-right:6px;"></i>Restaurar Datos de Ejemplo
         </button>
@@ -303,7 +303,7 @@ function renderConfiguracion() {
         <div class="card-header">
           <span class="card-title"><i class="fas fa-exclamation-triangle" style="margin-right:8px;color:var(--accent-red);"></i>Borrar Todo</span>
         </div>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Elimina permanentemente todos los datos almacenados.</p>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">Elimina permanentemente todos los datos almacenados.</p>
         <button class="btn btn-danger" onclick="if(confirm('Se creara un respaldo antes de borrar. Continuar?')){exportarRespaldo();clearAllData();}">
           <i class="fas fa-trash" style="margin-right:6px;"></i>Borrar Todos los Datos
         </button>
@@ -314,8 +314,8 @@ function renderConfiguracion() {
         </div>
         <div style="padding:10px 0;">
           <h3 style="color:var(--text-primary);margin-bottom:4px;font-size:16px;">Panel Financiero</h3>
-          <p style="color:var(--text-muted);font-size:12px;margin-bottom:0;">Version 1.0</p>
-          <p style="color:var(--text-secondary);font-size:12px;margin-top:6px;">Herramienta de gestion financiera personal para administrar cuentas, inversiones, gastos y rendimientos en multiples monedas.</p>
+          <p style="color:var(--text-muted);font-size:14px;margin-bottom:0;">Version 1.0</p>
+          <p style="color:var(--text-secondary);font-size:14px;margin-top:6px;">Herramienta de gestion financiera personal para administrar cuentas, inversiones, gastos y rendimientos en multiples monedas.</p>
         </div>
       </div>
       <div class="card" style="margin-bottom:0;">
@@ -323,8 +323,8 @@ function renderConfiguracion() {
           <span class="card-title"><i class="fas fa-shield-alt" style="margin-right:8px;color:var(--accent-blue);"></i>Autenticacion</span>
         </div>
         ${typeof isSupabaseConfigured === 'function' && isSupabaseConfigured() ?
-          '<p style="font-size:12px;color:var(--accent-green);"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Supabase conectado</p>' :
-          '<p style="font-size:12px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Autenticacion no configurada. Edita <code>js/supabase-config.js</code> con tu URL y clave de Supabase.</p>'
+          '<p style="font-size:14px;color:var(--accent-green);"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Supabase conectado</p>' :
+          '<p style="font-size:14px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Autenticacion no configurada. Edita <code>js/supabase-config.js</code> con tu URL y clave de Supabase.</p>'
         }
       </div>
     </div>
@@ -469,14 +469,14 @@ function renderTCHistoricoTable() {
         '<td style="font-weight:600;">' + mesLabel + '</td>' +
         '<td style="text-align:right;font-weight:600;">$' + Number(h.USD_MXN).toFixed(4) + '</td>' +
         '<td style="text-align:center;white-space:nowrap;">' +
-          '<button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;margin-right:2px;" onclick="editTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-edit"></i></button>' +
-          '<button class="btn btn-danger" style="padding:3px 6px;font-size:10px;" onclick="deleteTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-trash"></i></button>' +
+          '<button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;margin-right:2px;" onclick="editTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-edit"></i></button>' +
+          '<button class="btn btn-danger" style="padding:3px 6px;font-size:12px;" onclick="deleteTipoCambioHistorico(\'' + per + '\')"><i class="fas fa-trash"></i></button>' +
         '</td></tr>';
     } else {
       tbody.innerHTML += '<tr>' +
         '<td style="font-weight:600;color:var(--text-muted);">' + mesLabel + '</td>' +
         '<td style="text-align:center;color:var(--text-muted);">\u2014</td>' +
-        '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="addTipoCambioHistoricoMes(\'' + per + '\')"><i class="fas fa-plus"></i></button></td>' +
+        '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="addTipoCambioHistoricoMes(\'' + per + '\')"><i class="fas fa-plus"></i></button></td>' +
       '</tr>';
     }
   }
@@ -494,9 +494,9 @@ function addTipoCambioHistorico() {
   }
   var html = '<form onsubmit="saveTipoCambioHistorico(event)">' +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:120px;"></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:120px;"></div>' +
     '</div>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
   '</form>';
@@ -527,8 +527,8 @@ function addTipoCambioHistoricoMes(periodo) {
   var mesIdx = parseInt(parts[1]) - 1;
   var mesNombre = mesesNombres[mesIdx] || '';
   var html = '<form onsubmit="saveTipoCambioHistoricoDirecto(event,\'' + periodo + '\')">' +
-    '<p style="font-size:14px;margin-bottom:16px;color:var(--text-primary);"><strong>' + mesNombre + ' ' + parts[0] + '</strong></p>' +
-    '<div class="form-group"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxnDirect" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:160px;" autofocus></div>' +
+    '<p style="font-size:17px;margin-bottom:16px;color:var(--text-primary);"><strong>' + mesNombre + ' ' + parts[0] + '</strong></p>' +
+    '<div class="form-group"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxnDirect" class="form-input" step="0.0001" min="0" required placeholder="20.50" style="width:160px;" autofocus></div>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
   '</form>';
   openModal('Agregar T/C: ' + mesNombre + ' ' + parts[0], html);
@@ -561,9 +561,9 @@ function editTipoCambioHistorico(periodo) {
   for (var y = anioActual; y >= anioActual - 5; y--) { aniosOpts += '<option value="' + y + '"' + (String(y) === parts[0] ? ' selected' : '') + '>' + y + '</option>'; }
   var html = '<form onsubmit="saveTipoCambioHistorico(event)">' +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
-      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required value="' + (reg.USD_MXN || '') + '" style="width:120px;"></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">Mes</label><select id="tcHistMes" class="form-select">' + mesesOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">Ano</label><select id="tcHistAnio" class="form-select">' + aniosOpts + '</select></div>' +
+      '<div class="form-group" style="margin-bottom:0;"><label style="font-size:14px;color:var(--text-muted);margin-bottom:4px;display:block;">USD / MXN</label><input type="number" id="tcHistUsdMxn" class="form-input" step="0.0001" min="0" required value="' + (reg.USD_MXN || '') + '" style="width:120px;"></div>' +
     '</div>' +
     '<button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:4px;"></i>Guardar</button>' +
   '</form>';
@@ -589,7 +589,7 @@ async function actualizarTiposCambio() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Consultando...';
   }
   if (statusEl) {
-    statusEl.innerHTML = '<span style="color:var(--text-muted);font-size:12px;"><i class="fas fa-spinner fa-spin" style="margin-right:4px;"></i>Obteniendo tipos de cambio...</span>';
+    statusEl.innerHTML = '<span style="color:var(--text-muted);font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:4px;"></i>Obteniendo tipos de cambio...</span>';
   }
 
   try {
@@ -633,7 +633,7 @@ async function actualizarTiposCambio() {
       btn.innerHTML = '<i class="fas fa-globe" style="margin-right:6px;"></i>Actualizar desde Internet';
     }
     if (statusEl) {
-      statusEl.innerHTML = '<span style="color:var(--accent-red);font-size:12px;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Error al consultar. Ingresa los valores manualmente.</span>';
+      statusEl.innerHTML = '<span style="color:var(--accent-red);font-size:14px;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Error al consultar. Ingresa los valores manualmente.</span>';
     }
   }
 }
@@ -889,22 +889,22 @@ function getRespaldoIndicadorHTML() {
   }
 
   if (diasDesdeRespaldo > 30) {
-    badgeHTML = '<span class="badge" style="background:var(--accent-red);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;margin-left:8px;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Sin respaldo en 30+ dias</span>';
+    badgeHTML = '<span class="badge" style="background:var(--accent-red);color:#fff;padding:3px 10px;border-radius:12px;font-size:13px;margin-left:8px;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Sin respaldo en 30+ dias</span>';
   } else if (diasDesdeRespaldo > 14) {
-    badgeHTML = '<span class="badge" style="background:var(--accent-amber);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;margin-left:8px;"><i class="fas fa-clock" style="margin-right:4px;"></i>Respaldo hace ' + diasDesdeRespaldo + ' dias</span>';
+    badgeHTML = '<span class="badge" style="background:var(--accent-amber);color:#fff;padding:3px 10px;border-radius:12px;font-size:13px;margin-left:8px;"><i class="fas fa-clock" style="margin-right:4px;"></i>Respaldo hace ' + diasDesdeRespaldo + ' dias</span>';
   } else {
-    badgeHTML = '<span class="badge" style="background:var(--accent-green);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;margin-left:8px;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Respaldo reciente</span>';
+    badgeHTML = '<span class="badge" style="background:var(--accent-green);color:#fff;padding:3px 10px;border-radius:12px;font-size:13px;margin-left:8px;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Respaldo reciente</span>';
   }
 
   return '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 16px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color);">'
     + '<div style="flex:1;min-width:200px;">'
-    + '<span style="font-size:12px;color:var(--text-muted);">Ultimo respaldo manual:</span>'
-    + '<span style="font-size:13px;color:var(--text-primary);font-weight:600;margin-left:6px;">' + fechaTexto + '</span>'
+    + '<span style="font-size:14px;color:var(--text-muted);">Ultimo respaldo manual:</span>'
+    + '<span style="font-size:16px;color:var(--text-primary);font-weight:600;margin-left:6px;">' + fechaTexto + '</span>'
     + badgeHTML
     + '</div>'
     + '<div>'
-    + '<span style="font-size:12px;color:var(--text-muted);"><i class="fas fa-database" style="margin-right:4px;"></i>Tamano de datos:</span>'
-    + '<span style="font-size:13px;color:var(--text-primary);font-weight:600;margin-left:6px;">' + formatearTamano(tamano) + '</span>'
+    + '<span style="font-size:14px;color:var(--text-muted);"><i class="fas fa-database" style="margin-right:4px;"></i>Tamano de datos:</span>'
+    + '<span style="font-size:16px;color:var(--text-primary);font-weight:600;margin-left:6px;">' + formatearTamano(tamano) + '</span>'
     + '</div>'
     + '</div>';
 }
@@ -998,25 +998,25 @@ function importarRespaldo(event) {
         : 'Desconocida';
 
       var conteosHTML = conteos.length > 0
-        ? conteos.map(function(c) { return '<li style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">' + c + '</li>'; }).join('')
-        : '<li style="font-size:13px;color:var(--text-muted);">No se encontraron datos en el archivo</li>';
+        ? conteos.map(function(c) { return '<li style="font-size:16px;color:var(--text-secondary);margin-bottom:4px;">' + c + '</li>'; }).join('')
+        : '<li style="font-size:16px;color:var(--text-muted);">No se encontraron datos en el archivo</li>';
 
       var modalBody = ''
         + '<div style="padding:8px 0;">'
         + '  <div style="margin-bottom:16px;padding:12px;background:var(--bg-secondary);border-radius:8px;">'
-        + '    <p style="margin:0 0 6px 0;font-size:13px;color:var(--text-muted);">'
+        + '    <p style="margin:0 0 6px 0;font-size:16px;color:var(--text-muted);">'
         + '      <i class="fas fa-info-circle" style="margin-right:6px;"></i>Version del respaldo: <strong style="color:var(--text-primary);">' + data.version + '</strong>'
         + '    </p>'
-        + '    <p style="margin:0;font-size:13px;color:var(--text-muted);">'
+        + '    <p style="margin:0;font-size:16px;color:var(--text-muted);">'
         + '      <i class="fas fa-calendar" style="margin-right:6px;"></i>Fecha de exportacion: <strong style="color:var(--text-primary);">' + fechaRespaldo + '</strong>'
         + '    </p>'
         + '  </div>'
-        + '  <h4 style="margin:0 0 10px 0;font-size:14px;color:var(--text-primary);">Se importaran:</h4>'
+        + '  <h4 style="margin:0 0 10px 0;font-size:17px;color:var(--text-primary);">Se importaran:</h4>'
         + '  <ul style="margin:0 0 16px 0;padding-left:20px;">'
         + conteosHTML
         + '  </ul>'
         + '  <div style="padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;margin-bottom:16px;">'
-        + '    <p style="margin:0;font-size:12px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><strong>Atencion:</strong> Esta accion reemplazara TODOS los datos actuales con los datos del respaldo. Esta accion no se puede deshacer.</p>'
+        + '    <p style="margin:0;font-size:14px;color:var(--accent-red);"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><strong>Atencion:</strong> Esta accion reemplazara TODOS los datos actuales con los datos del respaldo. Esta accion no se puede deshacer.</p>'
         + '  </div>'
         + '  <div style="display:flex;gap:10px;justify-content:flex-end;">'
         + '    <button class="btn btn-secondary" onclick="closeModal()">'
@@ -1364,25 +1364,25 @@ function exportarPDF() {
     '<meta charset="UTF-8">' +
     '<title>Reporte Financiero - ' + fechaHoy + '</title>' +
     '<style>' +
-    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1e293b;margin:0;padding:40px;background:#fff;font-size:13px;}' +
+    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1e293b;margin:0;padding:40px;background:#fff;font-size:16px;}' +
     'h1{font-size:24px;margin-bottom:4px;color:#0f172a;}' +
     'h2{font-size:16px;margin-top:32px;margin-bottom:12px;color:#334155;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}' +
-    '.subtitle{color:#1e293b;font-size:13px;margin-bottom:24px;}' +
+    '.subtitle{color:#1e293b;font-size:16px;margin-bottom:24px;}' +
     '.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}' +
     '.kpi-card{border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;}' +
-    '.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;margin-bottom:6px;}' +
+    '.kpi-label{font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;margin-bottom:6px;}' +
     '.kpi-value{font-size:20px;font-weight:800;color:#0f172a;}' +
     'table{width:100%;border-collapse:collapse;margin-bottom:20px;}' +
-    'th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;border-bottom:2px solid #e2e8f0;}' +
-    'td{padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;}' +
+    'th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#1e293b;border-bottom:2px solid #e2e8f0;}' +
+    'td{padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:14px;}' +
     'tr:nth-child(even){background:#f8fafc;}' +
-    '.footer{margin-top:40px;text-align:center;color:#334155;font-size:11px;border-top:1px solid #e2e8f0;padding-top:16px;}' +
+    '.footer{margin-top:40px;text-align:center;color:#334155;font-size:13px;border-top:1px solid #e2e8f0;padding-top:16px;}' +
     '@media print{body{padding:20px;}.no-print{display:none;}@page{margin:15mm;}}' +
     '</style>' +
     '</head>' +
     '<body>' +
     '<div class="no-print" style="text-align:right;margin-bottom:16px;">' +
-    '<button onclick="window.print()" style="padding:10px 24px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">Imprimir / Guardar como PDF</button>' +
+    '<button onclick="window.print()" style="padding:10px 24px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:17px;font-weight:600;">Imprimir / Guardar como PDF</button>' +
     '</div>' +
     '<h1>Reporte Financiero</h1>' +
     '<p class="subtitle">Generado el ' + fechaHoy + ' | Panel Financiero v1.0</p>' +

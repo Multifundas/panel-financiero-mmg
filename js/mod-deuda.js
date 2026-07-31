@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULE: DEUDA HISTORICA  -  Historical Debt Tracking
    ============================================================ */
 
@@ -81,10 +81,10 @@ function renderDeuda() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-red-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-file-invoice-dollar" style="color:var(--accent-red);font-size:19px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Deuda Anual</span>';
+  html += '    <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Deuda Anual</span>';
   html += '  </div>';
   html += '  <div id="kpiDeudaTotal" style="font-size:24px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(totalAnual, 'MXN') + '</div>';
-  html += '  <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' + _deudaAnioSeleccionado + ' &mdash; ' + deudaAnio.length + ' registro(s)</div>';
+  html += '  <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">' + _deudaAnioSeleccionado + ' &mdash; ' + deudaAnio.length + ' registro(s)</div>';
   html += '</div>';
 
   // Promedio Mensual
@@ -93,10 +93,10 @@ function renderDeuda() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-calculator" style="color:var(--accent-amber);font-size:19px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Promedio Mensual</span>';
+  html += '    <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Promedio Mensual</span>';
   html += '  </div>';
   html += '  <div id="kpiDeudaPromedio" style="font-size:24px;font-weight:800;color:var(--accent-amber);">' + formatCurrencyInt(promedioMensual, 'MXN') + '</div>';
-  html += '  <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Basado en meses con datos</div>';
+  html += '  <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Basado en meses con datos</div>';
   html += '</div>';
 
   // Maximo Mensual
@@ -105,10 +105,10 @@ function renderDeuda() {
   html += '    <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">';
   html += '      <i class="fas fa-arrow-up" style="color:var(--accent-purple);font-size:19px;"></i>';
   html += '    </div>';
-  html += '    <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Maximo Mensual</span>';
+  html += '    <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Maximo Mensual</span>';
   html += '  </div>';
   html += '  <div id="kpiDeudaMaximo" style="font-size:24px;font-weight:800;color:var(--accent-purple);">' + formatCurrencyInt(maximoMensual, 'MXN') + '</div>';
-  html += '  <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Mes con mayor deuda</div>';
+  html += '  <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Mes con mayor deuda</div>';
   html += '</div>';
 
   html += '</div>'; // close grid-3
@@ -123,7 +123,7 @@ function renderDeuda() {
     registrosMes.forEach(function(r) {
       totalMes += toMXN(r.monto, r.moneda || 'MXN', tiposCambio);
       if (r.propiedad_id && propMap[r.propiedad_id]) {
-        propBadges += '<span class="badge badge-blue" style="font-size:10px;margin-top:4px;display:inline-block;">' + propMap[r.propiedad_id].nombre + '</span> ';
+        propBadges += '<span class="badge badge-blue" style="font-size:12px;margin-top:4px;display:inline-block;">' + propMap[r.propiedad_id].nombre + '</span> ';
       }
     });
 
@@ -135,14 +135,14 @@ function renderDeuda() {
     html += '  onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'none\';" ';
     html += '  onclick="editDeudaMes(' + _deudaAnioSeleccionado + ',' + m + ',' + (existingId ? '\'' + existingId + '\'' : 'null') + ')">';
     html += '  <div>';
-    html += '    <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">' + _mesesNombres[m - 1] + '</div>';
+    html += '    <div style="font-size:16px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">' + _mesesNombres[m - 1] + '</div>';
     if (tieneData) {
       html += '    <div style="font-size:18px;font-weight:800;color:var(--accent-red);">' + formatCurrencyInt(totalMes, 'MXN') + '</div>';
       if (registrosMes.length > 1) {
-        html += '    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + registrosMes.length + ' registros</div>';
+        html += '    <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">' + registrosMes.length + ' registros</div>';
       }
     } else {
-      html += '    <div style="font-size:14px;color:var(--text-muted);opacity:0.5;">Sin datos</div>';
+      html += '    <div style="font-size:17px;color:var(--text-muted);opacity:0.5;">Sin datos</div>';
     }
     html += '  </div>';
     if (propBadges) {
@@ -183,16 +183,16 @@ function renderDeuda() {
       html += '<tr style="' + zebra + '">';
       html += '  <td style="font-weight:600;color:var(--text-primary);">' + _mesesNombres[d.mes - 1] + '</td>';
       html += '  <td style="text-align:right;font-weight:700;color:var(--accent-red);">' + formatCurrencyInt(d.monto, moneda) + '</td>';
-      html += '  <td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:12px;">' + moneda + '</span></td>';
+      html += '  <td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:14px;">' + moneda + '</span></td>';
       html += '  <td style="color:var(--text-primary);">' + (d.descripcion || '\u2014') + '</td>';
       if (propBadgeClass) {
-        html += '  <td><span class="' + propBadgeClass + '" style="font-size:12px;">' + propNombre + '</span></td>';
+        html += '  <td><span class="' + propBadgeClass + '" style="font-size:14px;">' + propNombre + '</span></td>';
       } else {
         html += '  <td style="color:var(--text-muted);">' + propNombre + '</td>';
       }
       html += '  <td style="text-align:center;">';
-      html += '    <button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="event.stopPropagation();editDeudaMes(' + d.anio + ',' + d.mes + ',\'' + d.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
-      html += '    <button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="event.stopPropagation();_deleteDeudaMes(\'' + d.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+      html += '    <button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="event.stopPropagation();editDeudaMes(' + d.anio + ',' + d.mes + ',\'' + d.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+      html += '    <button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="event.stopPropagation();_deleteDeudaMes(\'' + d.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
       html += '  </td>';
       html += '</tr>';
     });
@@ -282,7 +282,7 @@ function editDeudaMes(anio, mes, existingId) {
   formHTML += '    <input type="text" id="deudaMesDescripcion" class="form-input" value="' + defDescripcion.replace(/"/g, '&quot;') + '" placeholder="Ej: Credito hipotecario BBVA"></div>';
   formHTML += '  <div class="form-group"><label class="form-label">Propiedad Asociada</label>';
   formHTML += '    <select id="deudaMesPropiedadId" class="form-select">' + propOpciones + '</select>';
-  formHTML += '    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Opcional: vincular deuda a una propiedad</div></div>';
+  formHTML += '    <div style="font-size:14px;color:var(--text-muted);margin-top:2px;">Opcional: vincular deuda a una propiedad</div></div>';
   formHTML += '  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">';
   formHTML += '    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>';
   formHTML += '    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ' + (isEdit ? 'Guardar Cambios' : 'Crear Registro') + '</button>';

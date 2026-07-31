@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MOD-ANALISIS  —  Análisis de Ingresos y Gastos
    ============================================================ */
 
@@ -152,7 +152,7 @@ function renderAnalisis() {
       var bar = Math.round(pct);
       return '<tr>' +
         '<td style="text-align:left;">' +
-          '<span style="display:inline-block;width:20px;color:var(--text-muted);font-size:11px;">' + (idx+1) + '</span>' +
+          '<span style="display:inline-block;width:20px;color:var(--text-muted);font-size:13px;">' + (idx+1) + '</span>' +
           item.nom +
         '</td>' +
         '<td>' + formatCurrencyInt(item.val, 'MXN') + '</td>' +
@@ -161,7 +161,7 @@ function renderAnalisis() {
             '<div style="flex:1;height:6px;background:var(--border-subtle);border-radius:3px;">' +
               '<div style="width:' + bar + '%;height:100%;background:var(--accent-blue);border-radius:3px;"></div>' +
             '</div>' +
-            '<span style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:right;">' + pct.toFixed(1) + '%</span>' +
+            '<span style="font-size:13px;color:var(--text-muted);min-width:36px;text-align:right;">' + pct.toFixed(1) + '%</span>' +
           '</div>' +
         '</td>' +
       '</tr>';
@@ -172,9 +172,9 @@ function renderAnalisis() {
   function card(label, value, valueStyle, sub) {
     return '<div style="flex:1;min-width:160px;background:var(--bg-card);border-radius:var(--radius-md);' +
            'border:1px solid var(--border-subtle);padding:16px 20px;">' +
-      '<div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">' + label + '</div>' +
+      '<div style="font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">' + label + '</div>' +
       '<div style="font-size:20px;font-weight:800;' + valueStyle + '">' + value + '</div>' +
-      (sub ? '<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">' + sub + '</div>' : '') +
+      (sub ? '<div style="font-size:13px;color:var(--text-muted);margin-top:3px;">' + sub + '</div>' : '') +
     '</div>';
   }
 
@@ -192,7 +192,7 @@ function renderAnalisis() {
         'Análisis de Ingresos y Gastos' +
       '</h2>' +
       '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<label style="font-size:13px;color:var(--text-secondary);">Año:</label>' +
+        '<label style="font-size:16px;color:var(--text-secondary);">Año:</label>' +
         '<select class="form-select" style="width:100px;" onchange="' +
           'document.getElementById(\'module-analisis\').dataset.anio=this.value;renderAnalisis();">' +
           aniosOpts +
@@ -214,11 +214,11 @@ function renderAnalisis() {
 
     // Monthly table full width
     '<div class="card" style="padding:16px;overflow-x:auto;margin-bottom:20px;">' +
-      '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
+      '<h3 style="font-size:18px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
         '<i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>' +
         'Resumen Mensual' +
       '</h3>' +
-      '<table class="data-table" style="width:100%;font-size:13px;">' +
+      '<table class="data-table" style="width:100%;font-size:16px;">' +
         '<thead><tr>' +
           '<th style="text-align:left;">Mes</th>' +
           '<th>Ingresos</th>' +
@@ -235,11 +235,11 @@ function renderAnalisis() {
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
 
       '<div class="card" style="padding:16px;overflow-x:auto;">' +
-        '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
+        '<h3 style="font-size:18px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
           '<i class="fas fa-receipt" style="margin-right:6px;color:var(--accent-red);"></i>' +
           'Top Categorías de Gasto' +
         '</h3>' +
-        '<table class="data-table" style="width:100%;font-size:13px;">' +
+        '<table class="data-table" style="width:100%;font-size:16px;">' +
           '<thead><tr>' +
             '<th style="text-align:left;">Categoría</th>' +
             '<th>Total MXN</th>' +
@@ -250,11 +250,11 @@ function renderAnalisis() {
       '</div>' +
 
       '<div class="card" style="padding:16px;overflow-x:auto;">' +
-        '<h3 style="font-size:15px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
+        '<h3 style="font-size:18px;font-weight:700;margin:0 0 14px;color:var(--text-primary);">' +
           '<i class="fas fa-arrow-down" style="margin-right:6px;color:var(--accent-blue);"></i>' +
           'Top Categorías de Ingreso' +
         '</h3>' +
-        '<table class="data-table" style="width:100%;font-size:13px;">' +
+        '<table class="data-table" style="width:100%;font-size:16px;">' +
           '<thead><tr>' +
             '<th style="text-align:left;">Categoría</th>' +
             '<th>Total MXN</th>' +

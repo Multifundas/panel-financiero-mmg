@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    PDF BANK STATEMENT IMPORT MODULE
    ============================================================ */
 
@@ -33,7 +33,7 @@ function openPdfImport() {
 
   var html = ''
     + '<div style="margin-bottom:16px;">'
-    +   '<p style="font-size:13px;color:var(--text-secondary);margin:0 0 16px;">'
+    +   '<p style="font-size:16px;color:var(--text-secondary);margin:0 0 16px;">'
     +     'Sube el estado de cuenta en PDF de tu banco. El sistema extraera los movimientos, '
     +     'los clasificara automaticamente por concepto y podras revisar, editar y confirmar antes de guardar.'
     +   '</p>'
@@ -54,7 +54,7 @@ function openPdfImport() {
     + '</div>'
     + '<div id="pdfLoadingIndicator" style="display:none;text-align:center;padding:32px;">'
     +   '<i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--accent-blue);"></i>'
-    +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:13px;">Leyendo y clasificando movimientos del PDF...</p>'
+    +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:16px;">Leyendo y clasificando movimientos del PDF...</p>'
     + '</div>'
     + '<div id="pdfPreviewContainer" style="display:none;"></div>';
 
@@ -482,24 +482,24 @@ function displayPdfPreview() {
   var html = ''
     + '<div class="pdf-preview-toolbar">'
     +   '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">'
-    +     '<span class="badge badge-blue" style="font-size:12px;padding:4px 10px;">'
+    +     '<span class="badge badge-blue" style="font-size:14px;padding:4px 10px;">'
     +       '<i class="fas fa-file-pdf"></i> ' + rows.length + ' movimientos detectados'
     +     '</span>'
-    +     '<span class="badge badge-green" style="font-size:12px;padding:4px 10px;">'
+    +     '<span class="badge badge-green" style="font-size:14px;padding:4px 10px;">'
     +       ingresosCount + ' ingresos'
     +     '</span>'
-    +     '<span class="badge badge-red" style="font-size:12px;padding:4px 10px;">'
+    +     '<span class="badge badge-red" style="font-size:14px;padding:4px 10px;">'
     +       gastosCount + ' gastos'
     +     '</span>'
     +   '</div>'
     +   '<div style="display:flex;gap:8px;align-items:center;">'
-    +     '<button class="btn btn-secondary" onclick="removePdfSelectedRows()" style="font-size:12px;padding:6px 12px;">'
+    +     '<button class="btn btn-secondary" onclick="removePdfSelectedRows()" style="font-size:14px;padding:6px 12px;">'
     +       '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +     '</button>'
     +   '</div>'
     + '</div>'
     + '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
-    + '<table class="data-table" style="font-size:12px;">'
+    + '<table class="data-table" style="font-size:14px;">'
     + '<thead><tr>'
     +   '<th style="width:30px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)" title="Seleccionar todos"></th>'
     +   '<th>Fecha</th>'
@@ -524,7 +524,7 @@ function displayPdfPreview() {
       });
       catSelect += '</select>';
     } else {
-      catSelect = '<span style="color:var(--text-muted);font-size:11px;">N/A</span>';
+      catSelect = '<span style="color:var(--text-muted);font-size:13px;">N/A</span>';
     }
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
@@ -532,7 +532,7 @@ function displayPdfPreview() {
       + '<td>' + formatDate(row.fecha) + '</td>'
       + '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + row.descripcion.replace(/"/g, '&quot;') + '">' + row.descripcion + '</td>'
       + '<td style="text-align:right;font-weight:700;color:' + tipoColor + ';">' + montoSign + '$' + formatNumber(row.monto) + '</td>'
-      + '<td><span class="badge ' + tipoBadge + '" style="font-size:11px;">' + tipoLabel + '</span></td>'
+      + '<td><span class="badge ' + tipoBadge + '" style="font-size:13px;">' + tipoLabel + '</span></td>'
       + '<td>' + catSelect + '</td>'
       + '</tr>';
   });
@@ -541,7 +541,7 @@ function displayPdfPreview() {
 
   // Action buttons
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">'
-    + '<span style="font-size:13px;color:var(--text-muted);">Revisa y edita las categorias. Selecciona filas para eliminar duplicados.</span>'
+    + '<span style="font-size:16px;color:var(--text-muted);">Revisa y edita las categorias. Selecciona filas para eliminar duplicados.</span>'
     + '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:10px 24px;">'
     +   '<i class="fas fa-check"></i> Confirmar e Importar ' + rows.length + ' movimientos'
     + '</button>'

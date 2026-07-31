@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    UUID GENERATION
    ============================================================ */
 function uuid() {
@@ -212,7 +212,7 @@ function _setupNumericFormatting() {
     if (!preview || !preview.classList.contains('live-comma-preview')) {
       preview = document.createElement('div');
       preview.className = 'live-comma-preview';
-      preview.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;font-weight:600;letter-spacing:0.3px;';
+      preview.style.cssText = 'font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:600;letter-spacing:0.3px;';
       input.parentNode.insertBefore(preview, input.nextSibling);
     }
     if (val === '' || val == null || isNaN(val)) {
@@ -320,7 +320,7 @@ function _initSortableTables(root) {
       // Add sort icon
       var arrow = document.createElement('i');
       arrow.className = 'fas fa-sort';
-      arrow.style.cssText = 'margin-left:6px;font-size:10px;color:var(--text-muted);opacity:0.6;';
+      arrow.style.cssText = 'margin-left:6px;font-size:12px;color:var(--text-muted);opacity:0.6;';
       th.appendChild(arrow);
 
       if (!firstSortable) firstSortable = th;

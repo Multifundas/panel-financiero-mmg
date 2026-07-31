@@ -1,4 +1,4 @@
-function renderRendimientos() {
+﻿function renderRendimientos() {
   const el = document.getElementById('module-rendimientos');
 
   // -- Load data --
@@ -68,24 +68,24 @@ function renderRendimientos() {
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div class="form-group" style="margin-bottom:0;">
-            <select id="filterRendCuenta" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
+            <select id="filterRendCuenta" class="form-select" style="font-size:14px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Todas las cuentas</option>
               ${cuentaFilterOpts}
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <select id="filterRendAnio" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
+            <select id="filterRendAnio" class="form-select" style="font-size:14px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
               ${aniosOpts}
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <select id="filterRendMes" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
+            <select id="filterRendMes" class="form-select" style="font-size:14px;padding:5px 8px;min-height:auto;width:72px;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Todos</option>
               ${mesFilterOpts}
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <select id="filterRendPeriodo" class="form-select" style="font-size:12px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
+            <select id="filterRendPeriodo" class="form-select" style="font-size:14px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos();renderRendMensualReport()">
               <option value="">Todos los periodos</option>
               <option value="mensual">Mensual</option>
               <option value="bimestral">Bimestral</option>
@@ -95,7 +95,7 @@ function renderRendimientos() {
             </select>
           </div>
         </div>
-        <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;" onclick="editRendimiento(null)">
+        <button class="btn btn-primary" style="padding:5px 12px;font-size:14px;" onclick="editRendimiento(null)">
           <i class="fas fa-plus"></i> Nuevo
         </button>
       </div>
@@ -108,27 +108,27 @@ function renderRendimientos() {
           <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-chart-line" style="color:var(--accent-green);font-size:16px;"></i>
           </div>
-          <span id="rendKpiLabel1" style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Mes</span>
+          <span id="rendKpiLabel1" style="font-size:16px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Mes</span>
         </div>
         <div id="rendKpiVal1" style="font-size:23px;font-weight:800;color:var(--accent-green);">${formatCurrencyInt(rendMes, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:9px;"></i></div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:11px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;padding:12px 14px;" onclick="mostrarDesgloseRendAnioFiltrado()">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
           <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-calendar-check" style="color:var(--accent-blue);font-size:16px;"></i>
           </div>
-          <span id="rendKpiLabel2" style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Ano</span>
+          <span id="rendKpiLabel2" style="font-size:16px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rend. del Ano</span>
         </div>
         <div id="rendKpiVal2" style="font-size:23px;font-weight:800;color:var(--accent-blue);">${formatCurrencyInt(rendAnio, 'MXN')}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:9px;"></i></div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:11px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-purple);padding:12px 14px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
           <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-purple-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-percentage" style="color:var(--accent-purple);font-size:16px;"></i>
           </div>
-          <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Promedio</span>
+          <span style="font-size:16px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Promedio</span>
         </div>
         <div id="rendKpiVal3" style="font-size:23px;font-weight:800;color:var(--accent-purple);">${formatPct(tasaPromedio)}</div>
       </div>
@@ -140,7 +140,7 @@ function renderRendimientos() {
         <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
           <i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>Rendimiento Mensual por Cuenta
         </h3>
-        <button class="btn btn-secondary" style="padding:5px 12px;font-size:13px;" onclick="printRendMensualReport()">
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:16px;" onclick="printRendMensualReport()">
           <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
         </button>
       </div>
@@ -155,18 +155,18 @@ function renderRendimientos() {
         </h3>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:3px;">
-            <label style="font-size:13px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
-            <select id="rendYoyAnio1" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
+            <label style="font-size:16px;font-weight:600;color:var(--text-muted);">Ano 1:</label>
+            <select id="rendYoyAnio1" class="form-select" style="width:62px;padding:3px 4px;font-size:13px;min-height:auto;"></select>
           </div>
           <div style="display:flex;align-items:center;gap:3px;">
-            <label style="font-size:13px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
-            <select id="rendYoyAnio2" class="form-select" style="width:62px;padding:3px 4px;font-size:11px;min-height:auto;"></select>
+            <label style="font-size:16px;font-weight:600;color:var(--text-muted);">Ano 2:</label>
+            <select id="rendYoyAnio2" class="form-select" style="width:62px;padding:3px 4px;font-size:13px;min-height:auto;"></select>
           </div>
-          <button class="btn btn-primary" style="padding:3px 10px;font-size:11px;" onclick="rendCompararAnios()">
+          <button class="btn btn-primary" style="padding:3px 10px;font-size:13px;" onclick="rendCompararAnios()">
             <i class="fas fa-chart-bar" style="margin-right:3px;"></i>Comparar
           </button>
-          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('rendYoyBarChart','rendimientos_comparados')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('rendYoyBarChart','Rendimientos Comparados')" title="Imprimir"><i class="fas fa-print"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('rendYoyBarChart','rendimientos_comparados')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('rendYoyBarChart','Rendimientos Comparados')" title="Imprimir"><i class="fas fa-print"></i></button>
         </div>
       </div>
       <div style="position:relative;height:320px;">
@@ -179,18 +179,18 @@ function renderRendimientos() {
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
         <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);white-space:nowrap;">Detalle de Rendimientos</h3>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <select id="filterDetalleRendCuenta" class="form-select" style="font-size:13px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos()">
+          <select id="filterDetalleRendCuenta" class="form-select" style="font-size:16px;padding:5px 8px;min-height:auto;" onchange="filterRendimientos()">
             <option value="">Todas las cuentas</option>
             ${cuentaFilterOpts}
           </select>
-          <select id="filterDetalleRendAnio" class="form-select" style="font-size:13px;padding:5px 8px;min-height:auto;width:84px;" onchange="filterRendimientos()">
+          <select id="filterDetalleRendAnio" class="form-select" style="font-size:16px;padding:5px 8px;min-height:auto;width:84px;" onchange="filterRendimientos()">
             <option value="">Todos los años</option>
             ${aniosOpts}
           </select>
         </div>
       </div>
       <div style="overflow-x:auto;">
-        <table class="data-table sortable-table" id="tablaRendimientos" style="font-size:14px;">
+        <table class="data-table sortable-table" id="tablaRendimientos" style="font-size:17px;">
           <thead>
             <tr>
               <th>Cuenta</th>
@@ -217,8 +217,8 @@ function renderRendimientos() {
           <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
         </h3>
         <div style="display:flex;gap:4px;">
-          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="exportChartAsImage('rendLineChart','rendimiento_acumulado')" title="Descargar imagen"><i class="fas fa-download"></i></button>
-          <button class="btn btn-secondary" style="padding:3px 6px;font-size:10px;" onclick="printChart('rendLineChart','Rendimiento Acumulado')" title="Imprimir"><i class="fas fa-print"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="exportChartAsImage('rendLineChart','rendimiento_acumulado')" title="Descargar imagen"><i class="fas fa-download"></i></button>
+          <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('rendLineChart','Rendimiento Acumulado')" title="Imprimir"><i class="fas fa-print"></i></button>
         </div>
       </div>
       <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
@@ -550,7 +550,7 @@ function filterRendimientos() {
     const rendPctAnual = (capital > 0 && dias > 0) ? ((rendPeriodo / capital) * (365 / dias) * 100) : (r.rendimiento_pct_anual || 0);
     const acum = acumuladoByCuenta[r.cuenta_id] || 0;
     const tipo = r.tipo || 'Interes';
-    const reinvTag = r.reinvertido ? '<span style="color:var(--accent-green);font-size:13px;margin-left:4px;"><i class="fas fa-recycle"></i></span>' : '';
+    const reinvTag = r.reinvertido ? '<span style="color:var(--accent-green);font-size:16px;margin-left:4px;"><i class="fas fa-recycle"></i></span>' : '';
     const rendColor = rendPeriodo >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
     return `<tr>
@@ -562,10 +562,10 @@ function filterRendimientos() {
       <td style="text-align:right;color:${rendColor};font-weight:600;white-space:nowrap;">${formatCurrencyInt(rendPeriodo, moneda)}${reinvTag}</td>
       <td style="text-align:right;color:var(--accent-blue);white-space:nowrap;">${formatCurrencyInt(acum, 'MXN')}</td>
       <td style="white-space:nowrap;">${r.fecha ? formatDate(r.fecha) : r.periodo || '-'}</td>
-      <td><span style="background:var(--accent-blue-soft);color:var(--accent-blue);padding:2px 6px;border-radius:5px;font-size:13px;font-weight:600;">${tipo}</span></td>
+      <td><span style="background:var(--accent-blue-soft);color:var(--accent-blue);padding:2px 6px;border-radius:5px;font-size:16px;font-weight:600;">${tipo}</span></td>
       <td style="text-align:center;white-space:nowrap;">
-        <button class="btn btn-secondary" style="padding:3px 6px;font-size:13px;margin-right:2px;" onclick="editRendimiento('${r.id}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-danger" style="padding:3px 6px;font-size:13px;" onclick="deleteRendimiento('${r.id}')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-secondary" style="padding:3px 6px;font-size:16px;margin-right:2px;" onclick="editRendimiento('${r.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-danger" style="padding:3px 6px;font-size:16px;" onclick="deleteRendimiento('${r.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -657,10 +657,10 @@ function renderRendMensualReport() {
 
   // Sort arrow indicator
   function sortArrow(col) {
-    if (_rendMensualSort.col !== col) return '<span style="font-size:11px;margin-left:2px;">&#8597;</span>';
+    if (_rendMensualSort.col !== col) return '<span style="font-size:13px;margin-left:2px;">&#8597;</span>';
     return _rendMensualSort.dir === 'asc'
-      ? '<span style="font-size:11px;margin-left:2px;">&#8593;</span>'
-      : '<span style="font-size:11px;margin-left:2px;">&#8595;</span>';
+      ? '<span style="font-size:13px;margin-left:2px;">&#8593;</span>'
+      : '<span style="font-size:13px;margin-left:2px;">&#8595;</span>';
   }
 
   // Build header
@@ -672,10 +672,10 @@ function renderRendMensualReport() {
     var colMonto = 'mes_' + m;
     var colPct   = 'mes_pct_' + m;
     thead += '<th style="text-align:right;min-width:80px;user-select:none;white-space:nowrap;">' +
-      '<div style="color:var(--text-muted);font-size:15px;font-weight:700;margin-bottom:4px;">' + mesesCortos[m] + '</div>' +
+      '<div style="color:var(--text-muted);font-size:18px;font-weight:700;margin-bottom:4px;">' + mesesCortos[m] + '</div>' +
       '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
-        '<span style="cursor:pointer;font-size:15px;color:' + (_rendMensualSort.col === colMonto ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colMonto + '\')">$' + sortArrow(colMonto) + '</span>' +
-        '<span style="cursor:pointer;font-size:15px;color:' + (_rendMensualSort.col === colPct ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colPct + '\')">%' + sortArrow(colPct) + '</span>' +
+        '<span style="cursor:pointer;font-size:18px;color:' + (_rendMensualSort.col === colMonto ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colMonto + '\')">$' + sortArrow(colMonto) + '</span>' +
+        '<span style="cursor:pointer;font-size:18px;color:' + (_rendMensualSort.col === colPct ? 'var(--accent-blue)' : 'var(--text-muted)') + ';font-weight:700;" onclick="sortRendMensual(\'' + colPct + '\')">%' + sortArrow(colPct) + '</span>' +
       '</div>' +
     '</th>';
   }
@@ -766,7 +766,7 @@ function renderRendMensualReport() {
   var rows = rowData.map(function(d) {
     var cta = d.cta;
     var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:16px;">' + cta.nombre + '</td>' +
-      '<td style="text-align:right;font-size:15px;font-weight:600;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(d.capitalActual, d.moneda) + '</td>';
+      '<td style="text-align:right;font-size:18px;font-weight:600;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(d.capitalActual, d.moneda) + '</td>';
 
     for (var mi = 0; mi < mesesVisibles.length; mi++) {
       var m = mesesVisibles[mi];
@@ -779,7 +779,7 @@ function renderRendMensualReport() {
       var sign = mv.rendMonto >= 0 ? '+' : '-';
       row += '<td style="text-align:right;padding:4px 4px;">' +
         '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:16px;">' + sign + formatCurrencyInt(Math.abs(mv.rendMonto), d.moneda) + '</div>' +
-        '<div style="color:' + color + ';font-size:14px;opacity:0.8;">' + sign + Math.abs(mv.rendPct).toFixed(2) + '%</div>' +
+        '<div style="color:' + color + ';font-size:17px;opacity:0.8;">' + sign + Math.abs(mv.rendPct).toFixed(2) + '%</div>' +
       '</td>';
     }
 
@@ -804,8 +804,8 @@ function renderRendMensualReport() {
 
   // Total row
   var totalCapitalActualMXN = rowData.reduce(function(s, d) { return s + d.capitalActualMXN; }, 0);
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:15px;">Total</td>' +
-    '<td style="text-align:right;font-size:15px;font-weight:700;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(totalCapitalActualMXN, 'MXN') + '</td>';
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:18px;">Total</td>' +
+    '<td style="text-align:right;font-size:18px;font-weight:700;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(totalCapitalActualMXN, 'MXN') + '</td>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
     var m = mesesVisibles[mi];
     if (totalPorMes[m] === 0) {
@@ -816,7 +816,7 @@ function renderRendMensualReport() {
       var mPct = capitalPorMes[m] > 0 ? (totalPorMes[m] / capitalPorMes[m] * 100) : 0;
       totalRow += '<td style="text-align:right;font-size:16px;color:' + mColor + ';">' +
         '<div>' + mSign + formatCurrencyInt(Math.abs(totalPorMes[m]), 'MXN') + '</div>' +
-        '<div style="font-size:14px;opacity:0.8;">' + mSign + Math.abs(mPct).toFixed(2) + '%</div>' +
+        '<div style="font-size:17px;opacity:0.8;">' + mSign + Math.abs(mPct).toFixed(2) + '%</div>' +
         '</td>';
     }
   }
@@ -845,8 +845,8 @@ function renderRendMensualReport() {
   }
 
   container.innerHTML =
-    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
-    '<table class="data-table" style="font-size:15px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
+    '<div style="font-size:17px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
+    '<table class="data-table" style="font-size:18px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 }
 
 /* -- Edit / Create rendimiento modal -- */
@@ -1227,7 +1227,7 @@ function printRendMensualReport() {
       '<div style="background:rgba(245,158,11,0.12);border:1px solid var(--accent-amber);border-radius:10px;padding:18px 20px;margin-bottom:26px;">' +
         '<div style="display:flex;align-items:flex-start;gap:14px;">' +
           '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:22px;margin-top:2px;flex-shrink:0;"></i>' +
-          '<div style="font-size:15px;color:var(--text-primary);line-height:1.9;">' +
+          '<div style="font-size:18px;color:var(--text-primary);line-height:1.9;">' +
             '<strong style="font-size:16px;">En el diálogo de impresión que se abrirá:</strong><br>' +
             '&nbsp;&nbsp;• Tamaño de papel: <strong>Oficio / Legal (8.5&quot; × 14&quot;)</strong><br>' +
             '&nbsp;&nbsp;• Orientación: <strong>Horizontal (Landscape)</strong><br>' +
@@ -1237,8 +1237,8 @@ function printRendMensualReport() {
         '</div>' +
       '</div>' +
       '<div style="display:flex;justify-content:flex-end;gap:12px;">' +
-        '<button onclick="document.querySelector(\'[data-print-overlay]\').remove()" class="btn btn-secondary" style="padding:10px 22px;font-size:15px;">Cancelar</button>' +
-        '<button onclick="_doPrintRendMensual()" class="btn btn-primary" style="padding:10px 22px;font-size:15px;"><i class="fas fa-print" style="margin-right:8px;"></i>Continuar e Imprimir</button>' +
+        '<button onclick="document.querySelector(\'[data-print-overlay]\').remove()" class="btn btn-secondary" style="padding:10px 22px;font-size:18px;">Cancelar</button>' +
+        '<button onclick="_doPrintRendMensual()" class="btn btn-primary" style="padding:10px 22px;font-size:18px;"><i class="fas fa-print" style="margin-right:8px;"></i>Continuar e Imprimir</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(overlay);

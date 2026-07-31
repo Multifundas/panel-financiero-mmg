@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    SUPABASE AUTHENTICATION
    ============================================================ */
 var _supabaseClient = null;
@@ -77,7 +77,7 @@ function handleLogin(event) {
 
 function showResetForm() {
   var container = document.getElementById('loginFormContainer');
-  container.innerHTML = '<form id="resetForm" onsubmit="handlePasswordReset(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="resetEmail" class="form-input" required placeholder="tu@correo.com"></div><div id="resetError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div><div id="resetSuccess" style="display:none;color:var(--accent-green);font-size:13px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-envelope"></i> Enviar enlace de recuperacion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showOriginalLoginForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Volver al login</a></div>';
+  container.innerHTML = '<form id="resetForm" onsubmit="handlePasswordReset(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="resetEmail" class="form-input" required placeholder="tu@correo.com"></div><div id="resetError" style="display:none;color:var(--accent-red);font-size:16px;margin-bottom:12px;"></div><div id="resetSuccess" style="display:none;color:var(--accent-green);font-size:16px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-envelope"></i> Enviar enlace de recuperacion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showOriginalLoginForm()" style="color:var(--accent-blue);cursor:pointer;font-size:16px;">Volver al login</a></div>';
 }
 
 function handlePasswordReset(event) {
@@ -95,7 +95,7 @@ function handlePasswordReset(event) {
 
 function showOriginalLoginForm() {
   var container = document.getElementById('loginFormContainer');
-  container.innerHTML = '<form id="loginForm" onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="authEmail" class="form-input" required placeholder="tu@correo.com"></div><div class="form-group"><label class="form-label">Contrasena</label><input type="password" id="authPassword" class="form-input" required placeholder="********"></div><div id="authError" style="display:none;color:var(--accent-red);font-size:13px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showResetForm()" style="color:var(--accent-blue);cursor:pointer;font-size:13px;">Olvide mi contrasena</a></div>';
+  container.innerHTML = '<form id="loginForm" onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label">Correo electronico</label><input type="email" id="authEmail" class="form-input" required placeholder="tu@correo.com"></div><div class="form-group"><label class="form-label">Contrasena</label><input type="password" id="authPassword" class="form-input" required placeholder="********"></div><div id="authError" style="display:none;color:var(--accent-red);font-size:16px;margin-bottom:12px;"></div><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button></form><div style="margin-top:16px;text-align:center;"><a onclick="showResetForm()" style="color:var(--accent-blue);cursor:pointer;font-size:16px;">Olvide mi contrasena</a></div>';
 }
 
 function handleLogout() {
@@ -104,7 +104,7 @@ function handleLogout() {
     '<div style="width:56px;height:56px;border-radius:14px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">' +
     '<i class="fas fa-sign-out-alt" style="color:var(--accent-amber);font-size:22px;"></i></div>' +
     '<div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Cerrar Sesion</div>' +
-    '<div style="font-size:13px;color:var(--text-muted);">Deseas exportar un respaldo de tus datos antes de cerrar sesion?</div></div>' +
+    '<div style="font-size:16px;color:var(--text-muted);">Deseas exportar un respaldo de tus datos antes de cerrar sesion?</div></div>' +
     '<div style="display:flex;flex-direction:column;gap:10px;">' +
     '<button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="logoutWithBackup()">' +
     '<i class="fas fa-download" style="margin-right:8px;"></i>Exportar Respaldo y Cerrar</button>' +

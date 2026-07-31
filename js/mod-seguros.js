@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULE: SEGUROS  -  Polizas de Seguro
    ============================================================ */
 
@@ -34,30 +34,30 @@ function renderSeguros() {
           '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">' +
             '<i class="fas fa-shield-alt" style="color:var(--accent-blue);font-size:19px;"></i>' +
           '</div>' +
-          '<span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Primas Anuales</span>' +
+          '<span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Primas Anuales</span>' +
         '</div>' +
         '<div id="kpiTotalPrimas" style="font-size:24px;font-weight:800;color:var(--accent-blue);">' + formatCurrencyInt(totalPrimasAnuales, 'MXN') + '</div>' +
-        '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Costo anual de seguros activos</div>' +
+        '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Costo anual de seguros activos</div>' +
       '</div>' +
       '<div class="card" style="border-left:3px solid var(--accent-green);">' +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
           '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-green-soft);display:flex;align-items:center;justify-content:center;">' +
             '<i class="fas fa-file-contract" style="color:var(--accent-green);font-size:19px;"></i>' +
           '</div>' +
-          '<span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Polizas Activas</span>' +
+          '<span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Polizas Activas</span>' +
         '</div>' +
         '<div id="kpiPolizasActivas" style="font-size:24px;font-weight:800;color:var(--accent-green);">' + polizasActivas + '</div>' +
-        '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Polizas vigentes</div>' +
+        '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Polizas vigentes</div>' +
       '</div>' +
       '<div class="card" style="border-left:3px solid var(--accent-amber);">' +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
           '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">' +
             '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);font-size:19px;"></i>' +
           '</div>' +
-          '<span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Proximos Vencimientos</span>' +
+          '<span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Proximos Vencimientos</span>' +
         '</div>' +
         '<div id="kpiProximosVenc" style="font-size:24px;font-weight:800;color:var(--accent-amber);">' + proximosVencimientos + '</div>' +
-        '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Vencen en los proximos 90 dias</div>' +
+        '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Vencen en los proximos 90 dias</div>' +
       '</div>' +
     '</div>' +
 
@@ -231,8 +231,8 @@ function filterSeguros() {
     if (vencExpired) vigenciaStyle = 'color:var(--accent-red);font-weight:600;';
     else if (vencSoon) vigenciaStyle = 'color:var(--accent-amber);font-weight:600;';
 
-    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="editSeguro(\'' + s.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
-    acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="deleteSeguro(\'' + s.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="editSeguro(\'' + s.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+    acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deleteSeguro(\'' + s.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
 
     // badge-secondary inline style for "Otro"
     var badgeExtra = tipoBadge === 'badge-secondary' ? ' style="background:rgba(148,163,184,0.15);color:#94a3b8;"' : '';
@@ -315,7 +315,7 @@ function editSeguro(id) {
       '<div class="form-group"><label class="form-label">Notas</label>' +
         '<textarea id="seguroNotas" class="form-input" rows="3" style="resize:vertical;" placeholder="Notas adicionales...">' + (isEdit && seguro.notas ? seguro.notas : '') + '</textarea></div>' +
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
-        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text-primary);">' +
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:17px;color:var(--text-primary);">' +
           '<input type="checkbox" id="seguroActivo" ' + (isEdit ? (seguro.activo ? 'checked' : '') : 'checked') + ' style="width:18px;height:18px;accent-color:var(--accent-green);">' +
           ' Poliza Activa' +
         '</label>' +

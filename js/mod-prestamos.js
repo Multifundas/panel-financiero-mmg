@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    MODULE: PRESTAMOS  -  Otorgados y Recibidos
    ============================================================ */
 
@@ -28,38 +28,38 @@ function renderPrestamos() {
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-amber-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-hand-holding-usd" style="color:var(--accent-amber);font-size:19px;"></i>
           </div>
-          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Otorgado</span>
+          <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Otorgado</span>
         </div>
         <div id="kpiTotalOtorgado" style="font-size:24px;font-weight:800;color:var(--accent-amber);">${formatCurrencyInt(totalOtorgado, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-blue);cursor:pointer;" onclick="mostrarDesglosePrestamosKpi('recibido')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-blue-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-file-invoice-dollar" style="color:var(--accent-blue);font-size:19px;"></i>
           </div>
-          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Recibido</span>
+          <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Total Recibido</span>
         </div>
         <div id="kpiTotalRecibido" style="font-size:24px;font-weight:800;color:var(--accent-blue);">${formatCurrencyInt(totalRecibido, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent-${balanceColor});cursor:pointer;" onclick="mostrarDesglosePrestamosKpi('balance')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-${balanceColor}-soft);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-balance-scale" style="color:var(--accent-${balanceColor});font-size:19px;"></i>
           </div>
-          <span style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
+          <span style="font-size:17px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Balance Neto</span>
         </div>
         <div id="kpiBalanceNeto" style="font-size:24px;font-weight:800;color:var(--accent-${balanceColor});">${formatCurrencyInt(balanceNeto, 'MXN')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:8px;"></i></div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Click para desglose <i class="fas fa-chevron-right" style="font-size:10px;"></i></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:16px;padding:8px 12px;">
       <div style="display:flex;gap:8px;">
-        <button id="tabPrestamosVista" class="btn btn-primary" style="padding:6px 16px;font-size:13px;" onclick="_switchPrestamosTab('vista')">
+        <button id="tabPrestamosVista" class="btn btn-primary" style="padding:6px 16px;font-size:16px;" onclick="_switchPrestamosTab('vista')">
           <i class="fas fa-list" style="margin-right:4px;"></i>Vista General
         </button>
-        <button id="tabPrestamosEdicion" class="btn btn-secondary" style="padding:6px 16px;font-size:13px;" onclick="_switchPrestamosTab('edicion')">
+        <button id="tabPrestamosEdicion" class="btn btn-secondary" style="padding:6px 16px;font-size:16px;" onclick="_switchPrestamosTab('edicion')">
           <i class="fas fa-edit" style="margin-right:4px;"></i>Edicion
         </button>
       </div>
@@ -150,10 +150,10 @@ function filterPrestamos() {
     else if (p.estado === 'vencido') { estadoBadge = 'badge-red'; estadoLabel = 'Vencido'; }
     var tasa = p.tasa_interes ? formatPct(p.tasa_interes) : '0.00%';
     var venc = p.fecha_vencimiento ? formatDate(p.fecha_vencimiento) : '\u2014';
-    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
-    if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:13px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
-    if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:13px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
-    acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:13px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+    if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
+    if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
+    acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
     var sc = p.saldo_pendiente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
     var moneda = p.moneda || 'MXN';
     // Main prestamo row with highlight background
@@ -162,12 +162,12 @@ function filterPrestamos() {
     var pagos = (p.pagos || []).slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
     var pagosRows = pagos.map(function(pg) {
       var esAdicional = pg.tipo === 'prestamo_adicional';
-      var pgTipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:10px;padding:1px 6px;">Adicional</span>' : '<span class="badge badge-green" style="font-size:10px;padding:1px 6px;">Abono</span>';
+      var pgTipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:12px;padding:1px 6px;">Adicional</span>' : '<span class="badge badge-green" style="font-size:12px;padding:1px 6px;">Abono</span>';
       var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
       var prefix = esAdicional ? '+' : '-';
-      var pgAcc = '<button class="btn btn-secondary" style="padding:3px 6px;font-size:11px;margin-right:3px;" onclick="_editPagoInline(\'' + p.id + '\',\'' + pg.id + '\')" title="Editar pago"><i class="fas fa-pencil-alt"></i></button>' +
-        '<button class="btn btn-danger" style="padding:3px 6px;font-size:11px;" onclick="_deletePagoEdicion(\'' + p.id + '\',\'' + pg.id + '\')" title="Eliminar pago"><i class="fas fa-trash"></i></button>';
-      return '<tr style="font-size:12px;"><td style="padding-left:24px;color:var(--text-muted);font-size:12px;"><i class="fas fa-level-up-alt fa-rotate-90" style="margin-right:6px;font-size:9px;opacity:0.4;"></i>' + (pg.descripcion || 'Pago') + '</td><td>' + pgTipoBadge + '</td><td style="text-align:right;color:' + montoColor + ';font-weight:600;font-size:12px;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td><td></td><td></td><td style="font-size:12px;">' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td><td></td><td style="text-align:center;">' + pgAcc + '</td></tr>';
+      var pgAcc = '<button class="btn btn-secondary" style="padding:3px 6px;font-size:13px;margin-right:3px;" onclick="_editPagoInline(\'' + p.id + '\',\'' + pg.id + '\')" title="Editar pago"><i class="fas fa-pencil-alt"></i></button>' +
+        '<button class="btn btn-danger" style="padding:3px 6px;font-size:13px;" onclick="_deletePagoEdicion(\'' + p.id + '\',\'' + pg.id + '\')" title="Eliminar pago"><i class="fas fa-trash"></i></button>';
+      return '<tr style="font-size:14px;"><td style="padding-left:24px;color:var(--text-muted);font-size:14px;"><i class="fas fa-level-up-alt fa-rotate-90" style="margin-right:6px;font-size:11px;opacity:0.4;"></i>' + (pg.descripcion || 'Pago') + '</td><td>' + pgTipoBadge + '</td><td style="text-align:right;color:' + montoColor + ';font-weight:600;font-size:14px;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td><td></td><td></td><td style="font-size:14px;">' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td><td></td><td style="text-align:center;">' + pgAcc + '</td></tr>';
     }).join('');
     return prestamoRow + pagosRows;
   }).join('');
@@ -304,8 +304,8 @@ function registrarPago(prestamoId) {
   const formHTML = `
     <form id="formPago" onsubmit="savePago(event, '${prestamoId}')">
       <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
-        <div style="font-size:14px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
+        <div style="font-size:17px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
+        <div style="font-size:17px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group"><label class="form-label">Monto del Pago *</label>
@@ -318,7 +318,7 @@ function registrarPago(prestamoId) {
           <option value="">Sin cuenta asociada</option>
           ${cuentaOpciones}
         </select>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Cuenta donde se recibe o paga el dinero</div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:2px;">Cuenta donde se recibe o paga el dinero</div>
       </div>
       <div class="form-group"><label class="form-label">Descripcion</label>
         <input type="text" id="pagoDescripcion" class="form-input" placeholder="Descripcion del pago..." value=""></div>
@@ -384,9 +384,9 @@ function prestarMas(prestamoId) {
   const formHTML = `
     <form id="formPrestarMas" onsubmit="savePrestamoAdicional(event, '${prestamoId}')">
       <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-base);">
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Monto original: <strong style="color:var(--text-primary);">${formatCurrencyInt(prestamo.monto_original, prestamo.moneda || 'MXN')}</strong></div>
-        <div style="font-size:14px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
+        <div style="font-size:17px;color:var(--text-muted);margin-bottom:4px;">Prestamo a: <strong style="color:var(--text-primary);">${prestamo.persona}</strong></div>
+        <div style="font-size:17px;color:var(--text-muted);margin-bottom:4px;">Monto original: <strong style="color:var(--text-primary);">${formatCurrencyInt(prestamo.monto_original, prestamo.moneda || 'MXN')}</strong></div>
+        <div style="font-size:17px;color:var(--text-muted);">Saldo pendiente: <strong style="color:var(--accent-amber);">${formatCurrencyInt(prestamo.saldo_pendiente, prestamo.moneda || 'MXN')}</strong></div>
       </div>
       <div class="form-group"><label class="form-label">Monto Adicional a Prestar *</label>
         <input type="number" id="prestarMasMonto" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>
@@ -503,7 +503,7 @@ function verHistorialPagos(prestamoId) {
 
     return '<tr>' +
       '<td>' + (e.fecha ? formatDate(e.fecha) : '\u2014') + '</td>' +
-      '<td><span class="badge ' + tipoBadgeClass + '" style="font-size:12px;">' + tipoLabel + '</span></td>' +
+      '<td><span class="badge ' + tipoBadgeClass + '" style="font-size:14px;">' + tipoLabel + '</span></td>' +
       '<td style="color:var(--text-primary);">' + e.descripcion + '</td>' +
       '<td style="text-align:right;">' + cargoDisplay + '</td>' +
       '<td style="text-align:right;">' + abonoDisplay + '</td>' +
@@ -528,19 +528,19 @@ function verHistorialPagos(prestamoId) {
 
   // Summary cards at top
   var summaryCards = '<div style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">' +
-    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Persona</div><div style="font-size:15px;font-weight:700;color:var(--text-primary);">' + prestamo.persona + '</div></div>' +
-    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total Prestado</div><div style="font-size:15px;font-weight:700;color:var(--accent-amber);">' + formatCurrencyInt(montoInicialOriginal + totalPrestado, moneda) + '</div></div>' +
-    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total ' + labelAbono + 's</div><div style="font-size:15px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(totalAbonado, moneda) + '</div></div>' +
-    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Saldo Pendiente</div><div style="font-size:15px;font-weight:700;color:' + (prestamo.saldo_pendiente > 0 ? 'var(--accent-red)' : 'var(--accent-green)') + ';">' + formatCurrencyInt(prestamo.saldo_pendiente, moneda) + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Persona</div><div style="font-size:18px;font-weight:700;color:var(--text-primary);">' + prestamo.persona + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total Prestado</div><div style="font-size:18px;font-weight:700;color:var(--accent-amber);">' + formatCurrencyInt(montoInicialOriginal + totalPrestado, moneda) + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Total ' + labelAbono + 's</div><div style="font-size:18px;font-weight:700;color:var(--accent-green);">' + formatCurrencyInt(totalAbonado, moneda) + '</div></div>' +
+    '<div style="text-align:center;padding:10px;border-radius:8px;background:var(--bg-base);"><div style="font-size:13px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px;">Saldo Pendiente</div><div style="font-size:18px;font-weight:700;color:' + (prestamo.saldo_pendiente > 0 ? 'var(--accent-red)' : 'var(--accent-green)') + ';">' + formatCurrencyInt(prestamo.saldo_pendiente, moneda) + '</div></div>' +
     '</div>';
 
   var estadoLabel = prestamo.estado.charAt(0).toUpperCase() + prestamo.estado.slice(1);
   var estadoBadge = prestamo.estado === 'pagado' ? 'badge-green' : prestamo.estado === 'activo' ? 'badge-blue' : 'badge-amber';
 
   const bodyHTML = summaryCards +
-    '<div style="margin-bottom:12px;font-size:13px;color:var(--text-muted);">Fecha de inicio: <strong style="color:var(--text-primary);">' + formatDate(prestamo.fecha_inicio || '') + '</strong>' +
+    '<div style="margin-bottom:12px;font-size:16px;color:var(--text-muted);">Fecha de inicio: <strong style="color:var(--text-primary);">' + formatDate(prestamo.fecha_inicio || '') + '</strong>' +
     (prestamo.fecha_vencimiento ? ' &nbsp;|&nbsp; Vencimiento: <strong style="color:var(--text-primary);">' + formatDate(prestamo.fecha_vencimiento) + '</strong>' : '') +
-    ' &nbsp;|&nbsp; Estado: <span class="badge ' + estadoBadge + '" style="font-size:12px;">' + estadoLabel + '</span></div>' +
+    ' &nbsp;|&nbsp; Estado: <span class="badge ' + estadoBadge + '" style="font-size:14px;">' + estadoLabel + '</span></div>' +
     tablaPagos +
     '<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>';
   openModal('Estado de Cuenta — ' + prestamo.persona, bodyHTML);
@@ -591,14 +591,14 @@ function mostrarDesglosePrestamosKpi(tipo) {
     var saldo = p.saldo_pendiente != null ? p.saldo_pendiente : p.monto_original;
     var valorMXN = toMXN(saldo, moneda, tiposCambio);
     totalMXN += (p.tipo === 'otorgado' ? valorMXN : -valorMXN);
-    var tipoLabel = p.tipo === 'otorgado' ? '<span class="badge badge-amber" style="font-size:12px;">Otorgado</span>' : '<span class="badge badge-blue" style="font-size:12px;">Recibido</span>';
-    var estadoBadge = p.estado === 'vencido' ? '<span class="badge badge-red" style="font-size:12px;">Vencido</span>' : '<span class="badge badge-green" style="font-size:12px;">Activo</span>';
+    var tipoLabel = p.tipo === 'otorgado' ? '<span class="badge badge-amber" style="font-size:14px;">Otorgado</span>' : '<span class="badge badge-blue" style="font-size:14px;">Recibido</span>';
+    var estadoBadge = p.estado === 'vencido' ? '<span class="badge badge-red" style="font-size:14px;">Vencido</span>' : '<span class="badge badge-green" style="font-size:14px;">Activo</span>';
     return '<tr>' +
       '<td style="font-weight:600;color:var(--text-primary);">' + (p.persona || 'N/A') + '</td>' +
       (tipo === 'balance' ? '<td style="text-align:center;">' + tipoLabel + '</td>' : '') +
       '<td style="text-align:right;white-space:nowrap;">' + formatCurrencyInt(p.monto_original, moneda) + '</td>' +
       '<td style="text-align:right;white-space:nowrap;font-weight:600;">' + formatCurrencyInt(saldo, moneda) + '</td>' +
-      '<td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:12px;">' + moneda + '</span></td>' +
+      '<td style="text-align:center;"><span class="badge ' + monedaBadgeClass(moneda) + '" style="font-size:14px;">' + moneda + '</span></td>' +
       '<td style="text-align:right;white-space:nowrap;font-weight:600;color:var(--accent-blue);">' + formatCurrencyInt(valorMXN, 'MXN') + '</td>' +
       '<td style="text-align:center;">' + estadoBadge + '</td>' +
     '</tr>';
@@ -641,13 +641,13 @@ function _switchPrestamosTab(tab) {
   if (tab === 'vista') {
     vistaTab.style.display = '';
     edicionTab.style.display = 'none';
-    if (btnVista) { btnVista.className = 'btn btn-primary'; btnVista.style.cssText = 'padding:6px 16px;font-size:13px;'; }
-    if (btnEdicion) { btnEdicion.className = 'btn btn-secondary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnVista) { btnVista.className = 'btn btn-primary'; btnVista.style.cssText = 'padding:6px 16px;font-size:16px;'; }
+    if (btnEdicion) { btnEdicion.className = 'btn btn-secondary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:16px;'; }
   } else {
     vistaTab.style.display = 'none';
     edicionTab.style.display = '';
-    if (btnVista) { btnVista.className = 'btn btn-secondary'; btnVista.style.cssText = 'padding:6px 16px;font-size:13px;'; }
-    if (btnEdicion) { btnEdicion.className = 'btn btn-primary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:13px;'; }
+    if (btnVista) { btnVista.className = 'btn btn-secondary'; btnVista.style.cssText = 'padding:6px 16px;font-size:16px;'; }
+    if (btnEdicion) { btnEdicion.className = 'btn btn-primary'; btnEdicion.style.cssText = 'padding:6px 16px;font-size:16px;'; }
     _renderEdicionContent();
   }
 }
@@ -678,16 +678,16 @@ function _renderEdicionContent() {
     var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
     return '<tr style="' + zebra + '">' +
       '<td style="font-weight:600;color:var(--text-primary);">' + (p.persona || '\u2014') + '</td>' +
-      '<td><span class="badge ' + tipoBadge + '" style="font-size:11px;">' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + '</span></td>' +
+      '<td><span class="badge ' + tipoBadge + '" style="font-size:13px;">' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + '</span></td>' +
       '<td style="text-align:right;">' + formatCurrencyInt(p.monto_original, moneda) + '</td>' +
       '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(p.saldo_pendiente, moneda) + '</td>' +
-      '<td><span class="badge ' + estadoBadge + '" style="font-size:11px;">' + (p.estado || 'activo') + '</span></td>' +
+      '<td><span class="badge ' + estadoBadge + '" style="font-size:13px;">' + (p.estado || 'activo') + '</span></td>' +
       '<td style="text-align:center;">' +
-        (numPagos > 0 ? '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_verPagosEdicion(\'' + p.id + '\')" title="Ver pagos (' + numPagos + ')"><i class="fas fa-list-ol"></i> ' + numPagos + '</button>' : '<span style="color:var(--text-muted);font-size:11px;">0</span>') +
+        (numPagos > 0 ? '<button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;margin-right:4px;" onclick="_verPagosEdicion(\'' + p.id + '\')" title="Ver pagos (' + numPagos + ')"><i class="fas fa-list-ol"></i> ' + numPagos + '</button>' : '<span style="color:var(--text-muted);font-size:13px;">0</span>') +
       '</td>' +
       '<td style="text-align:center;">' +
-        '<button class="btn btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="_editPrestamoModal(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
-        '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="_deletePrestamoEdicion(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+        '<button class="btn btn-secondary" style="padding:4px 10px;font-size:14px;margin-right:4px;" onclick="_editPrestamoModal(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
+        '<button class="btn btn-danger" style="padding:4px 10px;font-size:14px;" onclick="_deletePrestamoEdicion(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
       '</td>' +
     '</tr>';
   }).join('');
@@ -803,7 +803,7 @@ function _verPagosEdicion(prestamoId) {
 
   var pagosRows = pagos.map(function(pg, idx) {
     var esAdicional = pg.tipo === 'prestamo_adicional';
-    var tipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:11px;">Prestamo</span>' : '<span class="badge badge-green" style="font-size:11px;">Abono</span>';
+    var tipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:13px;">Prestamo</span>' : '<span class="badge badge-green" style="font-size:13px;">Abono</span>';
     var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
     var prefix = esAdicional ? '+' : '-';
     var zebra = idx % 2 === 1 ? 'background:rgba(255,255,255,0.02);' : '';
@@ -813,8 +813,8 @@ function _verPagosEdicion(prestamoId) {
       '<td style="color:' + montoColor + ';font-weight:600;text-align:right;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td>' +
       '<td>' + (pg.descripcion || '\u2014') + '</td>' +
       '<td style="text-align:center;">' +
-      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px;" onclick="_editPagoInline(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
-      '<button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="_deletePagoEdicion(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+      '<button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;margin-right:4px;" onclick="_editPagoInline(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
+      '<button class="btn btn-danger" style="padding:3px 8px;font-size:13px;" onclick="_deletePagoEdicion(\'' + prestamoId + '\',\'' + pg.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
       '</td></tr>';
   }).join('');
 
@@ -839,7 +839,7 @@ function _editPagoInline(prestamoId, pagoId) {
 
   var formHTML = '<form id="formEditPago" onsubmit="_savePagoEdit(event, \'' + prestamoId + '\', \'' + pagoId + '\')">' +
     '<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:var(--bg-base);">' +
-    '<div style="font-size:13px;color:var(--text-muted);">Tipo: <strong style="color:var(--text-primary);">' + (esAdicional ? 'Prestamo Adicional' : 'Abono/Pago') + '</strong></div></div>' +
+    '<div style="font-size:16px;color:var(--text-muted);">Tipo: <strong style="color:var(--text-primary);">' + (esAdicional ? 'Prestamo Adicional' : 'Abono/Pago') + '</strong></div></div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
     '<div class="form-group"><label class="form-label">Monto *</label><input type="number" id="editPagoMonto" class="form-input" required step="0.01" min="0.01" value="' + pago.monto + '"></div>' +
     '<div class="form-group"><label class="form-label">Fecha *</label><input type="date" id="editPagoFecha" class="form-input" required value="' + (pago.fecha || '') + '"></div>' +
