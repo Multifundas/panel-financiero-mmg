@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260817c
+   PDF BANK STATEMENT IMPORT MODULE  v20260817d
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -256,121 +256,179 @@ function _detectBanco(text) {
   return 'Banco desconocido';
 }
 
-/* ── Parser Banorte ─────────────────────────────────────────── */
-/*
-   Banorte emite dos tipos de estado:
-   A) Chequera/débito: fechas DD/MM/YYYY, columnas CARGO | ABONO | SALDO
-   B) Tarjeta crédito: fechas DD/MM (sin año), columna IMPORTE (cargo)
-                        pagos en sección separada "PAGOS Y CRÉDITOS"
-   Ambos se manejan aquí.
-*/
+/* ── Parser Banorte ─────────────────────────────────────────────────────────
+   Detecta automáticamente el sub-formato:
+   • TC  (Tarjeta de Crédito): fechas "DD-MMM-YYYY", monto "+$X" o "-$X"
+   • CHQ (Chequera / web):     fechas "DD/Mmm/YYYY", cargos "$-X", abonos "$X"
+   ─────────────────────────────────────────────────────────────────────────── */
 function parseBanorte(lines, fullText) {
+  // Detectar sub-formato por el patrón de fecha dominante
+  var tcDateRe  = /\b\d{2}-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)-\d{4}\b/i;
+  var chqDateRe = /\b\d{2}\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)\/\d{4}\b/i;
+
+  if (tcDateRe.test(fullText))  return parseBanorteTC(lines, fullText);
+  if (chqDateRe.test(fullText)) return parseBanorteChequera(lines, fullText);
+
+  // Si ningún patrón específico, intentar ambos y retornar el que encuentre más
+  var tcRows  = parseBanorteTC(lines, fullText);
+  var chqRows = parseBanorteChequera(lines, fullText);
+  return tcRows.length >= chqRows.length ? tcRows : chqRows;
+}
+
+/* ── Banorte Tarjeta de Crédito ─────────────────────────────────────────────
+   Formato por fila (separada por tabs):
+     "28-JUN-2026  29-JUN-2026  IPARK MTY INTERRED APODACA NL MX  +$1,050.00"
+   Líneas de tipo de cambio (ignorar fila previa):
+     "06/26/26 2,889.0892 USD RT 17.5572"
+   Pagos:  "-$105,000.00"  → tipo ingreso (reducen deuda)
+   ─────────────────────────────────────────────────────────────────────────── */
+function parseBanorteTC(lines, fullText) {
   var rows = [];
 
-  // Detectar año y mes de cierre del estado
-  var anio = new Date().getFullYear();
-  var mesCierre = 0;
-
-  var mAnio = fullText.match(/\b(20[2-9]\d)\b/);
-  if (mAnio) anio = parseInt(mAnio[1]);
-
-  // "Periodo 01/07/2026 al 31/07/2026"  o  "al 31 de Julio de 2026"
-  var mPeriodo = fullText.match(/al\s+\d{1,2}[\/\s](?:de\s+)?([A-Za-záéíóúÁÉÍÓÚ]+)[\/\s](\d{4})/i);
-  if (!mPeriodo) mPeriodo = fullText.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
-
-  if (mPeriodo && mPeriodo[3]) {
-    anio = parseInt(mPeriodo[3]);
-    mesCierre = parseInt(mPeriodo[2]);
-  } else if (mPeriodo && mPeriodo[2]) {
-    anio = parseInt(mPeriodo[2]);
-    var mKey = _sinAcentos(mPeriodo[1].toLowerCase()).substring(0, 3);
-    mesCierre = _MESES[mKey] || 0;
-  }
-
-  var inZona = false;
-  var esZonaPagos = false;
-
-  // Patrón de monto: "1,234.56"  o  "1234.56"  o  "$ 1,234.56"
-  var rMonto = /\$?\s*([\d,]+\.\d{2})/g;
+  // Fecha TC: DD-MMM-YYYY con abreviaturas en mayúsculas (o mezcladas)
+  var dateRe  = /^(\d{2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})/i;
+  // Monto al final de línea: +$1,050.00  o  -$105,000.00
+  var amtRe   = /([+\-])\s*\$\s*([\d,]+\.\d{2})\s*$/;
+  // Línea de tipo de cambio USD → ignorar fila anterior
+  var usdRe   = /\d{2}\/\d{2}\/\d{2}\s+[\d,.]+\s+USD\s+RT\s+[\d.]+/i;
 
   for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (!line.trim()) continue;
+    var raw  = lines[i];
+    var line = raw.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!line) continue;
 
-    // ── Detectar inicio/fin de zonas ───────────────────────
-    if (/MOVIMIENTOS DE LA CUENTA|DESGLOSE DE MOVIMIENTOS|MOVIMIENTOS DEL PERIODO|DETALLE DE MOVIMIENTOS|RELACI[OÓ]N DE MOVIMIENTOS/i.test(line)) {
-      inZona = true; esZonaPagos = false; continue;
-    }
-    if (/PAGOS\s*Y\s*CR[EÉ]DITOS|ABONOS\s*Y\s*CR[EÉ]DITOS/i.test(line)) {
-      inZona = true; esZonaPagos = true; continue;
-    }
-    if (/TOTAL\s+(DE\s+)?CARGOS|TOTAL\s+NUEVOS\s+CARGOS|SUBTOTAL|COMISIONES|RESUMEN\s+DE\s+CUENTA|SALDO\s+AL\s+CORTE/i.test(line)) {
-      inZona = false; continue;
-    }
-    if (!inZona) continue;
+    // Si la SIGUIENTE línea es tipo de cambio USD → saltar esta fila
+    var nextLine = i + 1 < lines.length ? lines[i + 1].replace(/\t/g, ' ') : '';
+    if (usdRe.test(nextLine)) { i++; continue; }
 
-    // ── Ignorar encabezados de tabla ───────────────────────
-    if (/^FECHA\b.*\b(OPERACI|APL|DESCRIPCI|CONCEPTO|CARGO|IMPORTE)/i.test(line)) continue;
+    var dm = line.match(dateRe);
+    if (!dm) continue;
 
-    // ── Extraer columnas separadas por tab ─────────────────
-    var cols = line.split('\t').map(function(c) { return c.trim(); }).filter(Boolean);
-    if (cols.length < 2) continue;
+    // Ignorar filas de encabezado de columnas
+    if (/Fecha de (la )?operaci|Fecha de cargo|Descripci/i.test(line)) continue;
+    // Ignorar totales y subtítulos
+    if (/CARGOS,\s*ABONOS|Tarjeta (titular|adicional)|Total (cargos|abonos)/i.test(line)) continue;
 
-    // Primera columna: ¿es una fecha?
-    var fecha = _parseFecha(cols[0], anio, mesCierre);
-    if (!fecha) {
-      // Puede que la fecha sea la primera parte del texto (sin tab)
-      var m = line.match(/^(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)/);
-      if (m) fecha = _parseFecha(m[1], anio, mesCierre);
-    }
-    if (!fecha) continue;
+    var am = line.match(amtRe);
+    if (!am) continue;
 
-    // Extraer todos los montos de la línea
-    var montos = [];
-    rMonto.lastIndex = 0;
-    var mMatch;
-    while ((mMatch = rMonto.exec(line)) !== null) {
-      var v = _parseMonto(mMatch[1]);
-      if (v > 0) montos.push(v);
-    }
-    if (!montos.length) continue;
+    var monto = _parseMonto(am[2]);
+    if (monto < 0.01) continue;
 
-    // Extraer descripción: columnas que no son fecha ni monto
-    var descCols = [];
-    for (var c = 1; c < cols.length; c++) {
-      var col = cols[c];
-      if (!col) continue;
-      if (/^(\$?\s*[\d,]+\.\d{2})$/.test(col)) continue; // es monto
-      if (/^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(col)) continue; // es fecha (ej. fecha de liquidación)
-      descCols.push(col);
-    }
-    var desc = descCols.join(' ').replace(/\s+/g, ' ').trim() || 'Movimiento';
+    // signo: '+' → cargo al cliente = gasto; '-' → pago recibido = ingreso
+    var tipo = (am[1] === '-') ? 'ingreso' : 'gasto';
 
-    // Determinar monto y tipo
-    var monto, tipo;
-    if (esZonaPagos) {
-      monto = montos[0];
-      tipo = 'ingreso';
-    } else if (montos.length >= 3) {
-      // Chequera: CARGO | ABONO | SALDO  → uno de los dos primeros es cero
-      var cargo = montos[0], abono = montos[1];
-      if (abono > 0 && abono !== montos[montos.length - 1]) {
-        monto = abono; tipo = 'ingreso';
-      } else {
-        monto = cargo; tipo = 'gasto';
-      }
-    } else {
-      // TC: columna única de importe
-      monto = montos[0];
-      tipo = _esPago(desc) ? 'ingreso' : 'gasto';
-    }
+    // Descripción: quitar fechas y monto de la línea
+    var desc = line
+      .replace(dateRe, '')          // primera fecha
+      .replace(dateRe, '')          // segunda fecha (fecha de cargo)
+      .replace(amtRe,  '')          // monto
+      .replace(/\s+/g, ' ').trim();
+    if (!desc) desc = 'Movimiento';
 
-    if (!monto || monto < 0.01) continue;
+    var mesNum = _MESES[dm[2].toLowerCase().substring(0, 3)];
+    if (!mesNum) continue;
+    var fecha = dm[3] + '-' + _pad(mesNum) + '-' + dm[1];
 
     rows.push({ fecha: fecha, descripcion: desc, monto: monto, tipo: tipo,
                 categoria_id: null, categoria_nombre: '', selected: false });
   }
+  return rows;
+}
 
+/* ── Banorte Chequera (estado web impreso a PDF) ─────────────────────────────
+   Formato por fila:
+     "12/Ago/2026  [descripción]  $-900.00  [vacío]  $50,347.94"
+     "12/Ago/2026  [descripción]  [vacío]   $255,000.00  $311,051.77"
+   La descripción puede continuar en líneas siguientes (sin fecha).
+   Columnas: Fecha | Concepto | Cargos ($-) | Abonos ($+) | Saldo
+   ─────────────────────────────────────────────────────────────────────────── */
+function parseBanorteChequera(lines, fullText) {
+  var rows = [];
+  // DD/Mmm/YYYY  (ej. 12/Ago/2026)
+  var dateRe = /^(\d{2})\/(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)\/(\d{4})/i;
+
+  var current = null;
+
+  function _pushCurrent() {
+    if (current && current.monto >= 0.01) rows.push(current);
+    current = null;
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var raw  = lines[i];
+    var line = raw.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!line) continue;
+
+    // Ignorar totales y encabezados
+    if (/^(Total:|Saldo |SALDO |Fecha\s+Concepto|CARGO POR MANEJO)/i.test(line)) {
+      _pushCurrent(); continue;
+    }
+
+    var dm = line.match(dateRe);
+    if (dm) {
+      _pushCurrent();
+
+      var mesNum = _MESES[dm[2].toLowerCase().substring(0, 3)];
+      if (!mesNum) continue;
+      var fecha = dm[3] + '-' + _pad(mesNum) + '-' + dm[1];
+
+      // Extraer todos los montos con signo de la línea
+      // Formato posible: "$-900.00"  o  "-$900.00"  o  "$900.00"
+      var signed = [];
+      var amRe = /([-+]?)\$\s*(-?)\s*([\d,]+\.\d{2})/g;
+      var m;
+      while ((m = amRe.exec(line)) !== null) {
+        var neg = (m[1] === '-' || m[2] === '-');
+        var v   = _parseMonto(m[3]);
+        signed.push(neg ? -v : v);
+      }
+
+      // Descripción: texto entre la fecha y el primer monto
+      var firstAmt = line.search(/([-+]?)\$\s*-?\s*[\d,]+\.\d{2}/);
+      var afterDate = line.substring(dm[0].length);
+      var desc = (firstAmt > dm[0].length
+        ? line.substring(dm[0].length, firstAmt)
+        : afterDate
+      ).replace(/\s+/g, ' ').trim();
+      if (!desc) desc = 'Movimiento';
+
+      // Con 2+ montos: el ÚLTIMO es el saldo (ignorar);
+      // el PRIMERO es cargo (negativo) o abono (positivo).
+      // Con 1 monto: podría ser sólo saldo → necesitamos detectarlo.
+      var monto = 0, tipo = 'gasto';
+
+      if (signed.length >= 2) {
+        var primero = signed[0];
+        if (primero < 0) { monto = Math.abs(primero); tipo = 'gasto';   }
+        else             { monto = primero;            tipo = 'ingreso'; }
+      } else if (signed.length === 1) {
+        // Solo un monto: si la descripción contiene palabras de abono → ingreso
+        var v1 = signed[0];
+        if (v1 < 0) { monto = Math.abs(v1); tipo = 'gasto'; }
+        else {
+          // Podría ser saldo o abono; si hay texto de descripción real, es abono
+          if (desc.length > 5) { monto = v1; tipo = 'ingreso'; }
+          // Si no, probablemente es solo el saldo → skip
+        }
+      }
+
+      current = { fecha: fecha, descripcion: desc, monto: monto, tipo: tipo,
+                  categoria_id: null, categoria_nombre: '', selected: false };
+
+    } else if (current) {
+      // Línea de continuación de descripción (referencias, RAS, FAC, etc.)
+      // Solo agregarla si no es pura basura numérica/técnica larga
+      if (!/^\d{15,}/.test(line)) {   // ignorar líneas de puro número de referencia largo
+        var extra = line.replace(/\s+/g, ' ').trim();
+        if (extra && current.descripcion.length < 120) {
+          current.descripcion = (current.descripcion + ' ' + extra).trim().substring(0, 150);
+        }
+      }
+    }
+  }
+
+  _pushCurrent();
   return rows;
 }
 
