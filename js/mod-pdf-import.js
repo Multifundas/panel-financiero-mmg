@@ -277,55 +277,69 @@ function parseBanorte(lines, fullText) {
 }
 
 /* ── Banorte Tarjeta de Crédito ─────────────────────────────────────────────
-   Formato por fila (separada por tabs):
-     "28-JUN-2026  29-JUN-2026  IPARK MTY INTERRED APODACA NL MX  +$1,050.00"
-   Líneas de tipo de cambio (ignorar fila previa):
-     "06/26/26 2,889.0892 USD RT 17.5572"
-   Pagos:  "-$105,000.00"  → tipo ingreso (reducen deuda)
+   Formatos detectados en el mismo PDF:
+   A)  "06-JUN-2026  07-JUN-2026  IPARK MTY  +$1,050.00"
+       — un solo monto con signo
+   B)  "06-MAY-2026  06-JUL-2026  CITY MARKET  $ 5,005.29  +$47,243.00"
+       — cargo sin signo + saldo con '+' al final (columna saldo visible)
+   Regla: cuando hay 2+ montos, el ÚLTIMO es el saldo (ignorar);
+          tomar el PRIMERO como movimiento.
+   Pagos al cliente (ingresos):  "-$X" único  o  desc que contenga "pago".
    ─────────────────────────────────────────────────────────────────────────── */
 function parseBanorteTC(lines, fullText) {
   var rows = [];
 
-  // Fecha TC: DD-MMM-YYYY con abreviaturas en mayúsculas (o mezcladas)
-  var dateRe  = /^(\d{2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})/i;
-  // Monto al final de línea: +$1,050.00  o  -$105,000.00
-  var amtRe   = /([+\-])\s*\$\s*([\d,]+\.\d{2})\s*$/;
+  // Fecha TC al inicio de línea: DD-MMM-YYYY
+  var dateRe    = /^(\d{2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})/i;
+  // Cualquier fecha DD-MMM-YYYY en cualquier posición (para limpiar descripción)
+  var anyDateRe = /\d{2}-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4}/ig;
+  // Cualquier monto monetario con o sin signo: +$X  -$X  $X  $ X
+  var anyAmtRe  = /([+\-]?)\s*\$\s*([\d,]+\.\d{2})/g;
   // Línea de tipo de cambio USD → ignorar fila anterior
-  var usdRe   = /\d{2}\/\d{2}\/\d{2}\s+[\d,.]+\s+USD\s+RT\s+[\d.]+/i;
+  var usdRe     = /\d{2}\/\d{2}\/\d{2}\s+[\d,.]+\s+USD\s+RT\s+[\d.]+/i;
 
   for (var i = 0; i < lines.length; i++) {
     var raw  = lines[i];
     var line = raw.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
     if (!line) continue;
 
-    // Si la SIGUIENTE línea es tipo de cambio USD → saltar esta fila
     var nextLine = i + 1 < lines.length ? lines[i + 1].replace(/\t/g, ' ') : '';
     if (usdRe.test(nextLine)) { i++; continue; }
 
     var dm = line.match(dateRe);
     if (!dm) continue;
 
-    // Ignorar filas de encabezado de columnas
     if (/Fecha de (la )?operaci|Fecha de cargo|Descripci/i.test(line)) continue;
-    // Ignorar totales y subtítulos
     if (/CARGOS,\s*ABONOS|Tarjeta (titular|adicional)|Total (cargos|abonos)/i.test(line)) continue;
 
-    var am = line.match(amtRe);
-    if (!am) continue;
+    // Extraer TODOS los montos de la línea
+    anyAmtRe.lastIndex = 0;
+    var amounts = [];
+    var m;
+    while ((m = anyAmtRe.exec(line)) !== null) {
+      amounts.push({ sign: m[1].trim(), value: _parseMonto(m[2]) });
+    }
+    if (!amounts.length) continue;
 
-    var monto = _parseMonto(am[2]);
+    // Determinar monto y tipo:
+    // - 1 monto: usar su signo ('-'=ingreso, cualquier otro=gasto)
+    // - 2+ montos: el ÚLTIMO es el saldo → tomar el PRIMERO como movimiento
+    var monto, tipo;
+    var movAmt = (amounts.length === 1) ? amounts[0] : amounts[0];
+    monto = movAmt.value;
+    tipo  = (movAmt.sign === '-') ? 'ingreso' : 'gasto';
+
     if (monto < 0.01) continue;
 
-    // signo: '+' → cargo al cliente = gasto; '-' → pago recibido = ingreso
-    var tipo = (am[1] === '-') ? 'ingreso' : 'gasto';
-
-    // Descripción: quitar fechas y monto de la línea
+    // Descripción: quitar TODAS las fechas TC y TODOS los montos
     var desc = line
-      .replace(dateRe, '')          // primera fecha
-      .replace(dateRe, '')          // segunda fecha (fecha de cargo)
-      .replace(amtRe,  '')          // monto
+      .replace(anyDateRe, '')
+      .replace(/([+\-]?)\s*\$\s*[\d,]+\.\d{2}/g, '')
       .replace(/\s+/g, ' ').trim();
     if (!desc) desc = 'Movimiento';
+
+    // Palabras clave de pago/abono sobreescriben el tipo a ingreso
+    if (_esPago(desc)) tipo = 'ingreso';
 
     var mesNum = _MESES[dm[2].toLowerCase().substring(0, 3)];
     if (!mesNum) continue;
