@@ -642,6 +642,10 @@ function saveMovimiento(event) {
     showToast('Por favor completa todos los campos obligatorios.', 'warning');
     return;
   }
+  if ((tipo === 'gasto' || tipo === 'ingreso') && !categoria_id) {
+    showToast('Por favor selecciona una categoría para el ' + tipo + '.', 'warning');
+    return;
+  }
 
   // Find the target cuenta
   const cuentaIdx = cuentas.findIndex(c => c.id === cuenta_id);
