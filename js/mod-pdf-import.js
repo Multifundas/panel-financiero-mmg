@@ -1,447 +1,496 @@
-﻿/* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE
+/* ============================================================
+   PDF BANK STATEMENT IMPORT MODULE  v20260817c
+   ============================================================
+   Flujo:
+   1. openPdfImport()   → modal con solo el selector de archivo
+   2. handlePdfUpload() → extrae texto, detecta banco, parsea, clasifica
+   3. displayPdfPreview() → tabla editable + selector de cuenta al fondo
+   4. confirmPdfImport() → guarda movimientos en la cuenta elegida
    ============================================================ */
 
-// Configure pdf.js worker
+// ── Worker de pdf.js ──────────────────────────────────────────
 if (typeof pdfjsLib !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-/* ---------- Classification Rules ---------- */
-var CLASSIFICATION_RULES = [
-  { keywords: ['oxxo','7 eleven','7eleven','soriana','walmart','walmex','heb','h-e-b','costco','superama','chedraui','la comer','mega comercial','city market','alsuper','smart','bodega aurrera','restaur','comida','aliment','torta','taco','pizza','sushi','burger','starbucks','mcdon','subway','dominos','little caesars','uber eat','rappi','didi food','cornershop'], categoria: 'Alimentacion' },
-  { keywords: ['uber trip','uber viaje','didi viaj','gasolina','gasolinera','pemex','bp station','shell','caseta','tag iave','peaje','estacionamiento','parking','cabify','autobus','metro','taxi','vehicul','refaccion','mecanico','llanta','verificacion vehic'], categoria: 'Transporte' },
-  { keywords: ['cfe','comision federal','telmex','izzi','megacable','totalplay','axtel','agua ','comision agua','predial','gas natural','naturgy','luz ','renta ','arrend','hipoteca','inmobili','mantenimiento','limpieza','plomero','electricista','pinturas','ferreteria','home depot'], categoria: 'Vivienda' },
-  { keywords: ['farmacia','benavides','guadalajara','san pablo','hospital','medic','doctor','dental','dentista','optica','lentes','laboratorio','analisis clinico','salud','seguro medico','consulta','ginecolog','pediatr','psicolog'], categoria: 'Salud' },
-  { keywords: ['cinepolis','cinemex','netflix','spotify','amazon prime','disney','hbo','youtube','apple music','steam','xbox','playstation','nintendo','cine ','teatro','concierto','boleto','viaje','hotel','airbnb','booking','avion','aeromexico','volaris','vivaaerobus','interjet','despegar'], categoria: 'Entretenimiento y viajes' },
-  { keywords: ['sat ','isr','impuesto','tenencia','isan','derechos','multa','infraccion','recargo','actualizacion fiscal'], categoria: 'Impuestos y obligaciones' },
-  { keywords: ['colegio','escuela','universidad','udemy','coursera','libro','papeleria','educacion','inscripcion','colegiatura','guarderia','kinder','mensualidad escol'], categoria: 'Familia' },
+// ── Reglas de clasificación por palabras clave ────────────────
+var PDF_CLASSIFICATION_RULES = [
+  { keywords: ['oxxo','soriana','walmart','costco','superama','chedraui','la comer','bodega aurrera','heb','alsuper','city market','restaur','torta','taco','pizza','sushi','burger','starbucks','mcdon','subway','dominos','little caesars','uber eat','rappi','didi food','cornershop','comida','aliment'], categoria: 'Alimentacion' },
+  { keywords: ['uber trip','uber viaje','didi viaj','gasolina','gasolinera','pemex','bp ','shell','caseta','tag iave','peaje','estacionamiento','parking','cabify','taxi','mecanico','llanta','verificacion vehic','refaccion'], categoria: 'Transporte' },
+  { keywords: ['cfe ','comision federal de electricidad','telmex','izzi','megacable','totalplay','axtel','agua ','predial','gas natural','naturgy','luz ','renta ','arrendamiento','hipoteca','mantenimiento','plomero','electricista','ferreteria','home depot'], categoria: 'Vivienda' },
+  { keywords: ['farmacia','hospital','medic','doctor','dental','dentista','optica','laboratorio','salud','seguro medico','consulta','ginecolog','pediatr','psicolog'], categoria: 'Salud' },
+  { keywords: ['netflix','spotify','amazon prime','disney','hbo','youtube','apple music','steam','xbox','playstation','nintendo','cinepolis','cinemex','cine ','teatro','concierto','airbnb','booking','aeromexico','volaris','vivaaerobus','hotel'], categoria: 'Entretenimiento y viajes' },
+  { keywords: ['sat ','isr','impuesto','tenencia','derechos','multa','infraccion'], categoria: 'Impuestos y obligaciones' },
+  { keywords: ['colegio','escuela','universidad','udemy','coursera','educacion','inscripcion','colegiatura','guarderia','mensualidad escol'], categoria: 'Familia' },
 ];
 
-/* ---------- State ---------- */
+// ── Estado del módulo ─────────────────────────────────────────
 var _pdfParsedRows = [];
-var _pdfSelectedAccount = null;
 
-/* ---------- Open Modal ---------- */
+// ═══════════════════════════════════════════════════════════════
+//  1. INTERFAZ
+// ═══════════════════════════════════════════════════════════════
+
 function openPdfImport() {
-  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  var activeCuentas = cuentas.filter(function(c) { return c.activa !== false; });
-
-  var cuentaOptions = activeCuentas.map(function(c) {
-    return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
-  }).join('');
-
   var html = ''
-    + '<div style="margin-bottom:16px;">'
-    +   '<p style="font-size:16px;color:var(--text-secondary);margin:0 0 16px;">'
-    +     'Sube el estado de cuenta en PDF de tu banco. El sistema extraera los movimientos, '
-    +     'los clasificara automaticamente por concepto y podras revisar, editar y confirmar antes de guardar.'
+    + '<p style="font-size:15px;color:var(--text-secondary);margin:0 0 20px;">'
+    +   'Sube el estado de cuenta en PDF. El banco se detecta automáticamente y los '
+    +   'movimientos se clasifican por concepto. Podrás revisar antes de confirmar.'
+    + '</p>'
+    + '<div>'
+    +   '<label class="form-label">Archivo PDF</label>'
+    +   '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
+    +     ' onchange="handlePdfUpload(event)" style="padding:8px;">'
+    + '</div>'
+    + '<div id="pdfLoadingIndicator" style="display:none;text-align:center;padding:40px;">'
+    +   '<i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--accent-blue);"></i>'
+    +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:15px;">'
+    +     'Leyendo y clasificando movimientos del PDF…'
     +   '</p>'
-    +   '<div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">'
-    +     '<div style="flex:1;min-width:200px;">'
-    +       '<label class="form-label">Cuenta destino</label>'
-    +       '<select id="pdfCuentaSelect" class="form-input">'
-    +         '<option value="">-- Selecciona cuenta --</option>'
-    +         cuentaOptions
-    +       '</select>'
-    +     '</div>'
-    +     '<div style="flex:1;min-width:200px;">'
-    +       '<label class="form-label">Archivo PDF</label>'
-    +       '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input" '
-    +         'onchange="handlePdfUpload(event)" style="padding:8px;">'
-    +     '</div>'
-    +   '</div>'
     + '</div>'
-    + '<div id="pdfLoadingIndicator" style="display:none;text-align:center;padding:32px;">'
-    +   '<i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--accent-blue);"></i>'
-    +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:16px;">Leyendo y clasificando movimientos del PDF...</p>'
-    + '</div>'
-    + '<div id="pdfPreviewContainer" style="display:none;"></div>';
+    + '<div id="pdfPreviewContainer" style="display:none;margin-top:20px;"></div>';
 
-  openModal('Cargar Estado de Cuenta (PDF)', html, { maxWidth: '900px' });
+  openModal('Cargar Estado de Cuenta (PDF)', html, { maxWidth: '940px' });
 }
 
-/* ---------- Handle File Upload ---------- */
+// ═══════════════════════════════════════════════════════════════
+//  2. EXTRACCIÓN DE TEXTO
+// ═══════════════════════════════════════════════════════════════
+
 function handlePdfUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
 
-  var cuentaId = document.getElementById('pdfCuentaSelect').value;
-  if (!cuentaId) {
-    showToast('Selecciona una cuenta destino primero', 'warning');
-    event.target.value = '';
-    return;
-  }
-  _pdfSelectedAccount = cuentaId;
-
-  document.getElementById('pdfLoadingIndicator').style.display = 'block';
-  document.getElementById('pdfPreviewContainer').style.display = 'none';
+  var loading = document.getElementById('pdfLoadingIndicator');
+  var preview = document.getElementById('pdfPreviewContainer');
+  loading.style.display = 'block';
+  preview.style.display = 'none';
+  _pdfParsedRows = [];
 
   var reader = new FileReader();
   reader.onload = function(e) {
     var typedArray = new Uint8Array(e.target.result);
-    extractPdfText(typedArray).then(function(text) {
-      document.getElementById('pdfLoadingIndicator').style.display = 'none';
-      var rows = parseBankStatement(text);
-      if (rows.length === 0) {
-        showToast('No se pudieron detectar movimientos en este PDF. Intenta con otro formato.', 'warning');
-        return;
-      }
-      classifyMovements(rows);
-      _pdfParsedRows = rows;
-      displayPdfPreview();
-    }).catch(function(err) {
-      document.getElementById('pdfLoadingIndicator').style.display = 'none';
-      console.error('PDF parse error:', err);
-      showToast('Error al leer el PDF: ' + err.message, 'error');
-    });
+    extractPdfText(typedArray)
+      .then(function(text) {
+        loading.style.display = 'none';
+        var result = parseBankStatement(text);
+        if (result.rows.length === 0) {
+          _mostrarTextoDebug(preview, result.rawText, result.banco);
+          return;
+        }
+        classifyMovements(result.rows);
+        _pdfParsedRows = result.rows;
+        displayPdfPreview(result.banco);
+      })
+      .catch(function(err) {
+        loading.style.display = 'none';
+        console.error('PDF error:', err);
+        showToast('Error al leer el PDF: ' + err.message, 'error');
+      });
   };
   reader.readAsArrayBuffer(file);
 }
 
-/* ---------- Extract Text from PDF ---------- */
 function extractPdfText(typedArray) {
   return pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
-    var pages = [];
-    for (var i = 1; i <= pdf.numPages; i++) {
-      pages.push(i);
-    }
-    var allText = '';
-    return pages.reduce(function(promise, pageNum) {
-      return promise.then(function() {
+    var pageNums = [];
+    for (var i = 1; i <= pdf.numPages; i++) pageNums.push(i);
+
+    var allLines = [];
+
+    return pageNums.reduce(function(p, pageNum) {
+      return p.then(function() {
         return pdf.getPage(pageNum).then(function(page) {
           return page.getTextContent().then(function(content) {
-            // Group text items by Y position to reconstruct lines
-            var items = content.items;
-            if (items.length === 0) return;
-            var lines = {};
-            items.forEach(function(item) {
-              var y = Math.round(item.transform[5]);
-              if (!lines[y]) lines[y] = [];
-              lines[y].push({ x: item.transform[4], text: item.str });
+            if (!content.items.length) return;
+
+            // Agrupar fragmentos por coordenada Y con tolerancia de 2px
+            var byY = {};
+            content.items.forEach(function(item) {
+              if (!item.str) return;
+              var bucket = Math.round(item.transform[5] / 2) * 2;
+              if (!byY[bucket]) byY[bucket] = [];
+              byY[bucket].push({ x: item.transform[4], text: item.str });
             });
-            // Sort by Y descending (top to bottom), then X ascending within each line
-            var sortedYs = Object.keys(lines).map(Number).sort(function(a, b) { return b - a; });
-            sortedYs.forEach(function(y) {
-              var lineItems = lines[y].sort(function(a, b) { return a.x - b.x; });
-              var lineText = lineItems.map(function(i) { return i.text; }).join('\t');
-              allText += lineText + '\n';
+
+            // Ordenar por Y descendente (arriba → abajo en el PDF)
+            var ys = Object.keys(byY).map(Number).sort(function(a, b) { return b - a; });
+            ys.forEach(function(y) {
+              var frags = byY[y].sort(function(a, b) { return a.x - b.x; });
+              var line = frags.map(function(f) { return f.text; }).join('\t');
+              line = line.replace(/\s+/g, ' ').trim();
+              if (line) allLines.push(line);
             });
           });
         });
       });
     }, Promise.resolve()).then(function() {
-      return allText;
+      return allLines.join('\n');
     });
   });
 }
 
-/* ---------- Parse Bank Statement Text ---------- */
+// ═══════════════════════════════════════════════════════════════
+//  3. PARSERS (funciones puras — no tocan la base de datos)
+// ═══════════════════════════════════════════════════════════════
+
+/* ── Helpers compartidos ────────────────────────────────────── */
+
+var _MESES = {
+  ene:1,enero:1,jan:1,january:1,
+  feb:2,febrero:2,february:2,
+  mar:3,marzo:3,march:3,
+  abr:4,abril:4,apr:4,april:4,
+  may:5,mayo:5,
+  jun:6,junio:6,june:6,
+  jul:7,julio:7,july:7,
+  ago:8,agosto:8,aug:8,august:8,
+  sep:9,septiembre:9,sept:9,september:9,
+  oct:10,octubre:10,october:10,
+  nov:11,noviembre:11,november:11,
+  dic:12,diciembre:12,dec:12,december:12
+};
+
+function _sinAcentos(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function _pad(n) { return String(n).padStart(2, '0'); }
+
+function _parseMonto(raw) {
+  var s = raw.replace(/[^\d.,]/g, '');
+  if (!s) return 0;
+  var lastDot   = s.lastIndexOf('.');
+  var lastComma = s.lastIndexOf(',');
+  var norm = (lastComma > lastDot)
+    ? s.replace(/\./g, '').replace(',', '.')  // 1.234,56 → 1234.56
+    : s.replace(/,/g, '');                     // 1,234.56 → 1234.56
+  return Math.abs(parseFloat(norm) || 0);
+}
+
+// Convierte fechas en múltiples formatos a ISO YYYY-MM-DD
+function _parseFecha(raw, anioFallback, mesCierre) {
+  anioFallback = anioFallback || new Date().getFullYear();
+  var r;
+
+  // DD/MM/YYYY  o  DD-MM-YYYY
+  r = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (r) {
+    var y = parseInt(r[3]); if (y < 100) y += 2000;
+    return y + '-' + _pad(parseInt(r[2])) + '-' + _pad(parseInt(r[1]));
+  }
+
+  // DD/MM  (sin año — estado de TC Banorte/BBVA)
+  r = raw.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if (r) {
+    var mes = parseInt(r[2]);
+    var anio = anioFallback;
+    // Cruce de año: si mes de la tx > mes de cierre, pertenece al año anterior
+    if (mesCierre && mes > mesCierre) anio = anioFallback - 1;
+    return anio + '-' + _pad(mes) + '-' + _pad(parseInt(r[1]));
+  }
+
+  // DD-MMM-YYYY  o  DD MMM YYYY  (05 ENE 2026)
+  r = raw.match(/(\d{1,2})[\s\-\/]([A-Za-záéíóúÁÉÍÓÚ]{3,})[\s\-\/](\d{2,4})/);
+  if (r) {
+    var mKey = _sinAcentos(r[2].toLowerCase()).substring(0, 3);
+    var mNum = _MESES[mKey];
+    if (mNum) {
+      var yr = parseInt(r[3]); if (yr < 100) yr += 2000;
+      return yr + '-' + _pad(mNum) + '-' + _pad(parseInt(r[1]));
+    }
+  }
+
+  // DD MMM  (sin año)
+  r = raw.match(/^(\d{1,2})\s+([A-Za-záéíóúÁÉÍÓÚ]{3,})$/);
+  if (r) {
+    var mKey2 = _sinAcentos(r[2].toLowerCase()).substring(0, 3);
+    var mNum2 = _MESES[mKey2];
+    if (mNum2) {
+      var anio2 = anioFallback;
+      if (mesCierre && mNum2 > mesCierre) anio2 = anioFallback - 1;
+      return anio2 + '-' + _pad(mNum2) + '-' + _pad(parseInt(r[1]));
+    }
+  }
+
+  return null;
+}
+
+function _esPago(desc) {
+  var n = _sinAcentos(desc.toLowerCase());
+  return /\b(pago|gracias por su pago|payment|credito aplicado|abono|bonificacion|devolucion|reembolso)\b/.test(n);
+}
+
+/* ── Selector de parser ─────────────────────────────────────── */
+
 function parseBankStatement(text) {
-  console.log('=== PDF RAW TEXT START ===');
+  console.group('PDF Import — texto crudo');
   console.log(text);
-  console.log('=== PDF RAW TEXT END ===');
+  console.groupEnd();
 
   var lines = text.split('\n');
   var rows = [];
 
-  // Try BBVA parser first
-  rows = parseBBVA(lines, text);
-  if (rows.length > 0) {
-    console.log('Parser BBVA detected ' + rows.length + ' rows');
-    return rows;
+  if (/BANORTE|BANCO MERCANTIL DEL NORTE/i.test(text)) {
+    rows = parseBanorte(lines, text);
+    if (rows.length > 0) console.log('Banorte:', rows.length, 'movimientos');
   }
 
-  // Try generic parser as fallback
-  rows = parseGeneric(lines);
-  console.log('Parser Generic detected ' + rows.length + ' rows');
+  if (!rows.length && /BBVA|BANCOMER/i.test(text)) {
+    rows = parseBBVA(lines, text);
+    if (rows.length > 0) console.log('BBVA:', rows.length, 'movimientos');
+  }
+
+  if (!rows.length) {
+    rows = parseGeneric(lines);
+    if (rows.length > 0) console.log('Genérico:', rows.length, 'movimientos');
+  }
+
+  return { rows: rows, rawText: text, banco: _detectBanco(text) };
+}
+
+function _detectBanco(text) {
+  if (/BANORTE|BANCO MERCANTIL DEL NORTE/i.test(text)) return 'Banorte';
+  if (/BBVA|BANCOMER/i.test(text)) return 'BBVA';
+  return 'Banco desconocido';
+}
+
+/* ── Parser Banorte ─────────────────────────────────────────── */
+/*
+   Banorte emite dos tipos de estado:
+   A) Chequera/débito: fechas DD/MM/YYYY, columnas CARGO | ABONO | SALDO
+   B) Tarjeta crédito: fechas DD/MM (sin año), columna IMPORTE (cargo)
+                        pagos en sección separada "PAGOS Y CRÉDITOS"
+   Ambos se manejan aquí.
+*/
+function parseBanorte(lines, fullText) {
+  var rows = [];
+
+  // Detectar año y mes de cierre del estado
+  var anio = new Date().getFullYear();
+  var mesCierre = 0;
+
+  var mAnio = fullText.match(/\b(20[2-9]\d)\b/);
+  if (mAnio) anio = parseInt(mAnio[1]);
+
+  // "Periodo 01/07/2026 al 31/07/2026"  o  "al 31 de Julio de 2026"
+  var mPeriodo = fullText.match(/al\s+\d{1,2}[\/\s](?:de\s+)?([A-Za-záéíóúÁÉÍÓÚ]+)[\/\s](\d{4})/i);
+  if (!mPeriodo) mPeriodo = fullText.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
+
+  if (mPeriodo && mPeriodo[3]) {
+    anio = parseInt(mPeriodo[3]);
+    mesCierre = parseInt(mPeriodo[2]);
+  } else if (mPeriodo && mPeriodo[2]) {
+    anio = parseInt(mPeriodo[2]);
+    var mKey = _sinAcentos(mPeriodo[1].toLowerCase()).substring(0, 3);
+    mesCierre = _MESES[mKey] || 0;
+  }
+
+  var inZona = false;
+  var esZonaPagos = false;
+
+  // Patrón de monto: "1,234.56"  o  "1234.56"  o  "$ 1,234.56"
+  var rMonto = /\$?\s*([\d,]+\.\d{2})/g;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line.trim()) continue;
+
+    // ── Detectar inicio/fin de zonas ───────────────────────
+    if (/MOVIMIENTOS DE LA CUENTA|DESGLOSE DE MOVIMIENTOS|MOVIMIENTOS DEL PERIODO|DETALLE DE MOVIMIENTOS|RELACI[OÓ]N DE MOVIMIENTOS/i.test(line)) {
+      inZona = true; esZonaPagos = false; continue;
+    }
+    if (/PAGOS\s*Y\s*CR[EÉ]DITOS|ABONOS\s*Y\s*CR[EÉ]DITOS/i.test(line)) {
+      inZona = true; esZonaPagos = true; continue;
+    }
+    if (/TOTAL\s+(DE\s+)?CARGOS|TOTAL\s+NUEVOS\s+CARGOS|SUBTOTAL|COMISIONES|RESUMEN\s+DE\s+CUENTA|SALDO\s+AL\s+CORTE/i.test(line)) {
+      inZona = false; continue;
+    }
+    if (!inZona) continue;
+
+    // ── Ignorar encabezados de tabla ───────────────────────
+    if (/^FECHA\b.*\b(OPERACI|APL|DESCRIPCI|CONCEPTO|CARGO|IMPORTE)/i.test(line)) continue;
+
+    // ── Extraer columnas separadas por tab ─────────────────
+    var cols = line.split('\t').map(function(c) { return c.trim(); }).filter(Boolean);
+    if (cols.length < 2) continue;
+
+    // Primera columna: ¿es una fecha?
+    var fecha = _parseFecha(cols[0], anio, mesCierre);
+    if (!fecha) {
+      // Puede que la fecha sea la primera parte del texto (sin tab)
+      var m = line.match(/^(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)/);
+      if (m) fecha = _parseFecha(m[1], anio, mesCierre);
+    }
+    if (!fecha) continue;
+
+    // Extraer todos los montos de la línea
+    var montos = [];
+    rMonto.lastIndex = 0;
+    var mMatch;
+    while ((mMatch = rMonto.exec(line)) !== null) {
+      var v = _parseMonto(mMatch[1]);
+      if (v > 0) montos.push(v);
+    }
+    if (!montos.length) continue;
+
+    // Extraer descripción: columnas que no son fecha ni monto
+    var descCols = [];
+    for (var c = 1; c < cols.length; c++) {
+      var col = cols[c];
+      if (!col) continue;
+      if (/^(\$?\s*[\d,]+\.\d{2})$/.test(col)) continue; // es monto
+      if (/^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(col)) continue; // es fecha (ej. fecha de liquidación)
+      descCols.push(col);
+    }
+    var desc = descCols.join(' ').replace(/\s+/g, ' ').trim() || 'Movimiento';
+
+    // Determinar monto y tipo
+    var monto, tipo;
+    if (esZonaPagos) {
+      monto = montos[0];
+      tipo = 'ingreso';
+    } else if (montos.length >= 3) {
+      // Chequera: CARGO | ABONO | SALDO  → uno de los dos primeros es cero
+      var cargo = montos[0], abono = montos[1];
+      if (abono > 0 && abono !== montos[montos.length - 1]) {
+        monto = abono; tipo = 'ingreso';
+      } else {
+        monto = cargo; tipo = 'gasto';
+      }
+    } else {
+      // TC: columna única de importe
+      monto = montos[0];
+      tipo = _esPago(desc) ? 'ingreso' : 'gasto';
+    }
+
+    if (!monto || monto < 0.01) continue;
+
+    rows.push({ fecha: fecha, descripcion: desc, monto: monto, tipo: tipo,
+                categoria_id: null, categoria_nombre: '', selected: false });
+  }
+
   return rows;
 }
 
-/* ---------- BBVA Mexico Parser ---------- */
+/* ── Parser BBVA México ─────────────────────────────────────── */
 function parseBBVA(lines, fullText) {
   var rows = [];
+  var meses = { ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',
+                jul:'07',ago:'08',sep:'09',oct:'10',nov:'11',dic:'12' };
 
-  // BBVA uses format: DD/Mmm (e.g., 02/Ene, 15/Feb) or DD/MMM
-  // Typical line with tabs: FechaOp\tFechaApl\tConcepto\tCargo\tAbono\tSaldo
-  // Or sometimes: DD/Mmm\tDD/Mmm\tDESCRIPCION\t1,234.56\t\t12,345.67
-  // Also possible: DD/Mmm\tDESCRIPCION\t1,234.56\t12,345.67
-
-  var meses = {
-    'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06',
-    'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'
-  };
-
-  // Detect year from text (BBVA statements usually show "Estado de Cuenta" with a period)
   var yearMatch = fullText.match(/20[2-3]\d/);
-  var statementYear = yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
-
-  // BBVA short date: DD/Mmm (e.g., 02/Ene, 15/Feb, 3/Mar)
-  var bbvaDateRegex = /^(\d{1,2})\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)/i;
+  var statementYear = yearMatch ? yearMatch[0] : String(new Date().getFullYear());
+  var bbvaDateRe = /^(\d{1,2})\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)/i;
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line || line.length < 5) continue;
 
-    // Check if line starts with a BBVA-style date
-    var dateMatch = line.match(bbvaDateRegex);
+    var dateMatch = line.match(bbvaDateRe);
     if (!dateMatch) continue;
 
-    var day = dateMatch[1].padStart(2, '0');
-    var monthName = dateMatch[2].toLowerCase().substring(0, 3);
-    var monthNum = meses[monthName];
-    if (!monthNum) continue;
+    var day  = dateMatch[1].padStart(2, '0');
+    var mes  = meses[dateMatch[2].toLowerCase().substring(0, 3)];
+    if (!mes) continue;
+    var fecha = statementYear + '-' + mes + '-' + day;
 
-    var fecha = statementYear + '-' + monthNum + '-' + day;
-
-    // Split by tab to get columns
     var parts = line.split('\t');
-
-    // Extract amounts from the line
     var amounts = [];
-    var amountPositions = []; // track which column index has amounts
-    var moneyRegex = /^[\$]?\s*([\d,]+\.\d{2})$/;
+    parts.forEach(function(p) {
+      var am = p.trim().match(/^\$?\s*([\d,]+\.\d{2})$/);
+      if (am) amounts.push(parseFloat(am[1].replace(/,/g, '')));
+    });
+    if (!amounts.length) continue;
 
-    // Check each part for amounts (skip first 1-2 parts which are dates)
-    for (var p = 0; p < parts.length; p++) {
-      var cleaned = parts[p].trim().replace(/[\$,]/g, '');
-      var numVal = parseFloat(cleaned);
-      var amtMatch = parts[p].trim().match(/^[\$]?\s*([\d,]+\.\d{2})$/);
-      if (amtMatch) {
-        var val = parseFloat(amtMatch[1].replace(/,/g, ''));
-        if (val > 0) {
-          amounts.push({ value: val, colIdx: p });
-        }
-      }
-    }
-
-    if (amounts.length === 0) continue;
-
-    // Extract description: parts that are not dates and not amounts
     var descParts = [];
-    for (var p2 = 0; p2 < parts.length; p2++) {
-      var part = parts[p2].trim();
-      if (!part) continue;
-      // Skip if it's a date
-      if (part.match(bbvaDateRegex)) continue;
-      // Skip if it's a pure number/amount
-      if (part.match(/^[\$]?\s*[\d,]+\.\d{2}$/)) continue;
-      // Skip if it matches partial date (just DD/Mmm)
-      if (part.match(/^\d{1,2}\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)/i)) continue;
-      descParts.push(part);
-    }
+    parts.forEach(function(p) {
+      p = p.trim();
+      if (!p) return;
+      if (p.match(bbvaDateRe)) return;
+      if (p.match(/^\$?\s*[\d,]+\.\d{2}$/)) return;
+      descParts.push(p);
+    });
+    var desc = descParts.join(' ').replace(/\s+/g, ' ').trim() || 'Movimiento bancario';
 
-    var descripcion = descParts.join(' ').replace(/\s+/g, ' ').trim();
-    if (!descripcion || descripcion.length < 2) {
-      descripcion = 'Movimiento bancario';
-    }
-
-    // Determine type and amount
-    // BBVA columns: typically ... | Cargo | Abono | Saldo
-    // If 3+ amounts: last is saldo, second-to-last could be abono, first is cargo
-    // If 2 amounts: one is cargo/abono, last is saldo
-    var monto, tipo;
-
-    if (amounts.length >= 3) {
-      // Last = saldo, middle = abono, first = cargo
-      var cargo = amounts[0].value;
-      var abono = amounts[1].value;
-      // Determine based on which column is populated (the other is usually 0 or missing)
-      // In BBVA: if cargo column has value, it's a gasto; if abono, it's ingreso
-      // Both could have values in rare cases
-      monto = cargo;
-      tipo = 'gasto';
-      // Check if abono is significantly different from saldo
-      if (abono !== amounts[amounts.length - 1].value) {
-        // Both cargo and abono columns present
-        monto = cargo;
-        tipo = 'gasto';
-      }
-    } else if (amounts.length === 2) {
-      // One is the movement, the other is the running balance (saldo)
-      // The balance is usually the larger number and the last column
-      monto = amounts[0].value;
-      // Determine type by keywords
-      var lineUpper = line.toUpperCase();
-      if (lineUpper.indexOf('ABONO') >= 0 || lineUpper.indexOf('DEPOSITO') >= 0 ||
-          lineUpper.indexOf('PAGO RECIBIDO') >= 0 || lineUpper.indexOf('NOMINA') >= 0 ||
-          lineUpper.indexOf('DEVOLUCION') >= 0 || lineUpper.indexOf('BONIFICACION') >= 0 ||
-          lineUpper.indexOf('RENDIMIENTO') >= 0 || lineUpper.indexOf('INTERES') >= 0 ||
-          lineUpper.indexOf('SPEI RECIBIDO') >= 0 || lineUpper.indexOf('TRANSFERENCIA RECIBIDA') >= 0 ||
-          lineUpper.indexOf('DEP ') >= 0 || lineUpper.indexOf('REEMBOLSO') >= 0) {
-        tipo = 'ingreso';
-      } else {
-        tipo = 'gasto';
-      }
-    } else {
-      monto = amounts[0].value;
-      tipo = 'gasto';
-    }
+    var monto = amounts[0];
+    var lineUp = line.toUpperCase();
+    var tipo = /ABONO|DEPOSITO|PAGO RECIBIDO|NOMINA|DEVOLUCION|SPEI RECIBIDO|DEP /.test(lineUp)
+      ? 'ingreso' : 'gasto';
 
     if (monto < 1) continue;
-
-    rows.push({
-      fecha: fecha,
-      descripcion: descripcion,
-      monto: monto,
-      tipo: tipo,
-      categoria_id: null,
-      categoria_nombre: '',
-      selected: false
-    });
+    rows.push({ fecha: fecha, descripcion: desc, monto: monto, tipo: tipo,
+                categoria_id: null, categoria_nombre: '', selected: false });
   }
-
   return rows;
 }
 
-/* ---------- Generic Parser (fallback) ---------- */
+/* ── Parser genérico (fallback) ─────────────────────────────── */
 function parseGeneric(lines) {
   var rows = [];
-  var dateRegex = /(\d{1,2})[\/\-](\d{1,2}|\w{3})[\/\-](\d{2,4})/;
-  var moneyRegex = /[\$]?\s*([\d,]+\.\d{2})/g;
+  var dateRe  = /(\d{1,2})[\/\-](\d{1,2}|\w{3})[\/\-](\d{2,4})/;
+  var moneyRe = /\$?\s*([\d,]+\.\d{2})/g;
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line || line.length < 10) continue;
 
-    var dateMatch = line.match(dateRegex);
-    if (!dateMatch) continue;
+    var dm = line.match(dateRe);
+    if (!dm) continue;
 
-    // Try to extract amounts
     var amounts = [];
-    var m;
-    moneyRegex.lastIndex = 0;
-    while ((m = moneyRegex.exec(line)) !== null) {
-      var val = parseFloat(m[1].replace(/,/g, ''));
-      if (val > 0 && val < 999999999) {
-        amounts.push(val);
-      }
+    moneyRe.lastIndex = 0;
+    var mm;
+    while ((mm = moneyRe.exec(line)) !== null) {
+      var v = parseFloat(mm[1].replace(/,/g, ''));
+      if (v > 0 && v < 1e8) amounts.push(v);
     }
+    if (!amounts.length) continue;
 
-    if (amounts.length === 0) continue;
-
-    // Parse date
-    var fecha = parseStatementDate(dateMatch[0]);
+    var fecha = _parseFecha(dm[0]);
     if (!fecha) continue;
 
-    // Extract description: text between date and first amount
-    var dateEnd = line.indexOf(dateMatch[0]) + dateMatch[0].length;
-    var firstAmountMatch = line.match(/[\$]?\s*[\d,]+\.\d{2}/);
-    var amountStart = firstAmountMatch ? line.indexOf(firstAmountMatch[0]) : line.length;
-    var descripcion = line.substring(dateEnd, amountStart).trim();
-    descripcion = descripcion.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!descripcion || descripcion.length < 2) {
-      descripcion = 'Movimiento bancario';
-    }
+    var dateEnd = line.indexOf(dm[0]) + dm[0].length;
+    var firstAmt = line.match(/\$?\s*[\d,]+\.\d{2}/);
+    var amtStart = firstAmt ? line.indexOf(firstAmt[0]) : line.length;
+    var desc = line.substring(dateEnd, amtStart).replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!desc || desc.length < 2) desc = 'Movimiento bancario';
 
-    // Determine type and amount
-    var monto, tipo;
-    if (amounts.length >= 2) {
-      monto = amounts[amounts.length - 1];
-      var lineUpper = line.toUpperCase();
-      if (lineUpper.indexOf('ABONO') >= 0 || lineUpper.indexOf('DEPOSITO') >= 0 ||
-          lineUpper.indexOf('TRANSFERENCIA RECIBIDA') >= 0 || lineUpper.indexOf('NOMINA') >= 0 ||
-          lineUpper.indexOf('PAGO RECIBIDO') >= 0 || lineUpper.indexOf('DEVOLUCION') >= 0 ||
-          lineUpper.indexOf('BONIFICACION') >= 0 || lineUpper.indexOf('RENDIMIENTO') >= 0 ||
-          lineUpper.indexOf('INTERES') >= 0 || lineUpper.indexOf('DIVIDENDO') >= 0) {
-        tipo = 'ingreso';
-        monto = amounts.length >= 2 ? amounts[1] : amounts[0];
-      } else {
-        tipo = 'gasto';
-        monto = amounts[0];
-      }
-    } else {
-      monto = amounts[0];
-      var lineCheck = line.toUpperCase();
-      if (line.indexOf('+') >= 0 || lineCheck.indexOf('ABONO') >= 0 ||
-          lineCheck.indexOf('DEPOSITO') >= 0 || lineCheck.indexOf('NOMINA') >= 0 ||
-          lineCheck.indexOf('DEVOLUCION') >= 0) {
-        tipo = 'ingreso';
-      } else {
-        tipo = 'gasto';
-      }
-    }
+    var monto = amounts[0];
+    var lineUp = line.toUpperCase();
+    var tipo = /ABONO|DEPOSITO|NOMINA|PAGO RECIBIDO|DEVOLUCION|SPEI RECIBIDO/.test(lineUp)
+      ? 'ingreso' : 'gasto';
 
     if (monto < 1) continue;
-
-    rows.push({
-      fecha: fecha,
-      descripcion: descripcion,
-      monto: monto,
-      tipo: tipo,
-      categoria_id: null,
-      categoria_nombre: '',
-      selected: false
-    });
+    rows.push({ fecha: fecha, descripcion: desc, monto: monto, tipo: tipo,
+                categoria_id: null, categoria_nombre: '', selected: false });
   }
-
   return rows;
 }
 
-/* ---------- Parse Date from Statement ---------- */
-function parseStatementDate(dateStr) {
-  var months = {
-    'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06',
-    'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12',
-    'jan': '01', 'apr': '04', 'aug': '08', 'dec': '12'
-  };
+// ═══════════════════════════════════════════════════════════════
+//  4. CLASIFICACIÓN
+// ═══════════════════════════════════════════════════════════════
 
-  // DD/MM/YYYY or DD/MM/YY
-  var numericMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-  if (numericMatch) {
-    var day = numericMatch[1].padStart(2, '0');
-    var monthOrName = numericMatch[2];
-    var year = numericMatch[3];
-
-    if (monthOrName.length <= 2) {
-      // Numeric month
-      var month = monthOrName.padStart(2, '0');
-      if (parseInt(month) > 12) {
-        // Probably MM/DD/YYYY format
-        var tmp = day; day = month; month = tmp;
-      }
-      if (year.length === 2) year = '20' + year;
-      return year + '-' + month + '-' + day;
-    } else {
-      // Named month (e.g., 15-Ene-24)
-      var monthNum = months[monthOrName.toLowerCase().substring(0, 3)];
-      if (!monthNum) return null;
-      if (year.length === 2) year = '20' + year;
-      return year + '-' + monthNum + '-' + day;
-    }
-  }
-  return null;
-}
-
-/* ---------- Classify Movements by Rules ---------- */
 function classifyMovements(rows) {
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var catMap = {};
-  categorias.forEach(function(c) {
-    catMap[c.nombre.toLowerCase()] = c;
-  });
+  categorias.forEach(function(c) { catMap[c.nombre.toLowerCase()] = c; });
 
   rows.forEach(function(row) {
-    if (row.tipo === 'ingreso') {
-      row.categoria_id = null;
-      row.categoria_nombre = '—';
-      return;
-    }
+    if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; return; }
 
-    var desc = row.descripcion.toLowerCase();
+    var desc = _sinAcentos(row.descripcion.toLowerCase());
     var matched = false;
 
-    for (var r = 0; r < CLASSIFICATION_RULES.length; r++) {
-      var rule = CLASSIFICATION_RULES[r];
+    for (var r = 0; r < PDF_CLASSIFICATION_RULES.length; r++) {
+      var rule = PDF_CLASSIFICATION_RULES[r];
       for (var k = 0; k < rule.keywords.length; k++) {
         if (desc.indexOf(rule.keywords[k]) >= 0) {
           var cat = catMap[rule.categoria.toLowerCase()];
-          if (cat) {
-            row.categoria_id = cat.id;
-            row.categoria_nombre = cat.nombre;
-          } else {
-            row.categoria_nombre = rule.categoria;
-          }
+          if (cat) { row.categoria_id = cat.id; row.categoria_nombre = cat.nombre; }
+          else      { row.categoria_nombre = rule.categoria; }
           matched = true;
           break;
         }
@@ -450,207 +499,216 @@ function classifyMovements(rows) {
     }
 
     if (!matched) {
-      // Default to "Otros"
       var otros = catMap['otros'];
-      if (otros) {
-        row.categoria_id = otros.id;
-        row.categoria_nombre = otros.nombre;
-      } else {
-        row.categoria_nombre = 'Sin clasificar';
-      }
+      if (otros) { row.categoria_id = otros.id; row.categoria_nombre = otros.nombre; }
+      else        { row.categoria_nombre = 'Sin clasificar'; }
     }
   });
 }
 
-/* ---------- Display Preview Table ---------- */
-function displayPdfPreview() {
+// ═══════════════════════════════════════════════════════════════
+//  5. PREVIEW Y CONFIRMACIÓN
+// ═══════════════════════════════════════════════════════════════
+
+function displayPdfPreview(banco) {
   var container = document.getElementById('pdfPreviewContainer');
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var rows = _pdfParsedRows;
 
-  var gastosCount = rows.filter(function(r) { return r.tipo === 'gasto'; }).length;
-  var ingresosCount = rows.filter(function(r) { return r.tipo === 'ingreso'; }).length;
-  var totalMonto = rows.reduce(function(sum, r) {
-    return sum + (r.tipo === 'ingreso' ? r.monto : -r.monto);
-  }, 0);
-
-  // Category dropdown options
-  var catOptions = categorias.map(function(c) {
-    return '<option value="' + c.id + '">' + c.nombre + '</option>';
-  }).join('');
+  var gastos   = rows.filter(function(r) { return r.tipo === 'gasto'; });
+  var ingresos = rows.filter(function(r) { return r.tipo === 'ingreso'; });
 
   var html = ''
-    + '<div class="pdf-preview-toolbar">'
-    +   '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">'
-    +     '<span class="badge badge-blue" style="font-size:14px;padding:4px 10px;">'
-    +       '<i class="fas fa-file-pdf"></i> ' + rows.length + ' movimientos detectados'
-    +     '</span>'
-    +     '<span class="badge badge-green" style="font-size:14px;padding:4px 10px;">'
-    +       ingresosCount + ' ingresos'
-    +     '</span>'
-    +     '<span class="badge badge-red" style="font-size:14px;padding:4px 10px;">'
-    +       gastosCount + ' gastos'
-    +     '</span>'
-    +   '</div>'
-    +   '<div style="display:flex;gap:8px;align-items:center;">'
-    +     '<button class="btn btn-secondary" onclick="removePdfSelectedRows()" style="font-size:14px;padding:6px 12px;">'
-    +       '<i class="fas fa-trash"></i> Eliminar seleccionados'
-    +     '</button>'
-    +   '</div>'
+    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">'
+    +   '<span class="badge badge-blue" style="font-size:14px;">'
+    +     '<i class="fas fa-university"></i> ' + (banco || '') + ' — ' + rows.length + ' movimientos'
+    +   '</span>'
+    +   '<span class="badge badge-red" style="font-size:14px;">' + gastos.length + ' gastos</span>'
+    +   '<span class="badge badge-green" style="font-size:14px;">' + ingresos.length + ' ingresos</span>'
+    +   '<button class="btn btn-secondary" onclick="removePdfSelectedRows()"'
+    +     ' style="font-size:13px;padding:4px 10px;margin-left:auto;">'
+    +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
+    +   '</button>'
     + '</div>'
-    + '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<div style="max-height:380px;overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
     + '<table class="data-table" style="font-size:14px;">'
     + '<thead><tr>'
-    +   '<th style="width:30px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)" title="Seleccionar todos"></th>'
-    +   '<th>Fecha</th>'
-    +   '<th>Concepto</th>'
+    +   '<th style="width:28px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
+    +   '<th>Fecha</th><th>Descripción</th>'
     +   '<th style="text-align:right;">Monto</th>'
-    +   '<th>Tipo</th>'
-    +   '<th>Categoria</th>'
+    +   '<th>Tipo</th><th>Categoría</th>'
     + '</tr></thead><tbody>';
 
   rows.forEach(function(row, idx) {
-    var tipoColor = row.tipo === 'ingreso' ? 'var(--accent-green)' : 'var(--accent-red)';
-    var tipoBadge = row.tipo === 'ingreso' ? 'badge-green' : 'badge-red';
-    var tipoLabel = row.tipo === 'ingreso' ? 'Ingreso' : 'Gasto';
-    var montoSign = row.tipo === 'ingreso' ? '+' : '-';
+    var esGasto   = row.tipo === 'gasto';
+    var colorMonto = esGasto ? 'var(--accent-red)' : 'var(--accent-green)';
+    var badgeClass = esGasto ? 'badge-red' : 'badge-green';
+    var signo      = esGasto ? '−' : '+';
 
-    var catSelect = '';
-    if (row.tipo === 'gasto') {
-      catSelect = '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ', this.value)">';
+    var catSel = '';
+    if (esGasto) {
+      catSel = '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
+             + ' style="font-size:13px;max-width:160px;">';
+      catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
-        var sel = (c.id === row.categoria_id) ? ' selected' : '';
-        catSelect += '<option value="' + c.id + '"' + sel + '>' + c.nombre + '</option>';
+        catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
+               + c.nombre + '</option>';
       });
-      catSelect += '</select>';
+      catSel += '</select>';
     } else {
-      catSelect = '<span style="color:var(--text-muted);font-size:13px;">N/A</span>';
+      catSel = '<span style="color:var(--text-muted);font-size:13px;">N/A</span>';
     }
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
-      + '<td>' + formatDate(row.fecha) + '</td>'
-      + '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + row.descripcion.replace(/"/g, '&quot;') + '">' + row.descripcion + '</td>'
-      + '<td style="text-align:right;font-weight:700;color:' + tipoColor + ';">' + montoSign + '$' + formatNumber(row.monto) + '</td>'
-      + '<td><span class="badge ' + tipoBadge + '" style="font-size:13px;">' + tipoLabel + '</span></td>'
-      + '<td>' + catSelect + '</td>'
+      + '<td style="font-size:13px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
+      + '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      +   row.descripcion
+      + '</td>'
+      + '<td style="text-align:right;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
+      +   signo + '$' + _formatNum(row.monto)
+      + '</td>'
+      + '<td><span class="badge ' + badgeClass + '" style="font-size:12px;">'
+      +   (esGasto ? 'Gasto' : 'Ingreso')
+      + '</span></td>'
+      + '<td>' + catSel + '</td>'
       + '</tr>';
   });
 
   html += '</tbody></table></div>';
 
-  // Action buttons
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">'
-    + '<span style="font-size:16px;color:var(--text-muted);">Revisa y edita las categorias. Selecciona filas para eliminar duplicados.</span>'
-    + '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:10px 24px;">'
-    +   '<i class="fas fa-check"></i> Confirmar e Importar ' + rows.length + ' movimientos'
-    + '</button>'
+  // Selector de cuenta + botón confirmar
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaOpts = cuentas
+    .filter(function(c) { return c.activa !== false; })
+    .map(function(c) {
+      return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
+    }).join('');
+
+  html += ''
+    + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">'
+    +   '<span style="font-size:14px;color:var(--text-muted);flex:1;">'
+    +     'Ajusta categorías y elimina duplicados si los hay.'
+    +   '</span>'
+    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Importar a:</label>'
+    +   '<select id="pdfCuentaSelect" class="form-input" style="min-width:190px;font-size:14px;">'
+    +     '<option value="">— Selecciona cuenta —</option>'
+    +     cuentaOpts
+    +   '</select>'
+    +   '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:9px 22px;">'
+    +     '<i class="fas fa-check"></i> Importar ' + rows.length + ' mov.'
+    +   '</button>'
     + '</div>';
 
   container.innerHTML = html;
   container.style.display = 'block';
 }
 
-/* ---------- Format Number Helper ---------- */
-function formatNumber(n) {
+/* Muestra texto crudo cuando no se detectaron movimientos */
+function _mostrarTextoDebug(container, rawText, banco) {
+  var primeras = rawText.split('\n').slice(0, 60).join('\n');
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--accent-amber);border-radius:8px;padding:16px;';
+
+  var titulo = document.createElement('p');
+  titulo.style.cssText = 'margin:0 0 10px;font-weight:600;color:var(--accent-amber);';
+  titulo.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No se detectaron movimientos en este PDF (' + banco + ').';
+
+  var instruc = document.createElement('p');
+  instruc.style.cssText = 'margin:0 0 10px;font-size:14px;color:var(--text-secondary);';
+  instruc.textContent = 'Copia el texto de abajo y compártelo para ajustar el parser a tu formato exacto:';
+
+  var ta = document.createElement('textarea');
+  ta.readOnly = true;
+  ta.style.cssText = 'width:100%;height:260px;font-family:monospace;font-size:12px;'
+    + 'background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-color);'
+    + 'border-radius:4px;padding:8px;resize:vertical;box-sizing:border-box;';
+  ta.value = primeras;  // .value es seguro — no interpreta HTML
+
+  wrap.appendChild(titulo);
+  wrap.appendChild(instruc);
+  wrap.appendChild(ta);
+  container.innerHTML = '';
+  container.appendChild(wrap);
+  container.style.display = 'block';
+}
+
+function _formatNum(n) {
   return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-/* ---------- Toggle Row Selection ---------- */
+/* ── Interacciones de la tabla ──────────────────────────────── */
+
 function togglePdfRow(idx) {
   _pdfParsedRows[idx].selected = !_pdfParsedRows[idx].selected;
   displayPdfPreview();
 }
 
 function toggleAllPdfRows(checked) {
-  _pdfParsedRows.forEach(function(row) { row.selected = checked; });
+  _pdfParsedRows.forEach(function(r) { r.selected = checked; });
   displayPdfPreview();
 }
 
-/* ---------- Update Category ---------- */
 function updatePdfCategory(idx, catId) {
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var cat = categorias.find(function(c) { return c.id === catId; });
-  _pdfParsedRows[idx].categoria_id = catId;
+  _pdfParsedRows[idx].categoria_id  = catId;
   _pdfParsedRows[idx].categoria_nombre = cat ? cat.nombre : '';
 }
 
-/* ---------- Remove Selected Rows ---------- */
 function removePdfSelectedRows() {
-  var count = _pdfParsedRows.filter(function(r) { return r.selected; }).length;
-  if (count === 0) {
-    showToast('Selecciona las filas que deseas eliminar', 'warning');
-    return;
-  }
-  if (!confirm('Eliminar ' + count + ' fila(s) seleccionada(s)?')) return;
+  var n = _pdfParsedRows.filter(function(r) { return r.selected; }).length;
+  if (!n) { showToast('Selecciona las filas que deseas eliminar', 'warning'); return; }
+  if (!confirm('Eliminar ' + n + ' fila(s)?')) return;
   _pdfParsedRows = _pdfParsedRows.filter(function(r) { return !r.selected; });
   displayPdfPreview();
-  showToast(count + ' fila(s) eliminada(s)');
+  showToast(n + ' fila(s) eliminada(s)');
 }
 
-/* ---------- Confirm and Import ---------- */
+/* ── Confirmar importación ──────────────────────────────────── */
+
 function confirmPdfImport() {
-  if (_pdfParsedRows.length === 0) {
-    showToast('No hay movimientos para importar', 'warning');
+  if (!_pdfParsedRows.length) { showToast('No hay movimientos para importar', 'warning'); return; }
+
+  var sel = document.getElementById('pdfCuentaSelect');
+  var cuentaId = sel ? sel.value : '';
+  if (!cuentaId) {
+    showToast('Selecciona la cuenta destino antes de importar', 'warning');
+    if (sel) sel.focus();
     return;
   }
 
-  var cuentaId = _pdfSelectedAccount;
-  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentas    = loadData(STORAGE_KEYS.cuentas) || [];
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
+  if (!cuenta) { showToast('Cuenta no encontrada', 'error'); return; }
 
-  if (!cuenta) {
-    showToast('Cuenta no encontrada', 'error');
-    return;
-  }
-
-  if (!confirm('Se importaran ' + _pdfParsedRows.length + ' movimientos a la cuenta "' + cuenta.nombre + '". Continuar?')) return;
-
-  var saldoChange = 0;
+  if (!confirm('Se importarán ' + _pdfParsedRows.length + ' movimientos a "' + cuenta.nombre + '". ¿Continuar?')) return;
 
   _pdfParsedRows.forEach(function(row) {
-    var mov = {
+    movimientos.push({
       id: uuid(),
       cuenta_id: cuentaId,
       tipo: row.tipo,
       monto: row.monto,
-      moneda: cuenta.moneda,
-      categoria_id: row.tipo === 'gasto' ? row.categoria_id : null,
+      moneda: cuenta.moneda || 'MXN',
+      categoria_id: row.tipo === 'gasto' ? (row.categoria_id || null) : null,
       descripcion: row.descripcion,
       fecha: row.fecha,
       notas: 'Importado desde PDF',
       created: new Date().toISOString()
-    };
-    movimientos.push(mov);
-
-    if (row.tipo === 'ingreso') {
-      saldoChange += row.monto;
-    } else {
-      saldoChange -= row.monto;
-    }
+    });
   });
 
-  // Update account balance
-  var cIdx = cuentas.findIndex(function(c) { return c.id === cuentaId; });
-  if (cIdx >= 0) {
-    cuentas[cIdx].saldo = (cuentas[cIdx].saldo || 0) + saldoChange;
-  }
-
+  // No se modifica cuenta.saldo: _calcSaldoReal lo recalcula automáticamente.
   saveData(STORAGE_KEYS.movimientos, movimientos);
-  saveData(STORAGE_KEYS.cuentas, cuentas);
 
-  var count = _pdfParsedRows.length;
+  var total = _pdfParsedRows.length;
   _pdfParsedRows = [];
-  _pdfSelectedAccount = null;
-
   closeModal();
-  showToast(count + ' movimientos importados exitosamente desde PDF');
+  showToast(total + ' movimientos importados exitosamente desde PDF', 'success');
 
-  if (typeof renderMovimientos === 'function') {
-    renderMovimientos();
-  }
-  if (typeof updateHeaderPatrimonio === 'function') {
-    updateHeaderPatrimonio();
-  }
+  if (typeof renderMovimientos === 'function') renderMovimientos();
+  if (typeof updateHeaderPatrimonio === 'function') updateHeaderPatrimonio();
 }
