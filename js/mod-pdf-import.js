@@ -277,14 +277,18 @@ function parseBanorte(lines, fullText) {
 }
 
 /* ── Banorte Tarjeta de Crédito ─────────────────────────────────────────────
-   Formatos detectados en el mismo PDF:
-   A)  "06-JUN-2026  07-JUN-2026  IPARK MTY  +$1,050.00"
-       — un solo monto con signo
-   B)  "06-MAY-2026  06-JUL-2026  CITY MARKET  $ 5,005.29  +$47,243.00"
-       — cargo sin signo + saldo con '+' al final (columna saldo visible)
-   Regla: cuando hay 2+ montos, el ÚLTIMO es el saldo (ignorar);
-          tomar el PRIMERO como movimiento.
-   Pagos al cliente (ingresos):  "-$X" único  o  desc que contenga "pago".
+   El PDF tiene DOS tipos de secciones:
+   1. "COMPRAS Y CARGOS DIFERIDOS A MESES SIN INTERESES"
+      → IGNORAR: son datos del plan a meses (monto original, saldo pendiente…)
+        El cargo mensual real ya aparece en la sección 2.
+   2. "CARGOS, ABONOS Y COMPRAS REGULARES (NO A MESES)"
+      → PARSEAR: cargos del periodo + mensualidades de compras a meses.
+
+   Formatos de monto en sección 2:
+   A)  "+$1,050.00"       — un solo monto con signo
+   B)  "$ 5,005.29  +$47,243.00" — cargo sin signo + saldo firmado al final
+   Regla: tomar siempre el PRIMER monto; el último con '+' es saldo (ignorar).
+   Pagos: "-$X" o descripción con palabras clave de pago → tipo ingreso.
    ─────────────────────────────────────────────────────────────────────────── */
 function parseBanorteTC(lines, fullText) {
   var rows = [];
@@ -297,11 +301,22 @@ function parseBanorteTC(lines, fullText) {
   var anyAmtRe  = /([+\-]?)\s*\$\s*([\d,]+\.\d{2})/g;
   // Línea de tipo de cambio USD → ignorar fila anterior
   var usdRe     = /\d{2}\/\d{2}\/\d{2}\s+[\d,.]+\s+USD\s+RT\s+[\d.]+/i;
+  // Detectores de sección
+  var aMesesRe    = /COMPRAS Y CARGOS DIFERIDOS A MESES/i;
+  var regularesRe = /CARGOS.*ABONOS.*COMPRAS REGULARES.*NO A MESES/i;
+
+  var inAMeses = false;   // arranca ignorando hasta encontrar REGULARES
 
   for (var i = 0; i < lines.length; i++) {
     var raw  = lines[i];
     var line = raw.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
     if (!line) continue;
+
+    // ── Control de sección ───────────────────────────────────────────────
+    if (aMesesRe.test(line))    { inAMeses = true;  continue; }
+    if (regularesRe.test(line)) { inAMeses = false; continue; }
+    if (inAMeses) continue;     // saltar todo lo que esté dentro de A MESES
+    // ────────────────────────────────────────────────────────────────────
 
     var nextLine = i + 1 < lines.length ? lines[i + 1].replace(/\t/g, ' ') : '';
     if (usdRe.test(nextLine)) { i++; continue; }
