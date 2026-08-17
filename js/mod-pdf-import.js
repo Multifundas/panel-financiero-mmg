@@ -353,8 +353,8 @@ function parseBanorteTC(lines, fullText) {
       .replace(/\s+/g, ' ').trim();
     if (!desc) desc = 'Movimiento';
 
-    // Palabras clave de pago/abono sobreescriben el tipo a ingreso
-    if (_esPago(desc)) tipo = 'ingreso';
+    // En TC Banorte el signo es definitivo: '-' = abono/pago (ingreso), '+' o sin signo = cargo (gasto).
+    // No usar _esPago() aquí — genera falsos positivos con comercios como "MERCADO PAGO".
 
     var mesNum = _MESES[dm[2].toLowerCase().substring(0, 3)];
     if (!mesNum) continue;
