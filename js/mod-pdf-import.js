@@ -27,6 +27,7 @@ var PDF_CLASSIFICATION_RULES = [
 
 // ── Estado del módulo ─────────────────────────────────────────
 var _pdfParsedRows = [];
+var _pdfBanco = '';
 
 // ═══════════════════════════════════════════════════════════════
 //  1. INTERFAZ
@@ -51,7 +52,7 @@ function openPdfImport() {
     + '</div>'
     + '<div id="pdfPreviewContainer" style="display:none;margin-top:20px;"></div>';
 
-  openModal('Cargar Estado de Cuenta (PDF)', html, { maxWidth: '940px' });
+  openModal('Cargar Estado de Cuenta (PDF)', html, { wide: true });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -569,6 +570,8 @@ function classifyMovements(rows) {
 // ═══════════════════════════════════════════════════════════════
 
 function displayPdfPreview(banco) {
+  if (banco) _pdfBanco = banco;
+  banco = _pdfBanco;
   var container = document.getElementById('pdfPreviewContainer');
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var rows = _pdfParsedRows;
@@ -588,13 +591,15 @@ function displayPdfPreview(banco) {
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
     + '</div>'
-    + '<div style="max-height:380px;overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
-    + '<table class="data-table" style="font-size:14px;">'
+    + '<div style="max-height:calc(65vh - 60px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<table class="data-table" style="font-size:14px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
-    +   '<th style="width:28px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
-    +   '<th>Fecha</th><th>Descripción</th>'
-    +   '<th style="text-align:right;">Monto</th>'
-    +   '<th>Tipo</th><th>Categoría</th>'
+    +   '<th style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
+    +   '<th style="width:100px;">Fecha</th>'
+    +   '<th>Descripción</th>'
+    +   '<th style="width:130px;text-align:right;">Monto</th>'
+    +   '<th style="width:80px;">Tipo</th>'
+    +   '<th style="width:200px;">Categoría</th>'
     + '</tr></thead><tbody>';
 
   rows.forEach(function(row, idx) {
@@ -606,7 +611,7 @@ function displayPdfPreview(banco) {
     var catSel = '';
     if (esGasto) {
       catSel = '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:13px;max-width:160px;">';
+             + ' style="font-size:13px;width:100%;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
@@ -620,7 +625,7 @@ function displayPdfPreview(banco) {
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
       + '<td style="font-size:13px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +   row.descripcion
       + '</td>'
       + '<td style="text-align:right;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
