@@ -578,28 +578,47 @@ function displayPdfPreview(banco) {
 
   var gastos   = rows.filter(function(r) { return r.tipo === 'gasto'; });
   var ingresos = rows.filter(function(r) { return r.tipo === 'ingreso'; });
+  var totalGastos   = gastos.reduce(function(s, r) { return s + r.monto; }, 0);
+  var totalIngresos = ingresos.reduce(function(s, r) { return s + r.monto; }, 0);
+  var neto = totalIngresos - totalGastos;
+  var netoColor = neto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
   var html = ''
-    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">'
-    +   '<span class="badge badge-blue" style="font-size:14px;">'
+    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
+    +   '<span class="badge badge-blue" style="font-size:15px;">'
     +     '<i class="fas fa-university"></i> ' + (banco || '') + ' — ' + rows.length + ' movimientos'
     +   '</span>'
-    +   '<span class="badge badge-red" style="font-size:14px;">' + gastos.length + ' gastos</span>'
-    +   '<span class="badge badge-green" style="font-size:14px;">' + ingresos.length + ' ingresos</span>'
+    +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
+    +   '<span class="badge badge-green" style="font-size:15px;">' + ingresos.length + ' ingresos</span>'
     +   '<button class="btn btn-secondary" onclick="removePdfSelectedRows()"'
-    +     ' style="font-size:13px;padding:4px 10px;margin-left:auto;">'
+    +     ' style="font-size:14px;padding:4px 12px;margin-left:auto;">'
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
     + '</div>'
-    + '<div style="max-height:calc(65vh - 60px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
-    + '<table class="data-table" style="font-size:14px;table-layout:fixed;width:100%;">'
+    // Fila de subtotales
+    + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;'
+    +   'background:var(--bg-secondary);border:1px solid var(--border-color);'
+    +   'border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:12px;font-size:15px;">'
+    +   '<span style="color:var(--text-muted);">Subtotales:</span>'
+    +   '<span style="color:var(--accent-red);font-variant-numeric:tabular-nums;">'
+    +     '<strong>Gastos</strong> −$' + _formatNum(totalGastos)
+    +   '</span>'
+    +   '<span style="color:var(--accent-green);font-variant-numeric:tabular-nums;">'
+    +     '<strong>Ingresos</strong> +$' + _formatNum(totalIngresos)
+    +   '</span>'
+    +   '<span style="margin-left:auto;font-weight:700;color:' + netoColor + ';font-variant-numeric:tabular-nums;">'
+    +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
+    +   '</span>'
+    + '</div>'
+    + '<div style="max-height:calc(60vh - 80px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<table class="data-table" style="font-size:15px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
     +   '<th style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
-    +   '<th style="width:100px;">Fecha</th>'
+    +   '<th style="width:105px;">Fecha</th>'
     +   '<th>Descripción</th>'
-    +   '<th style="width:130px;text-align:right;">Monto</th>'
+    +   '<th style="width:140px;text-align:right;">Monto</th>'
     +   '<th style="width:80px;">Tipo</th>'
-    +   '<th style="width:200px;">Categoría</th>'
+    +   '<th style="width:210px;">Categoría</th>'
     + '</tr></thead><tbody>';
 
   rows.forEach(function(row, idx) {
@@ -611,7 +630,7 @@ function displayPdfPreview(banco) {
     var catSel = '';
     if (esGasto) {
       catSel = '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:13px;width:100%;">';
+             + ' style="font-size:14px;width:100%;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
@@ -619,16 +638,16 @@ function displayPdfPreview(banco) {
       });
       catSel += '</select>';
     } else {
-      catSel = '<span style="color:var(--text-muted);font-size:13px;">N/A</span>';
+      catSel = '<span style="color:var(--text-muted);font-size:14px;">N/A</span>';
     }
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
-      + '<td style="font-size:13px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      + '<td style="font-size:14px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
+      + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +   row.descripcion
       + '</td>'
-      + '<td style="text-align:right;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
+      + '<td style="text-align:right;font-size:15px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
       +   signo + '$' + _formatNum(row.monto)
       + '</td>'
       + '<td><span class="badge ' + badgeClass + '" style="font-size:12px;">'
