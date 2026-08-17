@@ -624,7 +624,7 @@ function displayPdfPreview(banco) {
     +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
     +   '</span>'
     + '</div>'
-    + '<div style="max-height:calc(60vh - 80px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<div style="max-height:calc(86vh - 320px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
     + '<table class="data-table" style="font-size:15px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
     +   '<th style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
