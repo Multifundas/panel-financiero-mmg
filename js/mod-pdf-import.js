@@ -319,7 +319,7 @@ function parseBanorteTC(lines, fullText) {
     // ────────────────────────────────────────────────────────────────────
 
     var nextLine = i + 1 < lines.length ? lines[i + 1].replace(/\t/g, ' ') : '';
-    if (usdRe.test(nextLine)) { i++; continue; }
+    if (usdRe.test(nextLine)) { i++; }  // saltar solo la línea informativa de tipo de cambio; el cargo es válido en MXN
 
     var dm = line.match(dateRe);
     if (!dm) continue;
