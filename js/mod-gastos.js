@@ -1182,9 +1182,9 @@ function printGastosMensualReport() {
   var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
   var tableHTML = container.innerHTML
-    .replace(/var\(--text-primary\)/g, '#1e293b')
-    .replace(/var\(--text-secondary\)/g, '#1e293b')
-    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--text-primary\)/g, '#000')
+    .replace(/var\(--text-secondary\)/g, '#000')
+    .replace(/var\(--text-muted\)/g, '#333')
     .replace(/var\(--accent-red\)/g, '#dc2626')
     .replace(/var\(--accent-blue\)/g, '#2563eb')
     .replace(/var\(--accent-green\)/g, '#16a34a')
@@ -1217,10 +1217,10 @@ function printGastosMensualReport() {
     '<div style="padding:5mm;font-family:\'Segoe UI\',Arial,sans-serif;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #dc2626;padding-bottom:4px;margin-bottom:6px;">' +
         '<div style="font-size:10pt;font-weight:800;color:#0f172a;">Reporte Mensual de Gastos — ' + anio + '</div>' +
-        '<div style="font-size:7pt;color:#64748b;">' + fecha + ' · Panel Financiero MMG</div>' +
+        '<div style="font-size:7pt;color:#333;">' + fecha + ' · Panel Financiero MMG</div>' +
       '</div>' +
       tableHTML +
-      '<div style="margin-top:5px;font-size:6.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
+      '<div style="margin-top:5px;font-size:6.5pt;color:#333;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
         '<span>Panel Financiero MMG</span><span>Cifras en MXN salvo indicación contraria</span>' +
       '</div>' +
     '</div>';

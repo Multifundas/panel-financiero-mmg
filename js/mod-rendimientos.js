@@ -1256,9 +1256,9 @@ function _doPrintRendMensual() {
   var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
   var tableHTML = container.innerHTML
-    .replace(/var\(--text-primary\)/g, '#1e293b')
-    .replace(/var\(--text-secondary\)/g, '#1e293b')
-    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--text-primary\)/g, '#000')
+    .replace(/var\(--text-secondary\)/g, '#000')
+    .replace(/var\(--text-muted\)/g, '#333')
     .replace(/var\(--accent-red\)/g, '#dc2626')
     .replace(/var\(--accent-blue\)/g, '#2563eb')
     .replace(/var\(--accent-green\)/g, '#16a34a')
@@ -1289,7 +1289,7 @@ function _doPrintRendMensual() {
     'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; padding: 0; }' +
     '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; margin-bottom: 6px; }' +
     '.report-header h2 { font-size: 10pt; font-weight: 800; color: #0f172a; }' +
-    '.report-header .meta { font-size: 7pt; color: #64748b; text-align: right; line-height: 1.5; }' +
+    '.report-header .meta { font-size: 7pt; color:#333; text-align: right; line-height: 1.5; }' +
     'table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 7pt !important; }' +
     'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 6.5pt !important; font-weight: 700; padding: 3px 4px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
     'thead th:first-child { text-align: left; }' +
@@ -1298,7 +1298,7 @@ function _doPrintRendMensual() {
     'tbody td div { line-height: 1.25; font-size: 7pt !important; }' +
     'tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
     'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; }' +
-    '.footer { margin-top: 5px; font-size: 6.5pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
+    '.footer { margin-top: 5px; font-size: 6.5pt; color: #333; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
     '</style></head><body>' +
     '<div class="report-header">' +
       '<h2>Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +
@@ -1328,10 +1328,10 @@ function _doPrintRendMensual() {
     '<div style="padding:5mm;font-family:\'Segoe UI\',Arial,sans-serif;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin-bottom:6px;">' +
         '<div style="font-size:10pt;font-weight:800;color:#0f172a;">Rendimiento Mensual por Cuenta — ' + anio + '</div>' +
-        '<div style="font-size:7pt;color:#64748b;">' + fecha + ' · Panel Financiero MMG</div>' +
+        '<div style="font-size:7pt;color:#333;">' + fecha + ' · Panel Financiero MMG</div>' +
       '</div>' +
       tableHTML +
-      '<div style="margin-top:5px;font-size:6.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
+      '<div style="margin-top:5px;font-size:6.5pt;color:#333;border-top:1px solid #e2e8f0;padding-top:3px;display:flex;justify-content:space-between;">' +
         '<span>Panel Financiero MMG</span><span>Cifras en MXN salvo indicación contraria</span>' +
       '</div>' +
     '</div>';
@@ -1386,9 +1386,9 @@ function _doPrintRendMensual_unused() {
 
   // Clone and clean up: replace CSS vars → print colors, remove sort arrows & interactivity
   var tableHTML = container.innerHTML
-    .replace(/var\(--text-primary\)/g, '#1e293b')
-    .replace(/var\(--text-secondary\)/g, '#1e293b')
-    .replace(/var\(--text-muted\)/g, '#64748b')
+    .replace(/var\(--text-primary\)/g, '#000')
+    .replace(/var\(--text-secondary\)/g, '#000')
+    .replace(/var\(--text-muted\)/g, '#333')
     .replace(/var\(--accent-red\)/g, '#dc2626')
     .replace(/var\(--accent-blue\)/g, '#2563eb')
     .replace(/var\(--accent-green\)/g, '#16a34a')
@@ -1420,7 +1420,7 @@ function _doPrintRendMensual_unused() {
     'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7pt; color: #1e293b; background: #fff; margin: 0; padding: 5mm 6mm; }' +
     '.report-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3b82f6; padding-bottom: 4px; margin-bottom: 6px; }' +
     '.report-header h2 { font-size: 10pt; font-weight: 800; color: #0f172a; }' +
-    '.report-header .meta { font-size: 7pt; color: #64748b; text-align: right; line-height: 1.5; }' +
+    '.report-header .meta { font-size: 7pt; color:#333; text-align: right; line-height: 1.5; }' +
     'table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 7pt !important; }' +
     'thead th { background: #1e293b !important; color: #f1f5f9 !important; font-size: 6.5pt !important; font-weight: 700; padding: 3px 4px; text-align: right; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
     'thead th:first-child { text-align: left; }' +
@@ -1430,7 +1430,7 @@ function _doPrintRendMensual_unused() {
     'tbody td div { line-height: 1.25; font-size: 7pt !important; }' +
     'tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
     'tr[style*="border-top:2px"] td { font-weight: 700; border-top: 2px solid #1e293b !important; font-size: 7.5pt !important; }' +
-    '.footer { margin-top: 5px; font-size: 6.5pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
+    '.footer { margin-top: 5px; font-size: 6.5pt; color: #333; border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; justify-content: space-between; }' +
     '</style></head><body>' +
     '<div class="report-header">' +
       '<h2>&#x1F4C8; Rendimiento Mensual por Cuenta &mdash; ' + anio + '</h2>' +

@@ -235,7 +235,7 @@ function filterSeguros() {
     acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deleteSeguro(\'' + s.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
 
     // badge-secondary inline style for "Otro"
-    var badgeExtra = tipoBadge === 'badge-secondary' ? ' style="background:rgba(148,163,184,0.15);color:#94a3b8;"' : '';
+    var badgeExtra = tipoBadge === 'badge-secondary' ? ' style="background:rgba(100,116,139,0.12);color:#000;"' : '';
 
     return '<tr style="' + zebra + '">' +
       '<td><span class="badge ' + tipoBadge + '"' + badgeExtra + '>' + tipoLabel + '</span></td>' +
