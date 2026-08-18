@@ -1188,9 +1188,9 @@
       --bg-sidebar: #ffffff;
       --border-color: #cbd5e1;
       --border-subtle: #e2e8f0;
-      --text-primary: #0f172a;
-      --text-secondary: #0f172a;
-      --text-muted: #1e293b;
+      --text-primary: #000000;
+      --text-secondary: #000000;
+      --text-muted: #1a1a1a;
       --accent-green: #059669;
       --accent-green-soft: rgba(5, 150, 105, 0.12);
       --accent-red: #dc2626;

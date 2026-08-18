@@ -751,7 +751,7 @@ function displayPdfPreview(banco) {
       + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
       + '<td style="padding:4px 8px;">'
       // Descripción del banco — solo referencia, nunca se importa
-      +   '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);'
+      +   '<div class="pdf-print-hide" style="font-size:12px;color:#444;'
       +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;"'
       +     ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +     row.descripcion
