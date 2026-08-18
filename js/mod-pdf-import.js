@@ -561,24 +561,67 @@ function parseGeneric(lines) {
 //  4. CLASIFICACIÓN
 // ═══════════════════════════════════════════════════════════════
 
+/* Extrae una clave de comercio: primeras 2-3 palabras significativas */
+function _merchantKey(desc) {
+  var STOP = { de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,
+               del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1 };
+  var s = _sinAcentos(desc).toLowerCase().replace(/[^a-z\s]/g, ' ');
+  var words = s.split(/\s+/).filter(function(w) { return w.length >= 3 && !STOP[w]; });
+  return words.slice(0, 3).join(' ');
+}
+
+/* Construye mapa merchantKey → {categoria_id, categoria_nombre} desde movimientos existentes */
+function _buildHistoricalMap() {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catById = {};
+  categorias.forEach(function(c) { catById[c.id] = c; });
+
+  var map = {};
+  movimientos.forEach(function(m) {
+    if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
+    var key = _merchantKey(m.descripcion);
+    if (!key || key.split(' ').length < 2) return;
+    if (!map[key]) {
+      var cat = catById[m.categoria_id];
+      map[key] = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '', count: 0 };
+    }
+    map[key].count++;
+  });
+  return map;
+}
+
 function classifyMovements(rows) {
-  var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
-  var catMap = {};
-  categorias.forEach(function(c) { catMap[c.nombre.toLowerCase()] = c; });
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catByNombre = {};
+  categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; });
+
+  var histMap = _buildHistoricalMap();
 
   rows.forEach(function(row) {
-    if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; return; }
+    if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; row.categoria_source = null; return; }
 
-    var desc = _sinAcentos(row.descripcion.toLowerCase());
+    // 1. Historial (máxima prioridad)
+    var hKey = _merchantKey(row.descripcion);
+    if (hKey && histMap[hKey]) {
+      var h = histMap[hKey];
+      row.categoria_id     = h.categoria_id;
+      row.categoria_nombre = h.categoria_nombre;
+      row.categoria_source = 'historial';
+      return;
+    }
+
+    // 2. Reglas por palabras clave
+    var desc    = _sinAcentos(row.descripcion.toLowerCase());
     var matched = false;
-
     for (var r = 0; r < PDF_CLASSIFICATION_RULES.length; r++) {
       var rule = PDF_CLASSIFICATION_RULES[r];
       for (var k = 0; k < rule.keywords.length; k++) {
         if (desc.indexOf(rule.keywords[k]) >= 0) {
-          var cat = catMap[rule.categoria.toLowerCase()];
+          var cat = catByNombre[rule.categoria.toLowerCase()];
           if (cat) { row.categoria_id = cat.id; row.categoria_nombre = cat.nombre; }
           else      { row.categoria_nombre = rule.categoria; }
+          row.categoria_source = 'regla';
           matched = true;
           break;
         }
@@ -587,9 +630,10 @@ function classifyMovements(rows) {
     }
 
     if (!matched) {
-      var otros = catMap['otros'];
+      var otros = catByNombre['otros'];
       if (otros) { row.categoria_id = otros.id; row.categoria_nombre = otros.nombre; }
       else        { row.categoria_nombre = 'Sin clasificar'; }
+      row.categoria_source = 'default';
     }
   });
 }
@@ -612,6 +656,10 @@ function displayPdfPreview(banco) {
   var neto = totalIngresos - totalGastos;
   var netoColor = neto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
+  var nHist    = gastos.filter(function(r) { return r.categoria_source === 'historial'; }).length;
+  var nRegla   = gastos.filter(function(r) { return r.categoria_source === 'regla'; }).length;
+  var nRevisar = gastos.filter(function(r) { return r.categoria_source === 'default'; }).length;
+
   var html = ''
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
     +   '<span class="badge badge-blue" style="font-size:15px;">'
@@ -619,6 +667,13 @@ function displayPdfPreview(banco) {
     +   '</span>'
     +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
     +   '<span class="badge badge-green" style="font-size:15px;">' + ingresos.length + ' ingresos</span>'
+    +   '<span class="pdf-print-hide" style="font-size:13px;color:var(--text-muted);display:flex;gap:10px;align-items:center;">'
+    +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + ' historial&ensp;'
+    +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + ' regla&ensp;'
+    +     (nRevisar > 0
+        ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
+        : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i> <span style="color:var(--accent-green);">todos clasificados</span>')
+    +   '</span>'
     +   '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
     +     ' style="font-size:14px;padding:4px 12px;margin-left:auto;">'
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
@@ -657,17 +712,32 @@ function displayPdfPreview(banco) {
     var signo      = esGasto ? '−' : '+';
 
     var catNombre = row.categoria_nombre || (esGasto ? 'Sin categoría' : 'N/A');
+    var srcIcon = '';
+    if (esGasto) {
+      if (row.categoria_source === 'historial') {
+        srcIcon = '<i class="fas fa-history pdf-print-hide" title="Del historial de movimientos"'
+                + ' style="color:var(--accent-green);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
+      } else if (row.categoria_source === 'regla') {
+        srcIcon = '<i class="fas fa-tag pdf-print-hide" title="Por regla automática"'
+                + ' style="color:var(--accent-blue);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
+      } else {
+        srcIcon = '<i class="fas fa-exclamation-circle pdf-print-hide" title="Sin clasificar — revisa"'
+                + ' style="color:var(--accent-amber);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
+      }
+    }
     var catSel = '';
     if (esGasto) {
-      catSel = '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
+      catSel = '<div style="display:flex;align-items:center;gap:2px;">'
+             + srcIcon
+             + '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
              + '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:14px;width:100%;">';
+             + ' style="font-size:14px;flex:1;min-width:0;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
                + c.nombre + '</option>';
       });
-      catSel += '</select>';
+      catSel += '</select></div>';
     } else {
       catSel = '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">N/A</span>'
              + '<span style="color:var(--text-muted);font-size:14px;">N/A</span>';
