@@ -701,7 +701,7 @@ function displayPdfPreview(banco) {
     + '<thead><tr>'
     +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
     +   '<th style="width:120px;">Fecha</th>'
-    +   '<th><div style="font-size:11px;color:var(--text-muted);font-weight:400;line-height:1.2;">Banco (referencia)</div>'
+    +   '<th><div style="font-size:11px;font-weight:400;line-height:1.2;">Banco (referencia)</div>'
     +       '<div>Descripción a importar</div></th>'
     +   '<th style="width:160px;text-align:right;">Monto</th>'
     +   '<th style="width:90px;">Tipo</th>'
@@ -751,7 +751,7 @@ function displayPdfPreview(banco) {
       + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
       + '<td style="padding:4px 8px;">'
       // Descripción del banco — solo referencia, nunca se importa
-      +   '<div class="pdf-print-hide" style="font-size:12px;color:#444;'
+      +   '<div class="pdf-print-hide" style="font-size:12px;color:var(--text-primary);'
       +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;"'
       +     ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +     row.descripcion
