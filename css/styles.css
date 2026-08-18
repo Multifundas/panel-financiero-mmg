@@ -1923,8 +1923,9 @@
   .pdf-print-hide { display: none !important; }
   .pdf-cb-col     { display: none !important; }
   .pdf-cat-select { display: none !important; }
-  /* Categoría: mostrar texto en lugar del dropdown */
-  .pdf-cat-print {
+  /* Categoría y descripción: mostrar texto en lugar de inputs/dropdown */
+  .pdf-cat-print,
+  .pdf-desc-print {
     display: inline !important;
     font-size: 10px !important;
   }

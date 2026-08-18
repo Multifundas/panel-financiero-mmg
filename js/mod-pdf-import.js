@@ -584,7 +584,8 @@ function _buildHistoricalMap() {
     if (!key || key.split(' ').length < 2) return;
     if (!map[key]) {
       var cat = catById[m.categoria_id];
-      map[key] = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '', count: 0 };
+      map[key] = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '',
+                   descripcion: m.descripcion, count: 0 };
     }
     map[key].count++;
   });
@@ -605,9 +606,10 @@ function classifyMovements(rows) {
     var hKey = _merchantKey(row.descripcion);
     if (hKey && histMap[hKey]) {
       var h = histMap[hKey];
-      row.categoria_id     = h.categoria_id;
-      row.categoria_nombre = h.categoria_nombre;
-      row.categoria_source = 'historial';
+      row.categoria_id       = h.categoria_id;
+      row.categoria_nombre   = h.categoria_nombre;
+      row.categoria_source   = 'historial';
+      row.descripcion_final  = h.descripcion;  // descripción limpia del historial
       return;
     }
 
@@ -746,8 +748,20 @@ function displayPdfPreview(banco) {
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
       + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td style="font-size:15px;word-break:break-word;line-height:1.35;">'
-      +   row.descripcion
+      + '<td style="padding:4px 8px;">'
+      +   '<span class="pdf-desc-print" style="display:none;font-size:11px;">'
+      +     (row.descripcion_final || row.descripcion).replace(/</g,'&lt;')
+      +   '</span>'
+      +   '<input type="text" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
+      +     ' value="' + (row.descripcion_final || row.descripcion).replace(/"/g, '&quot;') + '"'
+      +     ' onchange="updatePdfDesc(' + idx + ',this.value)"'
+      +     ' style="width:100%;font-size:15px;font-family:inherit;border:1px solid var(--border-subtle);'
+      +       'border-radius:4px;padding:4px 7px;background:var(--bg-base);color:var(--text-primary);">'
+      +   (row.descripcion_final && row.descripcion_final !== row.descripcion
+        ? '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);margin-top:2px;'
+          + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+          + row.descripcion + '</div>'
+        : '')
       + '</td>'
       + '<td style="text-align:right;font-size:16px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
       +   signo + '$' + _formatNum(row.monto)
@@ -834,6 +848,10 @@ function toggleAllPdfRows(checked) {
   displayPdfPreview();
 }
 
+function updatePdfDesc(idx, value) {
+  _pdfParsedRows[idx].descripcion_final = value.trim() || _pdfParsedRows[idx].descripcion;
+}
+
 function updatePdfCategory(idx, catId) {
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var cat = categorias.find(function(c) { return c.id === catId; });
@@ -880,7 +898,7 @@ function confirmPdfImport() {
       monto: row.monto,
       moneda: cuenta.moneda || 'MXN',
       categoria_id: row.tipo === 'gasto' ? (row.categoria_id || null) : null,
-      descripcion: row.descripcion,
+      descripcion: row.descripcion_final || row.descripcion,
       fecha: row.fecha,
       notas: 'Importado desde PDF',
       created: new Date().toISOString()
