@@ -701,7 +701,8 @@ function displayPdfPreview(banco) {
     + '<thead><tr>'
     +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
     +   '<th style="width:120px;">Fecha</th>'
-    +   '<th>Descripción</th>'
+    +   '<th><div style="font-size:11px;color:var(--text-muted);font-weight:400;line-height:1.2;">Banco (referencia)</div>'
+    +       '<div>Descripción a importar</div></th>'
     +   '<th style="width:160px;text-align:right;">Monto</th>'
     +   '<th style="width:90px;">Tipo</th>'
     +   '<th style="width:240px;">Categoría</th>'
@@ -749,19 +750,22 @@ function displayPdfPreview(banco) {
       + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
       + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
       + '<td style="padding:4px 8px;">'
+      // Descripción del banco — solo referencia, nunca se importa
+      +   '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);'
+      +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;"'
+      +     ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      +     row.descripcion
+      +   '</div>'
+      // Descripción a importar — editable, se pre-llena del historial si hay match
       +   '<span class="pdf-desc-print" style="display:none;font-size:11px;">'
-      +     (row.descripcion_final || row.descripcion).replace(/</g,'&lt;')
+      +     (row.descripcion_final || '').replace(/</g,'&lt;')
       +   '</span>'
       +   '<input type="text" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
-      +     ' value="' + (row.descripcion_final || row.descripcion).replace(/"/g, '&quot;') + '"'
+      +     ' placeholder="Escribe la descripción a importar…"'
+      +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
       +     ' onchange="updatePdfDesc(' + idx + ',this.value)"'
-      +     ' style="width:100%;font-size:15px;font-family:inherit;border:1px solid var(--border-subtle);'
-      +       'border-radius:4px;padding:4px 7px;background:var(--bg-base);color:var(--text-primary);">'
-      +   (row.descripcion_final && row.descripcion_final !== row.descripcion
-        ? '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);margin-top:2px;'
-          + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
-          + row.descripcion + '</div>'
-        : '')
+      +     ' style="width:100%;font-size:14px;font-family:inherit;border:1px solid var(--border-subtle);'
+      +       'border-radius:4px;padding:3px 7px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
       + '<td style="text-align:right;font-size:16px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
       +   signo + '$' + _formatNum(row.monto)

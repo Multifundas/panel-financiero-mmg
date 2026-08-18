@@ -511,8 +511,8 @@
     }
 
     .modal-content.modal-wide {
-      max-width: 1600px;
-      width: 98vw;
+      max-width: 1600px !important;
+      width: 98vw !important;
       min-height: 92vh;
     }
 
