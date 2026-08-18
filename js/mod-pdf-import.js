@@ -694,15 +694,15 @@ function displayPdfPreview(banco) {
     +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
     +   '</span>'
     + '</div>'
-    + '<div class="pdf-scroll-container" style="max-height:calc(86vh - 320px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
-    + '<table class="data-table" style="font-size:15px;table-layout:fixed;width:100%;">'
+    + '<div class="pdf-scroll-container" style="max-height:calc(92vh - 300px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<table class="data-table" style="font-size:16px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
-    +   '<th class="pdf-cb-col" style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
-    +   '<th style="width:105px;">Fecha</th>'
+    +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
+    +   '<th style="width:120px;">Fecha</th>'
     +   '<th>Descripción</th>'
-    +   '<th style="width:140px;text-align:right;">Monto</th>'
-    +   '<th style="width:80px;">Tipo</th>'
-    +   '<th style="width:210px;">Categoría</th>'
+    +   '<th style="width:160px;text-align:right;">Monto</th>'
+    +   '<th style="width:90px;">Tipo</th>'
+    +   '<th style="width:240px;">Categoría</th>'
     + '</tr></thead><tbody>';
 
   rows.forEach(function(row, idx) {
@@ -731,7 +731,7 @@ function displayPdfPreview(banco) {
              + srcIcon
              + '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
              + '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:14px;flex:1;min-width:0;">';
+             + ' style="font-size:15px;flex:1;min-width:0;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
@@ -745,14 +745,14 @@ function displayPdfPreview(banco) {
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
-      + '<td style="font-size:14px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
+      + '<td style="font-size:15px;word-break:break-word;line-height:1.35;">'
       +   row.descripcion
       + '</td>'
-      + '<td style="text-align:right;font-size:15px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
+      + '<td style="text-align:right;font-size:16px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
       +   signo + '$' + _formatNum(row.monto)
       + '</td>'
-      + '<td><span class="badge ' + badgeClass + '" style="font-size:12px;">'
+      + '<td><span class="badge ' + badgeClass + '" style="font-size:13px;">'
       +   (esGasto ? 'Gasto' : 'Ingreso')
       + '</span></td>'
       + '<td>' + catSel + '</td>'
