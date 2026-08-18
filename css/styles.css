@@ -1814,6 +1814,7 @@
     backdrop-filter: none !important;
   }
   .modal-content {
+    display: block !important;
     width: 100% !important;
     max-width: none !important;
     max-height: none !important;
@@ -1824,6 +1825,14 @@
     animation: none !important;
     background: #fff !important;
     color: #000 !important;
+  }
+  #modalBody {
+    display: block !important;
+    flex: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    min-height: 0 !important;
   }
   .modal-content * {
     color-adjust: exact !important;
@@ -1892,6 +1901,59 @@
   #modalBody div[style*="margin-bottom"] {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  /* ── PDF Import: impresión multi-página ── */
+  #modalBody {
+    overflow: visible !important;
+    max-height: none !important;
+    min-height: 0 !important;
+  }
+  #pdfPreviewContainer {
+    display: block !important;
+    overflow: visible !important;
+  }
+  .pdf-scroll-container {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  /* Elementos ocultos en impresión */
+  .pdf-print-hide { display: none !important; }
+  .pdf-cb-col     { display: none !important; }
+  .pdf-cat-select { display: none !important; }
+  /* Categoría: mostrar texto en lugar del dropdown */
+  .pdf-cat-print {
+    display: inline !important;
+    font-size: 10px !important;
+  }
+  /* Tabla compacta para hojas múltiples */
+  #pdfPreviewContainer .data-table {
+    font-size: 10px !important;
+    table-layout: auto !important;
+  }
+  #pdfPreviewContainer .data-table th,
+  #pdfPreviewContainer .data-table td {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+  #pdfPreviewContainer .data-table td:nth-child(2) {
+    white-space: nowrap !important;
+  }
+  #pdfPreviewContainer .data-table tbody tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  /* Badges y subtotales en blanco/negro */
+  #pdfPreviewContainer .badge {
+    color: #000 !important;
+    background: #eee !important;
+    border: 1px solid #999 !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
   }
 }
 

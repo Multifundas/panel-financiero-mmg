@@ -35,16 +35,16 @@ var _pdfBanco = '';
 
 function openPdfImport() {
   var html = ''
-    + '<p style="font-size:15px;color:var(--text-secondary);margin:0 0 20px;">'
+    + '<p class="pdf-print-hide" style="font-size:15px;color:var(--text-secondary);margin:0 0 20px;">'
     +   'Sube el estado de cuenta en PDF. El banco se detecta automáticamente y los '
     +   'movimientos se clasifican por concepto. Podrás revisar antes de confirmar.'
     + '</p>'
-    + '<div>'
+    + '<div class="pdf-print-hide">'
     +   '<label class="form-label">Archivo PDF</label>'
     +   '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
     +     ' onchange="handlePdfUpload(event)" style="padding:8px;">'
     + '</div>'
-    + '<div id="pdfLoadingIndicator" style="display:none;text-align:center;padding:40px;">'
+    + '<div id="pdfLoadingIndicator" class="pdf-print-hide" style="display:none;text-align:center;padding:40px;">'
     +   '<i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--accent-blue);"></i>'
     +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:15px;">'
     +     'Leyendo y clasificando movimientos del PDF…'
@@ -619,7 +619,7 @@ function displayPdfPreview(banco) {
     +   '</span>'
     +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
     +   '<span class="badge badge-green" style="font-size:15px;">' + ingresos.length + ' ingresos</span>'
-    +   '<button class="btn btn-secondary" onclick="removePdfSelectedRows()"'
+    +   '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
     +     ' style="font-size:14px;padding:4px 12px;margin-left:auto;">'
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
@@ -639,10 +639,10 @@ function displayPdfPreview(banco) {
     +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
     +   '</span>'
     + '</div>'
-    + '<div style="max-height:calc(86vh - 320px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<div class="pdf-scroll-container" style="max-height:calc(86vh - 320px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
     + '<table class="data-table" style="font-size:15px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
-    +   '<th style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
+    +   '<th class="pdf-cb-col" style="width:32px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
     +   '<th style="width:105px;">Fecha</th>'
     +   '<th>Descripción</th>'
     +   '<th style="width:140px;text-align:right;">Monto</th>'
@@ -656,9 +656,11 @@ function displayPdfPreview(banco) {
     var badgeClass = esGasto ? 'badge-red' : 'badge-green';
     var signo      = esGasto ? '−' : '+';
 
+    var catNombre = row.categoria_nombre || (esGasto ? 'Sin categoría' : 'N/A');
     var catSel = '';
     if (esGasto) {
-      catSel = '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
+      catSel = '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
+             + '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
              + ' style="font-size:14px;width:100%;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
@@ -667,11 +669,12 @@ function displayPdfPreview(banco) {
       });
       catSel += '</select>';
     } else {
-      catSel = '<span style="color:var(--text-muted);font-size:14px;">N/A</span>';
+      catSel = '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">N/A</span>'
+             + '<span style="color:var(--text-muted);font-size:14px;">N/A</span>';
     }
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
-      + '<td><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
+      + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
       + '<td style="font-size:14px;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
       + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;" title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +   row.descripcion
@@ -697,7 +700,7 @@ function displayPdfPreview(banco) {
     }).join('');
 
   html += ''
-    + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">'
+    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">'
     +   '<span style="font-size:14px;color:var(--text-muted);flex:1;">'
     +     'Ajusta categorías y elimina duplicados si los hay.'
     +   '</span>'
@@ -764,8 +767,10 @@ function toggleAllPdfRows(checked) {
 function updatePdfCategory(idx, catId) {
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var cat = categorias.find(function(c) { return c.id === catId; });
-  _pdfParsedRows[idx].categoria_id  = catId;
+  _pdfParsedRows[idx].categoria_id     = catId;
   _pdfParsedRows[idx].categoria_nombre = cat ? cat.nombre : '';
+  var span = document.querySelector('.pdf-cat-print[data-idx="' + idx + '"]');
+  if (span) span.textContent = cat ? cat.nombre : 'Sin categoría';
 }
 
 function removePdfSelectedRows() {
