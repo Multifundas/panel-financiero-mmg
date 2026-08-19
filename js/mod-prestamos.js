@@ -519,8 +519,8 @@ function verHistorialPagos(prestamoId) {
   if (allEntries.length <= 1 && pagos.length === 0) {
     tablaPagos = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-receipt" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>No hay movimientos adicionales registrados para este prestamo.</div>';
   } else {
-    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:14%;"><col style="width:12%;"><col style="width:28%;"><col style="width:16%;"><col style="width:14%;"><col style="width:16%;"></colgroup><thead><tr>' +
-      '<th>Fecha</th><th>Concepto</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">' + labelAbono + '</th><th style="text-align:right;">Saldo</th>' +
+    tablaPagos = '<div style="overflow-x:auto;"><table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:14%;"><col style="width:12%;"><col style="width:28%;"><col style="width:16%;"><col style="width:14%;"><col style="width:16%;"></colgroup><thead><tr>' +
+      '<th>Fecha</th><th>Concepto</th><th>Descripcion</th><th style="text-align:right;">Cargo</th><th style="text-align:right;">' + labelAbono + '</th><th style="text-align:right;" data-no-sort="true">Saldo</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody>' +
       '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);background:var(--bg-base);">' +
       '<td colspan="3" style="font-weight:700;">Saldo Final</td>' +
