@@ -1452,8 +1452,8 @@ function verHistorialCuenta(cuentaId) {
         '<button class="btn btn-danger" style="padding:3px 7px;font-size:14px;" onclick="deleteCierreHistorial(\'' + cuentaId + '\',' + origIdx + ')" title="Eliminar"><i class="fas fa-trash"></i></button>' +
         '</td></tr>';
     });
-    tablaHTML = '<table class="data-table" style="font-size:16px;"><thead><tr>' +
-      '<th>Periodo</th><th style="text-align:right;">Saldo Inicial</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:center;">Acciones</th>' +
+    tablaHTML = '<table class="data-table sortable-table" style="font-size:16px;"><thead><tr>' +
+      '<th>Periodo</th><th style="text-align:right;">Saldo Inicial</th><th style="text-align:right;">Saldo Final</th><th style="text-align:right;">Rendimiento</th><th style="text-align:center;" data-no-sort="true">Acciones</th>' +
       '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
 
     // Chart data (chronological order)
@@ -1510,6 +1510,7 @@ function verHistorialCuenta(cuentaId) {
 
   openModal('Historial de Saldos: ' + cuenta.nombre, bodyHTML);
   document.querySelector('.modal-content').classList.add('modal-wide');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 100);
 }
 
 /* -- Edit a cierre in historial_saldos -- */

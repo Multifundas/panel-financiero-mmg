@@ -993,6 +993,7 @@ function openPlantillasRecurrentes() {
   `;
 
   openModal('Plantillas Recurrentes', contentHTML, 'modal-lg');
+  setTimeout(function() { _initSortableTables(document.getElementById('modalBody')); }, 100);
 }
 
 /* -- Open modal to create or edit a plantilla recurrente -- */
@@ -2032,6 +2033,7 @@ function _renderGastosHistoricos() {
   // Set year filter value
   var selEl = document.getElementById('ghFilterAnio');
   if (selEl) selEl.value = String(selYear);
+  setTimeout(function() { _initSortableTables(container); }, 100);
 }
 
 function _editGastoHistorico(id, anio, mes) {

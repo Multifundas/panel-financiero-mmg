@@ -1014,7 +1014,7 @@ function renderDashboard() {
           </select>
         </div>
         <div style="overflow-x:auto;">
-          <table class="data-table" id="yoyComparisonTable" style="font-size:13px;">
+          <table class="data-table sortable-table" id="yoyComparisonTable" style="font-size:13px;">
             <thead>
               <tr id="yoyComparisonThead"></tr>
             </thead>

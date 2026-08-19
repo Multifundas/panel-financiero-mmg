@@ -182,7 +182,7 @@
           </button>
         </div>
         <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
-          <table class="data-table" id="tablaCategorias">
+          <table class="data-table sortable-table" id="tablaCategorias">
             <thead>
               <tr>
                 <th>Nombre</th>
@@ -204,7 +204,7 @@
           </button>
         </div>
         <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
-          <table class="data-table" id="tablaInstituciones">
+          <table class="data-table sortable-table" id="tablaInstituciones">
             <thead>
               <tr>
                 <th>Nombre</th>

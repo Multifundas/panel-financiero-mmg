@@ -218,7 +218,7 @@ function renderAnalisis() {
         '<i class="fas fa-table" style="margin-right:6px;color:var(--accent-blue);"></i>' +
         'Resumen Mensual' +
       '</h3>' +
-      '<table class="data-table" style="width:100%;font-size:16px;">' +
+      '<table class="data-table sortable-table" style="width:100%;font-size:16px;">' +
         '<thead><tr>' +
           '<th style="text-align:left;">Mes</th>' +
           '<th>Ingresos</th>' +
@@ -239,7 +239,7 @@ function renderAnalisis() {
           '<i class="fas fa-receipt" style="margin-right:6px;color:var(--accent-red);"></i>' +
           'Top Categorías de Gasto' +
         '</h3>' +
-        '<table class="data-table" style="width:100%;font-size:16px;">' +
+        '<table class="data-table sortable-table" style="width:100%;font-size:16px;">' +
           '<thead><tr>' +
             '<th style="text-align:left;">Categoría</th>' +
             '<th>Total MXN</th>' +
@@ -254,7 +254,7 @@ function renderAnalisis() {
           '<i class="fas fa-arrow-down" style="margin-right:6px;color:var(--accent-blue);"></i>' +
           'Top Categorías de Ingreso' +
         '</h3>' +
-        '<table class="data-table" style="width:100%;font-size:16px;">' +
+        '<table class="data-table sortable-table" style="width:100%;font-size:16px;">' +
           '<thead><tr>' +
             '<th style="text-align:left;">Categoría</th>' +
             '<th>Total MXN</th>' +
