@@ -151,6 +151,7 @@ function filterPrestamos() {
     var tasa = p.tasa_interes ? formatPct(p.tasa_interes) : '0.00%';
     var venc = p.fecha_vencimiento ? formatDate(p.fecha_vencimiento) : '\u2014';
     var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+    acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verHistorialPagos(\'' + p.id + '\')" title="Ver historial completo"><i class="fas fa-history"></i></button>';
     if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
     if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
     acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
