@@ -392,6 +392,8 @@ function prestarMas(prestamoId) {
         <input type="number" id="prestarMasMonto" class="form-input" required step="0.01" min="0.01" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">Fecha *</label>
         <input type="date" id="prestarMasFecha" class="form-input" required value="${hoy}"></div>
+      <div class="form-group"><label class="form-label">Descripcion</label>
+        <input type="text" id="prestarMasDesc" class="form-input" placeholder="Ej: Prestamo adicional para bodas..."></div>
       <div class="form-group"><label class="form-label">Notas</label>
         <textarea id="prestarMasNotas" class="form-input" rows="2" style="resize:vertical;" placeholder="Notas del prestamo adicional..."></textarea></div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
@@ -412,11 +414,12 @@ function savePrestamoAdicional(event, prestamoId) {
   const prestamo = prestamos[pIdx];
   const monto = parseFloat(document.getElementById('prestarMasMonto').value) || 0;
   const fecha = document.getElementById('prestarMasFecha').value;
+  const descripcion = document.getElementById('prestarMasDesc').value.trim();
   const notas = document.getElementById('prestarMasNotas').value.trim();
   if (monto <= 0 || !fecha) { showToast('Por favor completa todos los campos obligatorios.', 'warning'); return; }
 
   if (!prestamo.pagos) prestamo.pagos = [];
-  prestamo.pagos.push({ id: uuid(), fecha: fecha, monto: monto, notas: notas, tipo: 'prestamo_adicional' });
+  prestamo.pagos.push({ id: uuid(), fecha: fecha, monto: monto, descripcion: descripcion, notas: notas, tipo: 'prestamo_adicional' });
   prestamo.monto_original += monto;
   prestamo.saldo_pendiente += monto;
   if (prestamo.estado === 'pagado') prestamo.estado = 'activo';
@@ -477,7 +480,7 @@ function verHistorialPagos(prestamoId) {
     allEntries.push({
       fecha: p.fecha || '',
       tipo: esAdicional ? 'prestamo_adicional' : 'abono',
-      descripcion: esAdicional ? 'Prestamo adicional' : (p.descripcion || labelAbono),
+      descripcion: esAdicional ? ('Prestamo adicional' + (p.descripcion ? ' — ' + p.descripcion : '')) : (p.descripcion || labelAbono),
       cargo: esAdicional ? p.monto : 0,
       abono: esAdicional ? 0 : p.monto,
       notas: p.notas || ''
