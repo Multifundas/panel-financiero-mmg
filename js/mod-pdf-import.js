@@ -27,7 +27,9 @@ var PDF_CLASSIFICATION_RULES = [
 
 // ── Estado del módulo ─────────────────────────────────────────
 var _pdfParsedRows = [];
-var _pdfBanco = '';
+var _pdfBanco      = '';
+var _pdfDescList   = [];   // descripciones únicas del historial (para datalist)
+var _pdfDescCatMap = {};   // descripcion → {categoria_id, categoria_nombre}
 
 // ═══════════════════════════════════════════════════════════════
 //  1. INTERFAZ
@@ -642,6 +644,35 @@ function classifyMovements(rows) {
 
 // ═══════════════════════════════════════════════════════════════
 //  5. PREVIEW Y CONFIRMACIÓN
+
+/* Construye el datalist de descripciones y el mapa desc→categoría */
+function _buildDescList() {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catById = {};
+  categorias.forEach(function(c) { catById[c.id] = c; });
+
+  var seen = {};
+  _pdfDescCatMap = {};
+
+  // Ordenar del más reciente al más antiguo para que la categoría más reciente gane
+  var sorted = movimientos.slice().sort(function(a, b) {
+    return (b.fecha || '').localeCompare(a.fecha || '');
+  });
+
+  sorted.forEach(function(m) {
+    if (!m.descripcion || m.tipo !== 'gasto') return;
+    var key = m.descripcion.trim();
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    _pdfDescCatMap[key] = {
+      categoria_id:     m.categoria_id || null,
+      categoria_nombre: (m.categoria_id && catById[m.categoria_id]) ? catById[m.categoria_id].nombre : ''
+    };
+  });
+
+  _pdfDescList = Object.keys(seen).sort(function(a, b) { return a.localeCompare(b); });
+}
 // ═══════════════════════════════════════════════════════════════
 
 function displayPdfPreview(banco) {
@@ -650,6 +681,7 @@ function displayPdfPreview(banco) {
   var container = document.getElementById('pdfPreviewContainer');
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var rows = _pdfParsedRows;
+  _buildDescList();
 
   var gastos   = rows.filter(function(r) { return r.tipo === 'gasto'; });
   var ingresos = rows.filter(function(r) { return r.tipo === 'ingreso'; });
@@ -662,7 +694,14 @@ function displayPdfPreview(banco) {
   var nRegla   = gastos.filter(function(r) { return r.categoria_source === 'regla'; }).length;
   var nRevisar = gastos.filter(function(r) { return r.categoria_source === 'default'; }).length;
 
-  var html = ''
+  // Datalist con todas las descripciones del historial
+  var datalistHtml = '<datalist id="pdfDescOptions">';
+  _pdfDescList.forEach(function(d) {
+    datalistHtml += '<option value="' + d.replace(/"/g, '&quot;') + '">';
+  });
+  datalistHtml += '</datalist>';
+
+  var html = datalistHtml
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
     +   '<span class="badge badge-blue" style="font-size:15px;">'
     +     '<i class="fas fa-university"></i> ' + (banco || '') + ' — ' + rows.length + ' movimientos'
@@ -718,13 +757,13 @@ function displayPdfPreview(banco) {
     var srcIcon = '';
     if (esGasto) {
       if (row.categoria_source === 'historial') {
-        srcIcon = '<i class="fas fa-history pdf-print-hide" title="Del historial de movimientos"'
+        srcIcon = '<i id="pdf-src-' + idx + '" class="fas fa-history pdf-print-hide" title="Del historial de movimientos"'
                 + ' style="color:var(--accent-green);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
       } else if (row.categoria_source === 'regla') {
-        srcIcon = '<i class="fas fa-tag pdf-print-hide" title="Por regla automática"'
+        srcIcon = '<i id="pdf-src-' + idx + '" class="fas fa-tag pdf-print-hide" title="Por regla automática"'
                 + ' style="color:var(--accent-blue);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
       } else {
-        srcIcon = '<i class="fas fa-exclamation-circle pdf-print-hide" title="Sin clasificar — revisa"'
+        srcIcon = '<i id="pdf-src-' + idx + '" class="fas fa-exclamation-circle pdf-print-hide" title="Sin clasificar — revisa"'
                 + ' style="color:var(--accent-amber);font-size:11px;margin-right:4px;flex-shrink:0;"></i>';
       }
     }
@@ -733,7 +772,7 @@ function displayPdfPreview(banco) {
       catSel = '<div style="display:flex;align-items:center;gap:2px;">'
              + srcIcon
              + '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
-             + '<select class="pdf-cat-select" onchange="updatePdfCategory(' + idx + ',this.value)"'
+             + '<select class="pdf-cat-select" data-idx="' + idx + '" onchange="updatePdfCategory(' + idx + ',this.value)"'
              + ' style="font-size:15px;flex:1;min-width:0;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
@@ -760,10 +799,10 @@ function displayPdfPreview(banco) {
       +   '<span class="pdf-desc-print" style="display:none;font-size:11px;">'
       +     (row.descripcion_final || '').replace(/</g,'&lt;')
       +   '</span>'
-      +   '<input type="text" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
-      +     ' placeholder="Escribe la descripción a importar…"'
+      +   '<input type="text" list="pdfDescOptions" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
+      +     ' placeholder="Escribe o elige del historial…"'
       +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
-      +     ' onchange="updatePdfDesc(' + idx + ',this.value)"'
+      +     ' oninput="updatePdfDesc(' + idx + ',this.value)"'
       +     ' style="width:100%;font-size:14px;font-family:inherit;border:1px solid var(--border-subtle);'
       +       'border-radius:4px;padding:3px 7px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
@@ -853,7 +892,32 @@ function toggleAllPdfRows(checked) {
 }
 
 function updatePdfDesc(idx, value) {
-  _pdfParsedRows[idx].descripcion_final = value.trim() || _pdfParsedRows[idx].descripcion;
+  var v = value.trim();
+  _pdfParsedRows[idx].descripcion_final = v;
+
+  // Si la descripción coincide exactamente con el historial → auto-rellenar categoría
+  if (v && _pdfDescCatMap[v] && _pdfDescCatMap[v].categoria_id && _pdfParsedRows[idx].tipo === 'gasto') {
+    var catInfo = _pdfDescCatMap[v];
+    _pdfParsedRows[idx].categoria_id     = catInfo.categoria_id;
+    _pdfParsedRows[idx].categoria_nombre = catInfo.categoria_nombre;
+    _pdfParsedRows[idx].categoria_source = 'historial';
+
+    // Actualizar el select en el DOM
+    var sel = document.querySelector('select.pdf-cat-select[data-idx="' + idx + '"]');
+    if (sel) sel.value = catInfo.categoria_id;
+
+    // Actualizar texto de impresión
+    var catSpan = document.querySelector('.pdf-cat-print[data-idx="' + idx + '"]');
+    if (catSpan) catSpan.textContent = catInfo.categoria_nombre || 'Sin categoría';
+
+    // Actualizar ícono de fuente a "historial"
+    var icon = document.getElementById('pdf-src-' + idx);
+    if (icon) {
+      icon.className = 'fas fa-history pdf-print-hide';
+      icon.title = 'Del historial de movimientos';
+      icon.style.color = 'var(--accent-green)';
+    }
+  }
 }
 
 function updatePdfCategory(idx, catId) {
