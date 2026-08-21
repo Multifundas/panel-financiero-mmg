@@ -2467,6 +2467,8 @@ function mostrarDesgloseCuentas(tipo) {
   var filtered = cuentas.filter(function(c) { return c.activa !== false && c.tipo === tipo; });
   filtered.sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });
   var total = 0;
+  var _btnEC = function(id) { return '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verEstadoCuenta(\'' + id + '\')" title="Estado de Cuenta"><i class="fas fa-file-invoice-dollar"></i></button></td>'; };
+
   var rows = filtered.map(function(c) {
     var saldoReal = _calcSaldoReal(c);
     var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
@@ -2480,6 +2482,7 @@ function mostrarDesgloseCuentas(tipo) {
       '<td style="text-align:right;">' + formatCurrencyInt(saldoReal, c.moneda) + '</td>' +
       '<td style="text-align:center;color:var(--text-primary);font-size:12px;font-weight:600;">' + tcDisplay + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
+      _btnEC(c.id) +
     '</tr>';
   }).join('');
 
@@ -2490,14 +2493,11 @@ function mostrarDesgloseCuentas(tipo) {
   var extraTd = '';
   if (tipo === 'inversion') {
     extraTh = '<th style="text-align:right;">Rend. %</th>';
-    // Recalculate rows with rendimiento column
-    var rendimientos = loadData(STORAGE_KEYS.rendimientos) || [];
     rows = filtered.map(function(c) {
       var saldoReal = _calcSaldoReal(c);
       var valMXN = toMXN(saldoReal, c.moneda, tiposCambio);
       var tc = c.moneda !== 'MXN' ? getTipoCambio(c.moneda) : null;
       var tcDisplay = tc ? '$' + tc.toFixed(4) : '\u2014';
-      // Get tasa anual from ultimo cierre
       var tasaAnual = c.rendimiento_anual || 0;
       var hist = c.historial_saldos || [];
       if (hist.length > 0) {
@@ -2515,17 +2515,18 @@ function mostrarDesgloseCuentas(tipo) {
         '<td style="text-align:center;color:var(--text-primary);font-size:12px;font-weight:600;">' + tcDisplay + '</td>' +
         '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
         '<td style="text-align:right;font-weight:600;color:' + tasaColor + ';">' + tasaDisplay + '</td>' +
+        _btnEC(c.id) +
       '</tr>';
     }).join('');
     extraTd = '<td></td>';
   }
 
-  var numCols = tipo === 'inversion' ? 7 : 6;
   var colgroup = tipo === 'inversion'
-    ? '<colgroup><col style="width:24%;"><col style="width:13%;"><col style="width:10%;"><col style="width:17%;"><col style="width:10%;"><col style="width:16%;"><col style="width:10%;"></colgroup>'
-    : '<colgroup><col style="width:28%;"><col style="width:14%;"><col style="width:10%;"><col style="width:18%;"><col style="width:10%;"><col style="width:20%;"></colgroup>';
-  var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;">' + colgroup + '<thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th>' + extraTh + '</tr></thead><tbody>' +
-    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td><td></td><td></td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td>' + extraTd + '</tr></tfoot></table>';
+    ? '<colgroup><col style="width:22%;"><col style="width:12%;"><col style="width:9%;"><col style="width:15%;"><col style="width:9%;"><col style="width:14%;"><col style="width:9%;"><col style="width:10%;"></colgroup>'
+    : '<colgroup><col style="width:25%;"><col style="width:13%;"><col style="width:9%;"><col style="width:17%;"><col style="width:9%;"><col style="width:17%;"><col style="width:10%;"></colgroup>';
+  var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;">' + colgroup +
+    '<thead><tr><th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:center;">T/C</th><th style="text-align:right;">Valor MXN</th>' + extraTh + '<th style="text-align:center;" data-no-sort="true"></th></tr></thead><tbody>' +
+    rows + '</tbody><tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td><td></td><td></td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(total, 'MXN') + '</td>' + extraTd + '<td></td></tr></tfoot></table>';
 
   var _mNowC = new Date();
   var _mNombresC = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
