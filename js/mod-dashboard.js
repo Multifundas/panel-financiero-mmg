@@ -2574,13 +2574,14 @@ function mostrarDesglosePrestamos() {
       '<td><span class="badge ' + tipoBadge + '">' + p.tipo + '</span></td>' +
       '<td style="text-align:right;">' + formatCurrencyInt(p.saldo_pendiente, p.moneda) + '</td>' +
       '<td style="text-align:right;font-weight:600;">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' +
+      '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verHistorialPagos(\'' + p.id + '\')" title="Ver historial"><i class="fas fa-history"></i></button></td>' +
     '</tr>';
   }).join('');
 
-  var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:35%;"><col style="width:15%;"><col style="width:25%;"><col style="width:25%;"></colgroup><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th></tr></thead><tbody>' + rows + '</tbody>' +
-    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Otorgados</td><td></td><td></td><td style="text-align:right;color:var(--text-primary);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td style="font-weight:700;">Recibidos</td><td></td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td></tr>' +
-    '<tr style="font-weight:700;"><td style="font-weight:700;">Neto</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td></tr></tfoot></table>';
+  var html = '<table class="data-table sortable-table" style="table-layout:fixed;width:100%;"><colgroup><col style="width:30%;"><col style="width:13%;"><col style="width:22%;"><col style="width:22%;"><col style="width:13%;"></colgroup><thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:center;" data-no-sort="true"></th></tr></thead><tbody>' + rows + '</tbody>' +
+    '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-weight:700;">Otorgados</td><td></td><td></td><td style="text-align:right;color:var(--text-primary);font-weight:700;">' + formatCurrencyInt(totalOtorgados, 'MXN') + '</td><td></td></tr>' +
+    '<tr style="font-weight:700;"><td style="font-weight:700;">Recibidos</td><td></td><td></td><td style="text-align:right;color:var(--accent-red);font-weight:700;">' + formatCurrencyInt(totalRecibidos, 'MXN') + '</td><td></td></tr>' +
+    '<tr style="font-weight:700;"><td style="font-weight:700;">Neto</td><td></td><td></td><td style="text-align:right;font-weight:700;">' + formatCurrencyInt(totalOtorgados - totalRecibidos, 'MXN') + '</td><td></td></tr></tfoot></table>';
 
   var _mNowPr = new Date();
   var _mNombresPr = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
