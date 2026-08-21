@@ -322,16 +322,17 @@ function mostrarDesgloseCuentas(tipoCuenta) {
       '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(saldoReal, c.moneda) + '</td>' +
       (c.moneda !== 'MXN' ? '<td style="text-align:right;color:var(--text-muted);">' + formatCurrencyInt(valMXN, 'MXN') + '</td>' : '<td style="text-align:right;color:var(--text-muted);">\u2014</td>') +
       '<td style="text-align:right;">' + rendHTML + '</td>' +
+      '<td style="text-align:center;"><button class="btn btn-secondary" style="padding:3px 8px;font-size:13px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verEstadoCuenta(\'' + c.id + '\')" title="Estado de Cuenta"><i class="fas fa-file-invoice-dollar"></i></button></td>' +
     '</tr>';
   }).join('');
 
   var html = '<table class="data-table sortable-table"><thead><tr>' +
-    '<th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:right;">Rend. %</th>' +
+    '<th>Nombre</th><th>Institucion</th><th>Moneda</th><th style="text-align:right;">Saldo</th><th style="text-align:right;">Valor MXN</th><th style="text-align:right;">Rend. %</th><th style="text-align:center;" data-no-sort="true"></th>' +
     '</tr></thead><tbody>' + rows + '</tbody>' +
     '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-color);">' +
     '<td colspan="3">Total (' + filtered.length + ' cuenta' + (filtered.length !== 1 ? 's' : '') + ')</td>' +
     '<td style="text-align:right;color:' + color + ';">' + formatCurrencyInt(totalMXN, 'MXN') + '</td>' +
-    '<td></td><td></td>' +
+    '<td></td><td></td><td></td>' +
     '</tr></tfoot></table>';
 
   var _mNowCtas = new Date();
