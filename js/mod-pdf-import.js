@@ -62,6 +62,73 @@ function loadPdfDraft() {
   } catch(e) { showToast('Error al cargar el borrador', 'error'); }
 }
 
+function toggleCatalogoPdf() {
+  var panel = document.getElementById('pdfCatalogoPanel');
+  var btn   = document.getElementById('pdfCatBtn');
+  if (!panel) return;
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-book"></i> Catálogo existente';
+    return;
+  }
+
+  _buildDescList();
+  var entries = Object.keys(_pdfDescCatMap).sort(function(a, b) { return a.localeCompare(b); });
+
+  if (!entries.length) {
+    panel.innerHTML = '<p style="color:var(--text-muted);font-size:14px;padding:12px 0;">No hay descripciones registradas aún.</p>';
+    panel.style.display = 'block';
+    if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar catálogo';
+    return;
+  }
+
+  var thS = 'padding:7px 10px;font-size:13px;text-align:left;border-bottom:2px solid var(--border-color);';
+  var tdS = 'padding:5px 10px;font-size:13px;border-bottom:1px solid var(--border-subtle);';
+
+  var rows = entries.map(function(desc) {
+    var cat = _pdfDescCatMap[desc].categoria_nombre || '<span style="color:var(--text-muted);">—</span>';
+    return '<tr>'
+      + '<td style="' + tdS + '">' + desc.replace(/</g, '&lt;') + '</td>'
+      + '<td style="' + tdS + '">' + cat + '</td>'
+      + '</tr>';
+  }).join('');
+
+  panel.innerHTML = ''
+    + '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;">'
+    +   '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+    +     '<span style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;">'
+    +       'Catálogo de descripciones (' + entries.length + ')'
+    +     '</span>'
+    +     '<input type="text" id="pdfCatSearch" placeholder="Buscar descripción o categoría…"'
+    +       ' oninput="filtrarCatalogoPdf(this.value)"'
+    +       ' style="flex:1;padding:5px 10px;font-size:13px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-base);color:var(--text-primary);">'
+    +   '</div>'
+    +   '<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
+    +     '<table id="pdfCatTable" style="width:100%;border-collapse:collapse;">'
+    +       '<thead><tr>'
+    +         '<th style="' + thS + 'position:sticky;top:0;background:var(--bg-secondary);">Descripción</th>'
+    +         '<th style="' + thS + 'position:sticky;top:0;background:var(--bg-secondary);width:180px;">Categoría</th>'
+    +       '</tr></thead>'
+    +       '<tbody id="pdfCatTbody">' + rows + '</tbody>'
+    +     '</table>'
+    +   '</div>'
+    + '</div>';
+
+  panel.style.display = 'block';
+  if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar catálogo';
+  setTimeout(function() { var s = document.getElementById('pdfCatSearch'); if(s) s.focus(); }, 50);
+}
+
+function filtrarCatalogoPdf(q) {
+  var tbody = document.getElementById('pdfCatTbody');
+  if (!tbody) return;
+  var term = q.trim().toLowerCase();
+  Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr) {
+    var text = tr.textContent.toLowerCase();
+    tr.style.display = (!term || text.indexOf(term) >= 0) ? '' : 'none';
+  });
+}
+
 function discardPdfDraft() {
   localStorage.removeItem(PDF_DRAFT_KEY);
   _pdfParsedRows = [];
@@ -221,15 +288,22 @@ function openPdfImport() {
   }
 
   var html = draftBanner
-    + '<p class="pdf-print-hide" style="font-size:15px;color:var(--text-secondary);margin:0 0 20px;">'
+    + '<p class="pdf-print-hide" style="font-size:15px;color:var(--text-secondary);margin:0 0 12px;">'
     +   'Sube el estado de cuenta en PDF. El banco se detecta automáticamente y los '
     +   'movimientos se clasifican por concepto. Podrás revisar antes de confirmar.'
     + '</p>'
-    + '<div class="pdf-print-hide">'
-    +   '<label class="form-label">Archivo PDF</label>'
-    +   '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
-    +     ' onchange="handlePdfUpload(event)" style="padding:8px;">'
+    + '<div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;">'
+    +   '<div style="flex:1;">'
+    +     '<label class="form-label">Archivo PDF</label>'
+    +     '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
+    +       ' onchange="handlePdfUpload(event)" style="padding:8px;">'
+    +   '</div>'
+    +   '<button class="btn btn-secondary" id="pdfCatBtn" onclick="toggleCatalogoPdf()"'
+    +     ' style="padding:9px 16px;font-size:14px;white-space:nowrap;">'
+    +     '<i class="fas fa-book"></i> Catálogo existente'
+    +   '</button>'
     + '</div>'
+    + '<div id="pdfCatalogoPanel" style="display:none;margin-bottom:16px;"></div>'
     + '<div id="pdfLoadingIndicator" class="pdf-print-hide" style="display:none;text-align:center;padding:40px;">'
     +   '<i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--accent-blue);"></i>'
     +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:15px;">'
