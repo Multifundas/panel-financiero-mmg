@@ -68,6 +68,116 @@ function discardPdfDraft() {
   showToast('Borrador descartado.', 'info');
 }
 
+function togglePdfVerification() {
+  var panel = document.getElementById('pdfVerificationPanel');
+  var btn   = document.getElementById('pdfVerBtn');
+  if (!panel) return;
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-list-ul"></i> Ver resumen';
+    return;
+  }
+
+  // Agrupar gastos por categoría
+  var gastos   = _pdfParsedRows.filter(function(r) { return r.tipo === 'gasto'; });
+  var ingresos = _pdfParsedRows.filter(function(r) { return r.tipo === 'ingreso'; });
+
+  var sinDesc  = gastos.filter(function(r) { return !(r.descripcion_final || '').trim(); });
+  var sinCat   = gastos.filter(function(r) { return (r.descripcion_final || '').trim() && !r.categoria_id; });
+
+  var catMap = {};
+  gastos.forEach(function(r) {
+    if (!(r.descripcion_final || '').trim() || !r.categoria_id) return;
+    var key = r.categoria_nombre || 'Sin categoría';
+    if (!catMap[key]) catMap[key] = { count: 0, total: 0 };
+    catMap[key].count++;
+    catMap[key].total += r.monto;
+  });
+  var catRows = Object.keys(catMap).sort(function(a, b) { return catMap[b].total - catMap[a].total; });
+
+  var totalGastos   = gastos.reduce(function(s, r) { return s + r.monto; }, 0);
+  var totalIngresos = ingresos.reduce(function(s, r) { return s + r.monto; }, 0);
+
+  var thStyle = 'padding:7px 10px;text-align:left;font-size:13px;border-bottom:2px solid var(--border-color);';
+  var tdStyle = 'padding:6px 10px;font-size:14px;border-bottom:1px solid var(--border-subtle);';
+  var tdR     = tdStyle + 'text-align:right;font-variant-numeric:tabular-nums;';
+
+  var html = '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:16px;">'
+    + '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+
+  // ── Columna izquierda: Atención ──────────────────────────────
+  var nAtention = sinDesc.length + sinCat.length;
+  html += '<div style="flex:0 0 auto;min-width:260px;">'
+    + '<p style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;">Requieren atención (' + nAtention + ')</p>'
+    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<thead><tr>'
+    +   '<th style="' + thStyle + '">Situación</th>'
+    +   '<th style="' + thStyle + 'text-align:right;">Movs.</th>'
+    +   '<th style="' + thStyle + 'text-align:right;">Total</th>'
+    + '</tr></thead><tbody>';
+
+  if (sinDesc.length > 0) {
+    var totSD = sinDesc.reduce(function(s, r) { return s + r.monto; }, 0);
+    html += '<tr style="background:rgba(var(--accent-red-rgb,220,53,69),.08);">'
+      + '<td style="' + tdStyle + '"><i class="fas fa-exclamation-circle" style="color:var(--accent-red);margin-right:6px;"></i><strong style="color:var(--accent-red);">Sin descripción</strong></td>'
+      + '<td style="' + tdR + 'color:var(--accent-red);">' + sinDesc.length + '</td>'
+      + '<td style="' + tdR + 'color:var(--accent-red);">$' + _formatNum(totSD) + '</td>'
+      + '</tr>';
+  }
+  if (sinCat.length > 0) {
+    var totSC = sinCat.reduce(function(s, r) { return s + r.monto; }, 0);
+    html += '<tr style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);">'
+      + '<td style="' + tdStyle + '"><i class="fas fa-tag" style="color:var(--accent-amber);margin-right:6px;"></i><strong style="color:var(--accent-amber);">Sin categoría</strong></td>'
+      + '<td style="' + tdR + 'color:var(--accent-amber);">' + sinCat.length + '</td>'
+      + '<td style="' + tdR + 'color:var(--accent-amber);">$' + _formatNum(totSC) + '</td>'
+      + '</tr>';
+  }
+  if (nAtention === 0) {
+    html += '<tr><td colspan="3" style="' + tdStyle + 'color:var(--accent-green);"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Todo completo</td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  // ── Columna derecha: Resumen por categoría ───────────────────
+  html += '<div style="flex:1;min-width:280px;">'
+    + '<p style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;">Gastos por categoría</p>'
+    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<thead><tr>'
+    +   '<th style="' + thStyle + '">Categoría</th>'
+    +   '<th style="' + thStyle + 'text-align:right;">Movs.</th>'
+    +   '<th style="' + thStyle + 'text-align:right;">Total</th>'
+    + '</tr></thead><tbody>';
+
+  catRows.forEach(function(cat) {
+    var g = catMap[cat];
+    html += '<tr>'
+      + '<td style="' + tdStyle + '">' + cat + '</td>'
+      + '<td style="' + tdR + '">' + g.count + '</td>'
+      + '<td style="' + tdR + '">$' + _formatNum(g.total) + '</td>'
+      + '</tr>';
+  });
+
+  html += '<tr style="font-weight:700;border-top:2px solid var(--border-color);">'
+    + '<td style="' + tdStyle + '">TOTAL GASTOS</td>'
+    + '<td style="' + tdR + '">' + gastos.length + '</td>'
+    + '<td style="' + tdR + 'color:var(--accent-red);">$' + _formatNum(totalGastos) + '</td>'
+    + '</tr>';
+
+  if (ingresos.length > 0) {
+    html += '<tr style="font-weight:700;">'
+      + '<td style="' + tdStyle + 'color:var(--accent-green);">TOTAL INGRESOS</td>'
+      + '<td style="' + tdR + 'color:var(--accent-green);">' + ingresos.length + '</td>'
+      + '<td style="' + tdR + 'color:var(--accent-green);">$' + _formatNum(totalIngresos) + '</td>'
+      + '</tr>';
+  }
+
+  html += '</tbody></table></div>';
+  html += '</div></div>';
+
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+  if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar resumen';
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  1. INTERFAZ
 // ═══════════════════════════════════════════════════════════════
@@ -773,11 +883,16 @@ function displayPdfPreview(banco) {
         ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
         : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i> <span style="color:var(--accent-green);">todos clasificados</span>')
     +   '</span>'
+    +   '<button class="btn btn-secondary pdf-print-hide" onclick="togglePdfVerification()"'
+    +     ' id="pdfVerBtn" style="font-size:14px;padding:4px 12px;">'
+    +     '<i class="fas fa-list-ul"></i> Ver resumen'
+    +   '</button>'
     +   '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
     +     ' style="font-size:14px;padding:4px 12px;margin-left:auto;">'
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
     + '</div>'
+    + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
     // Fila de subtotales
     + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;'
     +   'background:var(--bg-secondary);border:1px solid var(--border-color);'
