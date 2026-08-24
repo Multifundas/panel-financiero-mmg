@@ -845,7 +845,7 @@ function _buildDescList() {
   });
 
   sorted.forEach(function(m) {
-    if (!m.descripcion || m.tipo !== 'gasto') return;
+    if (!m.descripcion || m.tipo !== 'gasto' || m.transferencia_id) return;
     var key = m.descripcion.trim();
     if (!key || seen[key]) return;
     seen[key] = true;
