@@ -30,13 +30,70 @@ var _pdfParsedRows = [];
 var _pdfBanco      = '';
 var _pdfDescList   = [];   // descripciones únicas del historial (para datalist)
 var _pdfDescCatMap = {};   // descripcion → {categoria_id, categoria_nombre}
+var PDF_DRAFT_KEY  = 'pdf_import_draft';
+
+// ── Borrador (guardar/restaurar/descartar) ────────────────────
+function savePdfDraft() {
+  var sel = document.getElementById('pdfCuentaSelect');
+  localStorage.setItem(PDF_DRAFT_KEY, JSON.stringify({
+    banco:    _pdfBanco,
+    rows:     _pdfParsedRows,
+    cuentaId: sel ? sel.value : '',
+    savedAt:  new Date().toISOString()
+  }));
+  showToast('Borrador guardado. Puedes continuar más tarde.', 'success');
+}
+
+function loadPdfDraft() {
+  var raw = localStorage.getItem(PDF_DRAFT_KEY);
+  if (!raw) return;
+  try {
+    var draft = JSON.parse(raw);
+    _pdfParsedRows = draft.rows || [];
+    _pdfBanco      = draft.banco || '';
+    displayPdfPreview(_pdfBanco);
+    setTimeout(function() {
+      var sel = document.getElementById('pdfCuentaSelect');
+      if (sel && draft.cuentaId) sel.value = draft.cuentaId;
+    }, 50);
+  } catch(e) { showToast('Error al cargar el borrador', 'error'); }
+}
+
+function discardPdfDraft() {
+  localStorage.removeItem(PDF_DRAFT_KEY);
+  _pdfParsedRows = [];
+  _pdfBanco = '';
+  document.getElementById('modalOverlay').dataset.guardClose = '';
+  closeModal();
+  showToast('Borrador descartado.', 'info');
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  1. INTERFAZ
 // ═══════════════════════════════════════════════════════════════
 
 function openPdfImport() {
-  var html = ''
+  var hasDraft = !!localStorage.getItem(PDF_DRAFT_KEY);
+  var draftBanner = '';
+  if (hasDraft) {
+    var d = JSON.parse(localStorage.getItem(PDF_DRAFT_KEY));
+    var savedDate = d.savedAt ? new Date(d.savedAt).toLocaleString('es-MX', { dateStyle:'short', timeStyle:'short' }) : '';
+    draftBanner = '<div style="background:var(--bg-secondary);border:1px solid var(--accent-amber);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      + '<i class="fas fa-bookmark" style="color:var(--accent-amber);font-size:18px;"></i>'
+      + '<div style="flex:1;">'
+      +   '<strong style="color:var(--accent-amber);">Borrador guardado</strong>'
+      +   '<span style="font-size:13px;color:var(--text-muted);margin-left:8px;">' + (d.rows ? d.rows.length : 0) + ' movimientos · ' + savedDate + '</span>'
+      + '</div>'
+      + '<button class="btn btn-primary" onclick="loadPdfDraft()" style="padding:6px 16px;font-size:13px;">'
+      +   '<i class="fas fa-play"></i> Continuar borrador'
+      + '</button>'
+      + '<button class="btn btn-secondary" onclick="discardPdfDraft()" style="padding:6px 14px;font-size:13px;border-color:var(--accent-red);color:var(--accent-red);">'
+      +   '<i class="fas fa-trash"></i> Descartar'
+      + '</button>'
+      + '</div>';
+  }
+
+  var html = draftBanner
     + '<p class="pdf-print-hide" style="font-size:15px;color:var(--text-secondary);margin:0 0 20px;">'
     +   'Sube el estado de cuenta en PDF. El banco se detecta automáticamente y los '
     +   'movimientos se clasifican por concepto. Podrás revisar antes de confirmar.'
@@ -832,6 +889,9 @@ function displayPdfPreview(banco) {
     +   '<span style="font-size:14px;color:var(--text-muted);flex:1;">'
     +     'Ajusta categorías y elimina duplicados si los hay.'
     +   '</span>'
+    +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:9px 18px;font-size:14px;border-color:var(--accent-amber);color:var(--accent-amber);">'
+    +     '<i class="fas fa-bookmark"></i> Guardar borrador'
+    +   '</button>'
     +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Importar a:</label>'
     +   '<select id="pdfCuentaSelect" class="form-input" style="min-width:190px;font-size:14px;">'
     +     '<option value="">— Selecciona cuenta —</option>'
@@ -979,6 +1039,7 @@ function confirmPdfImport() {
 
   var total = _pdfParsedRows.length;
   _pdfParsedRows = [];
+  localStorage.removeItem(PDF_DRAFT_KEY);
   document.getElementById('modalOverlay').dataset.guardClose = '';
   closeModal();
   showToast(total + ' movimientos importados exitosamente desde PDF', 'success');
