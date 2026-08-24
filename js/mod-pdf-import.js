@@ -1024,9 +1024,9 @@ function displayPdfPreview(banco) {
     +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:9px 18px;font-size:14px;border-color:var(--accent-amber);color:var(--accent-amber);">'
     +     '<i class="fas fa-bookmark"></i> Guardar borrador'
     +   '</button>'
-    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Importar a:</label>'
+    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Cuenta de origen:</label>'
     +   '<select id="pdfCuentaSelect" class="form-input" style="min-width:190px;font-size:14px;">'
-    +     '<option value="">— Selecciona cuenta —</option>'
+    +     '<option value="">— Selecciona cuenta origen —</option>'
     +     cuentaOpts
     +   '</select>'
     +   '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:9px 22px;">'
@@ -1139,7 +1139,7 @@ function confirmPdfImport() {
   var sel = document.getElementById('pdfCuentaSelect');
   var cuentaId = sel ? sel.value : '';
   if (!cuentaId) {
-    showToast('Selecciona la cuenta destino antes de importar', 'warning');
+    showToast('Selecciona la cuenta de origen antes de importar', 'warning');
     if (sel) sel.focus();
     return;
   }
