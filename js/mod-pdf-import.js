@@ -121,8 +121,8 @@ function togglePdfVerification() {
 
   if (sinDesc.length > 0) {
     var totSD = sinDesc.reduce(function(s, r) { return s + r.monto; }, 0);
-    html += '<tr style="background:rgba(var(--accent-red-rgb,220,53,69),.08);">'
-      + '<td style="' + tdStyle + '"><i class="fas fa-exclamation-circle" style="color:var(--accent-red);margin-right:6px;"></i><strong style="color:var(--accent-red);">Sin descripción</strong></td>'
+    html += '<tr style="background:rgba(var(--accent-red-rgb,220,53,69),.08);cursor:pointer;" onclick="saltarSinDescripcion()" title="Click para ir a la primera sin descripción">'
+      + '<td style="' + tdStyle + '"><i class="fas fa-exclamation-circle" style="color:var(--accent-red);margin-right:6px;"></i><strong style="color:var(--accent-red);">Sin descripción</strong> <span style="font-size:12px;color:var(--text-muted);">(click para ir)</span></td>'
       + '<td style="' + tdR + 'color:var(--accent-red);">' + sinDesc.length + '</td>'
       + '<td style="' + tdR + 'color:var(--accent-red);">$' + _formatNum(totSD) + '</td>'
       + '</tr>';
@@ -179,6 +179,20 @@ function togglePdfVerification() {
   panel.innerHTML = html;
   panel.style.display = 'block';
   if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar resumen';
+
+  // Resaltar inputs vacíos en la tabla
+  document.querySelectorAll('.pdf-desc-input').forEach(function(inp) {
+    inp.style.borderColor = inp.value.trim() === '' ? 'var(--accent-red)' : '';
+    inp.style.background  = inp.value.trim() === '' ? 'rgba(220,53,69,.08)' : '';
+  });
+}
+
+function saltarSinDescripcion() {
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('.pdf-desc-input'));
+  var vacios = inputs.filter(function(inp) { return inp.value.trim() === ''; });
+  if (!vacios.length) { showToast('No hay filas sin descripción', 'success'); return; }
+  vacios[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  vacios[0].focus();
 }
 
 // ═══════════════════════════════════════════════════════════════
