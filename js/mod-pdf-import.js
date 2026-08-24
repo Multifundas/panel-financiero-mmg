@@ -104,7 +104,7 @@ function toggleCatalogoPdf() {
     +       ' style="flex:1;padding:5px 10px;font-size:13px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-base);color:var(--text-primary);">'
     +   '</div>'
     +   '<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
-    +     '<table id="pdfCatTable" style="width:100%;border-collapse:collapse;">'
+    +     '<table id="pdfCatTable" class="sortable-table" style="width:100%;border-collapse:collapse;">'
     +       '<thead><tr>'
     +         '<th style="' + thS + 'position:sticky;top:0;background:var(--bg-secondary);">Descripción</th>'
     +         '<th style="' + thS + 'position:sticky;top:0;background:var(--bg-secondary);width:180px;">Categoría</th>'
@@ -116,7 +116,10 @@ function toggleCatalogoPdf() {
 
   panel.style.display = 'block';
   if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar catálogo';
-  setTimeout(function() { var s = document.getElementById('pdfCatSearch'); if(s) s.focus(); }, 50);
+  setTimeout(function() {
+    _initSortableTables(panel);
+    var s = document.getElementById('pdfCatSearch'); if(s) s.focus();
+  }, 50);
 }
 
 function filtrarCatalogoPdf(q) {
@@ -920,6 +923,7 @@ function _buildDescList() {
 
   sorted.forEach(function(m) {
     if (!m.descripcion || m.tipo !== 'gasto' || m.transferencia_id) return;
+    if (m.notas && m.notas.indexOf('Prestamo ID:') >= 0) return;
     var key = m.descripcion.trim();
     if (!key || seen[key]) return;
     seen[key] = true;
