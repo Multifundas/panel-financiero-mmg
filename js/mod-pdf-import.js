@@ -41,6 +41,9 @@ function savePdfDraft() {
     cuentaId: sel ? sel.value : '',
     savedAt:  new Date().toISOString()
   }));
+  // Borrador guardado → ya no hay riesgo de perder datos al cerrar
+  var overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.dataset.guardClose = '';
   showToast('Borrador guardado. Puedes continuar más tarde.', 'success');
 }
 
