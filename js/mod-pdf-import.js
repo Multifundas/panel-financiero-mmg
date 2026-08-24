@@ -678,6 +678,7 @@ function _buildDescList() {
 function displayPdfPreview(banco) {
   if (banco) _pdfBanco = banco;
   banco = _pdfBanco;
+  document.getElementById('modalOverlay').dataset.guardClose = '1';
   var container = document.getElementById('pdfPreviewContainer');
   var categorias = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var rows = _pdfParsedRows;
@@ -802,7 +803,7 @@ function displayPdfPreview(banco) {
       +   '<input type="text" list="pdfDescOptions" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
       +     ' placeholder="Escribe o elige del historial…"'
       +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
-      +     ' oninput="updatePdfDesc(' + idx + ',this.value)"'
+      +     ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
       +     ' style="width:100%;font-size:14px;font-family:inherit;border:1px solid var(--border-subtle);'
       +       'border-radius:4px;padding:3px 7px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
@@ -978,6 +979,7 @@ function confirmPdfImport() {
 
   var total = _pdfParsedRows.length;
   _pdfParsedRows = [];
+  document.getElementById('modalOverlay').dataset.guardClose = '';
   closeModal();
   showToast(total + ' movimientos importados exitosamente desde PDF', 'success');
 

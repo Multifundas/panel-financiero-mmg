@@ -116,7 +116,12 @@ function openModal(title, bodyHTML, options) {
 function closeModal(event) {
   // If called from overlay click, only close if click was on overlay itself
   if (event && event.target !== document.getElementById('modalOverlay')) return;
-  document.getElementById('modalOverlay').classList.remove('show');
+  var overlay = document.getElementById('modalOverlay');
+  if (overlay.dataset.guardClose === '1') {
+    if (!confirm('¿Cerrar el módulo PDF? Los movimientos cargados se perderán.')) return;
+    overlay.dataset.guardClose = '';
+  }
+  overlay.classList.remove('show');
 }
 
 /* ============================================================
