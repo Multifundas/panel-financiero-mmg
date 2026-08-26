@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260826c
+   PDF BANK STATEMENT IMPORT MODULE  v20260826d
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -306,6 +306,9 @@ function toggleCatalogoPdf() {
     +     '<input type="text" id="pdfCatSearch" placeholder="Buscar descripción o categoría…"'
     +       ' oninput="filtrarCatalogoPdf(this.value)"'
     +       ' style="flex:1;padding:5px 10px;font-size:13px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-base);color:var(--text-primary);">'
+    +     '<button onclick="imprimirCatalogoPdf()" class="btn btn-secondary" style="padding:4px 10px;font-size:13px;" title="Imprimir catálogo completo">'
+    +       '<i class="fas fa-print"></i>'
+    +     '</button>'
     +   '</div>'
     +   '<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
     +     '<table id="pdfCatTable" class="sortable-table" style="width:100%;border-collapse:collapse;">'
@@ -334,6 +337,41 @@ function filtrarCatalogoPdf(q) {
     var text = tr.textContent.toLowerCase();
     tr.style.display = (!term || text.indexOf(term) >= 0) ? '' : 'none';
   });
+}
+
+function imprimirCatalogoPdf() {
+  _buildDescList();
+  var entries = Object.keys(_pdfDescCatMap).sort(function(a, b) { return a.localeCompare(b); });
+  if (!entries.length) { showToast('No hay entradas en el catálogo', 'error'); return; }
+
+  var filas = entries.map(function(desc) {
+    var cat = _pdfDescCatMap[desc].categoria_nombre || '—';
+    return '<tr><td>' + desc.replace(/</g, '&lt;') + '</td><td>' + cat.replace(/</g, '&lt;') + '</td></tr>';
+  }).join('');
+
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Catálogo de descripciones</title>'
+    + '<style>body{font-family:Arial,sans-serif;font-size:13px;margin:24px;color:#222;}'
+    + 'h2{margin:0 0 4px;}p{color:#666;margin:0 0 14px;font-size:12px;}'
+    + 'table{width:100%;border-collapse:collapse;}'
+    + 'th{text-align:left;padding:6px 10px;background:#f0f0f0;border-bottom:2px solid #ccc;font-size:12px;}'
+    + 'td{padding:5px 10px;border-bottom:1px solid #e0e0e0;font-size:12px;}'
+    + 'tr:nth-child(even) td{background:#fafafa;}'
+    + 'button{display:none;}'
+    + '@media print{button{display:none;}body{margin:10px;}}'
+    + '</style></head><body>'
+    + '<button onclick="window.print()" style="display:block;margin-bottom:14px;padding:6px 18px;font-size:13px;cursor:pointer;">🖨 Imprimir</button>'
+    + '<h2>Catálogo de descripciones PDF</h2>'
+    + '<p>' + entries.length + ' entradas — generado ' + new Date().toLocaleDateString('es-MX') + '</p>'
+    + '<table><thead><tr><th>Descripción</th><th style="width:180px;">Categoría</th></tr></thead>'
+    + '<tbody>' + filas + '</tbody></table>'
+    + '</body></html>';
+
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite ventanas emergentes para imprimir', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(function() { w.print(); }, 400);
 }
 
 function discardPdfDraft() {
