@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260826a
+   PDF BANK STATEMENT IMPORT MODULE  v20260826c
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1186,23 +1186,26 @@ function displayPdfPreview(banco) {
   });
   datalistHtml += '</datalist>';
 
+  var ingresoBadge = '';
+  if (ingresos.length > 0) {
+    var _ingTitle = _pdfExcluirIngresos ? 'Click para incluir ingresos' : 'Click para excluir ingresos del EC';
+    var _ingStyle = _pdfExcluirIngresos
+      ? 'background:var(--bg-secondary);color:var(--text-muted);border:1px dashed var(--border-color);'
+      : 'background:var(--accent-green-soft,rgba(25,135,84,.15));color:var(--accent-green);';
+    ingresoBadge = '<span class="badge pdf-print-hide" onclick="togglePdfExclIngr()" title="' + _ingTitle + '"'
+      + ' style="font-size:15px;cursor:pointer;user-select:none;' + _ingStyle + '">'
+      + '<i class="fas fa-' + (_pdfExcluirIngresos ? 'eye-slash' : 'eye') + '" style="margin-right:4px;"></i>'
+      + ingresos.length + (_pdfExcluirIngresos ? ' ingresos excluidos' : ' ingresos — click para excluir')
+      + '</span>';
+  }
+
   var html = datalistHtml
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
     +   '<span class="badge badge-blue" style="font-size:15px;">'
     +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' movimientos'
     +   '</span>'
     +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
-    +   (ingresos.length > 0
-    +     ? '<span class="badge pdf-print-hide" onclick="togglePdfExclIngr()" title="' + (_pdfExcluirIngresos ? 'Click para incluir ingresos' : 'Click para excluir ingresos del EC') + '"'
-    +       + ' style="font-size:15px;cursor:pointer;user-select:none;'
-    +       + (_pdfExcluirIngresos
-    +           ? 'background:var(--bg-secondary);color:var(--text-muted);border:1px dashed var(--border-color);'
-    +           : 'background:var(--accent-green-soft,rgba(25,135,84,.15));color:var(--accent-green);')
-    +       + '">'
-    +       + '<i class="fas fa-' + (_pdfExcluirIngresos ? 'eye-slash' : 'eye') + '" style="margin-right:4px;"></i>'
-    +       + ingresos.length + (_pdfExcluirIngresos ? ' ingresos excluidos' : ' ingresos — click para excluir')
-    +       + '</span>'
-    +     : '')
+    +   ingresoBadge
     +   '<span class="pdf-print-hide" style="font-size:13px;color:var(--text-muted);display:flex;gap:10px;align-items:center;">'
     +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + ' historial&ensp;'
     +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + ' regla&ensp;'
