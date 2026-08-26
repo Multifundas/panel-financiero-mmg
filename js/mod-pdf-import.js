@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260817d
+   PDF BANK STATEMENT IMPORT MODULE  v20260826a
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -26,20 +26,219 @@ var PDF_CLASSIFICATION_RULES = [
 ];
 
 // ── Estado del módulo ─────────────────────────────────────────
-var _pdfParsedRows = [];
-var _pdfBanco      = '';
-var _pdfDescList   = [];   // descripciones únicas del historial (para datalist)
-var _pdfDescCatMap = {};   // descripcion → {categoria_id, categoria_nombre}
-var PDF_DRAFT_KEY  = 'pdf_import_draft';
+var _pdfParsedRows      = [];
+var _pdfBanco           = '';
+var _pdfTipoEC          = '';
+var _pdfExcluirIngresos = false;
+var _pdfFechaPago       = '';
+var _pdfLastFile        = null;  // { buffer: ArrayBuffer, nombre: string } para archivar
+var _pdfDescList        = [];
+var _pdfDescCatMap      = {};
+var PDF_DRAFT_KEY       = 'pdf_import_draft';
+
+// ── Archivo de PDFs (IndexedDB) ───────────────────────────────
+function _openPdfArchiveDB() {
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open('pdfEstadosCuenta', 1);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('pdfs'))
+        db.createObjectStore('pdfs', { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror   = function(e) { reject(e.target.error); };
+  });
+}
+
+function _archivarPdf(banco, numMovs, nombre) {
+  if (!_pdfLastFile) return;
+  var entry = { banco: banco || 'Banco', nombre: nombre || 'estado_cuenta.pdf',
+                numMovs: numMovs || 0,
+                fechaArchivo: new Date().toISOString().substring(0, 10),
+                data: _pdfLastFile.buffer };
+  _openPdfArchiveDB().then(function(db) {
+    var tx = db.transaction('pdfs', 'readwrite');
+    tx.objectStore('pdfs').add(entry);
+    tx.oncomplete = function() { console.log('PDF archivado:', nombre); };
+  }).catch(function(e) { console.warn('No se pudo archivar el PDF:', e); });
+}
+
+function togglePdfArchivo() {
+  var panel = document.getElementById('pdfArchivoPanel');
+  var btn   = document.getElementById('pdfArchBtn');
+  if (!panel) return;
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-folder-open"></i> PDFs archivados';
+    return;
+  }
+  panel.innerHTML = '<p style="color:var(--text-muted);font-size:14px;padding:10px 0;">Cargando…</p>';
+  panel.style.display = 'block';
+  if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cerrar archivo';
+
+  _openPdfArchiveDB().then(function(db) {
+    var tx  = db.transaction('pdfs', 'readonly');
+    var req = tx.objectStore('pdfs').getAll();
+    req.onsuccess = function(e) {
+      var items = (e.target.result || []).sort(function(a, b) { return b.id - a.id; });
+      var btnReporte = '<button class="btn btn-secondary" onclick="generarReportePdfImport()" style="padding:6px 14px;font-size:13px;margin-left:auto;">'
+        + '<i class="fas fa-file-alt"></i> Generar reporte desde BD</button>';
+      if (!items.length) {
+        panel.innerHTML = '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;">'
+          + '<p style="color:var(--text-muted);font-size:14px;margin:0 0 10px;">No hay PDFs archivados aún — se guardan automáticamente al cargar un archivo.</p>'
+          + btnReporte
+          + '</div>';
+        return;
+      }
+      var thS = 'padding:7px 10px;font-size:13px;text-align:left;border-bottom:2px solid var(--border-color);position:sticky;top:0;background:var(--bg-secondary);';
+      var tdS = 'padding:6px 10px;font-size:13px;border-bottom:1px solid var(--border-subtle);';
+      var rows = items.map(function(item) {
+        var kb = item.data ? Math.round(item.data.byteLength / 1024) + ' KB' : '—';
+        return '<tr>'
+          + '<td style="' + tdS + '">' + item.fechaArchivo + '</td>'
+          + '<td style="' + tdS + '">' + (item.banco || '—') + '</td>'
+          + '<td style="' + tdS + 'text-align:center;">' + (item.numMovs || '—') + '</td>'
+          + '<td style="' + tdS + 'max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + (item.nombre || '') + '">' + (item.nombre || '—') + '</td>'
+          + '<td style="' + tdS + 'color:var(--text-muted);text-align:right;">' + kb + '</td>'
+          + '<td style="' + tdS + 'text-align:center;white-space:nowrap;">'
+          +   '<button class="btn btn-secondary" onclick="abrirPdfArchivado(' + item.id + ')" style="padding:3px 10px;font-size:12px;margin-right:4px;" title="Ver/Imprimir">'
+          +     '<i class="fas fa-eye"></i>'
+          +   '</button>'
+          +   '<button class="btn btn-secondary" onclick="eliminarPdfArchivado(' + item.id + ',this)" style="padding:3px 10px;font-size:12px;border-color:var(--accent-red);color:var(--accent-red);" title="Eliminar">'
+          +     '<i class="fas fa-trash"></i>'
+          +   '</button>'
+          + '</td>'
+          + '</tr>';
+      }).join('');
+      panel.innerHTML = ''
+        + '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;">'
+        +   '<div style="display:flex;align-items:center;margin-bottom:10px;">'
+        +     '<p style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:0;">PDFs archivados (' + items.length + ')</p>'
+        +     '<button class="btn btn-secondary" onclick="generarReportePdfImport()" style="padding:4px 12px;font-size:12px;margin-left:auto;" title="Genera reporte imprimible desde la base de datos">'
+        +       '<i class="fas fa-file-alt"></i> Reporte desde BD'
+        +     '</button>'
+        +   '</div>'
+        +   '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
+        +     '<table style="width:100%;border-collapse:collapse;">'
+        +       '<thead><tr>'
+        +         '<th style="' + thS + '">Fecha</th>'
+        +         '<th style="' + thS + '">Banco</th>'
+        +         '<th style="' + thS + 'text-align:center;">Movs.</th>'
+        +         '<th style="' + thS + '">Archivo</th>'
+        +         '<th style="' + thS + 'text-align:right;">Tamaño</th>'
+        +         '<th style="' + thS + 'width:90px;"></th>'
+        +       '</tr></thead>'
+        +       '<tbody>' + rows + '</tbody>'
+        +     '</table>'
+        +   '</div>'
+        + '</div>';
+    };
+  }).catch(function(err) {
+    panel.innerHTML = '<p style="color:var(--accent-red);font-size:13px;">Error: ' + err.message + '</p>';
+  });
+}
+
+function abrirPdfArchivado(id) {
+  _openPdfArchiveDB().then(function(db) {
+    var req = db.transaction('pdfs', 'readonly').objectStore('pdfs').get(id);
+    req.onsuccess = function(e) {
+      var item = e.target.result;
+      if (!item) { showToast('PDF no encontrado', 'error'); return; }
+      var url = URL.createObjectURL(new Blob([item.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+    };
+  });
+}
+
+function generarReportePdfImport() {
+  var movs   = loadData(STORAGE_KEYS.movimientos) || [];
+  var cats   = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catById = {};
+  cats.forEach(function(c){ catById[c.id] = c.nombre; });
+
+  var pdfMovs = movs.filter(function(m){
+    return m.notas && m.notas.indexOf('Importado desde PDF') >= 0 && m.tipo === 'gasto';
+  }).sort(function(a, b){ return (a.categoria_id||'').localeCompare(b.categoria_id||'') || a.descripcion.localeCompare(b.descripcion); });
+
+  if (!pdfMovs.length) { showToast('No hay movimientos PDF en la base de datos', 'warning'); return; }
+
+  var catMap = {};
+  pdfMovs.forEach(function(m) {
+    var cn = (m.categoria_id && catById[m.categoria_id]) ? catById[m.categoria_id] : 'Sin categoría';
+    if (!catMap[cn]) catMap[cn] = { movs: [], total: 0 };
+    catMap[cn].movs.push(m);
+    catMap[cn].total += m.monto;
+  });
+
+  var total   = pdfMovs.reduce(function(s, m){ return s + m.monto; }, 0);
+  var fechas  = pdfMovs.map(function(m){ return m.fecha; });
+  var fechaMin = fechas.reduce(function(a, b){ return a < b ? a : b; });
+  var fechaMax = fechas.reduce(function(a, b){ return a > b ? a : b; });
+  var fmt = function(n){ return n.toLocaleString('es-MX', { minimumFractionDigits: 2 }); };
+
+  var body = '<button onclick="window.print()" style="margin-bottom:14px;padding:6px 18px;font-size:13px;cursor:pointer;">🖨 Imprimir</button>'
+    + '<h2 style="margin:0 0 4px;">Estado de Cuenta — Movimientos importados PDF</h2>'
+    + '<p style="color:#666;margin:0 0 16px;font-size:13px;">Periodo: ' + fechaMin + ' al ' + fechaMax + ' &nbsp;|&nbsp; ' + pdfMovs.length + ' movimientos</p>';
+
+  Object.keys(catMap).sort().forEach(function(cat) {
+    var g = catMap[cat];
+    body += '<table style="width:100%;border-collapse:collapse;margin-bottom:14px;">'
+      + '<thead><tr style="background:#e8e8e8;"><th style="padding:6px 10px;text-align:left;border:1px solid #ccc;" colspan="2">' + cat + '</th>'
+      + '<th style="padding:6px 10px;text-align:right;border:1px solid #ccc;width:130px;">Monto</th></tr></thead><tbody>';
+    g.movs.forEach(function(m){
+      body += '<tr><td style="padding:4px 10px;border:1px solid #eee;color:#888;width:110px;">' + m.fecha + '</td>'
+        + '<td style="padding:4px 10px;border:1px solid #eee;">' + (m.descripcion || '—') + '</td>'
+        + '<td style="padding:4px 10px;border:1px solid #eee;text-align:right;">$' + fmt(m.monto) + '</td></tr>';
+    });
+    body += '<tr style="font-weight:600;background:#f5f5f5;">'
+      + '<td colspan="2" style="padding:5px 10px;border:1px solid #ddd;text-align:right;">Subtotal ' + cat + ':</td>'
+      + '<td style="padding:5px 10px;border:1px solid #ddd;text-align:right;">$' + fmt(g.total) + '</td></tr>'
+      + '</tbody></table>';
+  });
+
+  body += '<table style="width:100%;border-collapse:collapse;"><tbody>'
+    + '<tr style="font-weight:700;font-size:15px;background:#f0f0f0;">'
+    + '<td colspan="2" style="padding:8px 10px;border:2px solid #ccc;text-align:right;">TOTAL GENERAL:</td>'
+    + '<td style="padding:8px 10px;border:2px solid #ccc;text-align:right;width:130px;">$' + fmt(total) + '</td>'
+    + '</tr></tbody></table>';
+
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">'
+    + '<title>Estado de Cuenta PDF</title>'
+    + '<style>body{font-family:Arial,sans-serif;font-size:13px;margin:24px;color:#222;}'
+    + '@media print{button{display:none;}body{margin:10px;}}</style>'
+    + '</head><body>' + body + '</body></html>';
+
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  else showToast('Permite ventanas emergentes para ver el reporte', 'warning');
+}
+
+function eliminarPdfArchivado(id, btn) {
+  if (!confirm('¿Eliminar este PDF del archivo?')) return;
+  _openPdfArchiveDB().then(function(db) {
+    var tx = db.transaction('pdfs', 'readwrite');
+    tx.objectStore('pdfs').delete(id);
+    tx.oncomplete = function() {
+      var row = btn && btn.closest ? btn.closest('tr') : null;
+      if (row) row.remove();
+      showToast('PDF eliminado del archivo', 'info');
+    };
+  });
+}
 
 // ── Borrador (guardar/restaurar/descartar) ────────────────────
 function savePdfDraft() {
-  var sel = document.getElementById('pdfCuentaSelect');
+  var sel      = document.getElementById('pdfCuentaSelect');
+  var fechaInp = document.getElementById('pdfFechaPagoInput');
+  if (fechaInp) _pdfFechaPago = fechaInp.value;
   localStorage.setItem(PDF_DRAFT_KEY, JSON.stringify({
-    banco:    _pdfBanco,
-    rows:     _pdfParsedRows,
-    cuentaId: sel ? sel.value : '',
-    savedAt:  new Date().toISOString()
+    banco:           _pdfBanco,
+    tipoEC:          _pdfTipoEC,
+    excluirIngresos: _pdfExcluirIngresos,
+    rows:            _pdfParsedRows,
+    cuentaId:        sel ? sel.value : '',
+    fechaPago:       _pdfFechaPago,
+    savedAt:         new Date().toISOString()
   }));
   // Borrador guardado → ya no hay riesgo de perder datos al cerrar
   var overlay = document.getElementById('modalOverlay');
@@ -52,12 +251,17 @@ function loadPdfDraft() {
   if (!raw) return;
   try {
     var draft = JSON.parse(raw);
-    _pdfParsedRows = draft.rows || [];
-    _pdfBanco      = draft.banco || '';
+    _pdfParsedRows      = draft.rows || [];
+    _pdfBanco           = draft.banco || '';
+    _pdfTipoEC          = draft.tipoEC || '';
+    _pdfExcluirIngresos = !!draft.excluirIngresos;
+    _pdfFechaPago       = draft.fechaPago || '';
     displayPdfPreview(_pdfBanco);
     setTimeout(function() {
       var sel = document.getElementById('pdfCuentaSelect');
       if (sel && draft.cuentaId) sel.value = draft.cuentaId;
+      var fechaInp = document.getElementById('pdfFechaPagoInput');
+      if (fechaInp && _pdfFechaPago) fechaInp.value = _pdfFechaPago;
     }, 50);
   } catch(e) { showToast('Error al cargar el borrador', 'error'); }
 }
@@ -305,8 +509,13 @@ function openPdfImport() {
     +     ' style="padding:9px 16px;font-size:14px;white-space:nowrap;">'
     +     '<i class="fas fa-book"></i> Catálogo existente'
     +   '</button>'
+    +   '<button class="btn btn-secondary" id="pdfArchBtn" onclick="togglePdfArchivo()"'
+    +     ' style="padding:9px 16px;font-size:14px;white-space:nowrap;">'
+    +     '<i class="fas fa-folder-open"></i> PDFs archivados'
+    +   '</button>'
     + '</div>'
     + '<div id="pdfCatalogoPanel" style="display:none;margin-bottom:16px;"></div>'
+    + '<div id="pdfArchivoPanel" style="display:none;margin-bottom:16px;"></div>'
     + '<div id="pdfLoadingIndicator" class="pdf-print-hide" style="display:none;text-align:center;padding:40px;">'
     +   '<i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--accent-blue);"></i>'
     +   '<p style="margin:12px 0 0;color:var(--text-muted);font-size:15px;">'
@@ -325,6 +534,7 @@ function openPdfImport() {
 function handlePdfUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
+  _pdfLastFile = null;
 
   var loading = document.getElementById('pdfLoadingIndicator');
   var preview = document.getElementById('pdfPreviewContainer');
@@ -334,6 +544,8 @@ function handlePdfUpload(event) {
 
   var reader = new FileReader();
   reader.onload = function(e) {
+    // Copiar el buffer antes de que pdf.js lo consuma
+    _pdfLastFile = { buffer: e.target.result.slice(0), nombre: file.name };
     var typedArray = new Uint8Array(e.target.result);
     extractPdfText(typedArray)
       .then(function(text) {
@@ -345,6 +557,8 @@ function handlePdfUpload(event) {
         }
         classifyMovements(result.rows);
         _pdfParsedRows = result.rows;
+        // Archivar el PDF en IndexedDB al cargar (independiente del import)
+        _archivarPdf(result.banco, result.rows.length, file.name);
         displayPdfPreview(result.banco);
       })
       .catch(function(err) {
@@ -530,13 +744,13 @@ function parseBanorte(lines, fullText) {
   var tcDateRe  = /\b\d{2}-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)-\d{4}\b/i;
   var chqDateRe = /\b\d{2}\/(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)\/\d{4}\b/i;
 
-  if (tcDateRe.test(fullText))  return parseBanorteTC(lines, fullText);
-  if (chqDateRe.test(fullText)) return parseBanorteChequera(lines, fullText);
+  if (tcDateRe.test(fullText))  { _pdfTipoEC = 'tc';       return parseBanorteTC(lines, fullText); }
+  if (chqDateRe.test(fullText)) { _pdfTipoEC = 'chequera'; return parseBanorteChequera(lines, fullText); }
 
-  // Si ningún patrón específico, intentar ambos y retornar el que encuentre más
   var tcRows  = parseBanorteTC(lines, fullText);
   var chqRows = parseBanorteChequera(lines, fullText);
-  return tcRows.length >= chqRows.length ? tcRows : chqRows;
+  if (tcRows.length >= chqRows.length) { _pdfTipoEC = 'tc';       return tcRows; }
+  else                                  { _pdfTipoEC = 'chequera'; return chqRows; }
 }
 
 /* ── Banorte Tarjeta de Crédito ─────────────────────────────────────────────
@@ -937,8 +1151,16 @@ function _buildDescList() {
 }
 // ═══════════════════════════════════════════════════════════════
 
+function togglePdfExclIngr() {
+  _pdfExcluirIngresos = !_pdfExcluirIngresos;
+  displayPdfPreview();
+}
+
 function displayPdfPreview(banco) {
-  if (banco) _pdfBanco = banco;
+  if (banco) {
+    _pdfBanco = banco;
+    _pdfExcluirIngresos = (_pdfTipoEC === 'tc'); // TC: excluir ingresos por defecto
+  }
   banco = _pdfBanco;
   document.getElementById('modalOverlay').dataset.guardClose = '1';
   var container = document.getElementById('pdfPreviewContainer');
@@ -967,10 +1189,20 @@ function displayPdfPreview(banco) {
   var html = datalistHtml
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
     +   '<span class="badge badge-blue" style="font-size:15px;">'
-    +     '<i class="fas fa-university"></i> ' + (banco || '') + ' — ' + rows.length + ' movimientos'
+    +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' movimientos'
     +   '</span>'
     +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
-    +   '<span class="badge badge-green" style="font-size:15px;">' + ingresos.length + ' ingresos</span>'
+    +   (ingresos.length > 0
+    +     ? '<span class="badge pdf-print-hide" onclick="togglePdfExclIngr()" title="' + (_pdfExcluirIngresos ? 'Click para incluir ingresos' : 'Click para excluir ingresos del EC') + '"'
+    +       + ' style="font-size:15px;cursor:pointer;user-select:none;'
+    +       + (_pdfExcluirIngresos
+    +           ? 'background:var(--bg-secondary);color:var(--text-muted);border:1px dashed var(--border-color);'
+    +           : 'background:var(--accent-green-soft,rgba(25,135,84,.15));color:var(--accent-green);')
+    +       + '">'
+    +       + '<i class="fas fa-' + (_pdfExcluirIngresos ? 'eye-slash' : 'eye') + '" style="margin-right:4px;"></i>'
+    +       + ingresos.length + (_pdfExcluirIngresos ? ' ingresos excluidos' : ' ingresos — click para excluir')
+    +       + '</span>'
+    +     : '')
     +   '<span class="pdf-print-hide" style="font-size:13px;color:var(--text-muted);display:flex;gap:10px;align-items:center;">'
     +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + ' historial&ensp;'
     +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + ' regla&ensp;'
@@ -988,6 +1220,32 @@ function displayPdfPreview(banco) {
     +   '</button>'
     + '</div>'
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
+    + (function() {
+        if (_pdfExcluirIngresos && ingresos.length > 0) {
+          return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
+            + '<i class="fas fa-info-circle" style="color:var(--accent-amber);margin-right:6px;"></i>'
+            + '<strong>' + ingresos.length + ' crédito(s) del estado de TC excluidos</strong>'
+            + ' — pagos anteriores y bonificaciones no se importan a la chequera.'
+            + (function() {
+                var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
+                var pares = ingresos.filter(function(r){ return montos[r.monto]; });
+                return pares.length > 0
+                  ? ' <span style="color:var(--text-muted);">(' + pares.length + ' par(es) cargo+abono mismo monto detectados)</span>'
+                  : '';
+              }())
+            + '</div>';
+        }
+        var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
+        var pares = ingresos.filter(function(r){ return montos[r.monto]; });
+        if (pares.length > 0) {
+          return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
+            + '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);margin-right:6px;"></i>'
+            + '<strong>' + pares.length + ' par(es) cargo+abono del mismo monto</strong> — posibles bonificaciones o plazos.'
+            + ' <button onclick="togglePdfExclIngr()" class="btn btn-secondary" style="padding:2px 10px;font-size:12px;margin-left:8px;border-color:var(--accent-amber);color:var(--accent-amber);">Excluir ingresos</button>'
+            + '</div>';
+        }
+        return '';
+      }())
     // Fila de subtotales
     + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;'
     +   'background:var(--bg-secondary);border:1px solid var(--border-color);'
@@ -1007,7 +1265,7 @@ function displayPdfPreview(banco) {
     + '<table class="data-table" style="font-size:16px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
     +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
-    +   '<th style="width:120px;">Fecha</th>'
+    +   '<th style="width:120px;" title="Fecha del estado de cuenta (solo referencia)">Fecha EC</th>'
     +   '<th><div style="font-size:11px;font-weight:400;line-height:1.2;">Banco (referencia)</div>'
     +       '<div>Descripción a importar</div></th>'
     +   '<th style="width:160px;text-align:right;">Monto</th>'
@@ -1016,6 +1274,7 @@ function displayPdfPreview(banco) {
     + '</tr></thead><tbody>';
 
   rows.forEach(function(row, idx) {
+    if (_pdfExcluirIngresos && row.tipo === 'ingreso') return;
     var esGasto   = row.tipo === 'gasto';
     var colorMonto = esGasto ? 'var(--accent-red)' : 'var(--accent-green)';
     var badgeClass = esGasto ? 'badge-red' : 'badge-green';
@@ -1102,13 +1361,18 @@ function displayPdfPreview(banco) {
     +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:9px 18px;font-size:14px;border-color:var(--accent-amber);color:var(--accent-amber);">'
     +     '<i class="fas fa-bookmark"></i> Guardar borrador'
     +   '</button>'
+    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Fecha pago chequera:</label>'
+    +   '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:160px;font-size:14px;"'
+    +     ' value="' + _pdfFechaPago + '"'
+    +     ' onchange="_pdfFechaPago=this.value"'
+    +     ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
     +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Cuenta de origen:</label>'
     +   '<select id="pdfCuentaSelect" class="form-input" style="min-width:190px;font-size:14px;">'
     +     '<option value="">— Selecciona cuenta origen —</option>'
     +     cuentaOpts
     +   '</select>'
     +   '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:9px 22px;">'
-    +     '<i class="fas fa-check"></i> Importar ' + rows.length + ' mov.'
+    +     '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
     +   '</button>'
     + '</div>';
 
@@ -1214,6 +1478,14 @@ function removePdfSelectedRows() {
 function confirmPdfImport() {
   if (!_pdfParsedRows.length) { showToast('No hay movimientos para importar', 'warning'); return; }
 
+  var fechaInp = document.getElementById('pdfFechaPagoInput');
+  if (fechaInp) _pdfFechaPago = fechaInp.value;
+  if (!_pdfFechaPago) {
+    showToast('Ingresa la fecha de pago en chequera antes de importar', 'warning');
+    if (fechaInp) fechaInp.focus();
+    return;
+  }
+
   var sel = document.getElementById('pdfCuentaSelect');
   var cuentaId = sel ? sel.value : '';
   if (!cuentaId) {
@@ -1227,9 +1499,13 @@ function confirmPdfImport() {
   var cuenta = cuentas.find(function(c) { return c.id === cuentaId; });
   if (!cuenta) { showToast('Cuenta no encontrada', 'error'); return; }
 
-  if (!confirm('Se importarán ' + _pdfParsedRows.length + ' movimientos a "' + cuenta.nombre + '". ¿Continuar?')) return;
+  var toImport = _pdfExcluirIngresos
+    ? _pdfParsedRows.filter(function(r){ return r.tipo !== 'ingreso'; })
+    : _pdfParsedRows;
 
-  _pdfParsedRows.forEach(function(row) {
+  if (!confirm('Se importarán ' + toImport.length + ' movimientos a "' + cuenta.nombre + '". ¿Continuar?')) return;
+
+  toImport.forEach(function(row) {
     movimientos.push({
       id: uuid(),
       cuenta_id: cuentaId,
@@ -1238,7 +1514,7 @@ function confirmPdfImport() {
       moneda: cuenta.moneda || 'MXN',
       categoria_id: row.tipo === 'gasto' ? (row.categoria_id || null) : null,
       descripcion: row.descripcion_final || row.descripcion,
-      fecha: row.fecha,
+      fecha: _pdfFechaPago,
       notas: 'Importado desde PDF',
       created: new Date().toISOString()
     });
@@ -1247,8 +1523,9 @@ function confirmPdfImport() {
   // No se modifica cuenta.saldo: _calcSaldoReal lo recalcula automáticamente.
   saveData(STORAGE_KEYS.movimientos, movimientos);
 
-  var total = _pdfParsedRows.length;
+  var total = toImport.length;
   _pdfParsedRows = [];
+  _pdfLastFile   = null;
   localStorage.removeItem(PDF_DRAFT_KEY);
   document.getElementById('modalOverlay').dataset.guardClose = '';
   closeModal();
