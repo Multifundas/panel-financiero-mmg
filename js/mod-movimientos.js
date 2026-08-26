@@ -598,7 +598,7 @@ function updateMovDescripcionDropdown() {
   }
 }
 
-/* -- Show/hide nueva descripcion text input -- */
+/* -- Show/hide nueva descripcion text input y auto-fill categoria -- */
 function onMovDescripcionSelectChange() {
   var sel = document.getElementById('movDescripcionSelect');
   var inputNueva = document.getElementById('movDescripcionNueva');
@@ -609,6 +609,18 @@ function onMovDescripcionSelectChange() {
   } else {
     inputNueva.style.display = 'none';
     inputNueva.value = '';
+    // Auto-fill categoria si la descripcion tiene historial
+    if (sel.value) {
+      var tipo = (document.getElementById('movTipo') || {}).value || 'gasto';
+      var movs = loadData(STORAGE_KEYS.movimientos) || [];
+      var hist = movs
+        .filter(function(m) { return m.descripcion === sel.value && m.tipo === tipo && m.categoria_id; })
+        .sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+      if (hist.length > 0) {
+        var catSel = document.getElementById('movCategoriaId');
+        if (catSel) catSel.value = hist[0].categoria_id;
+      }
+    }
   }
 }
 
