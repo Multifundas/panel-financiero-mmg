@@ -144,7 +144,7 @@
           <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
         </button>
       </div>
-      <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
+      <div id="rendMensualReportContainer" style="overflow-x:scroll;"></div>
     </div>
 
     <!-- 2. Rendimientos Mensuales Comparados (Ano vs Ano) -->
