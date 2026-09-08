@@ -6,13 +6,17 @@
    Tablets/mobile (screen <= 1024px) are excluded (media queries).
    ============================================================ */
 var _autoZoomRef = 1920; // default reference width
+var _lastZoomValue = null; // guard to avoid redundant zoom sets
 
 function applyAutoZoom() {
   // Use screen.width which is stable regardless of current zoom
   var screenW = window.screen.width;
   // Don't apply on mobile / tablets — media queries handle those
   if (screenW <= 1024) {
-    document.documentElement.style.zoom = '';
+    if (_lastZoomValue !== '') {
+      _lastZoomValue = '';
+      document.documentElement.style.zoom = '';
+    }
     return;
   }
   var config = (typeof loadData === 'function' && typeof STORAGE_KEYS !== 'undefined')
@@ -21,6 +25,9 @@ function applyAutoZoom() {
   var zoom = screenW / ref;
   // Clamp between 0.4 and 1.25
   zoom = Math.max(0.4, Math.min(1.25, zoom));
+  // Only set zoom when value actually changes — prevents resize feedback loop
+  if (_lastZoomValue === zoom) return;
+  _lastZoomValue = zoom;
   document.documentElement.style.zoom = zoom;
 }
 
