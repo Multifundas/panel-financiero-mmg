@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260826d
+   PDF BANK STATEMENT IMPORT MODULE  v20260908a
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -738,6 +738,49 @@ function _esPago(desc) {
   return /\b(pago|gracias por su pago|payment|credito aplicado|abono|bonificacion|devolucion|reembolso)\b/.test(n);
 }
 
+/* ── Parser Scotiabank TC ───────────────────────────────────────────────────
+   Formato de movimientos regulares (NO a meses):
+     DD-mmm-YYYY  DD-mmm-YYYY  DESCRIPCION  +/-  $monto
+   Los cargos (+) son gastos; pagos/abonos (-) son ingresos (excluidos auto).
+   ─────────────────────────────────────────────────────────────────────────── */
+function parseScotiabank(lines, fullText) {
+  _pdfTipoEC = 'tc'; // siempre tarjeta de crédito
+
+  var meses = { 'ene':1,'feb':2,'mar':3,'abr':4,'may':5,'jun':6,'jul':7,'ago':8,'sep':9,'oct':10,'nov':11,'dic':12 };
+  function toISO(d) {
+    var m = d.match(/^(\d{2})-([a-z]{3})-(\d{4})$/i);
+    if (!m) return '';
+    var mon = meses[(m[2] || '').toLowerCase()];
+    if (!mon) return '';
+    return m[3] + '-' + (mon < 10 ? '0' + mon : '' + mon) + '-' + m[1];
+  }
+
+  // DD-mmm-YYYY DD-mmm-YYYY DESCRIPCION + $X,XXX.XX
+  var txRe = /^(\d{2}-[a-z]{3}-\d{4})\s+(\d{2}-[a-z]{3}-\d{4})\s+(.+?)\s+([+\-])\s+\$([0-9,]+\.?\d{0,2})$/i;
+
+  var rows = [];
+  lines.forEach(function(line) {
+    var m = txRe.exec(line.trim());
+    if (!m) return;
+    var fechaEc = toISO(m[1]);
+    if (!fechaEc) return;
+    var monto = parseFloat(m[5].replace(/,/g, ''));
+    if (!monto || monto < 0.01) return;
+    rows.push({
+      tipo:              m[4] === '+' ? 'gasto' : 'ingreso',
+      fecha_ec:          fechaEc,
+      descripcion:       m[3].trim(),
+      descripcion_final: '',
+      monto:             monto,
+      categoria_id:      '',
+      categoria_nombre:  '',
+      categoria_source:  null
+    });
+  });
+
+  return rows;
+}
+
 /* ── Selector de parser ─────────────────────────────────────── */
 
 function parseBankStatement(text) {
@@ -751,6 +794,11 @@ function parseBankStatement(text) {
   if (/BANORTE|BANCO MERCANTIL DEL NORTE/i.test(text)) {
     rows = parseBanorte(lines, text);
     if (rows.length > 0) console.log('Banorte:', rows.length, 'movimientos');
+  }
+
+  if (!rows.length && /SCOTIABANK/i.test(text)) {
+    rows = parseScotiabank(lines, text);
+    if (rows.length > 0) console.log('Scotiabank:', rows.length, 'movimientos');
   }
 
   if (!rows.length && /BBVA|BANCOMER/i.test(text)) {
@@ -768,6 +816,7 @@ function parseBankStatement(text) {
 
 function _detectBanco(text) {
   if (/BANORTE|BANCO MERCANTIL DEL NORTE/i.test(text)) return 'Banorte';
+  if (/SCOTIABANK/i.test(text)) return 'Scotiabank';
   if (/BBVA|BANCOMER/i.test(text)) return 'BBVA';
   return 'Banco desconocido';
 }
