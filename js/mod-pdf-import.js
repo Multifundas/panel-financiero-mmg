@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260908a
+   PDF BANK STATEMENT IMPORT MODULE  v20260908b
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -748,28 +748,37 @@ function parseScotiabank(lines, fullText) {
 
   var meses = { 'ene':1,'feb':2,'mar':3,'abr':4,'may':5,'jun':6,'jul':7,'ago':8,'sep':9,'oct':10,'nov':11,'dic':12 };
   function toISO(d) {
-    var m = d.match(/^(\d{2})-([a-z]{3})-(\d{4})$/i);
+    var m = d && d.match(/^(\d{2})-([a-z]{3})-(\d{4})$/i);
     if (!m) return '';
-    var mon = meses[(m[2] || '').toLowerCase()];
-    if (!mon) return '';
-    return m[3] + '-' + (mon < 10 ? '0' + mon : '' + mon) + '-' + m[1];
+    var mon = meses[(m[2]||'').toLowerCase()];
+    return mon ? m[3]+'-'+(mon<10?'0':'')+mon+'-'+m[1] : '';
   }
 
-  // DD-mmm-YYYY DD-mmm-YYYY DESCRIPCION + $X,XXX.XX
-  var txRe = /^(\d{2}-[a-z]{3}-\d{4})\s+(\d{2}-[a-z]{3}-\d{4})\s+(.+?)\s+([+\-])\s+\$([0-9,]+\.?\d{0,2})$/i;
+  // Patrón: DD-mmm-YYYY DD-mmm-YYYY DESCRIPCION [+|-] $X,XXX.XX
+  // Sin anclas ^ $ para tolerar espacios o caracteres extra al inicio/fin
+  var dateP = '(\\d{2}-(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)-\\d{4})';
+  var txRe = new RegExp(dateP+'\\s+'+dateP+'\\s+(.+?)\\s+([+\\-]?)\\s*\\$([\\d,]+\\.\\d{2})', 'i');
 
+  var dbgLines = [];
   var rows = [];
   lines.forEach(function(line) {
-    var m = txRe.exec(line.trim());
+    var t = line.trim();
+    if (!t) return;
+    var hasDate = /\d{2}-(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)-\d{4}/i.test(t);
+    var m = txRe.exec(t);
+    if (hasDate) dbgLines.push((m ? '✓' : '✗') + ' ' + t.substring(0, 90));
     if (!m) return;
     var fechaEc = toISO(m[1]);
     if (!fechaEc) return;
-    var monto = parseFloat(m[5].replace(/,/g, ''));
+    var monto = parseFloat(m[5].replace(/,/g,''));
     if (!monto || monto < 0.01) return;
+    var sign = m[4];
+    var desc  = m[3].trim();
+    var esPago = sign === '-' || _esPago(desc);
     rows.push({
-      tipo:              m[4] === '+' ? 'gasto' : 'ingreso',
+      tipo:              esPago ? 'ingreso' : 'gasto',
       fecha_ec:          fechaEc,
-      descripcion:       m[3].trim(),
+      descripcion:       desc,
       descripcion_final: '',
       monto:             monto,
       categoria_id:      '',
@@ -777,6 +786,11 @@ function parseScotiabank(lines, fullText) {
       categoria_source:  null
     });
   });
+
+  console.group('[Scotiabank] diagnóstico');
+  dbgLines.forEach(function(l){ console.log(l); });
+  console.log('Filas encontradas:', rows.length);
+  console.groupEnd();
 
   return rows;
 }
