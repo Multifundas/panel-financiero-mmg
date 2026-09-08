@@ -665,7 +665,7 @@ function renderRendMensualReport() {
 
   // Build header
   var thead = '<tr>' +
-    '<th style="min-width:110px;position:sticky;left:0;background:var(--bg-card);z-index:1;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>' +
+    '<th style="min-width:110px;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'cuenta\')">Cuenta' + sortArrow('cuenta') + '</th>' +
     '<th style="text-align:right;min-width:90px;cursor:pointer;user-select:none;white-space:nowrap;" onclick="sortRendMensual(\'capital\')">Capital' + sortArrow('capital') + '</th>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
     var m = mesesVisibles[mi];
@@ -765,7 +765,7 @@ function renderRendMensualReport() {
   // Render rows from sorted data
   var rows = rowData.map(function(d) {
     var cta = d.cta;
-    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:16px;">' + cta.nombre + '</td>' +
+    var row = '<tr><td style="font-weight:600;color:var(--text-primary);white-space:nowrap;font-size:16px;">' + cta.nombre + '</td>' +
       '<td style="text-align:right;font-size:18px;font-weight:600;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(d.capitalActual, d.moneda) + '</td>';
 
     for (var mi = 0; mi < mesesVisibles.length; mi++) {
@@ -804,7 +804,7 @@ function renderRendMensualReport() {
 
   // Total row
   var totalCapitalActualMXN = rowData.reduce(function(s, d) { return s + d.capitalActualMXN; }, 0);
-  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="position:sticky;left:0;background:var(--bg-card);z-index:1;font-size:18px;">Total</td>' +
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid var(--border-color);"><td style="font-size:18px;">Total</td>' +
     '<td style="text-align:right;font-size:18px;font-weight:700;color:var(--text-muted);white-space:nowrap;">' + fmtCapitalSimple(totalCapitalActualMXN, 'MXN') + '</td>';
   for (var mi = 0; mi < mesesVisibles.length; mi++) {
     var m = mesesVisibles[mi];
