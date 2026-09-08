@@ -169,7 +169,7 @@
           <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('rendYoyBarChart','Rendimientos Comparados')" title="Imprimir"><i class="fas fa-print"></i></button>
         </div>
       </div>
-      <div style="position:relative;height:320px;">
+      <div style="position:relative;height:320px;width:100%;overflow:hidden;">
         <canvas id="rendYoyBarChart"></canvas>
       </div>
     </div>
@@ -221,7 +221,7 @@
           <button class="btn btn-secondary" style="padding:3px 6px;font-size:12px;" onclick="printChart('rendLineChart','Rendimiento Acumulado')" title="Imprimir"><i class="fas fa-print"></i></button>
         </div>
       </div>
-      <div style="height:260px;"><canvas id="rendLineChart"></canvas></div>
+      <div style="position:relative;height:260px;width:100%;overflow:hidden;"><canvas id="rendLineChart"></canvas></div>
     </div>
     </div>
   `;
@@ -287,7 +287,7 @@
       }],
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, resizeDelay: 200,
       scales: {
         x: {
           ticks: { color: chartFontColor, font: { size: 9, family: "'Plus Jakarta Sans'" }, maxRotation: 45 },
@@ -389,7 +389,7 @@ function rendCompararAnios() {
       ],
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, resizeDelay: 200,
       interaction: { mode: 'index', intersect: false },
       onClick: function(evt, elements) {
         if (elements.length > 0) {
