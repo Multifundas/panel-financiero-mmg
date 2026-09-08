@@ -148,7 +148,7 @@
     </div>
 
     <!-- 2. Rendimientos Mensuales Comparados (Ano vs Ano) -->
-    <div class="card" style="margin-bottom:16px;">
+    <div class="card" style="margin-bottom:16px;display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
         <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
           <i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent-purple);"></i>Rendimientos Mensuales Comparados
@@ -211,7 +211,7 @@
     </div>
 
     <!-- 4. Grafica Rendimiento Acumulado -->
-    <div class="card" style="margin-bottom:16px;">
+    <div class="card" style="margin-bottom:16px;display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <h3 style="font-size:16px;font-weight:700;margin:0;color:var(--text-primary);">
           <i class="fas fa-chart-area" style="margin-right:6px;color:var(--accent-green);"></i>Rendimiento Acumulado
