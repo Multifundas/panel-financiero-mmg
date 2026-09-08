@@ -62,7 +62,7 @@
   ).join('');
 
   el.innerHTML = `
-    <div style="max-width:100%;overflow-x:hidden;">
+    <div style="max-width:100%;">
     <!-- Filtros y Boton (ABOVE KPIs) -->
     <div class="card" style="margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -144,7 +144,7 @@
           <i class="fas fa-print" style="margin-right:5px;"></i>Imprimir
         </button>
       </div>
-      <div id="rendMensualReportContainer" style="overflow-x:auto;transform:translateZ(0);-webkit-transform:translateZ(0);"></div>
+      <div id="rendMensualReportContainer" style="overflow-x:auto;"></div>
     </div>
 
     <!-- 2. Rendimientos Mensuales Comparados (Ano vs Ano) -->
