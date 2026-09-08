@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260908b
+   PDF BANK STATEMENT IMPORT MODULE  v20260908c
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -777,13 +777,15 @@ function parseScotiabank(lines, fullText) {
     var esPago = sign === '-' || _esPago(desc);
     rows.push({
       tipo:              esPago ? 'ingreso' : 'gasto',
+      fecha:             fechaEc,
       fecha_ec:          fechaEc,
       descripcion:       desc,
       descripcion_final: '',
       monto:             monto,
       categoria_id:      '',
       categoria_nombre:  '',
-      categoria_source:  null
+      categoria_source:  null,
+      selected:          false
     });
   });
 
