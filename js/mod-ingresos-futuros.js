@@ -123,6 +123,7 @@ function renderIngresosFuturos() {
 
 function filterIngresosFuturos() {
   var ingresos = loadData(STORAGE_KEYS.ingresos_futuros) || [];
+  var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var fTipo = document.getElementById('filterIFTipo') ? document.getElementById('filterIFTipo').value : '';
   var fCerteza = document.getElementById('filterIFCerteza') ? document.getElementById('filterIFCerteza').value : '';
 
@@ -154,7 +155,7 @@ function filterIngresosFuturos() {
     return '<tr style="' + zebra + '">' +
       '<td style="font-weight:600;color:var(--text-primary);">' + i.concepto + (i.notas ? '<br><span style="font-size:13px;color:var(--text-muted);">' + i.notas.substring(0, 50) + '</span>' : '') + '</td>' +
       '<td><span class="badge ' + (tipoBadges[i.tipo] || 'badge-blue') + '">' + (tipoLabels[i.tipo] || i.tipo) + '</span></td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(i.monto, i.moneda || 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrency(i.monto, i.moneda || 'MXN') + (i.moneda && i.moneda !== 'MXN' ? '<div style="font-size:11px;color:var(--text-muted);">≈ ' + formatCurrencyInt(toMXN(i.monto, i.moneda, tiposCambio), 'MXN') + '</div>' : '') + '</td>' +
       '<td>' + (freqLabels[i.frecuencia] || i.frecuencia) + '</td>' +
       '<td>' + (i.fecha_inicio ? formatDate(i.fecha_inicio) : '\u2014') + '</td>' +
       '<td><span class="badge ' + (certezaBadges[i.certeza] || 'badge-blue') + '">' + (certezaLabels[i.certeza] || i.certeza) + '</span></td>' +

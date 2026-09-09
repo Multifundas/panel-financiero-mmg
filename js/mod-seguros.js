@@ -243,7 +243,7 @@ function filterSeguros() {
       '<td style="color:var(--text-primary);">' + (s.numero_poliza || '\u2014') + '</td>' +
       '<td style="color:var(--text-primary);">' + (s.bien_asegurado || '\u2014') + '</td>' +
       '<td style="white-space:nowrap;' + vigenciaStyle + '">' + vigencia + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(s.monto_prima, s.moneda || 'MXN') + '</td>' +
+      '<td style="text-align:right;font-weight:600;color:var(--text-primary);">' + formatCurrencyInt(s.monto_prima, s.moneda || 'MXN') + (s.moneda && s.moneda !== 'MXN' ? '<div style="font-size:11px;color:var(--text-muted);">≈ ' + formatCurrencyInt(toMXN(s.monto_prima, s.moneda, tiposCambio), 'MXN') + '</div>' : '') + '</td>' +
       '<td>' + frecLabel + '</td>' +
       '<td><span class="badge ' + estadoBadge + '">' + estadoLabel + '</span></td>' +
       '<td style="text-align:center;">' + acc + '</td>' +
