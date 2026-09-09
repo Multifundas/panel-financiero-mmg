@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909v
+   PDF BANK STATEMENT IMPORT MODULE  v20260909w
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -253,16 +253,24 @@ function verPdfImportado(id) {
 }
 
 // Corrección masiva por texto crudo del banco. Ejemplo de uso desde consola:
-// corregirDescripcionBanco([['oxxo','Gastos Varios'],['costco','Varios Alimentacion']])
+// corregirDescripcionBanco([['oxxo','Gastos Varios','Familia'],['costco','Varios Alimentacion']])
+// Cada regla: [patron, descripcion, categoria_nombre_opcional]
 // El patron se compara contra el inicio del texto crudo (descripcion_banco).
 function corregirDescripcionBanco(reglas) {
   var movs = loadData(STORAGE_KEYS.movimientos) || [];
+  var cats = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var catByNombre = {};
+  cats.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; });
   var changed = 0;
   movs.forEach(function(m) {
     var b = _sinAcentos((m.descripcion_banco || m.descripcion || '').toLowerCase());
     for (var i = 0; i < reglas.length; i++) {
       if (b.indexOf(reglas[i][0]) === 0) {
         m.descripcion = reglas[i][1];
+        if (reglas[i][2]) {
+          var cat = catByNombre[_sinAcentos(reglas[i][2]).toLowerCase()];
+          if (cat) { m.categoria_id = cat.id; m.categoria_nombre = cat.nombre; }
+        }
         changed++;
         break;
       }
