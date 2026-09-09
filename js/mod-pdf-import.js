@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909s
+   PDF BANK STATEMENT IMPORT MODULE  v20260909t
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -248,6 +248,75 @@ function verPdfImportado(id) {
         showToast('Error al procesar el PDF archivado', 'error');
         console.error('verPdfImportado error:', err);
       });
+    };
+  });
+}
+
+// Rellena descripcion_banco en movimientos de agosto importados sin ese campo,
+// re-parseando los PDFs archivados en IndexedDB. Llamar desde consola del navegador.
+function backfillDescripcionBanco() {
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var sinBanco = movimientos.filter(function(m) {
+    return m.tipo === 'gasto' && m.notas && m.notas.indexOf('Importado desde PDF') >= 0 && !m.descripcion_banco;
+  });
+  if (!sinBanco.length) { console.log('✓ Todos los movimientos PDF ya tienen descripcion_banco.'); return; }
+  console.log('Movimientos a actualizar:', sinBanco.length);
+
+  // Índice por monto — lista de candidatos para asignar en orden
+  var montoIdx = {};
+  sinBanco.forEach(function(m) {
+    var k = String(m.monto);
+    if (!montoIdx[k]) montoIdx[k] = [];
+    montoIdx[k].push(m);
+  });
+
+  _openPdfArchiveDB().then(function(db) {
+    var req = db.transaction('pdfs', 'readonly').objectStore('pdfs').getAll();
+    req.onsuccess = function(e) {
+      var pdfs = (e.target.result || []).filter(function(p) { return p.importado && p.data; });
+      console.log('PDFs importados en archivo:', pdfs.length);
+      var updated = 0;
+
+      var procesarSiguiente = function(idx) {
+        if (idx >= pdfs.length) {
+          // Guardar resultados
+          var allMovs = loadData(STORAGE_KEYS.movimientos) || [];
+          var byId = {};
+          sinBanco.forEach(function(m) { if (m.descripcion_banco) byId[m.id] = m; });
+          var guardados = 0;
+          allMovs = allMovs.map(function(m) {
+            if (byId[m.id]) { guardados++; return byId[m.id]; }
+            return m;
+          });
+          saveData(STORAGE_KEYS.movimientos, allMovs);
+          console.log('✓ backfill completo: descripcion_banco actualizado en', guardados, 'movimientos');
+          return;
+        }
+
+        var pdf = pdfs[idx];
+        console.log('Procesando', pdf.nombre, '(' + pdf.banco + ')...');
+        var typedArray = new Uint8Array(pdf.data);
+        extractPdfText(typedArray).then(function(text) {
+          var result = parseBankStatement(text);
+          result.rows.forEach(function(row) {
+            if (row.tipo !== 'gasto') return;
+            var candidates = montoIdx[String(row.monto)];
+            if (!candidates || !candidates.length) return;
+            var mov = candidates.shift(); // tomar el primero disponible
+            if (!mov.descripcion_banco) {
+              mov.descripcion_banco = row.descripcion;
+              updated++;
+            }
+          });
+          console.log('  → ' + result.rows.length + ' filas procesadas, acumulado actualizado:', updated);
+          procesarSiguiente(idx + 1);
+        }).catch(function(err) {
+          console.warn('Error parseando', pdf.nombre, err);
+          procesarSiguiente(idx + 1);
+        });
+      };
+
+      procesarSiguiente(0);
     };
   });
 }
