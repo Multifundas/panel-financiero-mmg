@@ -1329,26 +1329,11 @@ function _buildHistoricalMap() {
 function classifyMovements(rows) {
   var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var catByNombre = {};
-  var catById     = {};
-  categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; catById[c.id] = c; });
+  categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; });
 
   var hist    = _buildHistoricalMap();
   var histMap = hist.map;
   var histWordMap = hist.wordMap;
-
-  // Índice por monto: fallback final para filas sin match por descripción ni regla
-  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
-  var montoMap = {};
-  movimientos.forEach(function(m) {
-    if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
-    var k = String(m.monto);
-    if (!montoMap[k]) {
-      var cat = catById[m.categoria_id];
-      montoMap[k] = { categoria_id: m.categoria_id,
-                      categoria_nombre: cat ? cat.nombre : '',
-                      descripcion: m.descripcion };
-    }
-  });
 
   rows.forEach(function(row) {
     if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; row.categoria_source = null; return; }
@@ -1393,23 +1378,12 @@ function classifyMovements(rows) {
       if (matched) break;
     }
 
-    if (matched) return;
-
-    // 3. Fallback por monto: busca un gasto previo con el mismo importe
-    var montoEntry = montoMap[String(row.monto)];
-    if (montoEntry) {
-      row.categoria_id      = montoEntry.categoria_id;
-      row.categoria_nombre  = montoEntry.categoria_nombre;
-      row.categoria_source  = 'historial';
-      row.descripcion_final = montoEntry.descripcion;
-      return;
+    if (!matched) {
+      var otros = catByNombre['otros'];
+      if (otros) { row.categoria_id = otros.id; row.categoria_nombre = otros.nombre; }
+      else        { row.categoria_nombre = 'Sin clasificar'; }
+      row.categoria_source = 'default';
     }
-
-    // 4. Sin clasificar
-    var otros = catByNombre['otros'];
-    if (otros) { row.categoria_id = otros.id; row.categoria_nombre = otros.nombre; }
-    else        { row.categoria_nombre = 'Sin clasificar'; }
-    row.categoria_source = 'default';
   });
 }
 
