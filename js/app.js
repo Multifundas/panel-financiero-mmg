@@ -39,8 +39,7 @@ window.addEventListener('resize', function() {
 });
 
 // Apply immediately on script load (before DOMContentLoaded)
-// TEMP DISABLED FOR DIAGNOSIS
-// applyAutoZoom();
+applyAutoZoom();
 
 /* ============================================================
    INIT APP

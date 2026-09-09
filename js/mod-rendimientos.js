@@ -846,8 +846,7 @@ function renderRendMensualReport() {
 
   container.innerHTML =
     '<div style="font-size:17px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>Ano: ' + anio + '</div>' +
-    '<table class="data-table sortable-table" style="font-size:18px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
-  setTimeout(function() { _initSortableTables(container); }, 100);
+    '<table class="data-table" style="font-size:18px;"><thead>' + thead + '</thead><tbody>' + rows + totalRow + '</tbody></table>';
 }
 
 /* -- Edit / Create rendimiento modal -- */

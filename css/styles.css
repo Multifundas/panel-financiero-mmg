@@ -234,15 +234,14 @@
       top: 0;
       z-index: 30;
       height: var(--header-height);
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 28px;
-      will-change: transform;
     }
 
     .header-left {
