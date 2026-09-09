@@ -777,8 +777,12 @@ function renderRendMensualReport() {
       }
       var color = mv.rendMonto >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
       var sign = mv.rendMonto >= 0 ? '+' : '-';
+      var mxnHint = (d.moneda !== 'MXN')
+        ? '<div style="color:var(--text-muted);font-size:11px;white-space:nowrap;">≈ ' + (mv.rendMXN >= 0 ? '+' : '') + formatCurrencyInt(mv.rendMXN, 'MXN') + '</div>'
+        : '';
       row += '<td style="text-align:right;padding:4px 4px;">' +
         '<div style="color:' + color + ';font-weight:700;white-space:nowrap;font-size:16px;">' + sign + formatCurrencyInt(Math.abs(mv.rendMonto), d.moneda) + '</div>' +
+        mxnHint +
         '<div style="color:' + color + ';font-size:17px;opacity:0.8;">' + sign + Math.abs(mv.rendPct).toFixed(2) + '%</div>' +
       '</td>';
     }
