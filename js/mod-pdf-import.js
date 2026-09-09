@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909t
+   PDF BANK STATEMENT IMPORT MODULE  v20260909u
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -250,6 +250,28 @@ function verPdfImportado(id) {
       });
     };
   });
+}
+
+// Auditoría de gastos: agrupa por comercio y detecta inconsistencias desc/cat.
+// Llamar desde consola: auditoriaGastos()  o  auditoriaGastos('2026-07','2026-08')
+function auditoriaGastos(desde, hasta) {
+  desde = desde || '2026-08'; hasta = hasta || '2026-09';
+  var STOP = {de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1,qroo:1,nl:1,df:1,cdmx:1,cco:1};
+  function mg(raw) { if (!raw) return '(sin texto)'; var s=raw.toLowerCase().replace(/[^a-z\s]/g,' '); var w=s.split(/\s+/).filter(function(x){return x.length>=3&&!STOP[x];}); return (w[0]||raw.substring(0,12)).toUpperCase(); }
+  var movs = loadData(STORAGE_KEYS.movimientos) || [];
+  var filtered = movs.filter(function(m) { var f=m.fecha||''; return m.tipo==='gasto'&&f>=desde&&f<=hasta+'z'; }).sort(function(a,b){return(a.fecha||'').localeCompare(b.fecha||'');});
+  console.log('Gastos encontrados:', filtered.length, '| Rango:', desde, '→', hasta);
+  if (!filtered.length) { var muestras=movs.filter(function(m){return m.tipo==='gasto';}).slice(0,5).map(function(m){return m.fecha;}); console.log('Muestra fechas BD:', muestras); return; }
+  var groups={};
+  filtered.forEach(function(m){var k=mg(m.descripcion_banco||m.descripcion);if(!groups[k])groups[k]=[];groups[k].push(m);});
+  var inc=[],ok=[];
+  Object.keys(groups).sort().forEach(function(k){var g=groups[k];var cats={},descs={};g.forEach(function(m){var c=m.categoria_nombre||'(sin cat)';cats[c]=(cats[c]||0)+1;var d=m.descripcion||'(sin desc)';descs[d]=(descs[d]||0)+1;});var nC=Object.keys(cats).length,nD=Object.keys(descs).length;var e={key:k,items:g,cats:cats,descs:descs,nC:nC,nD:nD};if(nC>1||nD>1)inc.push(e);else ok.push(e);});
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function rg(g){var hC=g.nC>1,hD=g.nD>1,hA=hC||hD;var bc=hC?'#f59e0b':hD?'#6366f1':'#e5e7eb',hBg=hC?'#fef3c7':hD?'#eef2ff':'#f9fafb';var h='<div style="margin-bottom:12px;border:'+(hA?'3px':'1px')+' solid '+bc+';border-radius:8px;overflow:hidden"><div style="padding:6px 12px;background:'+hBg+';display:flex;justify-content:space-between"><strong>'+esc(g.key)+'</strong><span style="font-size:11px;color:#6b7280">'+g.items.length+' mov'+(hC?' <b style="color:#b45309">⚠️ '+g.nC+' cat</b>':'')+(hD?' <b style="color:#4338ca">✏️ '+g.nD+' desc</b>':'')+'</span></div><table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="background:#f3f4f6"><th style="padding:3px 8px;text-align:left">Fecha</th><th style="padding:3px 8px;text-align:right">Monto</th><th style="padding:3px 8px;text-align:left">Descripción</th><th style="padding:3px 8px;text-align:left">Categoría</th><th style="padding:3px 8px;text-align:left">Texto banco</th><th style="padding:3px 8px;text-align:center">PDF</th></tr>';g.items.forEach(function(m,i){var ep=m.notas&&m.notas.indexOf('Importado desde PDF')>=0;h+='<tr style="background:'+(i%2?'#f9fafb':'#fff')+'"><td style="padding:3px 8px;white-space:nowrap">'+esc(m.fecha)+'</td><td style="padding:3px 8px;text-align:right">$'+(m.monto||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="padding:3px 8px;color:'+(hD?'#4338ca':'#111')+';font-weight:'+(hD?600:400)+'">'+esc(m.descripcion||'—')+'</td><td style="padding:3px 8px;color:'+(hC?'#b45309':'#374151')+';font-weight:'+(hC?600:400)+'">'+esc(m.categoria_nombre||'—')+'</td><td style="padding:3px 8px;color:#6b7280;font-size:10px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(m.descripcion_banco||'—')+'</td><td style="padding:3px 8px;text-align:center;color:#16a34a">'+(ep?'✓':'—')+'</td></tr>';});h+='</table></div>';return h;}
+  var body='<div style="font-family:system-ui,sans-serif;max-width:1200px;margin:0 auto;padding:24px"><h1 style="font-size:20px;margin-bottom:4px">Auditoría Gastos '+desde+'/'+hasta+'</h1><p style="color:#6b7280;font-size:13px;margin-bottom:4px">Gastos: <b>'+filtered.length+'</b> &nbsp;|&nbsp; Comercios: <b>'+Object.keys(groups).length+'</b> &nbsp;|&nbsp; Inconsistencias: <b>'+inc.length+'</b></p><p style="font-size:11px;color:#999;margin-bottom:18px"><span style="color:#b45309">⚠️ Categoría distinta</span> &nbsp; <span style="color:#4338ca">✏️ Descripción distinta</span></p>';
+  if(inc.length){body+='<h2 style="font-size:14px;margin-bottom:10px">Con inconsistencias ('+inc.length+')</h2>';inc.sort(function(a,b){return(b.nC+b.nD)-(a.nC+a.nD);});inc.forEach(function(g){body+=rg(g);});body+='<hr style="margin:20px 0;border:none;border-top:1px solid #e5e7eb">';}
+  body+='<h2 style="font-size:14px;margin-bottom:10px">Sin inconsistencias ('+ok.length+')</h2>';ok.forEach(function(g){body+=rg(g);});body+='</div>';
+  var w=window.open('','_blank');w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Auditoría</title></head><body style="margin:0;background:#f9fafb">'+body+'</body></html>');w.document.close();
 }
 
 // Rellena descripcion_banco en movimientos de agosto importados sin ese campo,
