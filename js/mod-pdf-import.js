@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909p
+   PDF BANK STATEMENT IMPORT MODULE  v20260909q
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1384,6 +1384,14 @@ function classifyMovements(rows) {
           if (cat) { row.categoria_id = cat.id; row.categoria_nombre = cat.nombre; }
           else      { row.categoria_nombre = rule.categoria; }
           row.categoria_source = 'regla';
+          // Buscar descripción en historial usando el keyword que hizo match
+          if (!row.descripcion_final) {
+            var kw = rule.keywords[k].replace(/\s+/g, '');
+            if (kw.length >= 4) {
+              var kwH = histWordMap[kw];
+              if (kwH && kwH.descripcion) row.descripcion_final = kwH.descripcion;
+            }
+          }
           matched = true;
           break;
         }
