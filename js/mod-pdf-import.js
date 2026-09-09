@@ -1344,7 +1344,14 @@ function classifyMovements(rows) {
     if (!h && hKey) {
       var rawWords = hKey.split(' ');
       for (var wi = 0; wi < rawWords.length; wi++) {
-        if (rawWords[wi].length >= 4 && histWordMap[rawWords[wi]]) { h = histWordMap[rawWords[wi]]; break; }
+        var rw = rawWords[wi];
+        if (rw.length < 4) continue;
+        var h2 = histWordMap[rw];
+        // Probar singular si termina en 's' (ej. "farmacias" → "farmacia")
+        if (!h2 && rw.length > 4 && rw.slice(-1) === 's') h2 = histWordMap[rw.slice(0, -1)];
+        // Probar plural si no termina en 's' (ej. "farmacia" → "farmacias")
+        if (!h2) h2 = histWordMap[rw + 's'];
+        if (h2) { h = h2; break; }
       }
     }
     if (h) {
