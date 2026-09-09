@@ -35,6 +35,7 @@ var _pdfLastFile        = null;  // { buffer: ArrayBuffer, nombre: string } para
 var _pdfDescList        = [];
 var _pdfDescCatMap      = {};
 var PDF_DRAFT_KEY       = 'pdf_import_draft';
+var _pdfArchivoCurrentId = null; // ID del registro IndexedDB del PDF actualmente en revisión
 
 // ── Archivo de PDFs (IndexedDB) ───────────────────────────────
 function _openPdfArchiveDB() {
@@ -52,14 +53,19 @@ function _openPdfArchiveDB() {
 
 function _archivarPdf(banco, numMovs, nombre) {
   if (!_pdfLastFile) return;
+  _pdfArchivoCurrentId = null;
   var entry = { banco: banco || 'Banco', nombre: nombre || 'estado_cuenta.pdf',
                 numMovs: numMovs || 0,
                 fechaArchivo: new Date().toISOString().substring(0, 10),
+                importado: false,
                 data: _pdfLastFile.buffer };
   _openPdfArchiveDB().then(function(db) {
     var tx = db.transaction('pdfs', 'readwrite');
-    tx.objectStore('pdfs').add(entry);
-    tx.oncomplete = function() { console.log('PDF archivado:', nombre); };
+    var req = tx.objectStore('pdfs').add(entry);
+    req.onsuccess = function(e) {
+      _pdfArchivoCurrentId = e.target.result;
+      console.log('PDF archivado:', nombre, 'id:', _pdfArchivoCurrentId);
+    };
   }).catch(function(e) { console.warn('No se pudo archivar el PDF:', e); });
 }
 
@@ -94,14 +100,19 @@ function togglePdfArchivo() {
       var tdS = 'padding:6px 10px;font-size:13px;border-bottom:1px solid var(--border-subtle);';
       var rows = items.map(function(item) {
         var kb = item.data ? Math.round(item.data.byteLength / 1024) + ' KB' : '—';
+        var estaImportado = !!item.importado;
+        var statusBadge = estaImportado
+          ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:#16a34a;cursor:default;" title="Ya importado">✓ Importado</span>'
+          : '<button onclick="reabrirPdfParaImportar(' + item.id + ')" style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.3);cursor:pointer;" title="Abrir para revisar e importar">⏳ Pendiente</button>';
         return '<tr>'
           + '<td style="' + tdS + '">' + item.fechaArchivo + '</td>'
           + '<td style="' + tdS + '">' + (item.banco || '—') + '</td>'
           + '<td style="' + tdS + 'text-align:center;">' + (item.numMovs || '—') + '</td>'
           + '<td style="' + tdS + 'max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + (item.nombre || '') + '">' + (item.nombre || '—') + '</td>'
           + '<td style="' + tdS + 'color:var(--text-muted);text-align:right;">' + kb + '</td>'
+          + '<td style="' + tdS + 'text-align:center;">' + statusBadge + '</td>'
           + '<td style="' + tdS + 'text-align:center;white-space:nowrap;">'
-          +   '<button class="btn btn-secondary" onclick="abrirPdfArchivado(' + item.id + ')" style="padding:3px 10px;font-size:12px;margin-right:4px;" title="Ver/Imprimir">'
+          +   '<button class="btn btn-secondary" onclick="abrirPdfArchivado(' + item.id + ')" style="padding:3px 10px;font-size:12px;margin-right:4px;" title="Ver PDF en nueva pestaña">'
           +     '<i class="fas fa-eye"></i>'
           +   '</button>'
           +   '<button class="btn btn-secondary" onclick="eliminarPdfArchivado(' + item.id + ',this)" style="padding:3px 10px;font-size:12px;border-color:var(--accent-red);color:var(--accent-red);" title="Eliminar">'
@@ -126,6 +137,7 @@ function togglePdfArchivo() {
         +         '<th style="' + thS + 'text-align:center;">Movs.</th>'
         +         '<th style="' + thS + '">Archivo</th>'
         +         '<th style="' + thS + 'text-align:right;">Tamaño</th>'
+        +         '<th style="' + thS + 'text-align:center;">Status</th>'
         +         '<th style="' + thS + 'width:90px;"></th>'
         +       '</tr></thead>'
         +       '<tbody>' + rows + '</tbody>'
@@ -146,6 +158,46 @@ function abrirPdfArchivado(id) {
       if (!item) { showToast('PDF no encontrado', 'error'); return; }
       var url = URL.createObjectURL(new Blob([item.data], { type: 'application/pdf' }));
       window.open(url, '_blank');
+    };
+  });
+}
+
+function reabrirPdfParaImportar(id) {
+  _openPdfArchiveDB().then(function(db) {
+    var req = db.transaction('pdfs', 'readonly').objectStore('pdfs').get(id);
+    req.onsuccess = function(e) {
+      var item = e.target.result;
+      if (!item || !item.data) { showToast('PDF no encontrado en archivo', 'error'); return; }
+
+      // Cerrar panel del archivo
+      var panel = document.getElementById('pdfArchivoPanel');
+      if (panel) panel.style.display = 'none';
+      var btn = document.getElementById('pdfArchBtn');
+      if (btn) btn.innerHTML = '<i class="fas fa-folder-open"></i> PDFs archivados';
+
+      // Preparar variables globales como si el usuario hubiera cargado el archivo
+      _pdfLastFile = { buffer: item.data.slice(0), nombre: item.nombre };
+      _pdfArchivoCurrentId = id; // al confirmar importación se marcará como importado
+
+      var loading = document.getElementById('pdfLoadingIndicator');
+      if (loading) loading.style.display = 'block';
+
+      var typedArray = new Uint8Array(item.data);
+      extractPdfText(typedArray).then(function(text) {
+        if (loading) loading.style.display = 'none';
+        var result = parseBankStatement(text);
+        if (!result.rows.length) {
+          showToast('No se pudieron extraer movimientos del PDF archivado', 'error');
+          return;
+        }
+        classifyMovements(result.rows);
+        _pdfParsedRows = result.rows;
+        displayPdfPreview(result.banco);
+      }).catch(function(err) {
+        if (loading) loading.style.display = 'none';
+        showToast('Error al procesar el PDF archivado', 'error');
+        console.error('reabrirPdfParaImportar error:', err);
+      });
     };
   });
 }
@@ -1649,6 +1701,21 @@ function confirmPdfImport() {
 
   // No se modifica cuenta.saldo: _calcSaldoReal lo recalcula automáticamente.
   saveData(STORAGE_KEYS.movimientos, movimientos);
+
+  // Marcar el PDF archivado como importado
+  if (_pdfArchivoCurrentId) {
+    var archivoId = _pdfArchivoCurrentId;
+    _openPdfArchiveDB().then(function(db) {
+      var tx = db.transaction('pdfs', 'readwrite');
+      var store = tx.objectStore('pdfs');
+      var getReq = store.get(archivoId);
+      getReq.onsuccess = function(e) {
+        var rec = e.target.result;
+        if (rec) { rec.importado = true; store.put(rec); }
+      };
+    }).catch(function() {});
+    _pdfArchivoCurrentId = null;
+  }
 
   var total = toImport.length;
   _pdfParsedRows = [];
