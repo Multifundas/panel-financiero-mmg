@@ -220,9 +220,17 @@ function verPdfImportado(id) {
 
       _pdfLastFile = { buffer: item.data.slice(0), nombre: item.nombre };
 
+      // Camino rápido: usar snapshot guardado al importar
+      if (item.rowsImportados && item.rowsImportados.length) {
+        if (item.tipoEC) _pdfTipoEC = item.tipoEC;
+        _pdfParsedRows = item.rowsImportados;
+        displayPdfPreview(item.banco);
+        return;
+      }
+
+      // Fallback: re-parsear y cruzar con movimientos guardados para recuperar asignaciones
       var loading = document.getElementById('pdfLoadingIndicator');
       if (loading) loading.style.display = 'block';
-
       var typedArray = new Uint8Array(item.data);
       extractPdfText(typedArray).then(function(text) {
         if (loading) loading.style.display = 'none';
@@ -232,6 +240,7 @@ function verPdfImportado(id) {
           return;
         }
         classifyMovements(result.rows);
+        _recuperarAsignacionesDesdeMovimientos(result.rows);
         _pdfParsedRows = result.rows;
         displayPdfPreview(result.banco);
       }).catch(function(err) {
@@ -240,6 +249,40 @@ function verPdfImportado(id) {
         console.error('verPdfImportado error:', err);
       });
     };
+  });
+}
+
+// Cruza filas del PDF con movimientos guardados para recuperar descripción y categoría original
+function _recuperarAsignacionesDesdeMovimientos(rows) {
+  var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var catById = {};
+  categorias.forEach(function(c) { catById[c.id] = c; });
+
+  var pdfMovs = movimientos.filter(function(m) {
+    return m.notas && m.notas.indexOf('Importado desde PDF') >= 0 && m.tipo === 'gasto';
+  });
+
+  // Índice: monto → lista de movimientos importados
+  var montoIdx = {};
+  pdfMovs.forEach(function(m) {
+    var k = String(m.monto);
+    if (!montoIdx[k]) montoIdx[k] = [];
+    montoIdx[k].push(m);
+  });
+
+  rows.forEach(function(row) {
+    if (row.tipo !== 'gasto') return;
+    var candidates = montoIdx[String(row.monto)];
+    if (!candidates || !candidates.length) return;
+    var mov = candidates[0];
+    if (mov) {
+      row.descripcion_final = mov.descripcion;
+      row.categoria_id      = mov.categoria_id || null;
+      var cat = mov.categoria_id ? catById[mov.categoria_id] : null;
+      row.categoria_nombre  = cat ? cat.nombre : '';
+      row.categoria_source  = mov.categoria_id ? 'historial' : 'default';
+    }
   });
 }
 
@@ -1766,16 +1809,28 @@ function confirmPdfImport() {
   // No se modifica cuenta.saldo: _calcSaldoReal lo recalcula automáticamente.
   saveData(STORAGE_KEYS.movimientos, movimientos);
 
-  // Marcar el PDF archivado como importado
+  // Marcar el PDF archivado como importado y guardar snapshot de filas finales
   if (_pdfArchivoCurrentId) {
     var archivoId = _pdfArchivoCurrentId;
+    var rowsSnapshot = _pdfParsedRows.map(function(r) {
+      return { fechaEC: r.fechaEC, descripcion: r.descripcion,
+               descripcion_final: r.descripcion_final, tipo: r.tipo, monto: r.monto,
+               categoria_id: r.categoria_id, categoria_nombre: r.categoria_nombre,
+               categoria_source: r.categoria_source };
+    });
+    var tipoECSnapshot = _pdfTipoEC;
     _openPdfArchiveDB().then(function(db) {
       var tx = db.transaction('pdfs', 'readwrite');
       var store = tx.objectStore('pdfs');
       var getReq = store.get(archivoId);
       getReq.onsuccess = function(e) {
         var rec = e.target.result;
-        if (rec) { rec.importado = true; store.put(rec); }
+        if (rec) {
+          rec.importado = true;
+          rec.rowsImportados = rowsSnapshot;
+          rec.tipoEC = tipoECSnapshot;
+          store.put(rec);
+        }
       };
     }).catch(function() {});
     _pdfArchivoCurrentId = null;
