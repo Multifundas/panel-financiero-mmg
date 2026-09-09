@@ -1150,26 +1150,39 @@ function _merchantKey(desc) {
   return words.slice(0, 3).join(' ');
 }
 
-/* Construye mapa merchantKey → {categoria_id, categoria_nombre} desde movimientos existentes */
+/* Construye mapa merchantKey → entry y wordMap palabra → entry desde movimientos existentes.
+   El wordMap permite matching flexible: si "Walmart" está guardado, coincide con "WALMART SUPERCENTER 1234". */
 function _buildHistoricalMap() {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var catById = {};
   categorias.forEach(function(c) { catById[c.id] = c; });
 
-  var map = {};
-  movimientos.forEach(function(m) {
+  var map = {};     // merchantKey exacto → entry
+  var wordMap = {}; // palabra individual → entry (fallback)
+
+  // Ordenar más reciente primero: la categoría más nueva gana en caso de colisión
+  var sorted = movimientos.slice().sort(function(a, b) {
+    return (b.fecha || '').localeCompare(a.fecha || '');
+  });
+
+  sorted.forEach(function(m) {
     if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
     var key = _merchantKey(m.descripcion);
-    if (!key || key.split(' ').length < 2) return;
+    if (!key) return;
     if (!map[key]) {
       var cat = catById[m.categoria_id];
-      map[key] = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '',
-                   descripcion: m.descripcion, count: 0 };
+      var entry = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '',
+                    descripcion: m.descripcion, count: 0 };
+      map[key] = entry;
+      // Indexar cada palabra significativa para fallback
+      key.split(' ').forEach(function(w) {
+        if (!wordMap[w]) wordMap[w] = entry;
+      });
     }
     map[key].count++;
   });
-  return map;
+  return { map: map, wordMap: wordMap };
 }
 
 function classifyMovements(rows) {
@@ -1177,19 +1190,27 @@ function classifyMovements(rows) {
   var catByNombre = {};
   categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; });
 
-  var histMap = _buildHistoricalMap();
+  var hist    = _buildHistoricalMap();
+  var histMap = hist.map;
+  var histWordMap = hist.wordMap;
 
   rows.forEach(function(row) {
     if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; row.categoria_source = null; return; }
 
-    // 1. Historial (máxima prioridad)
+    // 1. Historial — exacto primero, luego por palabra individual
     var hKey = _merchantKey(row.descripcion);
-    if (hKey && histMap[hKey]) {
-      var h = histMap[hKey];
+    var h = (hKey && histMap[hKey]) || null;
+    if (!h && hKey) {
+      var rawWords = hKey.split(' ');
+      for (var wi = 0; wi < rawWords.length; wi++) {
+        if (histWordMap[rawWords[wi]]) { h = histWordMap[rawWords[wi]]; break; }
+      }
+    }
+    if (h) {
       row.categoria_id       = h.categoria_id;
       row.categoria_nombre   = h.categoria_nombre;
       row.categoria_source   = 'historial';
-      row.descripcion_final  = h.descripcion;  // descripción limpia del historial
+      row.descripcion_final  = h.descripcion;
       return;
     }
 
