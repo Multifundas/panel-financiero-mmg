@@ -1329,11 +1329,21 @@ function _buildHistoricalMap() {
 function classifyMovements(rows) {
   var categorias  = loadData(STORAGE_KEYS.categorias_gasto) || [];
   var catByNombre = {};
-  categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; });
+  var catById     = {};
+  categorias.forEach(function(c) { catByNombre[c.nombre.toLowerCase()] = c; catById[c.id] = c; });
 
   var hist    = _buildHistoricalMap();
   var histMap = hist.map;
   var histWordMap = hist.wordMap;
+
+  // Índice monto+categoria → descripcion (para rellenar descripciones vacías tras asignar categoría)
+  var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
+  var montoMontoIdx = {};   // "monto|catId" → descripcion
+  movimientos.forEach(function(m) {
+    if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
+    var k = String(m.monto) + '|' + m.categoria_id;
+    if (!montoMontoIdx[k]) montoMontoIdx[k] = m.descripcion;
+  });
 
   rows.forEach(function(row) {
     if (row.tipo === 'ingreso') { row.categoria_nombre = '—'; row.categoria_source = null; return; }
@@ -1383,6 +1393,12 @@ function classifyMovements(rows) {
       if (otros) { row.categoria_id = otros.id; row.categoria_nombre = otros.nombre; }
       else        { row.categoria_nombre = 'Sin clasificar'; }
       row.categoria_source = 'default';
+    }
+
+    // Si quedó sin descripción pero tiene categoría, intentar por monto+categoría
+    if (!row.descripcion_final && row.categoria_id) {
+      var descFill = montoMontoIdx[String(row.monto) + '|' + row.categoria_id];
+      if (descFill) row.descripcion_final = descFill;
     }
   });
 }
