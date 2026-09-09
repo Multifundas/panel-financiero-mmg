@@ -993,6 +993,12 @@ function saveRendimiento(event) {
       saldo_final: saldo_inicial + rendimiento_monto,
       rendimiento_monto, rendimiento_pct,
       tipo, reinvertido, notas,
+      // Limpiar campos de movimientos heredados — el formulario no los expone
+      // y si quedan causan que _rendReal compute un valor incorrecto
+      movimientos_neto: undefined,
+      entradas: undefined,
+      salidas: undefined,
+      transferencias: undefined,
       updated: new Date().toISOString(),
     };
 
