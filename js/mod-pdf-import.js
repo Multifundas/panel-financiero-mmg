@@ -1565,7 +1565,7 @@ function displayPdfPreview(banco) {
              + srcIcon
              + '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
              + '<select class="pdf-cat-select" data-idx="' + idx + '" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:15px;flex:1;min-width:0;">';
+             + ' style="font-size:15px;font-weight:600;color:var(--text-primary);flex:1;min-width:0;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
@@ -1595,7 +1595,7 @@ function displayPdfPreview(banco) {
       +     ' placeholder="Escribe o elige del historial…"'
       +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
       +     ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
-      +     ' style="width:100%;font-size:14px;font-family:inherit;border:1px solid var(--border-subtle);'
+      +     ' style="width:100%;font-size:14px;font-weight:600;font-family:inherit;border:1px solid var(--border-subtle);'
       +       'border-radius:4px;padding:3px 7px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
       + '<td style="text-align:right;font-size:16px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
