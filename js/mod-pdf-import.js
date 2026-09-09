@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909x
+   PDF BANK STATEMENT IMPORT MODULE  v20260909y
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -284,7 +284,7 @@ function corregirDescripcionBanco(reglas) {
 // Llamar desde consola: auditoriaGastos()  o  auditoriaGastos('2026-07','2026-09')
 function auditoriaGastos(desde, hasta) {
   desde = desde || '2026-08'; hasta = hasta || '2026-09';
-  var STOP = {de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1,qroo:1,nl:1,df:1,cdmx:1,cco:1};
+  var STOP = {de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1,qroo:1,nl:1,df:1,cdmx:1,cco:1,dlo:1};
   function mg(raw) { if (!raw) return '(sin texto)'; var s=raw.toLowerCase().replace(/[^a-z\s]/g,' '); var w=s.split(/\s+/).filter(function(x){return x.length>=3&&!STOP[x];}); return (w[0]||raw.substring(0,12)).toUpperCase(); }
   var movs = loadData(STORAGE_KEYS.movimientos) || [];
   // Resolver categoria_nombre desde categoria_id
@@ -306,7 +306,7 @@ function auditoriaGastos(desde, hasta) {
     });
     var nC=Object.keys(catNombres).length,nD=Object.keys(descs).length;
     var e={key:k,items:g,cats:catNombres,descs:descs,nC:nC,nD:nD};
-    if(nC>1||nD>1)inc.push(e); else ok.push(e);
+    if(nC>1)inc.push(e); else ok.push(e);
   });
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function rg(g){
