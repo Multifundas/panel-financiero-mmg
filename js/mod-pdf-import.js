@@ -36,6 +36,7 @@ var _pdfDescList        = [];
 var _pdfDescCatMap      = {};
 var PDF_DRAFT_KEY       = 'pdf_import_draft';
 var _pdfArchivoCurrentId = null; // ID del registro IndexedDB del PDF actualmente en revisión
+var _pdfReadOnly         = false; // true = vista informativa sin edición (PDF ya importado)
 
 // ── Archivo de PDFs (IndexedDB) ───────────────────────────────
 function _openPdfArchiveDB() {
@@ -102,7 +103,7 @@ function togglePdfArchivo() {
         var kb = item.data ? Math.round(item.data.byteLength / 1024) + ' KB' : '—';
         var estaImportado = !!item.importado;
         var statusBadge = estaImportado
-          ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:#16a34a;cursor:default;" title="Ya importado">✓ Importado</span>'
+          ? '<button onclick="verPdfImportado(' + item.id + ')" style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:#16a34a;border:1px solid rgba(34,197,94,0.3);cursor:pointer;" title="Ver movimientos (solo lectura)">✓ Importado</button>'
           : '<button onclick="reabrirPdfParaImportar(' + item.id + ')" style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.3);cursor:pointer;" title="Abrir para revisar e importar">⏳ Pendiente</button>';
         return '<tr>'
           + '<td style="' + tdS + '">' + item.fechaArchivo + '</td>'
@@ -163,6 +164,7 @@ function abrirPdfArchivado(id) {
 }
 
 function reabrirPdfParaImportar(id) {
+  _pdfReadOnly = false;
   _openPdfArchiveDB().then(function(db) {
     var req = db.transaction('pdfs', 'readonly').objectStore('pdfs').get(id);
     req.onsuccess = function(e) {
@@ -197,6 +199,45 @@ function reabrirPdfParaImportar(id) {
         if (loading) loading.style.display = 'none';
         showToast('Error al procesar el PDF archivado', 'error');
         console.error('reabrirPdfParaImportar error:', err);
+      });
+    };
+  });
+}
+
+function verPdfImportado(id) {
+  _pdfReadOnly = true;
+  _pdfArchivoCurrentId = null;
+  _openPdfArchiveDB().then(function(db) {
+    var req = db.transaction('pdfs', 'readonly').objectStore('pdfs').get(id);
+    req.onsuccess = function(e) {
+      var item = e.target.result;
+      if (!item || !item.data) { showToast('PDF no encontrado en archivo', 'error'); return; }
+
+      var panel = document.getElementById('pdfArchivoPanel');
+      if (panel) panel.style.display = 'none';
+      var btn = document.getElementById('pdfArchBtn');
+      if (btn) btn.innerHTML = '<i class="fas fa-folder-open"></i> PDFs archivados';
+
+      _pdfLastFile = { buffer: item.data.slice(0), nombre: item.nombre };
+
+      var loading = document.getElementById('pdfLoadingIndicator');
+      if (loading) loading.style.display = 'block';
+
+      var typedArray = new Uint8Array(item.data);
+      extractPdfText(typedArray).then(function(text) {
+        if (loading) loading.style.display = 'none';
+        var result = parseBankStatement(text);
+        if (!result.rows.length) {
+          showToast('No se pudieron extraer movimientos del PDF archivado', 'error');
+          return;
+        }
+        classifyMovements(result.rows);
+        _pdfParsedRows = result.rows;
+        displayPdfPreview(result.banco);
+      }).catch(function(err) {
+        if (loading) loading.style.display = 'none';
+        showToast('Error al procesar el PDF archivado', 'error');
+        console.error('verPdfImportado error:', err);
       });
     };
   });
@@ -625,6 +666,8 @@ function handlePdfUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
   _pdfLastFile = null;
+  _pdfReadOnly = false;
+  _pdfArchivoCurrentId = null;
 
   var loading = document.getElementById('pdfLoadingIndicator');
   var preview = document.getElementById('pdfPreviewContainer');
@@ -1557,6 +1600,27 @@ function displayPdfPreview(banco) {
 
   container.innerHTML = html;
   container.style.display = 'block';
+
+  // Modo solo-lectura para PDFs ya importados
+  if (_pdfReadOnly) {
+    // Aviso al tope del contenedor
+    var notice = document.createElement('div');
+    notice.className = 'pdf-print-hide';
+    notice.style.cssText = 'background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.4);border-radius:6px;padding:8px 14px;margin-bottom:10px;font-size:13px;display:flex;align-items:center;gap:8px;';
+    notice.innerHTML = '<i class="fas fa-lock" style="color:#16a34a;"></i><span>Este estado de cuenta <strong>ya fue importado</strong> — vista de solo lectura.</span>';
+    container.insertBefore(notice, container.firstChild);
+
+    // Ocultar barra de acciones (fecha, cuenta, botón Importar, borrador)
+    var actionBar = container.querySelector('.pdf-print-hide[style*="margin-top:16px"]');
+    if (actionBar) actionBar.style.display = 'none';
+
+    // Deshabilitar todos los inputs, selects y botones dentro del preview
+    Array.prototype.forEach.call(container.querySelectorAll('input, select, button'), function(el) {
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.6';
+    });
+  }
 }
 
 /* Muestra texto crudo cuando no se detectaron movimientos */
