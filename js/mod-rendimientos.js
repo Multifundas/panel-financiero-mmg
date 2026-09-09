@@ -890,8 +890,8 @@ function editRendimiento(id) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
-          <label class="form-label">Monto del Rendimiento *</label>
-          <input type="number" id="rendMonto" class="form-input" required step="0.01" min="0"
+          <label class="form-label">Monto del Rendimiento * <span style="font-size:12px;color:var(--text-muted);">(negativo si hubo pérdida)</span></label>
+          <input type="number" id="rendMonto" class="form-input" required step="0.01"
                  value="${isEdit ? rend.rendimiento_monto : ''}" placeholder="0.00">
         </div>
         <div class="form-group">
@@ -952,7 +952,7 @@ function saveRendimiento(event) {
   const reinvertido = document.getElementById('rendReinvertido').checked;
   const notas = document.getElementById('rendNotas').value.trim();
 
-  if (!cuenta_id || !fecha || rendimiento_monto <= 0) {
+  if (!cuenta_id || !fecha || isNaN(rendimiento_monto)) {
     showToast('Por favor completa todos los campos obligatorios.', 'warning');
     return;
   }
