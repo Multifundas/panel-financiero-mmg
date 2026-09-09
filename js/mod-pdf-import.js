@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909r
+   PDF BANK STATEMENT IMPORT MODULE  v20260909s
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1309,7 +1309,10 @@ function _buildHistoricalMap() {
 
   sorted.forEach(function(m) {
     if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
-    var key = _merchantKey(m.descripcion);
+    // Usar texto crudo del banco como clave de búsqueda cuando está disponible,
+    // pero devolver la descripción que asignó el usuario como valor
+    var keySource = m.descripcion_banco || m.descripcion;
+    var key = _merchantKey(keySource);
     if (!key) return;
     if (!map[key]) {
       var cat = catById[m.categoria_id];
@@ -1858,6 +1861,7 @@ function confirmPdfImport() {
       moneda: cuenta.moneda || 'MXN',
       categoria_id: row.tipo === 'gasto' ? (row.categoria_id || null) : null,
       descripcion: row.descripcion_final || row.descripcion,
+      descripcion_banco: row.descripcion,
       fecha: _pdfFechaPago,
       notas: 'Importado desde PDF',
       created: new Date().toISOString()
