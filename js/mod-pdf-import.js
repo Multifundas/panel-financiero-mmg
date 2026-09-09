@@ -1281,8 +1281,11 @@ function parseGeneric(lines) {
 
 /* Extrae una clave de comercio: primeras 2-3 palabras significativas */
 function _merchantKey(desc) {
+  // Palabras genéricas de México en descripciones bancarias: abreviaturas de entidades/puntos cardinales/
+  // palabras de relleno que no identifican al comercio
   var STOP = { de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,
-               del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1 };
+               del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,
+               san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1 };
   var s = _sinAcentos(desc).toLowerCase().replace(/[^a-z\s]/g, ' ');
   var words = s.split(/\s+/).filter(function(w) { return w.length >= 3 && !STOP[w]; });
   return words.slice(0, 3).join(' ');
@@ -1313,9 +1316,9 @@ function _buildHistoricalMap() {
       var entry = { categoria_id: m.categoria_id, categoria_nombre: cat ? cat.nombre : '',
                     descripcion: m.descripcion, count: 0 };
       map[key] = entry;
-      // Indexar cada palabra significativa para fallback
+      // Indexar palabras de 4+ chars para fallback (evitar matches en palabras genéricas cortas)
       key.split(' ').forEach(function(w) {
-        if (!wordMap[w]) wordMap[w] = entry;
+        if (w.length >= 4 && !wordMap[w]) wordMap[w] = entry;
       });
     }
     map[key].count++;
@@ -1341,7 +1344,7 @@ function classifyMovements(rows) {
     if (!h && hKey) {
       var rawWords = hKey.split(' ');
       for (var wi = 0; wi < rawWords.length; wi++) {
-        if (histWordMap[rawWords[wi]]) { h = histWordMap[rawWords[wi]]; break; }
+        if (rawWords[wi].length >= 4 && histWordMap[rawWords[wi]]) { h = histWordMap[rawWords[wi]]; break; }
       }
     }
     if (h) {
