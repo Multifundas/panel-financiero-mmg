@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909w
+   PDF BANK STATEMENT IMPORT MODULE  v20260909x
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -295,7 +295,7 @@ function auditoriaGastos(desde, hasta) {
   console.log('Gastos encontrados:', filtered.length, '| Rango:', desde, '→', hasta);
   if (!filtered.length) { var muestras=movs.filter(function(m){return m.tipo==='gasto';}).slice(0,5).map(function(m){return m.fecha;}); console.log('Muestra fechas BD:', muestras); return; }
   var groups={};
-  filtered.forEach(function(m){ var k=mg(m.descripcion_banco||m.descripcion); if(!groups[k])groups[k]=[]; groups[k].push(m); });
+  filtered.forEach(function(m){ var k=m.descripcion_banco?mg(m.descripcion_banco):(m.descripcion||'(sin desc)').toUpperCase(); if(!groups[k])groups[k]=[]; groups[k].push(m); });
   var inc=[],ok=[];
   Object.keys(groups).sort().forEach(function(k){
     var g=groups[k]; var catNombres={},descs={};
