@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260908c
+   PDF BANK STATEMENT IMPORT MODULE  v20260909p
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1363,11 +1363,14 @@ function classifyMovements(rows) {
       }
     }
     if (h) {
-      row.categoria_id       = h.categoria_id;
-      row.categoria_nombre   = h.categoria_nombre;
-      row.categoria_source   = 'historial';
-      row.descripcion_final  = h.descripcion;
-      return;
+      if (h.descripcion) row.descripcion_final = h.descripcion;
+      if (h.categoria_id) {
+        row.categoria_id     = h.categoria_id;
+        row.categoria_nombre = h.categoria_nombre;
+        row.categoria_source = 'historial';
+        return; // descripción + categoría del historial → listo
+      }
+      // Tiene descripción del historial pero sin categoría → continúa a reglas
     }
 
     // 2. Reglas por palabras clave
