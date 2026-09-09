@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909q
+   PDF BANK STATEMENT IMPORT MODULE  v20260909r
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1336,13 +1336,31 @@ function classifyMovements(rows) {
   var histMap = hist.map;
   var histWordMap = hist.wordMap;
 
-  // Índice monto+categoria → descripcion (para rellenar descripciones vacías tras asignar categoría)
+  // Índice monto+categoria → descripcion
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var montoMontoIdx = {};   // "monto|catId" → descripcion
   movimientos.forEach(function(m) {
     if (!m.categoria_id || m.tipo !== 'gasto' || !m.descripcion) return;
     var k = String(m.monto) + '|' + m.categoria_id;
     if (!montoMontoIdx[k]) montoMontoIdx[k] = m.descripcion;
+  });
+
+  // Índice keyword → descripcion: busca en descripciones guardadas cuál contiene el keyword
+  // (sin importar el monto — usa la misma búsqueda de subcadena que las reglas)
+  var kwDescMap = {};
+  PDF_CLASSIFICATION_RULES.forEach(function(rule) {
+    rule.keywords.forEach(function(kw) {
+      if (kw in kwDescMap) return;
+      kwDescMap[kw] = null; // marcar como buscado aunque no se encuentre
+      for (var i = 0; i < movimientos.length; i++) {
+        var m = movimientos[i];
+        if (m.tipo !== 'gasto' || !m.descripcion) continue;
+        if (_sinAcentos(m.descripcion.toLowerCase()).indexOf(kw) >= 0) {
+          kwDescMap[kw] = m.descripcion;
+          break;
+        }
+      }
+    });
   });
 
   rows.forEach(function(row) {
@@ -1384,12 +1402,17 @@ function classifyMovements(rows) {
           if (cat) { row.categoria_id = cat.id; row.categoria_nombre = cat.nombre; }
           else      { row.categoria_nombre = rule.categoria; }
           row.categoria_source = 'regla';
-          // Buscar descripción en historial usando el keyword que hizo match
+          // Buscar descripción sin depender del monto
           if (!row.descripcion_final) {
-            var kw = rule.keywords[k].replace(/\s+/g, '');
-            if (kw.length >= 4) {
-              var kwH = histWordMap[kw];
+            // Intento 1: histWordMap por keyword (descripción guardada contiene la palabra exacta)
+            var kwClean = rule.keywords[k].replace(/\s+/g, '');
+            if (kwClean.length >= 4) {
+              var kwH = histWordMap[kwClean];
               if (kwH && kwH.descripcion) row.descripcion_final = kwH.descripcion;
+            }
+            // Intento 2: kwDescMap — busca en texto de descripciones guardadas (subcadena del keyword)
+            if (!row.descripcion_final && kwDescMap[rule.keywords[k]]) {
+              row.descripcion_final = kwDescMap[rule.keywords[k]];
             }
           }
           matched = true;
