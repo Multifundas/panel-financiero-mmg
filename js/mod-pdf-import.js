@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909y
+   PDF BANK STATEMENT IMPORT MODULE  v20260909z
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -284,8 +284,8 @@ function corregirDescripcionBanco(reglas) {
 // Llamar desde consola: auditoriaGastos()  o  auditoriaGastos('2026-07','2026-09')
 function auditoriaGastos(desde, hasta) {
   desde = desde || '2026-08'; hasta = hasta || '2026-09';
-  var STOP = {de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1,qroo:1,nl:1,df:1,cdmx:1,cco:1,dlo:1};
-  function mg(raw) { if (!raw) return '(sin texto)'; var s=raw.toLowerCase().replace(/[^a-z\s]/g,' '); var w=s.split(/\s+/).filter(function(x){return x.length>=3&&!STOP[x];}); return (w[0]||raw.substring(0,12)).toUpperCase(); }
+  var STOP = {de:1,la:1,el:1,en:1,mx:1,sa:1,cv:1,sn:1,sp:1,los:1,las:1,del:1,por:1,con:1,sin:1,una:1,para:1,vta:1,com:1,san:1,sta:1,sur:1,nte:1,ote:1,gar:1,cib:1,ana:1,gdl:1,mty:1,cdm:1,nvo:1,col:1,qroo:1,nl:1,df:1,cdmx:1,cco:1,dlo:1,ciudad:1,mex:1,upm:1,rsm:1,gci:1,bbe:1,rim:1,mae:1,nsi:1,rdi:1,eme:1,tto:1,ioc:1,sve:1,sih:1};
+  function mg(raw) { if (!raw) return '(sin texto)'; var s=raw.toLowerCase().replace(/[^a-z\s]/g,' '); var w=s.split(/\s+/).filter(function(x){return x.length>=3&&!STOP[x];}); return (w.slice(0,2).join(' ')||raw.substring(0,12)).toUpperCase(); }
   var movs = loadData(STORAGE_KEYS.movimientos) || [];
   // Resolver categoria_nombre desde categoria_id
   var cats = loadData(STORAGE_KEYS.categorias_gasto) || [];
