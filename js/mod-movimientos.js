@@ -75,7 +75,7 @@ function renderMovimientos() {
           <option value="gasto">Gasto</option>
           <option value="transferencia">Transferencia</option>
         </select>
-        <select id="filterMovCuenta" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:240px;" onchange="filterMovimientos()">
+        <select id="filterMovCuenta" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:275px;" onchange="filterMovimientos()">
           <option value="">Todas las cuentas</option>
           ${cuentaFilterOpts}
         </select>
