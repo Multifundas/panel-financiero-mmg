@@ -3064,10 +3064,9 @@ function auditoriaRendGastos() {
       var cta = cuentaById[r.cuenta_id];
       var real = _rendReal(r);
       var color = real >= 0 ? '#059669' : '#dc2626';
-      return '<div style="display:flex;justify-content:space-between;align-items:baseline;white-space:nowrap">'
-           + '<span>↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + ' <span style="color:#94a3b8;font-size:9px">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</span></span>'
-           + '<span style="color:' + color + ';padding-left:12px;flex-shrink:0">' + fmt(real) + '</span>'
-           + '</div>';
+      return '↳ ' + esc(cta ? cta.nombre : r.cuenta_id)
+           + ' <span style="color:#94a3b8;font-size:9px">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</span>'
+           + ' <span style="color:' + color + ';font-weight:600">' + fmt(real) + '</span>';
     });
 
     // Detalle gastos por categoria
@@ -3078,8 +3077,7 @@ function auditoriaRendGastos() {
       catTotales[cn] = (catTotales[cn] || 0) + toMXN(m.monto, cta ? (cta.moneda || 'MXN') : 'MXN');
     });
     var gastoItems = Object.keys(catTotales).sort().map(function(cn) {
-      return '<span style="white-space:nowrap">↳ ' + esc(cn) + '</span>'
-           + '<span style="float:right;color:#dc2626;white-space:nowrap;padding-left:8px">' + fmt(catTotales[cn]) + '</span>';
+      return '↳ ' + esc(cn) + ' <span style="color:#dc2626;font-weight:600">' + fmt(catTotales[cn]) + '</span>';
     });
 
     var maxLen = Math.max(rendItems.length, gastoItems.length);
@@ -3091,11 +3089,11 @@ function auditoriaRendGastos() {
     // Fila principal del mes
     var out = '<tr style="background:#f8fafc;border-top:2px solid #cbd5e1;page-break-inside:avoid">'
       + '<td style="padding:7px 10px;font-weight:700;font-size:13px;color:#0f172a;white-space:nowrap;vertical-align:top">' + mesLabel(per) + '</td>'
-      + '<td style="padding:7px 10px;text-align:right;vertical-align:top">'
+      + '<td style="padding:7px 10px;text-align:left;vertical-align:top">'
       +   '<div style="font-weight:700;font-size:13px;color:' + (hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8') + '">' + (hasRend ? fmt(rendTotal) : '—') + '</div>'
       +   '<div style="font-size:9px;color:#94a3b8">' + rendRecs.length + ' registro(s)</div>'
       + '</td>'
-      + '<td style="padding:7px 10px;text-align:right;vertical-align:top">'
+      + '<td style="padding:7px 10px;text-align:left;vertical-align:top">'
       +   '<div style="font-weight:700;font-size:13px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</div>'
       +   '<div style="font-size:9px;color:#94a3b8">' + gastoRecs.length + ' movimiento(s)</div>'
       + '</td>'
@@ -3106,8 +3104,8 @@ function auditoriaRendGastos() {
     for (var j = 0; j < maxLen; j++) {
       out += '<tr style="background:#fff;font-size:10px;color:#475569">'
         + '<td style="padding:1px 10px"></td>'
-        + '<td style="padding:2px 10px;overflow:hidden">' + (rendItems[j] || '') + '</td>'
-        + '<td style="padding:2px 10px;overflow:hidden">' + (gastoItems[j] || '') + '</td>'
+        + '<td style="padding:2px 10px">' + (rendItems[j] || '') + '</td>'
+        + '<td style="padding:2px 10px">' + (gastoItems[j] || '') + '</td>'
         + '<td></td></tr>';
     }
 
@@ -3130,24 +3128,24 @@ function auditoriaRendGastos() {
     + '}';
 
   var TH = '<tr style="background:#334155;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">'
-    + '<th style="padding:7px 10px;text-align:left;width:110px">Periodo</th>'
-    + '<th style="padding:7px 10px;text-align:right;width:200px">Rendimientos</th>'
-    + '<th style="padding:7px 10px;text-align:right;width:200px">Gastos</th>'
-    + '<th style="padding:7px 10px;text-align:right;width:110px">Diferencia</th>'
+    + '<th style="padding:7px 10px;text-align:left;white-space:nowrap">Periodo</th>'
+    + '<th style="padding:7px 10px;text-align:left">Rendimientos</th>'
+    + '<th style="padding:7px 10px;text-align:left">Gastos</th>'
+    + '<th style="padding:7px 10px;text-align:right;white-space:nowrap">Diferencia</th>'
     + '</tr>';
 
   var FOOT = '<tr style="background:#334155;color:#fff;font-weight:700;font-size:12px">'
-    + '<td style="padding:7px 10px">TOTAL ' + anio + '</td>'
-    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalRend) + '</td>'
-    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalGasto) + '</td>'
-    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalRend - totalGasto) + '</td>'
+    + '<td style="padding:7px 10px;white-space:nowrap">TOTAL ' + anio + '</td>'
+    + '<td style="padding:7px 10px">' + fmt(totalRend) + '</td>'
+    + '<td style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
+    + '<td style="padding:7px 10px;text-align:right;white-space:nowrap">' + fmt(totalRend - totalGasto) + '</td>'
     + '</tr>';
 
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos ' + anio + '</title><style>' + css + '</style></head><body>'
     + '<div class="wrap">'
     + '<h1>Auditoría — Rendimientos vs Gastos ' + anio + '</h1>'
     + '<p>Datos que alimentan la gráfica del Dashboard · ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[11]) + '</p>'
-    + '<table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
     + '<thead>' + TH + '</thead>'
     + '<tbody>' + rows + '</tbody>'
     + '<tfoot>' + FOOT + '</tfoot>'
