@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260909aa
+   PDF BANK STATEMENT IMPORT MODULE  v20260916a
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -90,10 +90,12 @@ function togglePdfArchivo() {
       var items = (e.target.result || []).sort(function(a, b) { return b.id - a.id; });
       var btnReporte = '<button class="btn btn-secondary" onclick="generarReportePdfImport()" style="padding:6px 14px;font-size:13px;margin-left:auto;">'
         + '<i class="fas fa-file-alt"></i> Generar reporte desde BD</button>';
+      var btnVerPdf = '<button class="btn btn-secondary" onclick="verPdfDesdeArchivo()" style="padding:6px 14px;font-size:13px;">'
+        + '<i class="fas fa-eye"></i> Ver PDF para revisar</button>';
       if (!items.length) {
         panel.innerHTML = '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;">'
-          + '<p style="color:var(--text-muted);font-size:14px;margin:0 0 10px;">No hay PDFs archivados aún — se guardan automáticamente al cargar un archivo.</p>'
-          + btnReporte
+          + '<p style="color:var(--text-muted);font-size:14px;margin:0 0 10px;">No hay PDFs archivados en este navegador — se guardan al cargar un archivo.</p>'
+          + '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + btnVerPdf + btnReporte + '</div>'
           + '</div>';
         return;
       }
@@ -126,9 +128,14 @@ function togglePdfArchivo() {
         + '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;">'
         +   '<div style="display:flex;align-items:center;margin-bottom:10px;">'
         +     '<p style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin:0;">PDFs archivados (' + items.length + ')</p>'
-        +     '<button class="btn btn-secondary" onclick="generarReportePdfImport()" style="padding:4px 12px;font-size:12px;margin-left:auto;" title="Genera reporte imprimible desde la base de datos">'
-        +       '<i class="fas fa-file-alt"></i> Reporte desde BD'
-        +     '</button>'
+        +     '<div style="display:flex;gap:6px;margin-left:auto;">'
+        +       '<button class="btn btn-secondary" onclick="verPdfDesdeArchivo()" style="padding:4px 12px;font-size:12px;" title="Abre un PDF del disco en modo solo lectura">'
+        +         '<i class="fas fa-eye"></i> Ver PDF'
+        +       '</button>'
+        +       '<button class="btn btn-secondary" onclick="generarReportePdfImport()" style="padding:4px 12px;font-size:12px;" title="Genera reporte imprimible desde la base de datos">'
+        +         '<i class="fas fa-file-alt"></i> Reporte BD'
+        +       '</button>'
+        +     '</div>'
         +   '</div>'
         +   '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
         +     '<table style="width:100%;border-collapse:collapse;">'
@@ -202,6 +209,45 @@ function reabrirPdfParaImportar(id) {
       });
     };
   });
+}
+
+function verPdfDesdeArchivo() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    _pdfReadOnly = true;
+    _pdfArchivoCurrentId = null;
+    var loading = document.getElementById('pdfLoadingIndicator');
+    var preview = document.getElementById('pdfPreviewContainer');
+    if (loading) loading.style.display = 'block';
+    if (preview) preview.style.display = 'none';
+    var panel = document.getElementById('pdfArchivoPanel');
+    if (panel) panel.style.display = 'none';
+    var btn = document.getElementById('pdfArchBtn');
+    if (btn) btn.innerHTML = '<i class="fas fa-folder-open"></i> PDFs archivados';
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      _pdfLastFile = { buffer: ev.target.result.slice(0), nombre: file.name };
+      var typedArray = new Uint8Array(ev.target.result);
+      extractPdfText(typedArray).then(function(text) {
+        if (loading) loading.style.display = 'none';
+        var result = parseBankStatement(text);
+        if (!result.rows.length) { showToast('No se pudieron extraer movimientos del PDF', 'error'); return; }
+        classifyMovements(result.rows);
+        _recuperarAsignacionesDesdeMovimientos(result.rows);
+        _pdfParsedRows = result.rows;
+        displayPdfPreview(result.banco);
+      }).catch(function(err) {
+        if (loading) loading.style.display = 'none';
+        showToast('Error al leer el PDF: ' + err.message, 'error');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  input.click();
 }
 
 function verPdfImportado(id) {
