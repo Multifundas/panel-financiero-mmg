@@ -507,7 +507,7 @@ function editMovimiento(id) {
           <option value="">No asociar</option>
           ${propOpciones}
         </select>
-        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Se registra como pago vinculado al inmueble</div>
       </div>
 
       <div class="form-group">
@@ -516,7 +516,7 @@ function editMovimiento(id) {
           <option value="">No vincular</option>
           ${prestamoOpciones}
         </select>
-        <div style="font-size:18px;color:var(--text-muted);margin-top:2px;">${_prestamosActivos.length === 0 ? 'No hay préstamos activos registrados' : 'Actualiza el saldo del préstamo automáticamente'}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${_prestamosActivos.length === 0 ? 'No hay préstamos activos registrados' : 'Actualiza el saldo del préstamo automáticamente'}</div>
       </div>
 
       <div class="form-group">
@@ -525,7 +525,7 @@ function editMovimiento(id) {
                   placeholder="Notas adicionales...">${isEdit && mov.notas ? mov.notas : ''}</textarea>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;position:sticky;bottom:0;background:var(--bg-card);padding:10px 0 2px;border-top:1px solid var(--border-subtle);">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">
           <i class="fas fa-save"></i> ${isEdit ? 'Guardar Cambios' : 'Crear Movimiento'}
