@@ -3027,13 +3027,11 @@ function auditoriaRendGastos() {
   var catById = {};
   cats.forEach(function(c) { catById[c.id] = c.nombre; });
 
-  // Mismos 24 meses que la grafica: Ene año-1 → Dic año-actual
+  // Solo el año actual: Ene → Dic
   var anio = new Date().getFullYear();
   var periodos = [];
-  for (var i = 0; i < 24; i++) {
-    var d = new Date(anio - 1, i, 1);
-    var per = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    periodos.push(per);
+  for (var i = 0; i < 12; i++) {
+    periodos.push(anio + '-' + String(i + 1).padStart(2, '0'));
   }
 
   function mesLabel(per) {
