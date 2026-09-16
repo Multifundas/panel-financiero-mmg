@@ -3043,6 +3043,7 @@ function auditoriaRendGastos() {
 
   var totalRend = 0, totalGasto = 0;
 
+  // 8 columnas: Periodo | Cuenta | Saldo Inicial | Saldo Final | Rendimiento | Descripcion Gasto | Monto Gasto | Diferencia
   var rows = periodos.map(function(per) {
     var rendRecs = rends.filter(function(r) { return _periodoLogicoCierre(r.fecha || r.periodo) === per; });
     var rendTotal = rendRecs.reduce(function(s, r) {
@@ -3059,92 +3060,103 @@ function auditoriaRendGastos() {
     totalRend  += rendTotal;
     totalGasto += gastoTotal;
 
-    // Detalle rendimientos por cuenta
+    var hasRend  = rendRecs.length > 0;
+    var hasGasto = gastoRecs.length > 0;
+    var diff = rendTotal - gastoTotal;
+    var diffColor = diff >= 0 ? '#059669' : '#dc2626';
+
+    // Items de rendimiento por cuenta
     var rendItems = rendRecs.map(function(r) {
       var cta = cuentaById[r.cuenta_id];
       var real = _rendReal(r);
-      var color = real >= 0 ? '#059669' : '#dc2626';
-      return '↳ ' + esc(cta ? cta.nombre : r.cuenta_id)
-           + ' <span style="color:#94a3b8;font-size:9px">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</span>'
-           + ' <span style="color:' + color + ';font-weight:600">' + fmt(real) + '</span>';
+      return { nombre: cta ? cta.nombre : r.cuenta_id, si: r.saldo_inicial || 0, sf: r.saldo_final || 0, real: real, color: real >= 0 ? '#059669' : '#dc2626' };
     });
 
-    // Detalle gastos por categoria
+    // Items de gasto por categoria
     var catTotales = {};
     gastoRecs.forEach(function(m) {
       var cn = m.categoria_nombre || (m.categoria_id ? catById[m.categoria_id] : null) || '(sin cat)';
       var cta = cuentaById[m.cuenta_id];
       catTotales[cn] = (catTotales[cn] || 0) + toMXN(m.monto, cta ? (cta.moneda || 'MXN') : 'MXN');
     });
-    var gastoItems = Object.keys(catTotales).sort().map(function(cn) {
-      return '↳ ' + esc(cn) + ' <span style="color:#dc2626;font-weight:600">' + fmt(catTotales[cn]) + '</span>';
-    });
+    var gastoItems = Object.keys(catTotales).sort().map(function(cn) { return { desc: cn, monto: catTotales[cn] }; });
 
     var maxLen = Math.max(rendItems.length, gastoItems.length);
-    var hasRend  = rendRecs.length > 0;
-    var hasGasto = gastoRecs.length > 0;
-    var diff = rendTotal - gastoTotal;
-    var diffColor = diff >= 0 ? '#059669' : '#dc2626';
+    var rs = maxLen + 1; // rowspan para Periodo y Diferencia
 
-    // Fila principal del mes
-    var out = '<tr style="background:#f8fafc;border-top:2px solid #cbd5e1;page-break-inside:avoid">'
-      + '<td style="padding:7px 10px;font-weight:700;font-size:13px;color:#0f172a;white-space:nowrap;vertical-align:top">' + mesLabel(per) + '</td>'
-      + '<td style="padding:7px 10px;text-align:left;vertical-align:top">'
-      +   '<div style="font-weight:700;font-size:13px;color:' + (hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8') + '">' + (hasRend ? fmt(rendTotal) : '—') + '</div>'
-      +   '<div style="font-size:9px;color:#94a3b8">' + rendRecs.length + ' registro(s)</div>'
+    // Fila de totales del mes (Periodo y Diferencia usan rowspan)
+    var rendColor = hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8';
+    var out = '<tr style="background:#eef2f7;border-top:2px solid #94a3b8">'
+      + '<td style="padding:6px 10px;font-weight:700;font-size:12px;white-space:nowrap;vertical-align:top;color:#0f172a;border-right:1px solid #cbd5e1" rowspan="' + rs + '">' + mesLabel(per) + '</td>'
+      + '<td colspan="4" style="padding:6px 10px;text-align:right;vertical-align:top;border-right:1px solid #cbd5e1">'
+      +   '<span style="font-weight:700;font-size:13px;color:' + rendColor + '">' + (hasRend ? fmt(rendTotal) : '—') + '</span>'
+      +   ' <span style="font-size:9px;color:#94a3b8">' + rendRecs.length + ' reg</span>'
       + '</td>'
-      + '<td style="padding:7px 10px;text-align:left;vertical-align:top">'
-      +   '<div style="font-weight:700;font-size:13px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</div>'
-      +   '<div style="font-size:9px;color:#94a3b8">' + gastoRecs.length + ' movimiento(s)</div>'
+      + '<td colspan="2" style="padding:6px 10px;text-align:right;vertical-align:top;border-right:1px solid #cbd5e1">'
+      +   '<span style="font-weight:700;font-size:13px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</span>'
+      +   ' <span style="font-size:9px;color:#94a3b8">' + gastoRecs.length + ' mov</span>'
       + '</td>'
-      + '<td style="padding:7px 10px;text-align:right;font-weight:700;font-size:13px;color:' + diffColor + ';white-space:nowrap;vertical-align:top">' + fmt(diff) + '</td>'
+      + '<td style="padding:6px 10px;text-align:right;font-weight:700;font-size:13px;color:' + diffColor + ';white-space:nowrap;vertical-align:top" rowspan="' + rs + '">' + fmt(diff) + '</td>'
       + '</tr>';
 
-    // Filas de detalle (cuentas y categorias lado a lado)
+    // Filas de detalle — solo 6 celdas (cols 2-7); cols 1 y 8 cubiertas por rowspan
     for (var j = 0; j < maxLen; j++) {
-      out += '<tr style="background:#fff;font-size:10px;color:#475569">'
-        + '<td style="padding:1px 10px"></td>'
-        + '<td style="padding:2px 10px">' + (rendItems[j] || '') + '</td>'
-        + '<td style="padding:2px 10px">' + (gastoItems[j] || '') + '</td>'
-        + '<td></td></tr>';
+      var ri = rendItems[j];
+      var gi = gastoItems[j];
+      out += '<tr style="background:#fff;font-size:10px;color:#334155;border-top:1px solid #f1f5f9">'
+        + '<td style="padding:2px 8px;white-space:nowrap;border-right:1px solid #e2e8f0">' + (ri ? '↳ ' + esc(ri.nombre) : '') + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px">' + (ri ? fmt(ri.si) : '') + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px">' + (ri ? fmt(ri.sf) : '') + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:' + (ri ? ri.color : '#334155') + ';border-right:1px solid #e2e8f0">' + (ri ? fmt(ri.real) : '') + '</td>'
+        + '<td style="padding:2px 8px">' + (gi ? '↳ ' + esc(gi.desc) : '') + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626;border-right:1px solid #e2e8f0">' + (gi ? fmt(gi.monto) : '') + '</td>'
+        + '</tr>';
     }
 
-    // Separador visual al final del mes
-    out += '<tr><td colspan="4" style="padding:0;height:4px;background:#f1f5f9"></td></tr>';
+    out += '<tr><td colspan="8" style="padding:0;height:5px;background:#e2e8f0"></td></tr>';
     return out;
   }).join('');
 
   var css = '*{box-sizing:border-box;margin:0;padding:0}'
     + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;padding:20px;color:#111}'
-    + '.wrap{max-width:720px;margin:0 auto}'
+    + '.wrap{max-width:1100px;margin:0 auto}'
     + 'h1{font-size:17px;font-weight:700;margin-bottom:3px}'
-    + 'p{font-size:11px;color:#64748b;margin-bottom:16px}'
+    + 'p.sub{font-size:11px;color:#64748b;margin-bottom:16px}'
     + '@media print{'
-    +   '@page{size:letter portrait;margin:1.2cm}'
+    +   '@page{size:letter landscape;margin:1cm}'
     +   'body{background:#fff;padding:0}'
     +   '.wrap{max-width:none}'
-    +   'table{font-size:10px}'
-    +   'h1{font-size:14px}'
+    +   'table{font-size:8px}'
+    +   'h1{font-size:13px}'
     + '}';
 
-  var TH = '<tr style="background:#334155;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">'
-    + '<th style="padding:7px 10px;text-align:left;white-space:nowrap">Periodo</th>'
-    + '<th style="padding:7px 10px;text-align:left">Rendimientos</th>'
-    + '<th style="padding:7px 10px;text-align:left">Gastos</th>'
-    + '<th style="padding:7px 10px;text-align:right;white-space:nowrap">Diferencia</th>'
+  // Encabezado de 2 filas
+  var TH = '<tr style="background:#1e293b;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">'
+    + '<th style="padding:7px 10px;text-align:left;white-space:nowrap;border-right:1px solid #334155" rowspan="2">Periodo</th>'
+    + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="4">Rendimientos</th>'
+    + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="2">Gastos</th>'
+    + '<th style="padding:7px 10px;text-align:right;white-space:nowrap" rowspan="2">Diferencia</th>'
+    + '</tr>'
+    + '<tr style="background:#334155;color:#94a3b8;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">'
+    + '<th style="padding:4px 8px;text-align:left">Cuenta</th>'
+    + '<th style="padding:4px 8px;text-align:right">Saldo Inicial</th>'
+    + '<th style="padding:4px 8px;text-align:right">Saldo Final</th>'
+    + '<th style="padding:4px 8px;text-align:right;border-right:1px solid #475569">Rendimiento</th>'
+    + '<th style="padding:4px 8px;text-align:left">Descripción</th>'
+    + '<th style="padding:4px 8px;text-align:right;border-right:1px solid #475569">Monto</th>'
     + '</tr>';
 
-  var FOOT = '<tr style="background:#334155;color:#fff;font-weight:700;font-size:12px">'
+  var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
     + '<td style="padding:7px 10px;white-space:nowrap">TOTAL ' + anio + '</td>'
-    + '<td style="padding:7px 10px">' + fmt(totalRend) + '</td>'
-    + '<td style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
+    + '<td colspan="4" style="padding:7px 10px;text-align:right">' + fmt(totalRend) + '</td>'
+    + '<td colspan="2" style="padding:7px 10px;text-align:right">' + fmt(totalGasto) + '</td>'
     + '<td style="padding:7px 10px;text-align:right;white-space:nowrap">' + fmt(totalRend - totalGasto) + '</td>'
     + '</tr>';
 
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos ' + anio + '</title><style>' + css + '</style></head><body>'
     + '<div class="wrap">'
     + '<h1>Auditoría — Rendimientos vs Gastos ' + anio + '</h1>'
-    + '<p>Datos que alimentan la gráfica del Dashboard · ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[11]) + '</p>'
+    + '<p class="sub">Datos que alimentan la gráfica del Dashboard · ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[11]) + '</p>'
     + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
     + '<thead>' + TH + '</thead>'
     + '<tbody>' + rows + '</tbody>'
