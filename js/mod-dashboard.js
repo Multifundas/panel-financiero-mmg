@@ -3125,7 +3125,7 @@ function auditoriaRendGastos() {
     + '</tr>';
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos</title><style>' + css + '</style></head><body>'
     + '<div class="wrap"><h1>Auditoría — Rendimientos vs Gastos</h1>'
-    + '<p>Datos que alimentan la gráfica del Dashboard · Período: ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[23]) + '</p>'
+    + '<p>Datos que alimentan la gráfica del Dashboard · Período: ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[periodos.length - 1]) + '</p>'
     + '<div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead>' + TH + '</thead>'
