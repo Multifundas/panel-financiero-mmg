@@ -534,7 +534,7 @@ function editMovimiento(id) {
     </form>
   `;
 
-  openModal(titulo, formHTML);
+  openModal(titulo, formHTML, { noScroll: true });
 
   // Ensure categoria field visibility matches tipo and populate description dropdown
   toggleCategoriaField();

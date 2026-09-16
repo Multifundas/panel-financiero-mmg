@@ -103,7 +103,9 @@ function showToast(message, type) {
    ============================================================ */
 function openModal(title, bodyHTML, options) {
   document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalBody').innerHTML = bodyHTML;
+  var mb = document.getElementById('modalBody');
+  mb.innerHTML = bodyHTML;
+  mb.style.overflowY = (options && options.noScroll) ? 'hidden' : '';
   // Reset modal width class before opening
   var mc = document.getElementById('modalContent');
   if (mc) {
