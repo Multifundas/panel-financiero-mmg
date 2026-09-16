@@ -3017,17 +3017,16 @@ function exportEvolucionPatrimonioPDF() {
 // Llamar desde consola del navegador: auditoriaRendGastos()
 // ─────────────────────────────────────────────────────────────────────────────
 function auditoriaRendGastos() {
-  var rends  = loadData(STORAGE_KEYS.rendimientos) || [];
-  var movs   = loadData(STORAGE_KEYS.movimientos)  || [];
-  var cuentas = loadData(STORAGE_KEYS.cuentas)     || [];
-  var cats   = loadData(STORAGE_KEYS.categorias_gasto) || [];
+  var rends   = loadData(STORAGE_KEYS.rendimientos) || [];
+  var movs    = loadData(STORAGE_KEYS.movimientos)  || [];
+  var cuentas = loadData(STORAGE_KEYS.cuentas)      || [];
+  var cats    = loadData(STORAGE_KEYS.categorias_gasto) || [];
 
   var cuentaById = {};
   cuentas.forEach(function(c) { cuentaById[c.id] = c; });
   var catById = {};
   cats.forEach(function(c) { catById[c.id] = c.nombre; });
 
-  // Solo el año actual: Ene → Dic
   var anio = new Date().getFullYear();
   var periodos = [];
   for (var i = 0; i < 12; i++) {
@@ -3036,37 +3035,39 @@ function auditoriaRendGastos() {
 
   function mesLabel(per) {
     var p = per.split('-');
-    var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    return meses[parseInt(p[1]) - 1] + ' ' + p[0].slice(-2);
+    var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return meses[parseInt(p[1]) - 1] + ' ' + p[0];
   }
-
   function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  var totalRend = 0, totalGasto = 0;
+
   var rows = periodos.map(function(per) {
-    // Rendimientos: misma logica que la grafica
     var rendRecs = rends.filter(function(r) { return _periodoLogicoCierre(r.fecha || r.periodo) === per; });
     var rendTotal = rendRecs.reduce(function(s, r) {
       var cta = cuentaById[r.cuenta_id];
       return s + toMXN(_rendReal(r), cta ? (cta.moneda || 'MXN') : 'MXN');
     }, 0);
 
-    // Gastos: misma logica que la grafica
     var gastoRecs = movs.filter(function(m) { return m.tipo === 'gasto' && !m.transferencia_id && (m.fecha || '').startsWith(per); });
     var gastoTotal = gastoRecs.reduce(function(s, m) {
       var cta = cuentaById[m.cuenta_id];
       return s + toMXN(m.monto, cta ? (cta.moneda || 'MXN') : 'MXN');
     }, 0);
 
-    // Detalle rendimientos
-    var rendDetalle = rendRecs.map(function(r) {
+    totalRend  += rendTotal;
+    totalGasto += gastoTotal;
+
+    // Detalle rendimientos por cuenta
+    var rendItems = rendRecs.map(function(r) {
       var cta = cuentaById[r.cuenta_id];
       var real = _rendReal(r);
-      return '<tr style="font-size:10px;color:#64748b"><td style="padding:2px 8px;white-space:nowrap">↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + '</td>'
-        + '<td style="padding:2px 8px;color:#64748b;white-space:nowrap">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;color:' + (real >= 0 ? '#059669' : '#dc2626') + '">' + fmt(real) + '</td>'
-        + '<td colspan="3"></td></tr>';
-    }).join('');
+      var color = real >= 0 ? '#059669' : '#dc2626';
+      return '<span style="white-space:nowrap">↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + '</span>'
+           + '<span style="float:right;color:' + color + ';white-space:nowrap;padding-left:8px">' + fmt(real) + '</span>'
+           + '<br><span style="color:#94a3b8;font-size:9px;white-space:nowrap">SI:' + fmt(r.saldo_inicial||0) + ' → SF:' + fmt(r.saldo_final||0) + '</span>';
+    });
 
     // Detalle gastos por categoria
     var catTotales = {};
@@ -3075,66 +3076,84 @@ function auditoriaRendGastos() {
       var cta = cuentaById[m.cuenta_id];
       catTotales[cn] = (catTotales[cn] || 0) + toMXN(m.monto, cta ? (cta.moneda || 'MXN') : 'MXN');
     });
-    var gastoDetalle = Object.keys(catTotales).sort().map(function(cn) {
-      return '<tr style="font-size:10px;color:#64748b"><td colspan="3"></td>'
-        + '<td style="padding:2px 8px">↳ ' + esc(cn) + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;color:#dc2626">' + fmt(catTotales[cn]) + '</td>'
-        + '<td></td></tr>';
-    }).join('');
+    var gastoItems = Object.keys(catTotales).sort().map(function(cn) {
+      return '<span style="white-space:nowrap">↳ ' + esc(cn) + '</span>'
+           + '<span style="float:right;color:#dc2626;white-space:nowrap;padding-left:8px">' + fmt(catTotales[cn]) + '</span>';
+    });
 
+    var maxLen = Math.max(rendItems.length, gastoItems.length);
     var hasRend  = rendRecs.length > 0;
     var hasGasto = gastoRecs.length > 0;
-    var rowBg = (hasRend || hasGasto) ? '#fff' : '#f8fafc';
+    var diff = rendTotal - gastoTotal;
+    var diffColor = diff >= 0 ? '#059669' : '#dc2626';
 
-    return '<tr style="background:' + rowBg + ';border-top:1px solid #e5e7eb">'
-      + '<td style="padding:6px 10px;white-space:nowrap;font-weight:600;color:#374151">' + mesLabel(per) + '</td>'
-      + '<td style="padding:6px 10px;text-align:right;color:' + (rendTotal > 0 ? '#059669' : rendTotal < 0 ? '#dc2626' : '#94a3b8') + ';font-weight:600">' + (hasRend ? fmt(rendTotal) : '—') + '</td>'
-      + '<td style="padding:6px 10px;color:#64748b;font-size:11px">' + rendRecs.length + ' registro(s)</td>'
-      + '<td style="padding:6px 10px;text-align:right;color:#dc2626;font-weight:600">' + (hasGasto ? fmt(gastoTotal) : '—') + '</td>'
-      + '<td style="padding:6px 10px;color:#64748b;font-size:11px">' + gastoRecs.length + ' movimiento(s)</td>'
-      + '<td style="padding:6px 10px;text-align:right;font-weight:600;color:#334155">' + fmt(rendTotal - gastoTotal) + '</td>'
-      + '</tr>'
-      + rendDetalle + gastoDetalle;
+    // Fila principal del mes
+    var out = '<tr style="background:#f8fafc;border-top:2px solid #cbd5e1;page-break-inside:avoid">'
+      + '<td style="padding:7px 10px;font-weight:700;font-size:13px;color:#0f172a;white-space:nowrap;vertical-align:top">' + mesLabel(per) + '</td>'
+      + '<td style="padding:7px 10px;text-align:right;vertical-align:top">'
+      +   '<div style="font-weight:700;font-size:13px;color:' + (hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8') + '">' + (hasRend ? fmt(rendTotal) : '—') + '</div>'
+      +   '<div style="font-size:9px;color:#94a3b8">' + rendRecs.length + ' registro(s)</div>'
+      + '</td>'
+      + '<td style="padding:7px 10px;text-align:right;vertical-align:top">'
+      +   '<div style="font-weight:700;font-size:13px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</div>'
+      +   '<div style="font-size:9px;color:#94a3b8">' + gastoRecs.length + ' movimiento(s)</div>'
+      + '</td>'
+      + '<td style="padding:7px 10px;text-align:right;font-weight:700;font-size:13px;color:' + diffColor + ';white-space:nowrap;vertical-align:top">' + fmt(diff) + '</td>'
+      + '</tr>';
+
+    // Filas de detalle (cuentas y categorias lado a lado)
+    for (var j = 0; j < maxLen; j++) {
+      out += '<tr style="background:#fff;font-size:10px;color:#475569">'
+        + '<td style="padding:1px 10px"></td>'
+        + '<td style="padding:2px 10px;overflow:hidden">' + (rendItems[j] || '') + '</td>'
+        + '<td style="padding:2px 10px;overflow:hidden">' + (gastoItems[j] || '') + '</td>'
+        + '<td></td></tr>';
+    }
+
+    // Separador visual al final del mes
+    out += '<tr><td colspan="4" style="padding:0;height:4px;background:#f1f5f9"></td></tr>';
+    return out;
   }).join('');
 
-  var totalRend  = periodos.reduce(function(s, per) {
-    return s + rends.filter(function(r) { return _periodoLogicoCierre(r.fecha || r.periodo) === per; })
-      .reduce(function(ss, r) { var cta = cuentaById[r.cuenta_id]; return ss + toMXN(_rendReal(r), cta ? (cta.moneda||'MXN') : 'MXN'); }, 0);
-  }, 0);
-  var totalGasto = periodos.reduce(function(s, per) {
-    return s + movs.filter(function(m) { return m.tipo === 'gasto' && !m.transferencia_id && (m.fecha||'').startsWith(per); })
-      .reduce(function(ss, m) { var cta = cuentaById[m.cuenta_id]; return ss + toMXN(m.monto, cta ? (cta.moneda||'MXN') : 'MXN'); }, 0);
-  }, 0);
+  var css = '*{box-sizing:border-box;margin:0;padding:0}'
+    + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;padding:20px;color:#111}'
+    + '.wrap{max-width:720px;margin:0 auto}'
+    + 'h1{font-size:17px;font-weight:700;margin-bottom:3px}'
+    + 'p{font-size:11px;color:#64748b;margin-bottom:16px}'
+    + '@media print{'
+    +   '@page{size:letter portrait;margin:1.2cm}'
+    +   'body{background:#fff;padding:0}'
+    +   '.wrap{max-width:none}'
+    +   'table{font-size:10px}'
+    +   'h1{font-size:14px}'
+    + '}';
 
-  var css = '*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;padding:24px;color:#111}.wrap{max-width:1100px;margin:0 auto}h1{font-size:19px;font-weight:700;margin-bottom:4px}p{font-size:13px;color:#64748b;margin-bottom:20px}';
-  var TH = '<tr style="background:#e2e8f0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475569">'
-    + '<th style="padding:6px 10px;text-align:left">Periodo</th>'
-    + '<th style="padding:6px 10px;text-align:right">Rendimientos</th>'
-    + '<th style="padding:6px 10px;text-align:left">Registros</th>'
-    + '<th style="padding:6px 10px;text-align:right">Gastos</th>'
-    + '<th style="padding:6px 10px;text-align:left">Movimientos</th>'
-    + '<th style="padding:6px 10px;text-align:right">Diferencia</th>'
+  var TH = '<tr style="background:#334155;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">'
+    + '<th style="padding:7px 10px;text-align:left;width:110px">Periodo</th>'
+    + '<th style="padding:7px 10px;text-align:right;width:200px">Rendimientos</th>'
+    + '<th style="padding:7px 10px;text-align:right;width:200px">Gastos</th>'
+    + '<th style="padding:7px 10px;text-align:right;width:110px">Diferencia</th>'
     + '</tr>';
-  var FOOT = '<tr style="background:#e2e8f0;font-weight:700;font-size:12px">'
-    + '<td style="padding:6px 10px">TOTAL 24 meses</td>'
-    + '<td style="padding:6px 10px;text-align:right;color:#059669">' + fmt(totalRend) + '</td>'
-    + '<td></td>'
-    + '<td style="padding:6px 10px;text-align:right;color:#dc2626">' + fmt(totalGasto) + '</td>'
-    + '<td></td>'
-    + '<td style="padding:6px 10px;text-align:right">' + fmt(totalRend - totalGasto) + '</td>'
+
+  var FOOT = '<tr style="background:#334155;color:#fff;font-weight:700;font-size:12px">'
+    + '<td style="padding:7px 10px">TOTAL ' + anio + '</td>'
+    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalRend) + '</td>'
+    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalGasto) + '</td>'
+    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalRend - totalGasto) + '</td>'
     + '</tr>';
-  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos</title><style>' + css + '</style></head><body>'
-    + '<div class="wrap"><h1>Auditoría — Rendimientos vs Gastos</h1>'
-    + '<p>Datos que alimentan la gráfica del Dashboard · Período: ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[periodos.length - 1]) + '</p>'
-    + '<div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">'
-    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos ' + anio + '</title><style>' + css + '</style></head><body>'
+    + '<div class="wrap">'
+    + '<h1>Auditoría — Rendimientos vs Gastos ' + anio + '</h1>'
+    + '<p>Datos que alimentan la gráfica del Dashboard · ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[11]) + '</p>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">'
     + '<thead>' + TH + '</thead>'
     + '<tbody>' + rows + '</tbody>'
     + '<tfoot>' + FOOT + '</tfoot>'
-    + '</table></div></div></body></html>';
+    + '</table></div></body></html>';
 
   var w = window.open('', '_blank');
   w.document.write(html);
   w.document.close();
-  console.log('Auditoría Rendimientos vs Gastos abierta. Totales → Rend:', fmt(totalRend), '| Gastos:', fmt(totalGasto));
+  console.log('Auditoría ' + anio + ' → Rend:', fmt(totalRend), '| Gastos:', fmt(totalGasto), '| Dif:', fmt(totalRend - totalGasto));
 }
