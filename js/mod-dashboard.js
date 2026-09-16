@@ -3064,9 +3064,10 @@ function auditoriaRendGastos() {
       var cta = cuentaById[r.cuenta_id];
       var real = _rendReal(r);
       var color = real >= 0 ? '#059669' : '#dc2626';
-      return '<span style="white-space:nowrap">↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + '</span>'
-           + '<span style="float:right;color:' + color + ';white-space:nowrap;padding-left:8px">' + fmt(real) + '</span>'
-           + '<br><span style="color:#94a3b8;font-size:9px;white-space:nowrap">SI:' + fmt(r.saldo_inicial||0) + ' → SF:' + fmt(r.saldo_final||0) + '</span>';
+      return '<div style="display:flex;justify-content:space-between;align-items:baseline;white-space:nowrap">'
+           + '<span>↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + ' <span style="color:#94a3b8;font-size:9px">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</span></span>'
+           + '<span style="color:' + color + ';padding-left:12px;flex-shrink:0">' + fmt(real) + '</span>'
+           + '</div>';
     });
 
     // Detalle gastos por categoria
