@@ -3064,9 +3064,9 @@ function auditoriaRendGastos() {
     var rendDetalle = rendRecs.map(function(r) {
       var cta = cuentaById[r.cuenta_id];
       var real = _rendReal(r);
-      return '<tr style="font-size:10px;color:#64748b"><td style="padding:2px 8px">↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + '</td>'
-        + '<td style="padding:2px 8px;color:#64748b">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;color:' + (real >= 0 ? '#059669' : '#dc2626') + '">' + fmt(real) + '</td>'
+      return '<tr style="font-size:10px;color:#64748b"><td style="padding:2px 8px;white-space:nowrap">↳ ' + esc(cta ? cta.nombre : r.cuenta_id) + '</td>'
+        + '<td style="padding:2px 8px;color:#64748b;white-space:nowrap">SI:' + fmt(r.saldo_inicial||0) + ' SF:' + fmt(r.saldo_final||0) + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;color:' + (real >= 0 ? '#059669' : '#dc2626') + '">' + fmt(real) + '</td>'
         + '<td colspan="3"></td></tr>';
     }).join('');
 
@@ -3129,8 +3129,7 @@ function auditoriaRendGastos() {
     + '<div class="wrap"><h1>Auditoría — Rendimientos vs Gastos</h1>'
     + '<p>Datos que alimentan la gráfica del Dashboard · Período: ' + mesLabel(periodos[0]) + ' → ' + mesLabel(periodos[23]) + '</p>'
     + '<div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">'
-    + '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">'
-    + '<colgroup><col style="width:70px"><col style="width:120px"><col style="width:110px"><col style="width:120px"><col style="width:130px"><col style="width:110px"></colgroup>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead>' + TH + '</thead>'
     + '<tbody>' + rows + '</tbody>'
     + '<tfoot>' + FOOT + '</tfoot>'
