@@ -60,7 +60,7 @@ function renderMovimientos() {
           <option value="">Año</option>
           ${(function() { var opts = ''; var cy = new Date().getFullYear(); for (var y = cy; y >= cy - 5; y--) opts += '<option value="' + y + '">' + y + '</option>'; return opts; })()}
         </select>
-        <select id="filterMovMes" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:100px;" onchange="filterMovimientos()">
+        <select id="filterMovMes" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:150px;" onchange="filterMovimientos()">
           <option value="">Mes</option>
           <option value="todos">Todos</option>
           <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
@@ -68,7 +68,7 @@ function renderMovimientos() {
           <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
           <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
         </select>
-        <select id="filterMovTipo" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:120px;" onchange="filterMovimientos()">
+        <select id="filterMovTipo" class="form-select" style="padding:8px 12px;font-size:17px;min-height:auto;width:160px;" onchange="filterMovimientos()">
           <option value="" disabled selected>Tipo</option>
           <option value="todos">Todos</option>
           <option value="ingreso">Ingreso</option>
