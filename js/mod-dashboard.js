@@ -3112,12 +3112,12 @@ function auditoriaRendGastos() {
       var ri = rendItems[j];
       var gi = gastoItems[j];
       out += '<tr style="background:#fff;font-size:10px;color:#334155;border-top:1px solid #f1f5f9">'
-        + '<td style="padding:2px 8px;white-space:nowrap">' + (ri ? '↳ ' + esc(ri.nombre) : '') + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:' + (ri ? ri.color : '#334155') + '">' + (ri ? fmt(ri.real) : '') + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px">' + (ri ? fmt(ri.si) : '') + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px;border-right:1px solid #e2e8f0">' + (ri ? fmt(ri.sf) : '') + '</td>'
-        + '<td style="padding:2px 8px;border-right:1px solid #e2e8f0">' + (gi ? '↳ ' + esc(gi.desc) : '') + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626">' + (gi ? fmt(gi.monto) : '') + '</td>'
+        + '<td style="padding:2px 6px;white-space:nowrap">' + (ri ? '↳ ' + esc(ri.nombre) : '') + '</td>'
+        + '<td style="padding:2px 6px;text-align:right;white-space:nowrap;font-weight:600;color:' + (ri ? ri.color : '#334155') + '">' + (ri ? fmt(ri.real) : '') + '</td>'
+        + '<td style="padding:2px 6px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px">' + (ri ? fmt(ri.si) : '') + '</td>'
+        + '<td style="padding:2px 6px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px;border-right:1px solid #e2e8f0">' + (ri ? fmt(ri.sf) : '') + '</td>'
+        + '<td style="padding:2px 6px;border-right:1px solid #e2e8f0">' + (gi ? '↳ ' + esc(gi.desc) : '') + '</td>'
+        + '<td style="padding:2px 6px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626">' + (gi ? fmt(gi.monto) : '') + '</td>'
         + '</tr>';
     }
 
@@ -3158,12 +3158,12 @@ function auditoriaRendGastos() {
     + '<th style="padding:7px 10px;text-align:center" colspan="2">Gastos</th>'
     + '</tr>'
     + '<tr style="background:#334155;color:#94a3b8;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">'
-    + '<th style="padding:4px 10px;text-align:left;border-right:1px solid #475569">Cuenta</th>'
-    + '<th style="padding:4px 8px;text-align:right">Rendimiento</th>'
-    + '<th style="padding:4px 8px;text-align:right">Saldo Inicial</th>'
-    + '<th style="padding:4px 8px;text-align:right;border-right:1px solid #475569">Saldo Final</th>'
-    + '<th style="padding:4px 8px;text-align:left">Descripción</th>'
-    + '<th style="padding:4px 8px;text-align:right">Monto</th>'
+    + '<th style="padding:4px 8px;text-align:left;border-right:1px solid #475569;width:19%">Cuenta</th>'
+    + '<th style="padding:4px 6px;text-align:right;width:13%">Rendimiento</th>'
+    + '<th style="padding:4px 6px;text-align:right;width:14%">Saldo Inicial</th>'
+    + '<th style="padding:4px 6px;text-align:right;border-right:1px solid #475569;width:14%">Saldo Final</th>'
+    + '<th style="padding:4px 8px;text-align:left;width:28%">Descripción</th>'
+    + '<th style="padding:4px 6px;text-align:right;width:12%">Monto</th>'
     + '</tr>';
 
   var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
