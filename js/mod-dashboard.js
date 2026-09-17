@@ -3130,11 +3130,19 @@ function auditoriaRendGastos() {
     + 'h1{font-size:17px;font-weight:700;margin-bottom:3px}'
     + 'p.sub{font-size:11px;color:#64748b;margin-bottom:16px}'
     + '@media print{'
-    +   '@page{size:letter landscape;margin:1cm}'
+    +   '@page{size:letter portrait;margin:1cm}'
     +   'body{background:#fff;padding:0}'
     +   '.wrap{max-width:none}'
-    +   'table{font-size:8.5px}'
+    +   'table{font-size:8px;table-layout:fixed;width:100%}'
     +   'h1{font-size:13px}'
+    +   'td,th{overflow:hidden;white-space:normal!important}'
+    +   'td:nth-child(1),th:nth-child(1){width:26%}'
+    +   'td:nth-child(2),th:nth-child(2){width:11%;text-align:right}'
+    +   'td:nth-child(3),th:nth-child(3){width:12%;text-align:right}'
+    +   'td:nth-child(4),th:nth-child(4){width:12%;text-align:right}'
+    +   'td:nth-child(5),th:nth-child(5){width:11%;text-align:right}'
+    +   'td:nth-child(6),th:nth-child(6){width:28%}'
+    +   'td,th{padding:2px 4px!important}'
     + '}';
 
   // 6 columnas: Periodo+Diferencia(misma celda) | Rendimiento | SI | SF | Monto | Descripcion
