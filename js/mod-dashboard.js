@@ -3148,8 +3148,11 @@ function auditoriaRendGastos() {
 
   // 6 columnas: Periodo+Diferencia(misma celda) | Rendimiento | SI | SF | Monto | Descripcion
   var TH = '<tr style="background:#1e293b;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">'
-    + '<th style="padding:7px 10px;text-align:left;border-right:1px solid #334155;white-space:nowrap">'
-    +   'Periodo <span style="font-size:9px;color:#94a3b8;font-weight:400">/ Diferencia</span>'
+    + '<th style="padding:7px 10px;border-right:1px solid #334155">'
+    +   '<div style="display:flex;justify-content:space-between;align-items:center;min-width:0">'
+    +     '<span style="white-space:nowrap">Periodo</span>'
+    +     '<span style="font-size:9px;color:#94a3b8;font-weight:400;white-space:nowrap;padding-left:20px">Diferencia</span>'
+    +   '</div>'
     + '</th>'
     + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="3">Rendimientos</th>'
     + '<th style="padding:7px 10px;text-align:center" colspan="2">Gastos</th>'
