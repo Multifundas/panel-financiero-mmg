@@ -3137,12 +3137,12 @@ function auditoriaRendGastos() {
     +   'table{font-size:8px;table-layout:fixed;width:100%}'
     +   'h1{font-size:13px}'
     +   'td,th{overflow:hidden;white-space:normal!important}'
-    +   'td:nth-child(1),th:nth-child(1){width:26%}'
-    +   'td:nth-child(2),th:nth-child(2){width:11%;text-align:right}'
-    +   'td:nth-child(3),th:nth-child(3){width:12%;text-align:right}'
-    +   'td:nth-child(4),th:nth-child(4){width:12%;text-align:right}'
-    +   'td:nth-child(5),th:nth-child(5){width:28%}'
-    +   'td:nth-child(6),th:nth-child(6){width:11%;text-align:right}'
+    +   'td:nth-child(1),th:nth-child(1){width:19%}'
+    +   'td:nth-child(2),th:nth-child(2){width:14%;text-align:right}'
+    +   'td:nth-child(3),th:nth-child(3){width:15%;text-align:right}'
+    +   'td:nth-child(4),th:nth-child(4){width:15%;text-align:right}'
+    +   'td:nth-child(5),th:nth-child(5){width:25%}'
+    +   'td:nth-child(6),th:nth-child(6){width:12%;text-align:right}'
     +   'td,th{padding:2px 4px!important}'
     + '}';
 
