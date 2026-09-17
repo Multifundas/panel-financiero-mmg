@@ -3085,11 +3085,13 @@ function auditoriaRendGastos() {
     var maxLen = Math.max(rendItems.length, gastoItems.length);
     var rendColor = hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8';
 
-    // Fila del mes: nombre + diferencia juntos a la izquierda
+    // Fila del mes: nombre izq, diferencia der — separados por el ancho de la columna Cuenta
     var out = '<tr style="background:#dbeafe;border-top:2px solid #1d4ed8">'
-      + '<td style="padding:5px 10px;white-space:nowrap">'
-      +   '<span style="font-weight:700;font-size:12px;color:#1e3a5f">' + mesLabel(per) + '</span>'
-      +   '  <span style="font-weight:700;font-size:12px;color:' + diffColor + '">' + fmt(diff) + '</span>'
+      + '<td style="padding:5px 10px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;min-width:0">'
+      +     '<span style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap">' + mesLabel(per) + '</span>'
+      +     '<span style="font-weight:700;font-size:12px;color:' + diffColor + ';white-space:nowrap;padding-left:20px">' + fmt(diff) + '</span>'
+      +   '</div>'
       + '</td>'
       + '<td colspan="3" style="padding:5px 10px">'
       +   '<span style="font-weight:700;font-size:12px;color:' + rendColor + '">' + (hasRend ? fmt(rendTotal) : '—') + '</span>'
@@ -3150,8 +3152,11 @@ function auditoriaRendGastos() {
     + '</tr>';
 
   var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
-    + '<td style="padding:7px 10px;white-space:nowrap">'
-    +   'TOTAL ' + anio + '  <span style="color:' + (totalRend - totalGasto >= 0 ? '#34d399' : '#f87171') + '">' + fmt(totalRend - totalGasto) + '</span>'
+    + '<td style="padding:7px 10px">'
+    +   '<div style="display:flex;justify-content:space-between;align-items:center;min-width:0">'
+    +     '<span>TOTAL ' + anio + '</span>'
+    +     '<span style="color:' + (totalRend - totalGasto >= 0 ? '#34d399' : '#f87171') + ';white-space:nowrap;padding-left:20px">' + fmt(totalRend - totalGasto) + '</span>'
+    +   '</div>'
     + '</td>'
     + '<td colspan="3" style="padding:7px 10px">' + fmt(totalRend) + '</td>'
     + '<td colspan="2" style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
