@@ -3085,13 +3085,11 @@ function auditoriaRendGastos() {
     var maxLen = Math.max(rendItems.length, gastoItems.length);
     var rendColor = hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8';
 
-    // Fila del mes: nombre a la izquierda, Diferencia a la derecha — en la misma celda
+    // Fila del mes: nombre + diferencia juntos a la izquierda
     var out = '<tr style="background:#dbeafe;border-top:2px solid #1d4ed8">'
-      + '<td style="padding:5px 10px">'
-      +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
-      +     '<span style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap">' + mesLabel(per) + '</span>'
-      +     '<span style="font-weight:700;font-size:12px;color:' + diffColor + ';white-space:nowrap">' + fmt(diff) + '</span>'
-      +   '</div>'
+      + '<td style="padding:5px 10px;white-space:nowrap">'
+      +   '<span style="font-weight:700;font-size:12px;color:#1e3a5f">' + mesLabel(per) + '</span>'
+      +   '  <span style="font-weight:700;font-size:12px;color:' + diffColor + '">' + fmt(diff) + '</span>'
       + '</td>'
       + '<td colspan="3" style="padding:5px 10px">'
       +   '<span style="font-weight:700;font-size:12px;color:' + rendColor + '">' + (hasRend ? fmt(rendTotal) : '—') + '</span>'
@@ -3136,10 +3134,8 @@ function auditoriaRendGastos() {
 
   // 6 columnas: Periodo+Diferencia(misma celda) | Rendimiento | SI | SF | Monto | Descripcion
   var TH = '<tr style="background:#1e293b;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">'
-    + '<th style="padding:7px 10px;border-right:1px solid #334155">'
-    +   '<div style="display:flex;justify-content:space-between;align-items:center">'
-    +     '<span>Periodo</span><span style="font-size:9px;color:#94a3b8;font-weight:400">Diferencia</span>'
-    +   '</div>'
+    + '<th style="padding:7px 10px;text-align:left;border-right:1px solid #334155;white-space:nowrap">'
+    +   'Periodo <span style="font-size:9px;color:#94a3b8;font-weight:400">/ Diferencia</span>'
     + '</th>'
     + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="3">Rendimientos</th>'
     + '<th style="padding:7px 10px;text-align:center" colspan="2">Gastos</th>'
@@ -3154,11 +3150,8 @@ function auditoriaRendGastos() {
     + '</tr>';
 
   var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
-    + '<td style="padding:7px 10px">'
-    +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
-    +     '<span>TOTAL ' + anio + '</span>'
-    +     '<span style="color:' + (totalRend - totalGasto >= 0 ? '#34d399' : '#f87171') + '">' + fmt(totalRend - totalGasto) + '</span>'
-    +   '</div>'
+    + '<td style="padding:7px 10px;white-space:nowrap">'
+    +   'TOTAL ' + anio + '  <span style="color:' + (totalRend - totalGasto >= 0 ? '#34d399' : '#f87171') + '">' + fmt(totalRend - totalGasto) + '</span>'
     + '</td>'
     + '<td colspan="3" style="padding:7px 10px">' + fmt(totalRend) + '</td>'
     + '<td colspan="2" style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
