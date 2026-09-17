@@ -3085,9 +3085,14 @@ function auditoriaRendGastos() {
     var maxLen = Math.max(rendItems.length, gastoItems.length);
     var rendColor = hasRend ? (rendTotal >= 0 ? '#059669' : '#dc2626') : '#94a3b8';
 
-    // Fila del nombre del mes — va en la columna Cuenta, totales en sus columnas
+    // Fila del mes: nombre a la izquierda, Diferencia a la derecha — en la misma celda
     var out = '<tr style="background:#dbeafe;border-top:2px solid #1d4ed8">'
-      + '<td style="padding:5px 10px;font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap">' + mesLabel(per) + '</td>'
+      + '<td style="padding:5px 10px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+      +     '<span style="font-weight:700;font-size:12px;color:#1e3a5f;white-space:nowrap">' + mesLabel(per) + '</span>'
+      +     '<span style="font-weight:700;font-size:12px;color:' + diffColor + ';white-space:nowrap">' + fmt(diff) + '</span>'
+      +   '</div>'
+      + '</td>'
       + '<td colspan="3" style="padding:5px 10px">'
       +   '<span style="font-weight:700;font-size:12px;color:' + rendColor + '">' + (hasRend ? fmt(rendTotal) : '—') + '</span>'
       +   ' <span style="font-size:9px;color:#64748b">' + rendRecs.length + ' reg</span>'
@@ -3096,10 +3101,9 @@ function auditoriaRendGastos() {
       +   '<span style="font-weight:700;font-size:12px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</span>'
       +   ' <span style="font-size:9px;color:#64748b">' + gastoRecs.length + ' mov</span>'
       + '</td>'
-      + '<td style="padding:5px 10px;text-align:center;font-weight:700;font-size:12px;color:' + diffColor + ';white-space:nowrap">' + fmt(diff) + '</td>'
       + '</tr>';
 
-    // Filas de detalle — 7 celdas completas
+    // Filas de detalle — 6 celdas
     for (var j = 0; j < maxLen; j++) {
       var ri = rendItems[j];
       var gi = gastoItems[j];
@@ -3110,11 +3114,10 @@ function auditoriaRendGastos() {
         + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px;border-right:1px solid #e2e8f0">' + (ri ? fmt(ri.sf) : '') + '</td>'
         + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626">' + (gi ? fmt(gi.monto) : '') + '</td>'
         + '<td style="padding:2px 8px;border-right:1px solid #e2e8f0">' + (gi ? '↳ ' + esc(gi.desc) : '') + '</td>'
-        + '<td></td>'
         + '</tr>';
     }
 
-    out += '<tr><td colspan="7" style="padding:0;height:5px;background:#e2e8f0"></td></tr>';
+    out += '<tr><td colspan="6" style="padding:0;height:5px;background:#e2e8f0"></td></tr>';
     return out;
   }).join('');
 
@@ -3131,13 +3134,15 @@ function auditoriaRendGastos() {
     +   'h1{font-size:13px}'
     + '}';
 
-  // Header fila 1: "Periodo" encima de "Cuenta" | Rendimientos(colspan=3) | Gastos(colspan=2) | Diferencia
-  // Header fila 2: Cuenta | Rendimiento | SI | SF | Monto | Descripción | (vacío — cubierto por Diferencia rowspan)
+  // 6 columnas: Periodo+Diferencia(misma celda) | Rendimiento | SI | SF | Monto | Descripcion
   var TH = '<tr style="background:#1e293b;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">'
-    + '<th style="padding:7px 10px;text-align:left;white-space:nowrap;border-right:1px solid #334155">Periodo</th>'
+    + '<th style="padding:7px 10px;border-right:1px solid #334155">'
+    +   '<div style="display:flex;justify-content:space-between;align-items:center">'
+    +     '<span>Periodo</span><span style="font-size:9px;color:#94a3b8;font-weight:400">Diferencia</span>'
+    +   '</div>'
+    + '</th>'
     + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="3">Rendimientos</th>'
-    + '<th style="padding:7px 10px;text-align:center;border-right:1px solid #334155" colspan="2">Gastos</th>'
-    + '<th style="padding:7px 10px;text-align:center;white-space:nowrap">Diferencia</th>'
+    + '<th style="padding:7px 10px;text-align:center" colspan="2">Gastos</th>'
     + '</tr>'
     + '<tr style="background:#334155;color:#94a3b8;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">'
     + '<th style="padding:4px 10px;text-align:left;border-right:1px solid #475569">Cuenta</th>'
@@ -3145,15 +3150,18 @@ function auditoriaRendGastos() {
     + '<th style="padding:4px 8px;text-align:right">Saldo Inicial</th>'
     + '<th style="padding:4px 8px;text-align:right;border-right:1px solid #475569">Saldo Final</th>'
     + '<th style="padding:4px 8px;text-align:right">Monto</th>'
-    + '<th style="padding:4px 8px;text-align:left;border-right:1px solid #475569">Descripción</th>'
-    + '<th></th>'
+    + '<th style="padding:4px 8px;text-align:left">Descripción</th>'
     + '</tr>';
 
   var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
-    + '<td style="padding:7px 10px;white-space:nowrap">TOTAL ' + anio + '</td>'
+    + '<td style="padding:7px 10px">'
+    +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+    +     '<span>TOTAL ' + anio + '</span>'
+    +     '<span style="color:' + (totalRend - totalGasto >= 0 ? '#34d399' : '#f87171') + '">' + fmt(totalRend - totalGasto) + '</span>'
+    +   '</div>'
+    + '</td>'
     + '<td colspan="3" style="padding:7px 10px">' + fmt(totalRend) + '</td>'
     + '<td colspan="2" style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
-    + '<td style="padding:7px 10px;text-align:center;white-space:nowrap">' + fmt(totalRend - totalGasto) + '</td>'
     + '</tr>';
 
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos ' + anio + '</title><style>' + css + '</style></head><body>'
