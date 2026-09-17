@@ -3100,7 +3100,8 @@ function auditoriaRendGastos() {
       +   '<span style="font-weight:700;font-size:12px;color:' + rendColor + '">' + (hasRend ? fmt(rendTotal) : '—') + '</span>'
       +   ' <span style="font-size:9px;color:#64748b">' + rendRecs.length + ' reg</span>'
       + '</td>'
-      + '<td colspan="2" style="padding:5px 10px;text-align:center">'
+      + '<td style="padding:5px 10px"></td>'
+      + '<td style="padding:5px 10px;text-align:right">'
       +   '<span style="font-weight:700;font-size:12px;color:' + (hasGasto ? '#dc2626' : '#94a3b8') + '">' + (hasGasto ? fmt(gastoTotal) : '—') + '</span>'
       +   ' <span style="font-size:9px;color:#64748b">' + gastoRecs.length + ' mov</span>'
       + '</td>'
@@ -3115,8 +3116,8 @@ function auditoriaRendGastos() {
         + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:' + (ri ? ri.color : '#334155') + '">' + (ri ? fmt(ri.real) : '') + '</td>'
         + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px">' + (ri ? fmt(ri.si) : '') + '</td>'
         + '<td style="padding:2px 8px;text-align:right;color:#64748b;white-space:nowrap;font-size:9px;border-right:1px solid #e2e8f0">' + (ri ? fmt(ri.sf) : '') + '</td>'
-        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626">' + (gi ? fmt(gi.monto) : '') + '</td>'
         + '<td style="padding:2px 8px;border-right:1px solid #e2e8f0">' + (gi ? '↳ ' + esc(gi.desc) : '') + '</td>'
+        + '<td style="padding:2px 8px;text-align:right;white-space:nowrap;font-weight:600;color:#dc2626">' + (gi ? fmt(gi.monto) : '') + '</td>'
         + '</tr>';
     }
 
@@ -3140,8 +3141,8 @@ function auditoriaRendGastos() {
     +   'td:nth-child(2),th:nth-child(2){width:11%;text-align:right}'
     +   'td:nth-child(3),th:nth-child(3){width:12%;text-align:right}'
     +   'td:nth-child(4),th:nth-child(4){width:12%;text-align:right}'
-    +   'td:nth-child(5),th:nth-child(5){width:11%;text-align:right}'
-    +   'td:nth-child(6),th:nth-child(6){width:28%}'
+    +   'td:nth-child(5),th:nth-child(5){width:28%}'
+    +   'td:nth-child(6),th:nth-child(6){width:11%;text-align:right}'
     +   'td,th{padding:2px 4px!important}'
     + '}';
 
@@ -3158,8 +3159,8 @@ function auditoriaRendGastos() {
     + '<th style="padding:4px 8px;text-align:right">Rendimiento</th>'
     + '<th style="padding:4px 8px;text-align:right">Saldo Inicial</th>'
     + '<th style="padding:4px 8px;text-align:right;border-right:1px solid #475569">Saldo Final</th>'
-    + '<th style="padding:4px 8px;text-align:right">Monto</th>'
     + '<th style="padding:4px 8px;text-align:left">Descripción</th>'
+    + '<th style="padding:4px 8px;text-align:right">Monto</th>'
     + '</tr>';
 
   var FOOT = '<tr style="background:#1e293b;color:#fff;font-weight:700;font-size:12px">'
@@ -3170,7 +3171,8 @@ function auditoriaRendGastos() {
     +   '</div>'
     + '</td>'
     + '<td colspan="3" style="padding:7px 10px">' + fmt(totalRend) + '</td>'
-    + '<td colspan="2" style="padding:7px 10px">' + fmt(totalGasto) + '</td>'
+    + '<td style="padding:7px 10px"></td>'
+    + '<td style="padding:7px 10px;text-align:right">' + fmt(totalGasto) + '</td>'
     + '</tr>';
 
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Auditoría Rend vs Gastos ' + anio + '</title><style>' + css + '</style></head><body>'
