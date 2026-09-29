@@ -90,18 +90,63 @@ function renderPrestamos() {
         <button class="btn btn-primary" onclick="editPrestamo(null)"><i class="fas fa-plus"></i> Nuevo Prestamo</button>
       </div>
     </div>
+    <div id="prestamosBreadcrumb" style="display:none;margin-bottom:12px;"></div>
     <div class="card">
       <div style="overflow-x:auto;">
         <table class="data-table sortable-table" id="tablaPrestamos">
-          <thead><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Tasa</th><th>Vencimiento</th><th>Estado</th><th style="text-align:center;" data-no-sort="true">Acciones</th></tr></thead>
+          <thead id="theadPrestamos"><tr><th>Persona</th><th>Tipo</th><th style="text-align:right;">Monto Original</th><th style="text-align:right;">Saldo Pendiente</th><th style="text-align:right;">Tasa</th><th>Vencimiento</th><th>Estado</th><th style="text-align:center;" data-no-sort="true">Acciones</th></tr></thead>
           <tbody id="tbodyPrestamos"></tbody>
         </table>
       </div>
     </div>
     </div>
     <div id="prestamosEdicionTab" style="display:none;"></div>`;
+  _prestamoDetalleId = null;
   filterPrestamos();
   setTimeout(function() { _initSortableTables(el); }, 100);
+}
+
+var _prestamoDetalleId = null;
+
+function _expandirPrestamo(id) {
+  _prestamoDetalleId = id;
+  filterPrestamos();
+}
+
+function _volverPrestamosSummary() {
+  _prestamoDetalleId = null;
+  filterPrestamos();
+}
+
+function _buildPrestamoRow(p, tiposCambio, modoSummary) {
+  var tipoBadge = p.tipo === 'otorgado' ? 'badge-amber' : 'badge-blue';
+  var tipoLabel = p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido';
+  var estadoBadge = 'badge-green', estadoLabel = 'Activo';
+  if (p.estado === 'pagado') { estadoBadge = 'badge-blue'; estadoLabel = 'Pagado'; }
+  else if (p.estado === 'vencido') { estadoBadge = 'badge-red'; estadoLabel = 'Vencido'; }
+  var tasa = p.tasa_interes ? formatPct(p.tasa_interes) : '0.00%';
+  var venc = p.fecha_vencimiento ? formatDate(p.fecha_vencimiento) : '\u2014';
+  var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+  acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verHistorialPagos(\'' + p.id + '\')" title="Ver historial completo"><i class="fas fa-history"></i></button>';
+  if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
+  if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
+  acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
+  var sc = p.saldo_pendiente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
+  var moneda = p.moneda || 'MXN';
+  var expandAttr = modoSummary ? ' onclick="_expandirPrestamo(\'' + p.id + '\')" style="cursor:pointer;background:rgba(59,130,246,0.04);border-top:2px solid var(--border-color);"' : ' data-sort-fixed="true" style="background:rgba(59,130,246,0.08);border-top:2px solid var(--accent-blue);"';
+  var personaCell = modoSummary
+    ? '<td style="font-weight:700;color:var(--text-primary);"><i class="fas fa-chevron-right" style="font-size:10px;color:var(--text-muted);margin-right:6px;"></i>' + p.persona + '</td>'
+    : '<td style="font-weight:700;color:var(--text-primary);">' + p.persona + '</td>';
+  return '<tr' + expandAttr + '>'
+    + personaCell
+    + '<td><span class="badge ' + tipoBadge + '">' + tipoLabel + '</span></td>'
+    + '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(p.monto_original, moneda) + '</td>'
+    + '<td style="text-align:right;font-weight:700;color:' + sc + ';">' + formatCurrencyInt(p.saldo_pendiente, moneda) + '</td>'
+    + '<td style="text-align:right;">' + tasa + '</td>'
+    + '<td>' + venc + '</td>'
+    + '<td><span class="badge ' + estadoBadge + '">' + estadoLabel + '</span></td>'
+    + '<td style="text-align:center;" onclick="event.stopPropagation();">' + acc + '</td>'
+    + '</tr>';
 }
 
 function filterPrestamos() {
@@ -137,41 +182,62 @@ function filterPrestamos() {
   if (kpiB) { kpiB.textContent = formatCurrencyInt(balanceNeto, 'MXN'); kpiB.style.color = balanceNeto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'; }
 
   const tbody = document.getElementById('tbodyPrestamos');
+  const breadcrumb = document.getElementById('prestamosBreadcrumb');
+  const table = document.getElementById('tablaPrestamos');
   if (!tbody) return;
+
+  // Reset sort so it re-initializes after content swap
+  if (table) table.removeAttribute('data-sortable-init');
+
+  // \u2500\u2500 DETAIL VIEW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (_prestamoDetalleId) {
+    var p = prestamos.find(function(x) { return x.id === _prestamoDetalleId; });
+    if (!p) { _prestamoDetalleId = null; }
+    else {
+      // Breadcrumb
+      if (breadcrumb) {
+        breadcrumb.style.display = 'block';
+        breadcrumb.innerHTML = '<button class="btn btn-secondary" style="padding:4px 12px;font-size:14px;" onclick="_volverPrestamosSummary()">'
+          + '<i class="fas fa-arrow-left" style="margin-right:6px;"></i>Todos los pr\u00e9stamos'
+          + '</button>'
+          + '<span style="margin-left:12px;font-weight:600;color:var(--text-primary);">' + p.persona + '</span>'
+          + '<span style="margin-left:8px;color:var(--text-muted);font-size:13px;">\u2014 ' + (p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido') + '</span>';
+      }
+      var moneda = p.moneda || 'MXN';
+      var pagos = (p.pagos || []).slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+      var pagosRows = pagos.map(function(pg) {
+        var esAdicional = pg.tipo === 'prestamo_adicional';
+        var pgTipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:12px;padding:1px 6px;">Adicional</span>' : '<span class="badge badge-green" style="font-size:12px;padding:1px 6px;">Abono</span>';
+        var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
+        var prefix = esAdicional ? '+' : '-';
+        var pgAcc = '<button class="btn btn-secondary" style="padding:3px 6px;font-size:13px;margin-right:3px;" onclick="_editPagoInline(\'' + p.id + '\',\'' + pg.id + '\')" title="Editar pago"><i class="fas fa-pencil-alt"></i></button>'
+          + '<button class="btn btn-danger" style="padding:3px 6px;font-size:13px;" onclick="_deletePagoEdicion(\'' + p.id + '\',\'' + pg.id + '\')" title="Eliminar pago"><i class="fas fa-trash"></i></button>';
+        return '<tr style="font-size:14px;">'
+          + '<td style="color:var(--text-muted);font-size:14px;">' + (pg.descripcion || 'Pago') + '</td>'
+          + '<td>' + pgTipoBadge + '</td>'
+          + '<td style="text-align:right;color:' + montoColor + ';font-weight:600;font-size:14px;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td>'
+          + '<td></td><td></td>'
+          + '<td style="font-size:14px;">' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td>'
+          + '<td></td>'
+          + '<td style="text-align:center;">' + pgAcc + '</td>'
+          + '</tr>';
+      }).join('');
+      tbody.innerHTML = pagosRows + _buildPrestamoRow(p, tiposCambio, false);
+      setTimeout(function() { _initSortableTables(document.getElementById('tablaPrestamos').closest('.card')); }, 50);
+      return;
+    }
+  }
+
+  // \u2500\u2500 SUMMARY VIEW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (breadcrumb) breadcrumb.style.display = 'none';
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="fas fa-search" style="font-size:29px;display:block;margin-bottom:8px;opacity:0.4;"></i>No se encontraron prestamos con los filtros aplicados.</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map(function(p, idx) {
-    var tipoBadge = p.tipo === 'otorgado' ? 'badge-amber' : 'badge-blue';
-    var tipoLabel = p.tipo === 'otorgado' ? 'Otorgado' : 'Recibido';
-    var estadoBadge = 'badge-green', estadoLabel = 'Activo';
-    if (p.estado === 'pagado') { estadoBadge = 'badge-blue'; estadoLabel = 'Pagado'; }
-    else if (p.estado === 'vencido') { estadoBadge = 'badge-red'; estadoLabel = 'Vencido'; }
-    var tasa = p.tasa_interes ? formatPct(p.tasa_interes) : '0.00%';
-    var venc = p.fecha_vencimiento ? formatDate(p.fecha_vencimiento) : '\u2014';
-    var acc = '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="editPrestamo(\'' + p.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
-    acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-blue);color:var(--accent-blue);" onclick="verHistorialPagos(\'' + p.id + '\')" title="Ver historial completo"><i class="fas fa-history"></i></button>';
-    if (p.estado === 'activo') acc += '<button class="btn btn-primary" style="padding:4px 8px;font-size:16px;margin-right:4px;" onclick="registrarPago(\'' + p.id + '\')" title="Registrar Pago"><i class="fas fa-money-bill-wave"></i></button>';
-    if (p.estado === 'activo') acc += '<button class="btn btn-secondary" style="padding:4px 8px;font-size:16px;margin-right:4px;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="prestarMas(\'' + p.id + '\')" title="Prestar Mas"><i class="fas fa-plus-circle"></i></button>';
-    acc += '<button class="btn btn-danger" style="padding:4px 8px;font-size:16px;" onclick="deletePrestamo(\'' + p.id + '\')" title="Eliminar"><i class="fas fa-trash"></i></button>';
-    var sc = p.saldo_pendiente > 0 ? 'var(--accent-amber)' : 'var(--accent-green)';
-    var moneda = p.moneda || 'MXN';
-    // Main prestamo row with highlight background
-    var prestamoRow = '<tr style="background:rgba(59,130,246,0.04);border-top:2px solid var(--border-color);"><td style="font-weight:700;color:var(--text-primary);">' + p.persona + '</td><td><span class="badge ' + tipoBadge + '">' + tipoLabel + '</span></td><td style="text-align:right;font-weight:700;color:var(--text-primary);">' + formatCurrencyInt(p.monto_original, moneda) + '</td><td style="text-align:right;font-weight:700;color:' + sc + ';">' + formatCurrencyInt(p.saldo_pendiente, moneda) + '</td><td style="text-align:right;">' + tasa + '</td><td>' + venc + '</td><td><span class="badge ' + estadoBadge + '">' + estadoLabel + '</span></td><td style="text-align:center;">' + acc + '</td></tr>';
-    // Payment sub-rows
-    var pagos = (p.pagos || []).slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
-    var pagosRows = pagos.map(function(pg) {
-      var esAdicional = pg.tipo === 'prestamo_adicional';
-      var pgTipoBadge = esAdicional ? '<span class="badge badge-amber" style="font-size:12px;padding:1px 6px;">Adicional</span>' : '<span class="badge badge-green" style="font-size:12px;padding:1px 6px;">Abono</span>';
-      var montoColor = esAdicional ? 'var(--accent-amber)' : 'var(--accent-green)';
-      var prefix = esAdicional ? '+' : '-';
-      var pgAcc = '<button class="btn btn-secondary" style="padding:3px 6px;font-size:13px;margin-right:3px;" onclick="_editPagoInline(\'' + p.id + '\',\'' + pg.id + '\')" title="Editar pago"><i class="fas fa-pencil-alt"></i></button>' +
-        '<button class="btn btn-danger" style="padding:3px 6px;font-size:13px;" onclick="_deletePagoEdicion(\'' + p.id + '\',\'' + pg.id + '\')" title="Eliminar pago"><i class="fas fa-trash"></i></button>';
-      return '<tr data-sort-group-child="true" style="font-size:14px;"><td style="padding-left:24px;color:var(--text-muted);font-size:14px;"><i class="fas fa-level-up-alt fa-rotate-90" style="margin-right:6px;font-size:11px;opacity:0.4;"></i>' + (pg.descripcion || 'Pago') + '</td><td>' + pgTipoBadge + '</td><td style="text-align:right;color:' + montoColor + ';font-weight:600;font-size:14px;">' + prefix + formatCurrencyInt(pg.monto, moneda) + '</td><td></td><td></td><td style="font-size:14px;">' + (pg.fecha ? formatDate(pg.fecha) : '\u2014') + '</td><td></td><td style="text-align:center;">' + pgAcc + '</td></tr>';
-    }).join('');
-    return prestamoRow + pagosRows;
+  tbody.innerHTML = filtered.map(function(p) {
+    return _buildPrestamoRow(p, tiposCambio, true);
   }).join('');
+  setTimeout(function() { _initSortableTables(document.getElementById('tablaPrestamos').closest('.card')); }, 50);
 }
 
 function editPrestamo(id) {
