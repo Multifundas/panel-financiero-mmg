@@ -348,53 +348,59 @@ function _initSortableTables(root) {
         tbodies.forEach(function(tbody) {
           var allRows = Array.from(tbody.querySelectorAll('tr'));
 
-          // Separate fixed rows (section headers, subtotals) from sortable data rows
-          // Fixed rows keep their position; only data rows between them get sorted
-          var segments = []; // array of { fixed: tr|null, dataRows: [tr...] }
-          var currentSegment = { fixed: null, dataRows: [] };
-
+          // Build sortable units: rows with data-sort-group-child="true" stick to the
+          // preceding non-child row so groups (e.g. loan + its payments) sort as one block.
+          var units = [];
           allRows.forEach(function(row) {
-            if (row.getAttribute('data-sort-fixed') === 'true') {
-              // Save current segment if it has data rows
-              if (currentSegment.dataRows.length > 0 || currentSegment.fixed) {
-                segments.push(currentSegment);
-              }
-              currentSegment = { fixed: row, dataRows: [] };
+            if (row.getAttribute('data-sort-group-child') === 'true' && units.length > 0) {
+              units[units.length - 1].rows.push(row);
             } else {
-              currentSegment.dataRows.push(row);
+              units.push({ fixed: row.getAttribute('data-sort-fixed') === 'true', rows: [row] });
             }
           });
-          // Push last segment
-          if (currentSegment.dataRows.length > 0 || currentSegment.fixed) {
+
+          // Separate fixed units (section headers, subtotals) from sortable units
+          var segments = [];
+          var currentSegment = { fixed: null, dataUnits: [] };
+          units.forEach(function(unit) {
+            if (unit.fixed) {
+              if (currentSegment.dataUnits.length > 0 || currentSegment.fixed) {
+                segments.push(currentSegment);
+              }
+              currentSegment = { fixed: unit.rows[0], dataUnits: [] };
+            } else {
+              currentSegment.dataUnits.push(unit);
+            }
+          });
+          if (currentSegment.dataUnits.length > 0 || currentSegment.fixed) {
             segments.push(currentSegment);
           }
 
-          // Sort data rows within each segment
+          // Sort units within each segment by the header row's cell value
           var sortFn = function(a, b) {
-            var cellA = a.cells[colIdx];
-            var cellB = b.cells[colIdx];
+            var cellA = a.rows[0].cells[colIdx];
+            var cellB = b.rows[0].cells[colIdx];
             if (!cellA || !cellB) return 0;
             var txtA = cellA.textContent.trim();
             var txtB = cellB.textContent.trim();
-
-            // Try numeric comparison (strip currency symbols, commas)
             var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
             var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
             if (!isNaN(numA) && !isNaN(numB)) {
               return newDir === 'asc' ? numA - numB : numB - numA;
             }
-            // Fallback: string comparison
             return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
           };
 
           segments.forEach(function(seg) {
-            seg.dataRows.sort(sortFn);
+            seg.dataUnits.sort(sortFn);
           });
 
           // Re-append all rows in correct order
           segments.forEach(function(seg) {
             if (seg.fixed) tbody.appendChild(seg.fixed);
-            seg.dataRows.forEach(function(row) { tbody.appendChild(row); });
+            seg.dataUnits.forEach(function(unit) {
+              unit.rows.forEach(function(row) { tbody.appendChild(row); });
+            });
           });
         });
       });
