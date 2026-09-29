@@ -186,9 +186,6 @@ function filterPrestamos() {
   const table = document.getElementById('tablaPrestamos');
   if (!tbody) return;
 
-  // Reset sort so it re-initializes after content swap
-  if (table) table.removeAttribute('data-sortable-init');
-
   // \u2500\u2500 DETAIL VIEW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   if (_prestamoDetalleId) {
     var p = prestamos.find(function(x) { return x.id === _prestamoDetalleId; });
@@ -223,7 +220,6 @@ function filterPrestamos() {
           + '</tr>';
       }).join('');
       tbody.innerHTML = pagosRows + _buildPrestamoRow(p, tiposCambio, false);
-      setTimeout(function() { _initSortableTables(document.getElementById('tablaPrestamos').closest('.card')); }, 50);
       return;
     }
   }
@@ -237,7 +233,6 @@ function filterPrestamos() {
   tbody.innerHTML = filtered.map(function(p) {
     return _buildPrestamoRow(p, tiposCambio, true);
   }).join('');
-  setTimeout(function() { _initSortableTables(document.getElementById('tablaPrestamos').closest('.card')); }, 50);
 }
 
 function editPrestamo(id) {
