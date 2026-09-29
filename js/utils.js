@@ -383,17 +383,17 @@ function _initSortableTables(root) {
             if (!cellA || !cellB) return 0;
             var txtA = cellA.textContent.trim();
             var txtB = cellB.textContent.trim();
-            var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
-            var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
-            if (!isNaN(numA) && !isNaN(numB)) {
-              return newDir === 'asc' ? numA - numB : numB - numA;
-            }
-            // DD/MM/YYYY date comparison — convert to YYYYMMDD so string sort is chronological
+            // DD/MM/YYYY date check FIRST — stripping slashes gives a false numeric match
             var dateRe = /^(\d{2})\/(\d{2})\/(\d{4})$/;
             var dA = txtA.match(dateRe), dB = txtB.match(dateRe);
             if (dA && dB) {
               var isoA = dA[3] + dA[2] + dA[1], isoB = dB[3] + dB[2] + dB[1];
               return newDir === 'asc' ? isoA.localeCompare(isoB) : isoB.localeCompare(isoA);
+            }
+            var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
+            var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
+            if (!isNaN(numA) && !isNaN(numB)) {
+              return newDir === 'asc' ? numA - numB : numB - numA;
             }
             return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
           };
