@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001f
+   PDF BANK STATEMENT IMPORT MODULE  v20261001g
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1818,28 +1818,16 @@ function displayPdfPreview(banco) {
     + '</div>'
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
     + (function() {
-        if (_pdfExcluirIngresos && ingresos.length > 0) {
-          return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
-            + '<i class="fas fa-info-circle" style="color:var(--accent-amber);margin-right:6px;"></i>'
-            + '<strong>' + ingresos.length + ' crédito(s) del estado de TC excluidos</strong>'
-            + ' — pagos anteriores y bonificaciones no se importan a la chequera.'
-            + (function() {
-                var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
-                var pares = ingresos.filter(function(r){ return montos[r.monto]; });
-                return pares.length > 0
-                  ? ' <span style="color:var(--text-muted);">(' + pares.length + ' par(es) cargo+abono mismo monto detectados)</span>'
-                  : '';
-              }())
-            + '</div>';
-        }
-        var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
-        var pares = ingresos.filter(function(r){ return montos[r.monto]; });
-        if (pares.length > 0) {
-          return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
-            + '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);margin-right:6px;"></i>'
-            + '<strong>' + pares.length + ' par(es) cargo+abono del mismo monto</strong> — posibles bonificaciones o plazos.'
-            + ' <button onclick="togglePdfExclIngr()" class="btn btn-secondary" style="padding:2px 10px;font-size:12px;margin-left:8px;border-color:var(--accent-amber);color:var(--accent-amber);">Excluir ingresos</button>'
-            + '</div>';
+        if (!_pdfExcluirIngresos && ingresos.length > 0) {
+          var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
+          var pares = ingresos.filter(function(r){ return montos[r.monto]; });
+          if (pares.length > 0) {
+            return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
+              + '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);margin-right:6px;"></i>'
+              + '<strong>' + pares.length + ' par(es) cargo+abono del mismo monto</strong> — posibles bonificaciones o plazos.'
+              + ' <button onclick="togglePdfExclIngr()" class="btn btn-secondary" style="padding:2px 10px;font-size:12px;margin-left:8px;border-color:var(--accent-amber);color:var(--accent-amber);">Excluir ingresos</button>'
+              + '</div>';
+          }
         }
         return '';
       }())
