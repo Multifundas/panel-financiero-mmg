@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001i
+   PDF BANK STATEMENT IMPORT MODULE  v20261001j
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1791,38 +1791,60 @@ function displayPdfPreview(banco) {
   }
 
   var html = datalistHtml
-    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:' + (metaChips ? '6px' : '10px') + ';">'
-    +   '<span class="badge badge-blue" style="font-size:15px;">'
-    +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' movimientos'
+    // ── Fila 1: banco · clasificación · totales · acciones ──────────────────
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
+    +   '<span class="badge badge-blue" style="font-size:14px;">'
+    +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' mov.'
     +   '</span>'
-    +   '<span class="badge badge-red" style="font-size:15px;">' + gastos.length + ' gastos</span>'
+    +   '<span class="badge badge-red" style="font-size:14px;">' + gastos.length + ' gastos</span>'
     +   ingresoBadge
-    +   '<span class="pdf-print-hide" style="font-size:13px;color:var(--text-muted);display:flex;gap:10px;align-items:center;">'
-    +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + ' historial&ensp;'
-    +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + ' regla&ensp;'
+    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:center;">'
+    +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + '&ensp;'
+    +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + '&ensp;'
     +     (nRevisar > 0
         ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
-        : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i> <span style="color:var(--accent-green);">todos clasificados</span>')
+        : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i>')
     +   '</span>'
+    // separador visual
+    +   '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;"></span>'
+    // totales en línea
+    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--accent-red);font-variant-numeric:tabular-nums;white-space:nowrap;">'
+    +     '<strong>G</strong> −$' + _formatNum(totalGastos)
+    +   '</span>'
+    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--accent-green);font-variant-numeric:tabular-nums;white-space:nowrap;">'
+    +     '<strong>I</strong> +$' + _formatNum(totalIngresos)
+    +   '</span>'
+    +   '<span class="pdf-print-hide" style="font-size:13px;font-weight:700;color:' + netoColor + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
+    +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
+    +   '</span>'
+    // separador visual
+    +   '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;"></span>'
+    // acciones
     +   '<button class="btn btn-secondary pdf-print-hide" onclick="togglePdfVerification()"'
-    +     ' id="pdfVerBtn" style="font-size:14px;padding:4px 12px;">'
-    +     '<i class="fas fa-list-ul"></i> Ver resumen'
+    +     ' id="pdfVerBtn" style="font-size:13px;padding:3px 10px;">'
+    +     '<i class="fas fa-list-ul"></i> Resumen'
     +   '</button>'
     +   '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
-    +     ' style="font-size:14px;padding:4px 12px;margin-left:auto;">'
-    +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
+    +     ' style="font-size:13px;padding:3px 10px;">'
+    +     '<i class="fas fa-trash"></i> Eliminar'
     +   '</button>'
-    +   '<button class="btn btn-primary pdf-print-hide" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:4px 16px;font-size:14px;white-space:nowrap;">'
+    +   '<button class="btn btn-primary pdf-print-hide" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 14px;font-size:13px;white-space:nowrap;margin-left:auto;">'
     +     '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
     +   '</button>'
     + '</div>'
-    + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
+    // ── Fila 2: identificación del EC (corte + pago sin intereses) ───────────
+    + (metaChips
+        ? '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
+          + metaChips
+          + '</div>'
+        : '')
+    + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:8px;"></div>'
     + (function() {
         if (!_pdfExcluirIngresos && ingresos.length > 0) {
           var montos = {}; gastos.forEach(function(r){ montos[r.monto] = true; });
           var pares = ingresos.filter(function(r){ return montos[r.monto]; });
           if (pares.length > 0) {
-            return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:8px 14px;margin-bottom:8px;font-size:13px;">'
+            return '<div class="pdf-print-hide" style="background:rgba(var(--accent-amber-rgb,255,193,7),.08);border:1px solid var(--accent-amber);border-radius:4px;padding:6px 12px;margin-bottom:6px;font-size:12px;">'
               + '<i class="fas fa-exclamation-triangle" style="color:var(--accent-amber);margin-right:6px;"></i>'
               + '<strong>' + pares.length + ' par(es) cargo+abono del mismo monto</strong> — posibles bonificaciones o plazos.'
               + ' <button onclick="togglePdfExclIngr()" class="btn btn-secondary" style="padding:2px 10px;font-size:12px;margin-left:8px;border-color:var(--accent-amber);color:var(--accent-amber);">Excluir ingresos</button>'
@@ -1831,25 +1853,6 @@ function displayPdfPreview(banco) {
         }
         return '';
       }())
-    // Fila de subtotales (con meta-datos del EC a la izquierda cuando existen)
-    + '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;'
-    +   'background:var(--bg-secondary);border:1px solid var(--border-color);'
-    +   'border-radius:var(--radius-sm);padding:8px 16px;margin-bottom:12px;font-size:15px;">'
-    + (metaChips
-        ? metaChips
-          + '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 4px;"></span>'
-        : '')
-    +   '<span style="color:var(--text-muted);font-size:13px;">Subtotales:</span>'
-    +   '<span style="color:var(--accent-red);font-variant-numeric:tabular-nums;">'
-    +     '<strong>Gastos</strong> −$' + _formatNum(totalGastos)
-    +   '</span>'
-    +   '<span style="color:var(--accent-green);font-variant-numeric:tabular-nums;">'
-    +     '<strong>Ingresos</strong> +$' + _formatNum(totalIngresos)
-    +   '</span>'
-    +   '<span style="margin-left:auto;font-weight:700;color:' + netoColor + ';font-variant-numeric:tabular-nums;">'
-    +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
-    +   '</span>'
-    + '</div>'
     + '<div class="pdf-scroll-container" style="overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
     + '<table class="data-table" style="font-size:13px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
