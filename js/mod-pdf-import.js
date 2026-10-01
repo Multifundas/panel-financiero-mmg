@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001b
+   PDF BANK STATEMENT IMPORT MODULE  v20261001c
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1865,7 +1865,7 @@ function displayPdfPreview(banco) {
     +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
     +   '</span>'
     + '</div>'
-    + '<div class="pdf-scroll-container" style="max-height:calc(92vh - 300px);overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
+    + '<div class="pdf-scroll-container" style="overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
     + '<table class="data-table" style="font-size:16px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
     +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
@@ -1981,7 +1981,28 @@ function displayPdfPreview(banco) {
     + '</div>';
 
   container.innerHTML = html;
-  container.style.display = 'block';
+
+  // Flex layout: el scroll container ocupa todo el espacio disponible del modal
+  var modalBody = document.getElementById('modalBody');
+  if (modalBody) {
+    modalBody.style.overflow = 'hidden';
+    modalBody.style.display = 'flex';
+    modalBody.style.flexDirection = 'column';
+    // Hermanos del container (file selector, loading) no deben crecer
+    Array.prototype.forEach.call(modalBody.children, function(ch) {
+      if (ch !== container) ch.style.flexShrink = '0';
+    });
+  }
+  container.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0;margin-top:20px;';
+  // Hijos fijos del container no deben crecer; solo el scroll container crece
+  var scrollEl = container.querySelector('.pdf-scroll-container');
+  Array.prototype.forEach.call(container.children, function(ch) {
+    if (ch !== scrollEl) ch.style.flexShrink = '0';
+  });
+  if (scrollEl) {
+    scrollEl.style.flex = '1';
+    scrollEl.style.minHeight = '0';
+  }
 
   // Modo solo-lectura para PDFs ya importados
   if (_pdfReadOnly) {
