@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20260916a
+   PDF BANK STATEMENT IMPORT MODULE  v20261001a
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -31,6 +31,8 @@ var _pdfBanco           = '';
 var _pdfTipoEC          = '';
 var _pdfExcluirIngresos = false;
 var _pdfFechaPago       = '';
+var _pdfFechaCorte      = '';   // extraído del PDF: fecha de corte del estado de cuenta
+var _pdfPagoSinInt      = '';   // extraído del PDF: monto pago para no generar intereses
 var _pdfLastFile        = null;  // { buffer: ArrayBuffer, nombre: string } para archivar
 var _pdfDescList        = [];
 var _pdfDescCatMap      = {};
@@ -1180,6 +1182,7 @@ function parseBankStatement(text) {
     if (rows.length > 0) console.log('Genérico:', rows.length, 'movimientos');
   }
 
+  _extractMetaEC(text);
   return { rows: rows, rawText: text, banco: _detectBanco(text) };
 }
 
@@ -1188,6 +1191,41 @@ function _detectBanco(text) {
   if (/SCOTIABANK/i.test(text)) return 'Scotiabank';
   if (/BBVA|BANCOMER/i.test(text)) return 'BBVA';
   return 'Banco desconocido';
+}
+
+/* Extrae fecha de corte y pago sin intereses del texto completo del PDF.
+   Guarda resultados en las variables de módulo _pdfFechaCorte y _pdfPagoSinInt. */
+function _extractMetaEC(text) {
+  _pdfFechaCorte = '';
+  _pdfPagoSinInt = '';
+
+  // ── Fecha de corte ────────────────────────────────────────────
+  // Banorte TC: "Fecha de Corte 13-AGO-2026" o "FECHA DE CORTE: 13/08/2026"
+  // Banorte CHQ: "Fecha de Corte 12/Ago/2026"
+  // BBVA: "Fecha de Corte 13 AGO 2026"
+  var cortePatterns = [
+    /[Ff]echa\s+de\s+[Cc]orte[:\s]+(\d{2}[-\/]\w{3,}[-\/]\d{4})/,
+    /[Ff]echa\s+de\s+[Cc]orte[:\s]+(\d{2}[-\/]\d{2}[-\/]\d{4})/,
+    /FECHA\s+DE\s+CORTE[:\s]+(\d{2}[-\/]\w{3,}[-\/]\d{4})/i,
+    /FECHA\s+DE\s+CORTE[:\s]+(\d{2}\s+\w{3}\s+\d{4})/i,
+  ];
+  for (var ci = 0; ci < cortePatterns.length; ci++) {
+    var cm = text.match(cortePatterns[ci]);
+    if (cm) { _pdfFechaCorte = cm[1].trim(); break; }
+  }
+
+  // ── Pago para no generar intereses ────────────────────────────
+  // Banorte: "Para No Generar Intereses Pague $87,148.47"
+  // BBVA:    "Pago para no generar intereses $X"
+  var pagoPatterns = [
+    /[Pp]ara\s+[Nn]o\s+[Gg]enerar\s+[Ii]ntereses[:\s]+(?:[Pp]ague[:\s]+)?\$?([\d,]+\.\d{2})/,
+    /[Pp]ago\s+[Pp]ara\s+[Nn]o\s+[Gg]enerar\s+[Ii]ntereses[:\s]+\$?([\d,]+\.\d{2})/i,
+    /[Tt]otal\s+[Aa]\s+[Pp]agar[:\s]+\$?([\d,]+\.\d{2})/i,
+  ];
+  for (var pi = 0; pi < pagoPatterns.length; pi++) {
+    var pm = text.match(pagoPatterns[pi]);
+    if (pm) { _pdfPagoSinInt = '$' + pm[1].trim(); break; }
+  }
 }
 
 /* ── Parser Banorte ─────────────────────────────────────────────────────────
@@ -1737,8 +1775,29 @@ function displayPdfPreview(banco) {
       + '</span>';
   }
 
+  // Chips de meta-datos del estado de cuenta (fecha de corte, pago sin intereses)
+  var metaChips = '';
+  if (_pdfFechaCorte) {
+    metaChips += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;'
+      + 'background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;'
+      + 'padding:3px 10px;color:var(--text-secondary);white-space:nowrap;">'
+      + '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:11px;"></i>'
+      + '<span style="color:var(--text-muted);font-size:11px;">Corte</span>'
+      + '<strong style="color:var(--text-primary);">' + _pdfFechaCorte + '</strong>'
+      + '</span>';
+  }
+  if (_pdfPagoSinInt) {
+    metaChips += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;'
+      + 'background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;'
+      + 'padding:3px 10px;color:var(--text-secondary);white-space:nowrap;">'
+      + '<i class="fas fa-check-circle" style="color:var(--accent-green);font-size:11px;"></i>'
+      + '<span style="color:var(--text-muted);font-size:11px;">Pago sin intereses</span>'
+      + '<strong style="color:var(--accent-green);">' + _pdfPagoSinInt + '</strong>'
+      + '</span>';
+  }
+
   var html = datalistHtml
-    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
+    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:' + (metaChips ? '6px' : '10px') + ';">'
     +   '<span class="badge badge-blue" style="font-size:15px;">'
     +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' movimientos'
     +   '</span>'
@@ -1760,6 +1819,11 @@ function displayPdfPreview(banco) {
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
     + '</div>'
+    + (metaChips
+        ? '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
+          + metaChips
+          + '</div>'
+        : '')
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
     + (function() {
         if (_pdfExcluirIngresos && ingresos.length > 0) {
