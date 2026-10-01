@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001e
+   PDF BANK STATEMENT IMPORT MODULE  v20261001f
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -886,22 +886,16 @@ function openPdfImport() {
   }
 
   var html = draftBanner
-    + '<p class="pdf-print-hide" style="font-size:15px;color:var(--text-secondary);margin:0 0 12px;">'
-    +   'Sube el estado de cuenta en PDF. El banco se detecta automáticamente y los '
-    +   'movimientos se clasifican por concepto. Podrás revisar antes de confirmar.'
-    + '</p>'
-    + '<div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;">'
-    +   '<div style="flex:1;">'
-    +     '<label class="form-label">Archivo PDF</label>'
-    +     '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
-    +       ' onchange="handlePdfUpload(event)" style="padding:8px;">'
-    +   '</div>'
+    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;margin-bottom:12px;">'
+    +   '<span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">Archivo PDF</span>'
+    +   '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
+    +     ' onchange="handlePdfUpload(event)" style="flex:1;padding:6px 8px;font-size:13px;">'
     +   '<button class="btn btn-secondary" id="pdfCatBtn" onclick="toggleCatalogoPdf()"'
-    +     ' style="padding:9px 16px;font-size:14px;white-space:nowrap;">'
+    +     ' style="padding:6px 14px;font-size:13px;white-space:nowrap;">'
     +     '<i class="fas fa-book"></i> Catálogo existente'
     +   '</button>'
     +   '<button class="btn btn-secondary" id="pdfArchBtn" onclick="togglePdfArchivo()"'
-    +     ' style="padding:9px 16px;font-size:14px;white-space:nowrap;">'
+    +     ' style="padding:6px 14px;font-size:13px;white-space:nowrap;">'
     +     '<i class="fas fa-folder-open"></i> PDFs archivados'
     +   '</button>'
     + '</div>'
