@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001h
+   PDF BANK STATEMENT IMPORT MODULE  v20261001i
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1904,21 +1904,24 @@ function displayPdfPreview(banco) {
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
       + '<td style="font-size:13px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td>'
-      +   '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);'
-      +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;"'
-      +     ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
-      +     row.descripcion
+      + '<td style="padding:2px 6px;">'
+      +   '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:6px;min-width:0;">'
+      +     '<div style="font-size:11px;color:var(--text-muted);flex:1;min-width:0;'
+      +       'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"'
+      +       ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
+      +       row.descripcion
+      +     '</div>'
+      +     '<input type="text" list="pdfDescOptions" class="pdf-desc-input" data-idx="' + idx + '"'
+      +       ' placeholder="Descripción…"'
+      +       ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
+      +       ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
+      +       ' style="width:200px;flex-shrink:0;font-size:13px;font-weight:600;font-family:inherit;'
+      +         'border:1px solid var(--border-subtle);border-radius:3px;padding:1px 5px;'
+      +         'background:var(--bg-base);color:var(--text-primary);">'
       +   '</div>'
       +   '<span class="pdf-desc-print" style="display:none;font-size:11px;">'
       +     (row.descripcion_final || '').replace(/</g,'&lt;')
       +   '</span>'
-      +   '<input type="text" list="pdfDescOptions" class="pdf-desc-input pdf-print-hide" data-idx="' + idx + '"'
-      +     ' placeholder="Escribe o elige del historial…"'
-      +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
-      +     ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
-      +     ' style="width:100%;font-size:13px;font-weight:600;font-family:inherit;border:1px solid var(--border-subtle);'
-      +       'border-radius:3px;padding:1px 5px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
       + '<td style="text-align:right;font-size:13px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
       +   signo + '$' + _formatNum(row.monto)
