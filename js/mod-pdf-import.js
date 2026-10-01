@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001a
+   PDF BANK STATEMENT IMPORT MODULE  v20261001b
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1819,11 +1819,6 @@ function displayPdfPreview(banco) {
     +     '<i class="fas fa-trash"></i> Eliminar seleccionados'
     +   '</button>'
     + '</div>'
-    + (metaChips
-        ? '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
-          + metaChips
-          + '</div>'
-        : '')
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:12px;"></div>'
     + (function() {
         if (_pdfExcluirIngresos && ingresos.length > 0) {
@@ -1851,11 +1846,15 @@ function displayPdfPreview(banco) {
         }
         return '';
       }())
-    // Fila de subtotales
-    + '<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;'
+    // Fila de subtotales (con meta-datos del EC a la izquierda cuando existen)
+    + '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;'
     +   'background:var(--bg-secondary);border:1px solid var(--border-color);'
-    +   'border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:12px;font-size:15px;">'
-    +   '<span style="color:var(--text-muted);">Subtotales:</span>'
+    +   'border-radius:var(--radius-sm);padding:8px 16px;margin-bottom:12px;font-size:15px;">'
+    + (metaChips
+        ? metaChips
+          + '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 4px;"></span>'
+        : '')
+    +   '<span style="color:var(--text-muted);font-size:13px;">Subtotales:</span>'
     +   '<span style="color:var(--accent-red);font-variant-numeric:tabular-nums;">'
     +     '<strong>Gastos</strong> −$' + _formatNum(totalGastos)
     +   '</span>'
