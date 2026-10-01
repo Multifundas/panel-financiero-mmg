@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001c
+   PDF BANK STATEMENT IMPORT MODULE  v20261001d
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1958,24 +1958,21 @@ function displayPdfPreview(banco) {
     }).join('');
 
   html += ''
-    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">'
-    +   '<span style="font-size:14px;color:var(--text-muted);flex:1;">'
-    +     'Ajusta categorías y elimina duplicados si los hay.'
-    +   '</span>'
-    +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:9px 18px;font-size:14px;border-color:var(--accent-amber);color:var(--accent-amber);">'
+    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-top:12px;flex-shrink:0;">'
+    +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:7px 14px;font-size:13px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
     +     '<i class="fas fa-bookmark"></i> Guardar borrador'
     +   '</button>'
-    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Fecha pago chequera:</label>'
-    +   '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:160px;font-size:14px;"'
+    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:13px;">Fecha pago:</label>'
+    +   '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:145px;font-size:13px;padding:6px 8px;"'
     +     ' value="' + _pdfFechaPago + '"'
     +     ' onchange="_pdfFechaPago=this.value"'
     +     ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
-    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:14px;">Cuenta de origen:</label>'
-    +   '<select id="pdfCuentaSelect" class="form-input" style="min-width:190px;font-size:14px;">'
-    +     '<option value="">— Selecciona cuenta origen —</option>'
+    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:13px;">Cuenta:</label>'
+    +   '<select id="pdfCuentaSelect" class="form-input" style="flex:1;min-width:160px;font-size:13px;padding:6px 8px;">'
+    +     '<option value="">— Selecciona cuenta —</option>'
     +     cuentaOpts
     +   '</select>'
-    +   '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:9px 22px;">'
+    +   '<button class="btn btn-primary" onclick="confirmPdfImport()" style="padding:7px 18px;white-space:nowrap;">'
     +     '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
     +   '</button>'
     + '</div>';
@@ -2014,7 +2011,7 @@ function displayPdfPreview(banco) {
     container.insertBefore(notice, container.firstChild);
 
     // Ocultar barra de acciones (fecha, cuenta, botón Importar, borrador)
-    var actionBar = container.querySelector('.pdf-print-hide[style*="margin-top:16px"]');
+    var actionBar = container.querySelector('.pdf-print-hide[style*="margin-top:12px"]');
     if (actionBar) actionBar.style.display = 'none';
 
     // Deshabilitar todos los inputs, selects y botones dentro del preview
