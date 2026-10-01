@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001j
+   PDF BANK STATEMENT IMPORT MODULE  v20261001k
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1790,6 +1790,14 @@ function displayPdfPreview(banco) {
       + '</span>';
   }
 
+  // Selector de cuenta (se necesita en fila 2)
+  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+  var cuentaOpts = cuentas
+    .filter(function(c) { return c.activa !== false; })
+    .map(function(c) {
+      return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
+    }).join('');
+
   var html = datalistHtml
     // ── Fila 1: banco · clasificación · totales · acciones ──────────────────
     + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
@@ -1832,12 +1840,25 @@ function displayPdfPreview(banco) {
     +     '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
     +   '</button>'
     + '</div>'
-    // ── Fila 2: identificación del EC (corte + pago sin intereses) ───────────
-    + (metaChips
-        ? '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
-          + metaChips
-          + '</div>'
-        : '')
+    // ── Fila 2: chips EC (izq) + cuenta/fecha/borrador (der) ────────────────
+    + '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;margin-bottom:8px;">'
+    +   metaChips
+    +   '<div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;">'
+    +     '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:4px 10px;font-size:12px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
+    +       '<i class="fas fa-bookmark"></i> Borrador'
+    +     '</button>'
+    +     '<label class="form-label" style="margin:0;white-space:nowrap;font-size:12px;">Fecha pago:</label>'
+    +     '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:135px;font-size:12px;padding:4px 6px;"'
+    +       ' value="' + _pdfFechaPago + '"'
+    +       ' onchange="_pdfFechaPago=this.value"'
+    +       ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
+    +     '<label class="form-label" style="margin:0;white-space:nowrap;font-size:12px;">Cuenta:</label>'
+    +     '<select id="pdfCuentaSelect" class="form-input" style="min-width:150px;font-size:12px;padding:4px 6px;">'
+    +       '<option value="">— Selecciona —</option>'
+    +       cuentaOpts
+    +     '</select>'
+    +   '</div>'
+    + '</div>'
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:8px;"></div>'
     + (function() {
         if (!_pdfExcluirIngresos && ingresos.length > 0) {
@@ -1938,30 +1959,6 @@ function displayPdfPreview(banco) {
 
   html += '</tbody></table></div>';
 
-  // Selector de cuenta + botón confirmar
-  var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
-  var cuentaOpts = cuentas
-    .filter(function(c) { return c.activa !== false; })
-    .map(function(c) {
-      return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
-    }).join('');
-
-  html += ''
-    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-top:10px;flex-shrink:0;">'
-    +   '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:6px 12px;font-size:13px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
-    +     '<i class="fas fa-bookmark"></i> Guardar borrador'
-    +   '</button>'
-    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:13px;">Fecha pago:</label>'
-    +   '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:145px;font-size:13px;padding:5px 8px;"'
-    +     ' value="' + _pdfFechaPago + '"'
-    +     ' onchange="_pdfFechaPago=this.value"'
-    +     ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
-    +   '<label class="form-label" style="margin:0;white-space:nowrap;font-size:13px;">Cuenta:</label>'
-    +   '<select id="pdfCuentaSelect" class="form-input" style="flex:1;min-width:160px;font-size:13px;padding:5px 8px;">'
-    +     '<option value="">— Selecciona cuenta —</option>'
-    +     cuentaOpts
-    +   '</select>'
-    + '</div>';
 
   container.innerHTML = html;
 
@@ -1997,7 +1994,7 @@ function displayPdfPreview(banco) {
     container.insertBefore(notice, container.firstChild);
 
     // Ocultar barra de acciones (fecha, cuenta, botón Importar, borrador)
-    var actionBar = container.querySelector('.pdf-print-hide[style*="margin-top:10px"]');
+    var actionBar = container.querySelector('#pdfCuentaSelect') ? container.querySelector('#pdfCuentaSelect').closest('div[style*="margin-left:auto"]') : null;
     if (actionBar) actionBar.style.display = 'none';
 
     // Deshabilitar todos los inputs, selects y botones dentro del preview
