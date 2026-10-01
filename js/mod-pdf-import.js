@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001g
+   PDF BANK STATEMENT IMPORT MODULE  v20261001h
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1851,7 +1851,7 @@ function displayPdfPreview(banco) {
     +   '</span>'
     + '</div>'
     + '<div class="pdf-scroll-container" style="overflow-y:auto;border:1px solid var(--border-color);border-radius:var(--radius-sm);">'
-    + '<table class="data-table" style="font-size:16px;table-layout:fixed;width:100%;">'
+    + '<table class="data-table" style="font-size:13px;table-layout:fixed;width:100%;">'
     + '<thead><tr>'
     +   '<th class="pdf-cb-col" style="width:36px;"><input type="checkbox" onchange="toggleAllPdfRows(this.checked)"></th>'
     +   '<th style="width:120px;" title="Fecha del estado de cuenta (solo referencia)">Fecha EC</th>'
@@ -1889,7 +1889,7 @@ function displayPdfPreview(banco) {
              + srcIcon
              + '<span class="pdf-cat-print" data-idx="' + idx + '" style="display:none;font-size:11px;">' + catNombre + '</span>'
              + '<select class="pdf-cat-select" data-idx="' + idx + '" onchange="updatePdfCategory(' + idx + ',this.value)"'
-             + ' style="font-size:15px;font-weight:600;color:var(--text-primary);flex:1;min-width:0;">';
+             + ' style="font-size:13px;font-weight:600;color:var(--text-primary);flex:1;min-width:0;">';
       catSel += '<option value="">Sin categoría</option>';
       categorias.forEach(function(c) {
         catSel += '<option value="' + c.id + '"' + (c.id === row.categoria_id ? ' selected' : '') + '>'
@@ -1903,15 +1903,13 @@ function displayPdfPreview(banco) {
 
     html += '<tr class="pdf-row' + (row.selected ? ' pdf-row-selected' : '') + '">'
       + '<td class="pdf-cb-col"><input type="checkbox" ' + (row.selected ? 'checked' : '') + ' onchange="togglePdfRow(' + idx + ')"></td>'
-      + '<td style="font-size:15px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
-      + '<td style="padding:4px 8px;">'
-      // Descripción del banco — solo referencia, nunca se importa
-      +   '<div class="pdf-print-hide" style="font-size:12px;color:var(--text-primary);'
-      +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;"'
+      + '<td style="font-size:13px;white-space:nowrap;">' + (typeof formatDate === 'function' ? formatDate(row.fecha) : row.fecha) + '</td>'
+      + '<td>'
+      +   '<div class="pdf-print-hide" style="font-size:11px;color:var(--text-muted);'
+      +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;"'
       +     ' title="' + row.descripcion.replace(/"/g,'&quot;') + '">'
       +     row.descripcion
       +   '</div>'
-      // Descripción a importar — editable, se pre-llena del historial si hay match
       +   '<span class="pdf-desc-print" style="display:none;font-size:11px;">'
       +     (row.descripcion_final || '').replace(/</g,'&lt;')
       +   '</span>'
@@ -1919,13 +1917,13 @@ function displayPdfPreview(banco) {
       +     ' placeholder="Escribe o elige del historial…"'
       +     ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
       +     ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
-      +     ' style="width:100%;font-size:14px;font-weight:600;font-family:inherit;border:1px solid var(--border-subtle);'
-      +       'border-radius:4px;padding:3px 7px;background:var(--bg-base);color:var(--text-primary);">'
+      +     ' style="width:100%;font-size:13px;font-weight:600;font-family:inherit;border:1px solid var(--border-subtle);'
+      +       'border-radius:3px;padding:1px 5px;background:var(--bg-base);color:var(--text-primary);">'
       + '</td>'
-      + '<td style="text-align:right;font-size:16px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
+      + '<td style="text-align:right;font-size:13px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
       +   signo + '$' + _formatNum(row.monto)
       + '</td>'
-      + '<td><span class="badge ' + badgeClass + '" style="font-size:13px;">'
+      + '<td><span class="badge ' + badgeClass + '" style="font-size:12px;padding:2px 7px;">'
       +   (esGasto ? 'Gasto' : 'Ingreso')
       + '</span></td>'
       + '<td>' + catSel + '</td>'

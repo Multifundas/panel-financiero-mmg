@@ -557,6 +557,16 @@
       z-index: 2;
     }
 
+    /* Compact rows in PDF import table */
+    .pdf-scroll-container .data-table thead th {
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .pdf-scroll-container .data-table tbody td {
+      padding: 2px 6px;
+      font-size: 13px;
+    }
+
     /* Tabular-nums for all amount cells */
     .data-table td {
       font-variant-numeric: tabular-nums;
