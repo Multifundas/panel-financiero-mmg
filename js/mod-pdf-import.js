@@ -910,6 +910,8 @@ function openPdfImport() {
     + '<div id="pdfPreviewContainer" style="display:none;margin-top:20px;"></div>';
 
   openModal('Cargar Estado de Cuenta (PDF)', html, { wide: true });
+  var mb = document.getElementById('modalBody');
+  if (mb) mb.style.overflowY = 'auto';
 }
 
 // ═══════════════════════════════════════════════════════════════
