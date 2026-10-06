@@ -139,7 +139,7 @@ function togglePdfArchivo() {
         +       '</button>'
         +     '</div>'
         +   '</div>'
-        +   '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
+        +   '<div style="max-height:420px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:4px;">'
         +     '<table style="width:100%;border-collapse:collapse;">'
         +       '<thead><tr>'
         +         '<th style="' + thS + '">Fecha</th>'
