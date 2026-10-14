@@ -886,16 +886,15 @@ function openPdfImport() {
   }
 
   var html = draftBanner
-    + '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;margin-bottom:12px;">'
-    +   '<span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">Archivo PDF</span>'
+    + '<div id="pdfFileRow" class="pdf-print-hide" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-bottom:12px;">'
     +   '<input type="file" id="pdfFileInput" accept=".pdf" class="form-input"'
-    +     ' onchange="handlePdfUpload(event)" style="flex:1;padding:6px 8px;font-size:13px;">'
+    +     ' onchange="handlePdfUpload(event)" style="flex:1;min-width:0;padding:4px 8px;font-size:12px;">'
     +   '<button class="btn btn-secondary" id="pdfCatBtn" onclick="toggleCatalogoPdf()"'
-    +     ' style="padding:6px 14px;font-size:13px;white-space:nowrap;">'
+    +     ' style="padding:4px 10px;font-size:12px;white-space:nowrap;flex-shrink:0;">'
     +     '<i class="fas fa-book"></i> Catálogo existente'
     +   '</button>'
     +   '<button class="btn btn-secondary" id="pdfArchBtn" onclick="togglePdfArchivo()"'
-    +     ' style="padding:6px 14px;font-size:13px;white-space:nowrap;">'
+    +     ' style="padding:4px 10px;font-size:12px;white-space:nowrap;flex-shrink:0;">'
     +     '<i class="fas fa-folder-open"></i> PDFs archivados'
     +   '</button>'
     + '</div>'
@@ -910,6 +909,17 @@ function openPdfImport() {
     + '<div id="pdfPreviewContainer" style="display:none;margin-top:20px;"></div>';
 
   openModal('Cargar Estado de Cuenta (PDF)', html, { wide: true });
+
+  // Fusionar selector de archivo con la fila del modal-header
+  (function() {
+    var fileRow = document.getElementById('pdfFileRow');
+    var mhdr   = document.querySelector('.modal-header');
+    if (!fileRow || !mhdr) return;
+    mhdr.style.marginBottom = '10px';
+    mhdr.insertBefore(fileRow, mhdr.lastElementChild);
+    fileRow.style.marginBottom = '0';
+  }());
+
   var mb = document.getElementById('modalBody');
   if (mb) mb.style.overflowY = 'auto';
 }

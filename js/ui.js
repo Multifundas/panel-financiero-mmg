@@ -102,6 +102,8 @@ function showToast(message, type) {
    MODAL SYSTEM
    ============================================================ */
 function openModal(title, bodyHTML, options) {
+  var mhdr = document.querySelector('.modal-header');
+  if (mhdr) mhdr.removeAttribute('style');
   document.getElementById('modalTitle').textContent = title;
   var mb = document.getElementById('modalBody');
   mb.innerHTML = bodyHTML;
