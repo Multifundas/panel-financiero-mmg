@@ -1825,46 +1825,86 @@ function displayPdfPreview(banco) {
       return '<option value="' + c.id + '">' + c.nombre + ' (' + c.moneda + ')</option>';
     }).join('');
 
+  // ── Barra resumen: variables de estado (traffic-light) ───────────────────
+  var _pnS = parseFloat((_pdfPagoSinInt || '').replace(/[$,]/g,'')) || 0;
+  var _dfS = _pnS > 0 ? totalGastos - _pnS : 0;
+  var _okS = _pnS <= 0 || Math.abs(_dfS) <= 1;
+  var _wnS = !_okS && _pnS > 0 && Math.abs(_dfS) / _pnS <= 0.05;
+  var _bgS, _bcS, _icS, _inS, _mcS;
+  if (_okS)       { _bgS='rgba(34,197,94,0.07)';  _bcS='rgba(34,197,94,0.4)';   _icS='var(--accent-green)'; _inS='fa-check-circle';        _mcS='var(--accent-green)'; }
+  else if (_wnS)  { _bgS='rgba(245,158,11,0.07)'; _bcS='rgba(245,158,11,0.5)'; _icS='var(--accent-amber)'; _inS='fa-exclamation-triangle'; _mcS='var(--accent-amber)'; }
+  else            { _bgS='rgba(239,68,68,0.07)';  _bcS='rgba(239,68,68,0.5)';  _icS='var(--accent-red)';   _inS='fa-exclamation-triangle'; _mcS='var(--accent-red)'; }
+  var _movsS = _pdfExcluirIngresos ? gastos.length : rows.length;
+  var _vsep  = '<span style="width:1px;align-self:stretch;background:var(--border-color);flex-shrink:0;"></span>';
+  var _rBar  = '<i class="fas ' + _inS + '" style="color:' + _icS + ';font-size:13px;flex-shrink:0;"></i>'
+    + '<span style="font-size:14px;font-weight:700;color:' + _mcS + ';font-variant-numeric:tabular-nums;white-space:nowrap;">−$' + _formatNum(totalGastos) + '</span>'
+    + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">' + _movsS + ' mov.</span>';
+  if (_pdfFechaCorte) {
+    _rBar += _vsep + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+      + '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:10px;margin-right:3px;"></i>'
+      + 'Corte <strong style="color:var(--text-primary);">' + _pdfFechaCorte + '</strong></span>';
+  }
+  if (_pnS > 0) {
+    _rBar += _vsep + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+      + 'Sin int: <strong style="color:var(--accent-green);">$' + _formatNum(_pnS) + '</strong></span>';
+    if (!_okS) {
+      _rBar += '<span style="font-size:12px;font-weight:600;color:' + _mcS + ';white-space:nowrap;">'
+        + (_dfS > 0 ? '⚠ Exceso $' + _formatNum(Math.abs(_dfS)) : '⚠ Faltante $' + _formatNum(Math.abs(_dfS)))
+        + '</span>';
+    } else {
+      _rBar += '<span style="font-size:12px;color:var(--accent-green);white-space:nowrap;"><i class="fas fa-check"></i> Cuadra</span>';
+    }
+  }
+
   var html = datalistHtml
-    // ── Fila 1: banco · clasificación · controles · acciones ────────────────
-    + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
-    +   '<span class="badge badge-blue" style="font-size:13px;">'
-    +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' mov.'
-    +   '</span>'
-    +   '<span class="badge badge-red" style="font-size:13px;">' + gastos.length + ' gastos</span>'
-    +   ingresoBadge
-    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--text-muted);display:flex;gap:6px;align-items:center;">'
-    +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + '&ensp;'
-    +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + '&ensp;'
-    +     (nRevisar > 0
-        ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
-        : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i>')
-    +   '</span>'
-    // controles + acciones lado derecho
-    +   '<div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap;">'
-    +     '<button class="btn btn-secondary pdf-print-hide" onclick="savePdfDraft()" style="padding:3px 8px;font-size:12px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
-    +       '<i class="fas fa-bookmark"></i> Borrador'
-    +     '</button>'
-    +     '<label class="form-label pdf-print-hide" style="margin:0;white-space:nowrap;font-size:12px;">Fecha pago:</label>'
-    +     '<input type="date" id="pdfFechaPagoInput" class="form-input pdf-print-hide" style="width:130px;font-size:12px;padding:3px 6px;"'
-    +       ' value="' + _pdfFechaPago + '"'
-    +       ' onchange="_pdfFechaPago=this.value"'
-    +       ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
-    +     '<select id="pdfCuentaSelect" class="form-input pdf-print-hide" style="min-width:140px;font-size:12px;padding:3px 6px;" title="Cuenta origen del pago">'
-    +       '<option value="">— Cuenta —</option>'
-    +       cuentaOpts
-    +     '</select>'
-    +     '<button class="btn btn-secondary pdf-print-hide" onclick="togglePdfVerification()"'
+    // ── Fila 1: info (izq, puede crecer) + acciones (der, nowrap) ───────────
+    + '<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:6px;margin-bottom:5px;">'
+    +   '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1;min-width:0;">'
+    +     '<span class="badge badge-blue" style="font-size:13px;">'
+    +       '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' mov.'
+    +     '</span>'
+    +     '<span class="badge badge-red" style="font-size:13px;">' + gastos.length + ' gastos</span>'
+    +     ingresoBadge
+    +     '<span class="pdf-print-hide" style="font-size:12px;color:var(--text-muted);display:flex;gap:6px;align-items:center;">'
+    +       '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + '&ensp;'
+    +       '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + '&ensp;'
+    +       (nRevisar > 0
+          ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
+          : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i>')
+    +     '</span>'
+    +   '</div>'
+    +   '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">'
+    +     '<button class="btn btn-secondary" onclick="togglePdfVerification()"'
     +       ' id="pdfVerBtn" style="font-size:12px;padding:3px 8px;">'
     +       '<i class="fas fa-list-ul"></i> Resumen'
     +     '</button>'
-    +     '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
-    +       ' style="font-size:12px;padding:3px 8px;">'
-    +       '<i class="fas fa-trash"></i> Eliminar'
+    +     '<button class="btn btn-secondary" onclick="removePdfSelectedRows()"'
+    +       ' style="font-size:12px;padding:3px 8px;" title="Eliminar filas seleccionadas">'
+    +       '<i class="fas fa-trash"></i>'
     +     '</button>'
-    +     '<button class="btn btn-primary pdf-print-hide" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 12px;font-size:13px;white-space:nowrap;">'
+    +     '<button class="btn btn-primary" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 12px;font-size:13px;white-space:nowrap;">'
     +       '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
     +     '</button>'
+    +   '</div>'
+    + '</div>'
+    // ── Fila 2: controles (izq) + barra resumen inline (der) ────────────────
+    + '<div class="pdf-print-hide" style="display:flex;align-items:stretch;gap:6px;margin-bottom:6px;">'
+    +   '<div id="pdfControlsBar" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">'
+    +     '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:3px 8px;font-size:12px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);" title="Guardar como borrador">'
+    +       '<i class="fas fa-bookmark"></i> Borrador'
+    +     '</button>'
+    +     '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:120px;font-size:12px;padding:3px 6px;"'
+    +       ' value="' + _pdfFechaPago + '"'
+    +       ' onchange="_pdfFechaPago=this.value"'
+    +       ' title="Fecha de pago de la tarjeta">'
+    +     '<select id="pdfCuentaSelect" class="form-input" style="width:140px;font-size:12px;padding:3px 6px;" title="Cuenta origen del pago">'
+    +       '<option value="">— Cuenta —</option>'
+    +       cuentaOpts
+    +     '</select>'
+    +   '</div>'
+    +   '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap;'
+    +     'background:' + _bgS + ';border:1px solid ' + _bcS + ';border-radius:6px;padding:4px 10px;">'
+    +     _rBar
     +   '</div>'
     + '</div>'
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:8px;"></div>'
@@ -1985,52 +2025,6 @@ function displayPdfPreview(banco) {
 
   container.innerHTML = html;
 
-  // Insertar barra de resumen compacta antes de pdfVerificationPanel
-  (function insertSummaryBar() {
-    var verPanel = document.getElementById('pdfVerificationPanel');
-    if (!verPanel) return;
-    var pn = parseFloat((_pdfPagoSinInt || '').replace(/[$,]/g,'')) || 0;
-    var tg = 0;
-    _pdfParsedRows.forEach(function(r) { if (r.tipo === 'gasto') tg += r.monto; });
-    var df = pn > 0 ? tg - pn : 0;
-    var ok   = pn <= 0 || Math.abs(df) <= 1;
-    var warn = !ok && pn > 0 && Math.abs(df) / pn <= 0.05;
-    var bg, bc, ic, icn, mc;
-    if (ok)        { bg='rgba(34,197,94,0.07)';  bc='rgba(34,197,94,0.4)';   ic='var(--accent-green)'; icn='fa-check-circle';        mc='var(--accent-green)'; }
-    else if (warn) { bg='rgba(245,158,11,0.07)'; bc='rgba(245,158,11,0.5)'; ic='var(--accent-amber)'; icn='fa-exclamation-triangle'; mc='var(--accent-amber)'; }
-    else           { bg='rgba(239,68,68,0.07)';  bc='rgba(239,68,68,0.5)';  ic='var(--accent-red)';   icn='fa-exclamation-triangle'; mc='var(--accent-red)'; }
-    var movs = _pdfExcluirIngresos
-      ? _pdfParsedRows.filter(function(r){ return r.tipo==='gasto'; }).length
-      : _pdfParsedRows.length;
-    var fmt = function(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); };
-    var sep = '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;flex-shrink:0;"></span>';
-    var inner = '<i class="fas ' + icn + '" style="color:' + ic + ';font-size:14px;flex-shrink:0;"></i>'
-      + '<span style="font-size:14px;font-weight:700;color:' + mc + ';font-variant-numeric:tabular-nums;white-space:nowrap;">−$' + fmt(tg) + '</span>'
-      + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">' + movs + ' mov.</span>';
-    if (_pdfFechaCorte) {
-      inner += sep
-        + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
-        + '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:10px;margin-right:3px;"></i>'
-        + 'Corte <strong style="color:var(--text-primary);">' + _pdfFechaCorte + '</strong></span>';
-    }
-    if (pn > 0) {
-      inner += sep
-        + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
-        + 'Sin int: <strong style="color:var(--accent-green);">$' + fmt(pn) + '</strong></span>';
-      if (!ok) {
-        var lbl = df > 0 ? '⚠ Exceso $' + fmt(Math.abs(df)) : '⚠ Faltante $' + fmt(Math.abs(df));
-        inner += '<span style="font-size:12px;font-weight:600;color:' + mc + ';white-space:nowrap;">' + lbl + '</span>';
-      } else {
-        inner += '<span style="font-size:12px;color:var(--accent-green);white-space:nowrap;"><i class="fas fa-check"></i> Cuadra</span>';
-      }
-    }
-    var box = document.createElement('div');
-    box.className = 'pdf-print-hide';
-    box.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:' + bg
-      + ';border:1px solid ' + bc + ';border-radius:6px;padding:5px 12px;margin-bottom:6px;flex-shrink:0;';
-    box.innerHTML = inner;
-    verPanel.parentNode.insertBefore(box, verPanel);
-  }());
 
   // Flex layout: el scroll container ocupa todo el espacio disponible del modal
   var modalBody = document.getElementById('modalBody');
@@ -2063,8 +2057,8 @@ function displayPdfPreview(banco) {
     notice.innerHTML = '<i class="fas fa-lock" style="color:#16a34a;"></i><span>Este estado de cuenta <strong>ya fue importado</strong> — vista de solo lectura.</span>';
     container.insertBefore(notice, container.firstChild);
 
-    // Ocultar barra de acciones (fecha, cuenta, botón Importar, borrador)
-    var actionBar = container.querySelector('#pdfCuentaSelect') ? container.querySelector('#pdfCuentaSelect').closest('div[style*="margin-left:auto"]') : null;
+    // Ocultar barra de controles (fecha, cuenta, botón Importar, borrador)
+    var actionBar = document.getElementById('pdfControlsBar');
     if (actionBar) actionBar.style.display = 'none';
 
     // Deshabilitar todos los inputs, selects y botones dentro del preview
