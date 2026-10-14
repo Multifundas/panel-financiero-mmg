@@ -1907,7 +1907,7 @@ function displayPdfPreview(banco) {
     +       ' value="' + _pdfFechaPago + '"'
     +       ' onchange="_pdfFechaPago=this.value"'
     +       ' title="Fecha de pago de la tarjeta">'
-    +     '<select id="pdfCuentaSelect" class="form-input" style="width:140px;font-size:12px;padding:3px 6px;" title="Cuenta origen del pago">'
+    +     '<select id="pdfCuentaSelect" class="form-input" style="min-width:130px;max-width:190px;font-size:12px;padding:3px 6px;" title="Cuenta origen del pago">'
     +       '<option value="">— Cuenta —</option>'
     +       cuentaOpts
     +     '</select>'
