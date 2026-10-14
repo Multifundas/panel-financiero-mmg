@@ -1,5 +1,5 @@
 /* ============================================================
-   PDF BANK STATEMENT IMPORT MODULE  v20261001k
+   PDF BANK STATEMENT IMPORT MODULE  v20261014d
    ============================================================
    Flujo:
    1. openPdfImport()   → modal con solo el selector de archivo
@@ -1106,15 +1106,25 @@ function parseScotiabank(lines, fullText) {
   }
 
   // Patrón: DD-mmm-YYYY DD-mmm-YYYY DESCRIPCION [+|-] $X,XXX.XX
-  // Sin anclas ^ $ para tolerar espacios o caracteres extra al inicio/fin
   var dateP = '(\\d{2}-(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)-\\d{4})';
   var txRe = new RegExp(dateP+'\\s+'+dateP+'\\s+(.+?)\\s+([+\\-]?)\\s*\\$([\\d,]+\\.\\d{2})', 'i');
+
+  // Detectores de sección MSI (igual que Banorte TC)
+  var aMesesRe    = /COMPRAS Y CARGOS DIFERIDOS A MESES/i;
+  var finMesesRe  = /CARGOS.*ABONOS.*OTRAS OPERACIONES|CARGOS.*ABONOS.*COMPRAS REGULARES|TOTAL.*DIFERIDOS|RESUMEN DE OPERACIONES/i;
+  var inMSI = false;
 
   var dbgLines = [];
   var rows = [];
   lines.forEach(function(line) {
     var t = line.trim();
     if (!t) return;
+
+    // Control de sección MSI
+    if (aMesesRe.test(t))   { inMSI = true;  return; }
+    if (inMSI && finMesesRe.test(t)) { inMSI = false; return; }
+    if (inMSI) return; // saltar líneas dentro de la sección MSI
+
     var hasDate = /\d{2}-(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)-\d{4}/i.test(t);
     var m = txRe.exec(t);
     if (hasDate) dbgLines.push((m ? '✓' : '✗') + ' ' + t.substring(0, 90));
@@ -1783,6 +1793,9 @@ function displayPdfPreview(banco) {
       + '</span>';
   }
   if (_pdfPagoSinInt) {
+    var pagoSinIntNum = parseFloat(_pdfPagoSinInt.replace(/[$,]/g, '')) || 0;
+    var diffPago = totalGastos - pagoSinIntNum;
+    var pagoOk = Math.abs(diffPago) <= 1;
     metaChips += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;'
       + 'background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;'
       + 'padding:3px 10px;color:var(--text-secondary);white-space:nowrap;">'
@@ -1790,7 +1803,57 @@ function displayPdfPreview(banco) {
       + '<span style="color:var(--text-muted);font-size:11px;">Pago sin intereses</span>'
       + '<strong style="color:var(--accent-green);">' + _pdfPagoSinInt + '</strong>'
       + '</span>';
+    if (!pagoOk) {
+      var diffColor = diffPago > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+      var diffLabel = diffPago > 0 ? '+$' + _formatNum(diffPago) + ' exceso' : '−$' + _formatNum(Math.abs(diffPago)) + ' menos';
+      metaChips += '<span id="pdfReconChip" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;'
+        + 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.4);border-radius:20px;'
+        + 'padding:3px 10px;white-space:nowrap;">'
+        + '<i class="fas fa-exclamation-triangle" style="color:var(--accent-red);font-size:11px;"></i>'
+        + '<span style="color:var(--text-muted);font-size:11px;">vs pago sin intereses</span>'
+        + '<strong style="color:' + diffColor + ';">' + diffLabel + '</strong>'
+        + '</span>';
+    }
   }
+
+  // ── Cuadro resumen pre-importación ─────────────────────────────────────────
+  var _resumenBox = (function() {
+    var pagoNum = _pdfPagoSinInt ? (parseFloat(_pdfPagoSinInt.replace(/[$,]/g,'')) || 0) : 0;
+    var diff    = pagoNum > 0 ? (totalGastos - pagoNum) : 0;
+    var hayPago = pagoNum > 0;
+    var ok      = !hayPago || Math.abs(diff) <= 1;
+    var warn    = hayPago && !ok && Math.abs(diff) / pagoNum <= 0.05;
+    var bgColor, borderColor, iconColor, icon, msgColor;
+    if (ok)        { bgColor='rgba(34,197,94,0.07)';  borderColor='rgba(34,197,94,0.4)';   iconColor='var(--accent-green)'; icon='fa-check-circle';        msgColor='var(--accent-green)'; }
+    else if (warn) { bgColor='rgba(245,158,11,0.07)'; borderColor='rgba(245,158,11,0.5)'; iconColor='var(--accent-amber)'; icon='fa-exclamation-triangle'; msgColor='var(--accent-amber)'; }
+    else           { bgColor='rgba(239,68,68,0.07)';  borderColor='rgba(239,68,68,0.5)';  iconColor='var(--accent-red)';   icon='fa-exclamation-triangle'; msgColor='var(--accent-red)'; }
+    var gastosSel = _pdfExcluirIngresos ? gastos.length : rows.length;
+    var pagoInfo = '';
+    if (hayPago) {
+      pagoInfo += '<span style="font-size:13px;color:var(--text-muted);">Pago sin intereses (EC): '
+        + '<strong style="color:var(--accent-green);">$' + _formatNum(pagoNum) + '</strong></span>';
+      if (!ok) {
+        var lbl = diff > 0 ? ('⚠ Exceso de $' + _formatNum(Math.abs(diff))) : ('⚠ Faltante de $' + _formatNum(Math.abs(diff)));
+        pagoInfo += '<span style="font-size:13px;font-weight:600;color:' + msgColor + ';">' + lbl + '</span>';
+      } else {
+        pagoInfo += '<span style="font-size:13px;color:var(--accent-green);"><i class="fas fa-check"></i> Cuadra</span>';
+      }
+    }
+    return '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;'
+      + 'background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:6px;'
+      + 'padding:8px 14px;margin-bottom:8px;">'
+      + '<i class="fas ' + icon + '" style="color:' + iconColor + ';font-size:18px;flex-shrink:0;"></i>'
+      + '<div style="flex:1;min-width:0;">'
+      +   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:2px;">'
+      +     'Esta carga registrará <strong>' + gastosSel + ' movimientos</strong>'
+      +   '</div>'
+      +   '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">'
+      +     '<span style="font-size:20px;font-weight:700;color:' + msgColor + ';font-variant-numeric:tabular-nums;">−$' + _formatNum(totalGastos) + '</span>'
+      +     pagoInfo
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }());
 
   // Selector de cuenta (se necesita en fila 2)
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
@@ -1940,7 +2003,9 @@ function displayPdfPreview(banco) {
       +     '<input type="text" list="pdfDescOptions" class="pdf-desc-input" data-idx="' + idx + '"'
       +       ' placeholder="Descripción…"'
       +       ' value="' + (row.descripcion_final || '').replace(/"/g, '&quot;') + '"'
-      +       ' oninput="updatePdfDesc(' + idx + ',this.value)" onfocus="this.select()"'
+      +       ' oninput="updatePdfDesc(' + idx + ',this.value)"'
+      +       ' onfocus="this.dataset.orig=this.value;this.value=\'\';"'
+      +       ' onblur="if(!this.value.trim())this.value=this.dataset.orig||\'\';"'
       +       ' style="width:200px;flex-shrink:0;font-size:13px;font-weight:600;font-family:inherit;'
       +         'border:1px solid var(--border-subtle);border-radius:3px;padding:1px 5px;'
       +         'background:var(--bg-base);color:var(--text-primary);">'
@@ -1949,8 +2014,21 @@ function displayPdfPreview(banco) {
       +     (row.descripcion_final || '').replace(/</g,'&lt;')
       +   '</span>'
       + '</td>'
-      + '<td style="text-align:right;font-size:13px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
-      +   signo + '$' + _formatNum(row.monto)
+      + '<td style="text-align:right;white-space:nowrap;">'
+      +   '<span class="pdf-print-hide" style="display:inline-flex;align-items:center;gap:2px;">'
+      +     '<span style="font-size:13px;font-weight:700;color:' + colorMonto + ';">' + signo + '$</span>'
+      +     '<input type="number" step="0.01" min="0.01" class="pdf-monto-input" data-idx="' + idx + '"'
+      +       ' value="' + row.monto.toFixed(2) + '"'
+      +       ' oninput="updatePdfMonto(' + idx + ',this.value)"'
+      +       ' style="width:90px;text-align:right;font-size:13px;font-weight:700;color:' + colorMonto + ';'
+      +         'font-variant-numeric:tabular-nums;font-family:inherit;border:1px solid transparent;'
+      +         'border-radius:3px;padding:1px 4px;background:transparent;"'
+      +       ' onfocus="this.style.borderColor=\'var(--border-color)\';this.style.background=\'var(--bg-base)\'"'
+      +       ' onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">'
+      +   '</span>'
+      +   '<span class="pdf-monto-print" style="display:none;font-size:13px;font-weight:700;color:' + colorMonto + ';font-variant-numeric:tabular-nums;">'
+      +     signo + '$' + _formatNum(row.monto)
+      +   '</span>'
       + '</td>'
       + '<td><span class="badge ' + badgeClass + '" style="font-size:12px;padding:2px 7px;">'
       +   (esGasto ? 'Gasto' : 'Ingreso')
@@ -1963,6 +2041,52 @@ function displayPdfPreview(banco) {
 
 
   container.innerHTML = html;
+
+  // Insertar cuadro resumen pre-importación en el DOM (antes de pdfVerificationPanel)
+  (function insertResumenBox() {
+    var verPanel = document.getElementById('pdfVerificationPanel');
+    if (!verPanel) return;
+    var pn = parseFloat((_pdfPagoSinInt || '').replace(/[$,]/g,'')) || 0;
+    var tg = 0;
+    _pdfParsedRows.forEach(function(r) { if (r.tipo === 'gasto') tg += r.monto; });
+    var df = pn > 0 ? tg - pn : 0;
+    var ok = pn <= 0 || Math.abs(df) <= 1;
+    var warn = !ok && pn > 0 && Math.abs(df) / pn <= 0.05;
+    var bg, bc, ic, icn, mc;
+    if (ok)        { bg='rgba(34,197,94,0.07)';  bc='rgba(34,197,94,0.4)';   ic='var(--accent-green)'; icn='fa-check-circle';        mc='var(--accent-green)'; }
+    else if (warn) { bg='rgba(245,158,11,0.07)'; bc='rgba(245,158,11,0.5)'; ic='var(--accent-amber)'; icn='fa-exclamation-triangle'; mc='var(--accent-amber)'; }
+    else           { bg='rgba(239,68,68,0.07)';  bc='rgba(239,68,68,0.5)';  ic='var(--accent-red)';   icn='fa-exclamation-triangle'; mc='var(--accent-red)'; }
+    var movs = _pdfExcluirIngresos
+      ? _pdfParsedRows.filter(function(r){ return r.tipo==='gasto'; }).length
+      : _pdfParsedRows.length;
+    var fmt = function(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); };
+    var pagoTxt = '';
+    if (pn > 0) {
+      pagoTxt = '<span style="font-size:13px;color:var(--text-muted);">Pago sin intereses (EC): '
+        + '<strong style="color:var(--accent-green);">$' + fmt(pn) + '</strong></span>';
+      if (!ok) {
+        var lbl = df > 0 ? '⚠ Exceso de $' + fmt(Math.abs(df)) : '⚠ Faltante de $' + fmt(Math.abs(df));
+        pagoTxt += '<span style="font-size:13px;font-weight:600;color:' + mc + ';">' + lbl + '</span>';
+      } else {
+        pagoTxt += '<span style="font-size:13px;color:var(--accent-green);"><i class="fas fa-check"></i> Cuadra</span>';
+      }
+    }
+    var box = document.createElement('div');
+    box.className = 'pdf-print-hide';
+    box.style.cssText = 'display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:' + bg
+      + ';border:1px solid ' + bc + ';border-radius:6px;padding:8px 14px;margin-bottom:8px;flex-shrink:0;';
+    box.innerHTML = '<i class="fas ' + icn + '" style="color:' + ic + ';font-size:18px;flex-shrink:0;"></i>'
+      + '<div style="flex:1;min-width:0;">'
+      +   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:2px;">'
+      +     'Esta carga registrará <strong>' + movs + ' movimientos</strong>'
+      +   '</div>'
+      +   '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">'
+      +     '<span style="font-size:20px;font-weight:700;color:' + mc + ';font-variant-numeric:tabular-nums;">−$' + fmt(tg) + '</span>'
+      +     pagoTxt
+      +   '</div>'
+      + '</div>';
+    verPanel.parentNode.insertBefore(box, verPanel);
+  }());
 
   // Flex layout: el scroll container ocupa todo el espacio disponible del modal
   var modalBody = document.getElementById('modalBody');
@@ -2080,6 +2204,18 @@ function updatePdfDesc(idx, value) {
       icon.title = 'Del historial de movimientos';
       icon.style.color = 'var(--accent-green)';
     }
+  }
+}
+
+function updatePdfMonto(idx, value) {
+  var v = parseFloat(value);
+  if (!v || v < 0.01) return;
+  _pdfParsedRows[idx].monto = v;
+  // Actualizar texto de impresión
+  var printSpan = document.querySelector('.pdf-monto-print[data-idx="' + idx + '"]');
+  if (printSpan) {
+    var signo = _pdfParsedRows[idx].tipo === 'ingreso' ? '+' : '−';
+    printSpan.textContent = signo + '$' + _formatNum(v);
   }
 }
 
