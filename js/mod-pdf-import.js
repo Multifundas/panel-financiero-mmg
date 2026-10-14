@@ -1816,44 +1816,6 @@ function displayPdfPreview(banco) {
     }
   }
 
-  // ── Cuadro resumen pre-importación ─────────────────────────────────────────
-  var _resumenBox = (function() {
-    var pagoNum = _pdfPagoSinInt ? (parseFloat(_pdfPagoSinInt.replace(/[$,]/g,'')) || 0) : 0;
-    var diff    = pagoNum > 0 ? (totalGastos - pagoNum) : 0;
-    var hayPago = pagoNum > 0;
-    var ok      = !hayPago || Math.abs(diff) <= 1;
-    var warn    = hayPago && !ok && Math.abs(diff) / pagoNum <= 0.05;
-    var bgColor, borderColor, iconColor, icon, msgColor;
-    if (ok)        { bgColor='rgba(34,197,94,0.07)';  borderColor='rgba(34,197,94,0.4)';   iconColor='var(--accent-green)'; icon='fa-check-circle';        msgColor='var(--accent-green)'; }
-    else if (warn) { bgColor='rgba(245,158,11,0.07)'; borderColor='rgba(245,158,11,0.5)'; iconColor='var(--accent-amber)'; icon='fa-exclamation-triangle'; msgColor='var(--accent-amber)'; }
-    else           { bgColor='rgba(239,68,68,0.07)';  borderColor='rgba(239,68,68,0.5)';  iconColor='var(--accent-red)';   icon='fa-exclamation-triangle'; msgColor='var(--accent-red)'; }
-    var gastosSel = _pdfExcluirIngresos ? gastos.length : rows.length;
-    var pagoInfo = '';
-    if (hayPago) {
-      pagoInfo += '<span style="font-size:13px;color:var(--text-muted);">Pago sin intereses (EC): '
-        + '<strong style="color:var(--accent-green);">$' + _formatNum(pagoNum) + '</strong></span>';
-      if (!ok) {
-        var lbl = diff > 0 ? ('⚠ Exceso de $' + _formatNum(Math.abs(diff))) : ('⚠ Faltante de $' + _formatNum(Math.abs(diff)));
-        pagoInfo += '<span style="font-size:13px;font-weight:600;color:' + msgColor + ';">' + lbl + '</span>';
-      } else {
-        pagoInfo += '<span style="font-size:13px;color:var(--accent-green);"><i class="fas fa-check"></i> Cuadra</span>';
-      }
-    }
-    return '<div class="pdf-print-hide" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;'
-      + 'background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:6px;'
-      + 'padding:8px 14px;margin-bottom:8px;">'
-      + '<i class="fas ' + icon + '" style="color:' + iconColor + ';font-size:18px;flex-shrink:0;"></i>'
-      + '<div style="flex:1;min-width:0;">'
-      +   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:2px;">'
-      +     'Esta carga registrará <strong>' + gastosSel + ' movimientos</strong>'
-      +   '</div>'
-      +   '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">'
-      +     '<span style="font-size:20px;font-weight:700;color:' + msgColor + ';font-variant-numeric:tabular-nums;">−$' + _formatNum(totalGastos) + '</span>'
-      +     pagoInfo
-      +   '</div>'
-      + '</div>'
-      + '</div>';
-  }());
 
   // Selector de cuenta (se necesita en fila 2)
   var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
@@ -1864,64 +1826,45 @@ function displayPdfPreview(banco) {
     }).join('');
 
   var html = datalistHtml
-    // ── Fila 1: banco · clasificación · totales · acciones ──────────────────
-    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
-    +   '<span class="badge badge-blue" style="font-size:14px;">'
+    // ── Fila 1: banco · clasificación · controles · acciones ────────────────
+    + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">'
+    +   '<span class="badge badge-blue" style="font-size:13px;">'
     +     '<i class="fas fa-university"></i> ' + (banco || '') + (_pdfTipoEC === 'tc' ? ' TC' : _pdfTipoEC === 'chequera' ? ' CHQ' : '') + ' — ' + rows.length + ' mov.'
     +   '</span>'
-    +   '<span class="badge badge-red" style="font-size:14px;">' + gastos.length + ' gastos</span>'
+    +   '<span class="badge badge-red" style="font-size:13px;">' + gastos.length + ' gastos</span>'
     +   ingresoBadge
-    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:center;">'
+    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--text-muted);display:flex;gap:6px;align-items:center;">'
     +     '<i class="fas fa-history" style="color:var(--accent-green);"></i> ' + nHist + '&ensp;'
     +     '<i class="fas fa-tag" style="color:var(--accent-blue);"></i> ' + nRegla + '&ensp;'
     +     (nRevisar > 0
         ? '<i class="fas fa-exclamation-circle" style="color:var(--accent-amber);"></i> <strong style="color:var(--accent-amber);">' + nRevisar + ' revisar</strong>'
         : '<i class="fas fa-check-circle" style="color:var(--accent-green);"></i>')
     +   '</span>'
-    // separador visual
-    +   '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;"></span>'
-    // totales en línea
-    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--accent-red);font-variant-numeric:tabular-nums;white-space:nowrap;">'
-    +     '<strong>G</strong> −$' + _formatNum(totalGastos)
-    +   '</span>'
-    +   '<span class="pdf-print-hide" style="font-size:12px;color:var(--accent-green);font-variant-numeric:tabular-nums;white-space:nowrap;">'
-    +     '<strong>I</strong> +$' + _formatNum(totalIngresos)
-    +   '</span>'
-    +   '<span class="pdf-print-hide" style="font-size:13px;font-weight:700;color:' + netoColor + ';font-variant-numeric:tabular-nums;white-space:nowrap;">'
-    +     'Neto ' + (neto >= 0 ? '+' : '−') + '$' + _formatNum(Math.abs(neto))
-    +   '</span>'
-    // separador visual
-    +   '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;"></span>'
-    // acciones
-    +   '<button class="btn btn-secondary pdf-print-hide" onclick="togglePdfVerification()"'
-    +     ' id="pdfVerBtn" style="font-size:13px;padding:3px 10px;">'
-    +     '<i class="fas fa-list-ul"></i> Resumen'
-    +   '</button>'
-    +   '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
-    +     ' style="font-size:13px;padding:3px 10px;">'
-    +     '<i class="fas fa-trash"></i> Eliminar'
-    +   '</button>'
-    +   '<button class="btn btn-primary pdf-print-hide" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 14px;font-size:13px;white-space:nowrap;margin-left:auto;">'
-    +     '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
-    +   '</button>'
-    + '</div>'
-    // ── Fila 2: chips EC (izq) + cuenta/fecha/borrador (der) ────────────────
-    + '<div class="pdf-print-hide" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;margin-bottom:8px;">'
-    +   metaChips
-    +   '<div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;">'
-    +     '<button class="btn btn-secondary" onclick="savePdfDraft()" style="padding:4px 10px;font-size:12px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
+    // controles + acciones lado derecho
+    +   '<div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap;">'
+    +     '<button class="btn btn-secondary pdf-print-hide" onclick="savePdfDraft()" style="padding:3px 8px;font-size:12px;white-space:nowrap;border-color:var(--accent-amber);color:var(--accent-amber);">'
     +       '<i class="fas fa-bookmark"></i> Borrador'
     +     '</button>'
-    +     '<label class="form-label" style="margin:0;white-space:nowrap;font-size:12px;">Fecha pago:</label>'
-    +     '<input type="date" id="pdfFechaPagoInput" class="form-input" style="width:135px;font-size:12px;padding:4px 6px;"'
+    +     '<label class="form-label pdf-print-hide" style="margin:0;white-space:nowrap;font-size:12px;">Fecha pago:</label>'
+    +     '<input type="date" id="pdfFechaPagoInput" class="form-input pdf-print-hide" style="width:130px;font-size:12px;padding:3px 6px;"'
     +       ' value="' + _pdfFechaPago + '"'
     +       ' onchange="_pdfFechaPago=this.value"'
     +       ' title="Fecha en que realizaste el pago de la tarjeta desde la chequera">'
-    +     '<label class="form-label" style="margin:0;white-space:nowrap;font-size:12px;">Cuenta:</label>'
-    +     '<select id="pdfCuentaSelect" class="form-input" style="min-width:150px;font-size:12px;padding:4px 6px;">'
-    +       '<option value="">— Selecciona —</option>'
+    +     '<select id="pdfCuentaSelect" class="form-input pdf-print-hide" style="min-width:140px;font-size:12px;padding:3px 6px;" title="Cuenta origen del pago">'
+    +       '<option value="">— Cuenta —</option>'
     +       cuentaOpts
     +     '</select>'
+    +     '<button class="btn btn-secondary pdf-print-hide" onclick="togglePdfVerification()"'
+    +       ' id="pdfVerBtn" style="font-size:12px;padding:3px 8px;">'
+    +       '<i class="fas fa-list-ul"></i> Resumen'
+    +     '</button>'
+    +     '<button class="btn btn-secondary pdf-print-hide" onclick="removePdfSelectedRows()"'
+    +       ' style="font-size:12px;padding:3px 8px;">'
+    +       '<i class="fas fa-trash"></i> Eliminar'
+    +     '</button>'
+    +     '<button class="btn btn-primary pdf-print-hide" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 12px;font-size:13px;white-space:nowrap;">'
+    +       '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
+    +     '</button>'
     +   '</div>'
     + '</div>'
     + '<div id="pdfVerificationPanel" style="display:none;margin-bottom:8px;"></div>'
@@ -2042,15 +1985,15 @@ function displayPdfPreview(banco) {
 
   container.innerHTML = html;
 
-  // Insertar cuadro resumen pre-importación en el DOM (antes de pdfVerificationPanel)
-  (function insertResumenBox() {
+  // Insertar barra de resumen compacta antes de pdfVerificationPanel
+  (function insertSummaryBar() {
     var verPanel = document.getElementById('pdfVerificationPanel');
     if (!verPanel) return;
     var pn = parseFloat((_pdfPagoSinInt || '').replace(/[$,]/g,'')) || 0;
     var tg = 0;
     _pdfParsedRows.forEach(function(r) { if (r.tipo === 'gasto') tg += r.monto; });
     var df = pn > 0 ? tg - pn : 0;
-    var ok = pn <= 0 || Math.abs(df) <= 1;
+    var ok   = pn <= 0 || Math.abs(df) <= 1;
     var warn = !ok && pn > 0 && Math.abs(df) / pn <= 0.05;
     var bg, bc, ic, icn, mc;
     if (ok)        { bg='rgba(34,197,94,0.07)';  bc='rgba(34,197,94,0.4)';   ic='var(--accent-green)'; icn='fa-check-circle';        mc='var(--accent-green)'; }
@@ -2060,31 +2003,32 @@ function displayPdfPreview(banco) {
       ? _pdfParsedRows.filter(function(r){ return r.tipo==='gasto'; }).length
       : _pdfParsedRows.length;
     var fmt = function(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); };
-    var pagoTxt = '';
+    var sep = '<span style="width:1px;align-self:stretch;background:var(--border-color);margin:0 2px;flex-shrink:0;"></span>';
+    var inner = '<i class="fas ' + icn + '" style="color:' + ic + ';font-size:14px;flex-shrink:0;"></i>'
+      + '<span style="font-size:14px;font-weight:700;color:' + mc + ';font-variant-numeric:tabular-nums;white-space:nowrap;">−$' + fmt(tg) + '</span>'
+      + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">' + movs + ' mov.</span>';
+    if (_pdfFechaCorte) {
+      inner += sep
+        + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+        + '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:10px;margin-right:3px;"></i>'
+        + 'Corte <strong style="color:var(--text-primary);">' + _pdfFechaCorte + '</strong></span>';
+    }
     if (pn > 0) {
-      pagoTxt = '<span style="font-size:13px;color:var(--text-muted);">Pago sin intereses (EC): '
-        + '<strong style="color:var(--accent-green);">$' + fmt(pn) + '</strong></span>';
+      inner += sep
+        + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+        + 'Sin int: <strong style="color:var(--accent-green);">$' + fmt(pn) + '</strong></span>';
       if (!ok) {
-        var lbl = df > 0 ? '⚠ Exceso de $' + fmt(Math.abs(df)) : '⚠ Faltante de $' + fmt(Math.abs(df));
-        pagoTxt += '<span style="font-size:13px;font-weight:600;color:' + mc + ';">' + lbl + '</span>';
+        var lbl = df > 0 ? '⚠ Exceso $' + fmt(Math.abs(df)) : '⚠ Faltante $' + fmt(Math.abs(df));
+        inner += '<span style="font-size:12px;font-weight:600;color:' + mc + ';white-space:nowrap;">' + lbl + '</span>';
       } else {
-        pagoTxt += '<span style="font-size:13px;color:var(--accent-green);"><i class="fas fa-check"></i> Cuadra</span>';
+        inner += '<span style="font-size:12px;color:var(--accent-green);white-space:nowrap;"><i class="fas fa-check"></i> Cuadra</span>';
       }
     }
     var box = document.createElement('div');
     box.className = 'pdf-print-hide';
-    box.style.cssText = 'display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:' + bg
-      + ';border:1px solid ' + bc + ';border-radius:6px;padding:8px 14px;margin-bottom:8px;flex-shrink:0;';
-    box.innerHTML = '<i class="fas ' + icn + '" style="color:' + ic + ';font-size:18px;flex-shrink:0;"></i>'
-      + '<div style="flex:1;min-width:0;">'
-      +   '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:2px;">'
-      +     'Esta carga registrará <strong>' + movs + ' movimientos</strong>'
-      +   '</div>'
-      +   '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">'
-      +     '<span style="font-size:20px;font-weight:700;color:' + mc + ';font-variant-numeric:tabular-nums;">−$' + fmt(tg) + '</span>'
-      +     pagoTxt
-      +   '</div>'
-      + '</div>';
+    box.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:' + bg
+      + ';border:1px solid ' + bc + ';border-radius:6px;padding:5px 12px;margin-bottom:6px;flex-shrink:0;';
+    box.innerHTML = inner;
     verPanel.parentNode.insertBefore(box, verPanel);
   }());
 
