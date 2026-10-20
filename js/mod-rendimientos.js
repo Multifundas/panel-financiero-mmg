@@ -415,6 +415,10 @@ function rendCompararAnios() {
 
 /* -- Helper: calcula rendimiento real descontando flujos de capital -- */
 function _rendReal(r) {
+  // Para cierres mensuales sincronizados desde historial_saldos, saldo_final representa
+  // el saldo "puro" sin movimientos (saldo_inicial + rendimiento), por lo que restar
+  // movimientos_neto causaria doble conteo. Usar rendimiento_monto directamente si existe.
+  if (r.rendimiento_monto != null) return r.rendimiento_monto;
   var sI = r.saldo_inicial || 0;
   var sF = r.saldo_final || 0;
   // Si tiene entradas/salidas/transferencias (captura historica), usar esos campos
