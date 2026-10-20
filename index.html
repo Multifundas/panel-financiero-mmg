@@ -394,6 +394,25 @@
       fixes++;
     })();
 
+    // 5) BANORTE (PVB MMG): copiar saldo_inicio Ene-Mar 2026 desde pf_rendimientos (sI=0 en hist)
+    (function() {
+      var c = findCuenta("BANORTE (PVB MMG)");
+      if (!c || !c.historial_saldos) return;
+      var fixes2026 = [
+        { fecha:"2026-01-31", sI:7566836 },
+        { fecha:"2026-02-28", sI:7605689 },
+        { fecha:"2026-03-31", sI:7637885 }
+      ];
+      fixes2026.forEach(function(f) {
+        var h = c.historial_saldos.find(function(x){ return x.fecha===f.fecha && (x.saldo_inicio||0)===0; });
+        if (!h) { console.log("PVB MMG: " + f.fecha + " ya tiene saldo_inicio o no existe"); return; }
+        console.log("PVB MMG " + f.fecha + ": saldo_inicio 0 -> " + f.sI);
+        h.saldo_inicio = f.sI;
+        h.rendimiento_pct = (h.rendimiento||0) / f.sI * 100;
+        fixes++;
+      });
+    })();
+
     if (fixes > 0) {
       saveData(STORAGE_KEYS.cuentas, cuentas);
       console.log("Guardado. " + fixes + " fix(es) aplicados. Recarga la pagina para ver los cambios.");
