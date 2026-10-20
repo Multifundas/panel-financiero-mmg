@@ -137,7 +137,7 @@
               <th>Institucion</th>
               <th>Moneda</th>
               <th style="text-align:right;">Saldo</th>
-              <th style="text-align:right;">Rendimiento %</th>
+              <th style="text-align:right;">Rend. Anual</th>
               <th>Subtipo</th>
               <th>Cierre</th>
               <th style="text-align:center;" data-no-sort="true">Acciones</th>
@@ -1909,7 +1909,7 @@ function filterEstadoCuenta() {
   var esInversion = cuenta.tipo === 'inversion';
   var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (_calcSaldoReal(cuenta) * rendAnualPct / 100 / 12) : 0;
   var rendHTML = esInversion
-    ? '<div style="text-align:center;"><div style="font-size:16px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
+    ? '<div style="text-align:center;"><div style="font-size:16px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rend. Anual</div>' +
       '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
       (rendMonto ? '<div style="font-size:17px;color:var(--text-primary);font-weight:700;">Acumulado año: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
       (rendEstimadoMensual > 0 ? '<div style="font-size:16px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrencyInt(rendEstimadoMensual, moneda) + '/mes</div>' : '') +

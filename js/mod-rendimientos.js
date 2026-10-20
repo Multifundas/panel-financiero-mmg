@@ -685,7 +685,7 @@ function renderRendMensualReport() {
   }
   thead += '<th style="text-align:right;min-width:100px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'total\')">Total' + sortArrow('total') + '</th>';
   thead += '<th style="text-align:right;min-width:80px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'pct\')">% Acum.' + sortArrow('pct') + '</th>';
-  thead += '<th style="text-align:right;min-width:90px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'anualizado\')">Anualizado' + sortArrow('anualizado') + '</th></tr>';
+  thead += '<th style="text-align:right;min-width:90px;font-weight:800;cursor:pointer;user-select:none;" onclick="sortRendMensual(\'anualizado\')">Rend. Anual' + sortArrow('anualizado') + '</th></tr>';
 
   // Compute row data
   var totalPorMes = new Array(12).fill(0);
