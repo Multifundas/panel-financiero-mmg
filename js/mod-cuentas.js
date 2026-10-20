@@ -311,12 +311,17 @@ function mostrarDesgloseCuentas(tipoCuenta) {
     totalMXN += valMXN;
     var instNombre = instMap[c.institucion_id] || '\u2014';
 
-    // Rendimiento
+    // Rendimiento: YTD acumulado / capital inicial, anualizado por meses (misma logica que tabla)
     var rendAnual = c.rendimiento_anual || 0;
-    var histCta = c.historial_saldos || [];
-    if (histCta.length > 0) {
-      var ultCierre = histCta.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
-      if (ultCierre.rendimiento_pct_anual != null) rendAnual = ultCierre.rendimiento_pct_anual;
+    var histCtaL = (c.historial_saldos || []).slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+    if (histCtaL.length > 0) {
+      var anioL = new Date().getFullYear().toString();
+      var histAnioL = histCtaL.filter(function(h) { return (h.fecha || '').startsWith(anioL); });
+      if (histAnioL.length === 0) histAnioL = histCtaL;
+      var capInicialL = histAnioL[0].saldo_inicio || 0;
+      var totalRendL = histAnioL.reduce(function(s, h) { return s + (h.rendimiento || 0); }, 0);
+      var mesesL = histAnioL.length;
+      if (capInicialL > 0 && mesesL > 0) rendAnual = (totalRendL / capInicialL) * (12 / mesesL) * 100;
     }
     var rendHTML = rendAnual !== 0
       ? '<span style="color:' + (rendAnual > 0 ? 'var(--text-primary)' : 'var(--accent-red)') + ';font-weight:600;">' + (rendAnual >= 0 ? '+' : '') + Number(rendAnual).toFixed(2) + '%</span>'
