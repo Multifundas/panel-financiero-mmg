@@ -1180,8 +1180,8 @@ function recalcCierreRendimiento(inputEl) {
   var fechaCierre = fechaInput ? fechaInput.value : '';
   var dias = _calcDiasEntreFechas(fechaUltimoCierre, fechaCierre);
 
-  // Rendimiento = saldo nuevo - saldo anterior (diferencia simple)
-  var rend = saldoFinal - saldoInicio;
+  // Rendimiento neto = (saldoFinal - saldoInicio) - movNeto
+  var rend = saldoFinal - saldoInicio - movNeto;
   var rendPct = saldoInicio > 0 ? ((rend / saldoInicio) * 100) : 0;
   var rendPctAnual = (saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
@@ -1234,11 +1234,10 @@ function saveCierreMensual(event) {
     var dias = _calcDiasEntreFechas(fechaUltimoCierre, fecha);
 
     // Las cuentas de debito no generan rendimiento
-    // Rendimiento = diferencia total (saldoFinal - saldoInicio)
-    // movNeto se guarda para referencia pero NO se descuenta del rendimiento
+    // Rendimiento neto = (saldoFinal - saldoInicio) - movNeto
+    // Descontar movimientos de capital para obtener solo el rendimiento de la inversion
     var esDebito = tipoCuenta === 'debito';
-    var diff = saldoFinal - saldoInicio;
-    var rend = esDebito ? 0 : diff;
+    var rend = esDebito ? 0 : (saldoFinal - saldoInicio - movNeto);
     var rendPct = (!esDebito && saldoInicio > 0) ? ((rend / saldoInicio) * 100) : 0;
     var rendPctAnual = (!esDebito && saldoInicio > 0 && dias > 0) ? ((rend / saldoInicio) * (365 / dias) * 100) : 0;
 
