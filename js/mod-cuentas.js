@@ -1,4 +1,6 @@
-﻿function renderCuentas() {
+﻿console.log('[mod-cuentas v20261020f] loaded');
+
+function renderCuentas() {
   const el = document.getElementById('module-cuentas');
 
   // -- Load data --
@@ -220,6 +222,10 @@ function filterCuentas() {
       const mesesConDatos = histAnio.length;
       if (capitalInicial > 0 && mesesConDatos > 0) {
         rendAnualCalc = (totalRend / capitalInicial) * (12 / mesesConDatos) * 100;
+      } else if (mesesConDatos > 0) {
+        // Fallback: suma de rendimiento_pct * 12/meses (cuando falta saldo_inicio)
+        const sumPct = histAnio.reduce((s, h) => s + (h.rendimiento_pct || 0), 0);
+        rendAnualCalc = sumPct * (12 / mesesConDatos);
       }
     }
     const rendimiento = rendAnualCalc !== 0
@@ -321,7 +327,12 @@ function mostrarDesgloseCuentas(tipoCuenta) {
       var capInicialL = histAnioL[0].saldo_inicio || 0;
       var totalRendL = histAnioL.reduce(function(s, h) { return s + (h.rendimiento || 0); }, 0);
       var mesesL = histAnioL.length;
-      if (capInicialL > 0 && mesesL > 0) rendAnual = (totalRendL / capInicialL) * (12 / mesesL) * 100;
+      if (capInicialL > 0 && mesesL > 0) {
+        rendAnual = (totalRendL / capInicialL) * (12 / mesesL) * 100;
+      } else if (mesesL > 0) {
+        var sumPctL = histAnioL.reduce(function(s, h) { return s + (h.rendimiento_pct || 0); }, 0);
+        rendAnual = sumPctL * (12 / mesesL);
+      }
     }
     var rendHTML = rendAnual !== 0
       ? '<span style="color:' + (rendAnual > 0 ? 'var(--text-primary)' : 'var(--accent-red)') + ';font-weight:600;">' + (rendAnual >= 0 ? '+' : '') + Number(rendAnual).toFixed(2) + '%</span>'
@@ -1889,6 +1900,9 @@ function filterEstadoCuenta() {
     var mesesConDatosEc = histAnioEc.length;
     if (capitalInicialEc > 0 && mesesConDatosEc > 0) {
       rendAnualPct = (totalRendEc / capitalInicialEc) * (12 / mesesConDatosEc) * 100;
+    } else if (mesesConDatosEc > 0) {
+      var sumPctEc = histAnioEc.reduce(function(s, h) { return s + (h.rendimiento_pct || 0); }, 0);
+      rendAnualPct = sumPctEc * (12 / mesesConDatosEc);
     }
     rendMonto = totalRendEc;
     var ultCierreEc = histOrdenado[histOrdenado.length - 1];
