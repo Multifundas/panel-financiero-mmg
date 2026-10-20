@@ -404,9 +404,10 @@
         { fecha:"2026-03-31", sI:7637885 }
       ];
       fixes2026.forEach(function(f) {
-        var h = c.historial_saldos.find(function(x){ return x.fecha===f.fecha && (x.saldo_inicio||0)===0; });
-        if (!h) { console.log("PVB MMG: " + f.fecha + " ya tiene saldo_inicio o no existe"); return; }
-        console.log("PVB MMG " + f.fecha + ": saldo_inicio 0 -> " + f.sI);
+        var h = c.historial_saldos.find(function(x){ return x.fecha===f.fecha; });
+        if (!h) { console.log("PVB MMG: no existe H " + f.fecha); return; }
+        if (h.saldo_inicio === f.sI) { console.log("PVB MMG " + f.fecha + ": ya correcto (" + f.sI + ")"); return; }
+        console.log("PVB MMG " + f.fecha + ": saldo_inicio " + Math.round(h.saldo_inicio||0) + " -> " + f.sI);
         h.saldo_inicio = f.sI;
         h.rendimiento_pct = (h.rendimiento||0) / f.sI * 100;
         fixes++;
