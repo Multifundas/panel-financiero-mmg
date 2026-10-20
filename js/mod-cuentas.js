@@ -1,6 +1,4 @@
-﻿console.log('[mod-cuentas v20261020f] loaded');
-
-function renderCuentas() {
+﻿function renderCuentas() {
   const el = document.getElementById('module-cuentas');
 
   // -- Load data --
