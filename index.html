@@ -332,6 +332,76 @@
   <script src="js/manual.js?v=20260731c"></script>
   <script src="js/app.js?v=20260909a"></script>
   <script>
+  window.arqFix = function() {
+    var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+    var rends   = loadData(STORAGE_KEYS.rendimientos) || [];
+    var fixes   = 0;
+
+    function findCuenta(nombre) { return cuentas.find(function(c){ return c.nombre===nombre; }); }
+    function findHistEntry(hist, fecha, sI) {
+      return hist.find(function(h){ return h.fecha===fecha && Math.round(h.saldo_inicio||0)===Math.round(sI); });
+    }
+
+    // 1) BANORTE (MARITZA): H 2026-03-23 rendimiento 9309 -> 28466
+    (function() {
+      var c = findCuenta("BANORTE (MARITZA)");
+      if (!c || !c.historial_saldos) return;
+      var h = findHistEntry(c.historial_saldos, "2026-03-23", 6270829);
+      if (!h) { console.warn("MARITZA: no encontre H 2026-03-23 sI=6270829"); return; }
+      console.log("MARITZA 2026-03-23: rend " + h.rendimiento + " -> 28466");
+      h.rendimiento = 28466;
+      h.saldo_final = 6270829 + 28466;
+      h.rendimiento_pct = (28466/6270829)*100;
+      h.rendimiento_pct_anual = (28466/6270829)*(365/28)*100;
+      fixes++;
+    })();
+
+    // 2) BANORTE (PVB MMG): insertar April 2026 + fix sI de mayo
+    (function() {
+      var c = findCuenta("BANORTE (PVB MMG)");
+      if (!c || !c.historial_saldos) return;
+      var hasApr = c.historial_saldos.some(function(h){ return (h.fecha||"").startsWith("2026-04"); });
+      if (hasApr) { console.log("PVB MMG: April ya existe"); return; }
+      console.log("PVB MMG: insertando April 2026 y corrigiendo sI de Mayo");
+      c.historial_saldos.push({ fecha:"2026-04-30", saldo_inicio:7675181, saldo_final:7714119, movimientos_neto:0, rendimiento:38938, rendimiento_pct:(38938/7675181)*100, rendimiento_pct_anual:(38938/7675181)*(365/30)*100, dias:30 });
+      var mayo = findHistEntry(c.historial_saldos, "2026-05-30", 7675181);
+      if (mayo) { console.log("PVB MMG: mayo saldo_inicio 7675181 -> 7714119"); mayo.saldo_inicio = 7714119; mayo.rendimiento_pct = (mayo.rendimiento||0)/7714119*100; }
+      fixes++;
+    })();
+
+    // 3) BANORTE (PVB MECG): insertar April 2026 + fix sI de mayo
+    (function() {
+      var c = findCuenta("BANORTE (PVB MECG)");
+      if (!c || !c.historial_saldos) return;
+      var hasApr = c.historial_saldos.some(function(h){ return (h.fecha||"").startsWith("2026-04"); });
+      if (hasApr) { console.log("PVB MECG: April ya existe"); return; }
+      console.log("PVB MECG: insertando April 2026 y corrigiendo sI de Mayo");
+      c.historial_saldos.push({ fecha:"2026-04-30", saldo_inicio:6973361, saldo_final:7005526, movimientos_neto:0, rendimiento:32165, rendimiento_pct:(32165/6973361)*100, rendimiento_pct_anual:(32165/6973361)*(365/30)*100, dias:30 });
+      var mayo = findHistEntry(c.historial_saldos, "2026-05-30", 6973361);
+      if (mayo) { console.log("PVB MECG: mayo saldo_inicio 6973361 -> 7005526"); mayo.saldo_inicio = 7005526; mayo.rendimiento_pct = (mayo.rendimiento||0)/7005526*100; }
+      fixes++;
+    })();
+
+    // 4) GBM (DBT-MSD MMG): H 2026-01-31 saldo_inicio 103000 -> 104000
+    (function() {
+      var c = findCuenta("GBM (DBT-MSD MMG)");
+      if (!c || !c.historial_saldos) return;
+      var h = findHistEntry(c.historial_saldos, "2026-01-31", 103000);
+      if (!h) { console.warn("GBM: no encontre H 2026-01-31 sI=103000"); return; }
+      console.log("GBM 2026-01-31: saldo_inicio 103000 -> 104000");
+      h.saldo_inicio = 104000;
+      h.rendimiento_pct = (h.rendimiento||0)/104000*100;
+      fixes++;
+    })();
+
+    if (fixes > 0) {
+      saveData(STORAGE_KEYS.cuentas, cuentas);
+      console.log("Guardado. " + fixes + " fix(es) aplicados. Recarga la pagina para ver los cambios.");
+    } else {
+      console.log("Nada que corregir.");
+    }
+  };
+
   window.arqDiag = function() {
     var ANIO = "2026";
     var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
