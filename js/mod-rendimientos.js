@@ -727,18 +727,8 @@ function renderRendMensualReport() {
     totalCapitalGeneral += capitalInicialMXN;
     var cumPct = capitalInicialMXN > 0 ? (totalCuenta / capitalInicialMXN * 100) : 0;
     var mesesConDatos = monthValues.filter(function(mv) { return mv && mv.hasData; }).length;
-    // Tasa anualizada del ultimo cierre del año (igual que la que muestra el estado de cuenta)
-    var anualizadoPct = 0;
-    for (var lm = 11; lm >= 0; lm--) {
-      if (monthValues[lm] && monthValues[lm].hasData) {
-        var periodoUlt = anio + '-' + String(lm + 1).padStart(2, '0');
-        var regsUlt = rendimientos.filter(function(r) { return r.cuenta_id === cta.id && r.periodo === periodoUlt; });
-        if (regsUlt.length > 0 && regsUlt[0].rendimiento_pct_anual != null) {
-          anualizadoPct = regsUlt[0].rendimiento_pct_anual;
-        }
-        break;
-      }
-    }
+    // Rendimiento acumulado del año / capital inicial, anualizado por meses transcurridos
+    var anualizadoPct = (mesesConDatos > 0 && capitalInicialMXN > 0) ? (cumPct * (12 / mesesConDatos)) : 0;
     var capitalActual = _calcSaldoReal(cta);
     var capitalActualMXN = toMXN(capitalActual, moneda, tiposCambio);
     totalGeneral += totalCuenta;
