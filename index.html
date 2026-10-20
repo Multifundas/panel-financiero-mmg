@@ -331,6 +331,29 @@
   <script src="js/mod-seguros.js?v=20260909e"></script>
   <script src="js/manual.js?v=20260731c"></script>
   <script src="js/app.js?v=20260909a"></script>
+  <script>
+  window.arqDiag = function() {
+    var ANIO = "2026";
+    var cuentas = loadData(STORAGE_KEYS.cuentas) || [];
+    var rends   = loadData(STORAGE_KEYS.rendimientos) || [];
+    var names   = ["BANORTE (PVB MMG)","BANORTE (PVB MECG)","GBM (DBT-MSD MMG)","BANORTE (MARITZA)"];
+    names.forEach(function(nombre) {
+      var c = cuentas.find(function(x){ return x.nombre === nombre; });
+      if (!c) { console.log(nombre + ": NO ENCONTRADA"); return; }
+      var hist = (c.historial_saldos||[]).slice().sort(function(a,b){ return (a.fecha||"").localeCompare(b.fecha||""); });
+      var r26  = rends.filter(function(r){ return r.cuenta_id===c.id && (r.periodo||r.fecha||"").startsWith(ANIO); })
+                      .sort(function(a,b){ return (a.periodo||a.fecha||"").localeCompare(b.periodo||b.fecha||""); });
+      var h26  = hist.filter(function(h){ return (h.fecha||"").startsWith(ANIO); });
+      console.log("\n--- " + nombre + " | hist2026=" + h26.length + " | rend2026=" + r26.length + " ---");
+      hist.slice(-12).forEach(function(h){
+        console.log("  H " + h.fecha + " | sI=" + Math.round(h.saldo_inicio||0) + " | rend=" + Math.round(h.rendimiento||0) + " | movN=" + Math.round(h.movimientos_neto||0));
+      });
+      r26.forEach(function(r){
+        console.log("  R " + r.periodo + " | sI=" + Math.round(r.saldo_inicial||0) + " | rendM=" + Math.round(r.rendimiento_monto||0));
+      });
+    });
+  };
+  </script>
 </body>
 </html>
 
