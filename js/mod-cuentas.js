@@ -208,12 +208,19 @@ function filterCuentas() {
       : c.tipo === 'inmueble' ? 'INMUEBLE'
       : c.tipo === 'activo_fijo' ? 'ACTIVO FIJO' : 'DEBITO';
 
-    // Rendimiento display (usar tasa anualizada del ultimo cierre, o fallback al campo estatico)
+    // Rendimiento display: YTD acumulado / capital inicial, anualizado por meses (misma logica que tabla)
     let rendAnualCalc = c.rendimiento_anual || 0;
-    const histCta = c.historial_saldos || [];
+    const histCta = (c.historial_saldos || []).slice().sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
     if (histCta.length > 0) {
-      const ultCierre = [...histCta].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))[0];
-      if (ultCierre.rendimiento_pct_anual != null) rendAnualCalc = ultCierre.rendimiento_pct_anual;
+      const anioActual = new Date().getFullYear().toString();
+      let histAnio = histCta.filter(h => (h.fecha || '').startsWith(anioActual));
+      if (histAnio.length === 0) histAnio = histCta;
+      const capitalInicial = histAnio[0].saldo_inicio || 0;
+      const totalRend = histAnio.reduce((s, h) => s + (h.rendimiento || 0), 0);
+      const mesesConDatos = histAnio.length;
+      if (capitalInicial > 0 && mesesConDatos > 0) {
+        rendAnualCalc = (totalRend / capitalInicial) * (12 / mesesConDatos) * 100;
+      }
     }
     const rendimiento = rendAnualCalc !== 0
       ? (rendAnualCalc >= 0 ? '+' : '') + Number(rendAnualCalc).toFixed(2) + '%'
@@ -1865,20 +1872,29 @@ function filterEstadoCuenta() {
 
   var saldoFinal = saldoRunning;
 
-  // Calculate rendimiento info from latest cierre
+  // Calculate rendimiento info: YTD acumulado / capital inicial, anualizado por meses (misma logica que tabla)
   var rendAnualPct = 0, rendMonto = 0, rendFuente = '';
   if (cuenta.tipo === 'inversion' && historial.length > 0) {
-    var ultCierre = historial.slice().sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); })[0];
-    if (ultCierre.rendimiento_pct_anual != null) rendAnualPct = ultCierre.rendimiento_pct_anual;
-    if (ultCierre.rendimiento != null) rendMonto = ultCierre.rendimiento;
-    rendFuente = ultCierre.fecha ? formatDate(ultCierre.fecha) : '';
+    var histOrdenado = historial.slice().sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+    var anioActualEc = new Date().getFullYear().toString();
+    var histAnioEc = histOrdenado.filter(function(h) { return (h.fecha || '').startsWith(anioActualEc); });
+    if (histAnioEc.length === 0) histAnioEc = histOrdenado;
+    var capitalInicialEc = histAnioEc[0].saldo_inicio || 0;
+    var totalRendEc = histAnioEc.reduce(function(s, h) { return s + (h.rendimiento || 0); }, 0);
+    var mesesConDatosEc = histAnioEc.length;
+    if (capitalInicialEc > 0 && mesesConDatosEc > 0) {
+      rendAnualPct = (totalRendEc / capitalInicialEc) * (12 / mesesConDatosEc) * 100;
+    }
+    rendMonto = totalRendEc;
+    var ultCierreEc = histOrdenado[histOrdenado.length - 1];
+    rendFuente = ultCierreEc.fecha ? formatDate(ultCierreEc.fecha) : '';
   }
   var esInversion = cuenta.tipo === 'inversion';
   var rendEstimadoMensual = esInversion && rendAnualPct > 0 ? (_calcSaldoReal(cuenta) * rendAnualPct / 100 / 12) : 0;
   var rendHTML = esInversion
     ? '<div style="text-align:center;"><div style="font-size:16px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Rendimiento Anual</div>' +
       '<div style="font-size:22px;font-weight:800;color:var(--accent-amber);">' + (rendAnualPct >= 0 ? '+' : '') + rendAnualPct.toFixed(2) + '%</div>' +
-      (rendMonto ? '<div style="font-size:17px;color:var(--text-primary);font-weight:700;">Ultimo cierre: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
+      (rendMonto ? '<div style="font-size:17px;color:var(--text-primary);font-weight:700;">Acumulado año: ' + formatCurrencyInt(rendMonto, moneda) + '</div>' : '') +
       (rendEstimadoMensual > 0 ? '<div style="font-size:16px;color:var(--text-secondary);margin-top:2px;">~' + formatCurrencyInt(rendEstimadoMensual, moneda) + '/mes</div>' : '') +
       (rendFuente ? '<div style="font-size:14px;color:var(--text-muted);margin-top:2px;">Cierre: ' + rendFuente + '</div>' : '') +
       '</div>'
