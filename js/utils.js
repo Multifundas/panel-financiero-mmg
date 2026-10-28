@@ -311,6 +311,15 @@ function _initSortableTables(root) {
     table.setAttribute('data-sortable-init', 'true');
 
     var headers = table.querySelectorAll('thead th');
+    // Build a name→colIdx map for secondary sort resolution
+    var headerNameToIdx = {};
+    headers.forEach(function(th, i) {
+      var name = th.textContent.trim().toLowerCase();
+      headerNameToIdx[name] = i;
+    });
+    // Pairs that always sort together (primary→secondary, always asc for secondary)
+    var secondarySortPairs = { 'categoria': 'descripcion', 'descripcion': 'categoria' };
+
     var firstSortable = null;
     headers.forEach(function(th, colIdx) {
       if (th.getAttribute('data-no-sort') === 'true') return;
@@ -377,6 +386,14 @@ function _initSortableTables(root) {
           }
 
           // Sort units within each segment by the header row's cell value
+          var thName = th.textContent.trim().toLowerCase();
+          var secColName = secondarySortPairs[thName];
+          var secondaryColIdx = secColName !== undefined ? (headerNameToIdx[secColName] !== undefined ? headerNameToIdx[secColName] : -1) : -1;
+          var hasSecondary = secondaryColIdx >= 0;
+          var getCellText = function(unit, idx) {
+            var cell = unit.rows[0].cells[idx];
+            return cell ? cell.textContent.trim() : '';
+          };
           var sortFn = function(a, b) {
             var cellA = a.rows[0].cells[colIdx];
             var cellB = b.rows[0].cells[colIdx];
@@ -393,9 +410,17 @@ function _initSortableTables(root) {
             var numA = parseFloat(txtA.replace(/[^0-9.\-]/g, ''));
             var numB = parseFloat(txtB.replace(/[^0-9.\-]/g, ''));
             if (!isNaN(numA) && !isNaN(numB)) {
-              return newDir === 'asc' ? numA - numB : numB - numA;
+              var diff = newDir === 'asc' ? numA - numB : numB - numA;
+              if (diff !== 0) return diff;
+            } else {
+              var cmp = newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
+              if (cmp !== 0) return cmp;
             }
-            return newDir === 'asc' ? txtA.localeCompare(txtB) : txtB.localeCompare(txtA);
+            // Secondary sort (always asc alphabetical) when primary values are equal
+            if (hasSecondary) {
+              return getCellText(a, secondaryColIdx).localeCompare(getCellText(b, secondaryColIdx));
+            }
+            return 0;
           };
 
           segments.forEach(function(seg) {

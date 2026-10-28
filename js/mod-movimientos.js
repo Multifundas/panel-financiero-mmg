@@ -161,8 +161,8 @@ function renderMovimientos() {
             <tr>
               <th style="width:30px;" data-no-sort="true"><input type="checkbox" id="selectAllMovs" onchange="toggleAllMovCheckboxes(this)" title="Seleccionar todos"></th>
               <th>Fecha</th>
-              <th>Categoria</th>
-              <th>Descripcion</th>
+              <th data-secondary-sort-col="3">Categoria</th>
+              <th data-secondary-sort-col="2">Descripcion</th>
               <th>Cuenta</th>
               <th>Tipo</th>
               <th style="text-align:right;">Monto</th>
