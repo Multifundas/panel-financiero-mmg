@@ -1893,7 +1893,7 @@ function displayPdfPreview(banco) {
     +       '<i class="fas fa-trash"></i>'
     +     '</button>'
     +     '<button class="btn btn-primary" id="pdfImportarBtn" onclick="confirmPdfImport()" style="padding:3px 12px;font-size:13px;white-space:nowrap;">'
-    +       '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos.length : rows.length) + ' mov.'
+    +       '<i class="fas fa-check"></i> Importar ' + (_pdfExcluirIngresos ? gastos : rows).filter(function(r){return !r.selected;}).length + ' mov.'
     +     '</button>'
     +   '</div>'
     + '</div>'
@@ -2212,8 +2212,8 @@ function confirmPdfImport() {
   if (!cuenta) { showToast('Cuenta no encontrada', 'error'); return; }
 
   var toImport = _pdfExcluirIngresos
-    ? _pdfParsedRows.filter(function(r){ return r.tipo !== 'ingreso'; })
-    : _pdfParsedRows;
+    ? _pdfParsedRows.filter(function(r){ return r.tipo !== 'ingreso' && !r.selected; })
+    : _pdfParsedRows.filter(function(r){ return !r.selected; });
 
   if (!confirm('Se importarán ' + toImport.length + ' movimientos a "' + cuenta.nombre + '". ¿Continuar?')) return;
 
