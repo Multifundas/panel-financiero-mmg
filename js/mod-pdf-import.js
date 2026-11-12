@@ -1762,14 +1762,16 @@ function displayPdfPreview(banco) {
 
   var gastos   = rows.filter(function(r) { return r.tipo === 'gasto'; });
   var ingresos = rows.filter(function(r) { return r.tipo === 'ingreso'; });
-  var totalGastos   = gastos.reduce(function(s, r) { return s + r.monto; }, 0);
-  var totalIngresos = ingresos.reduce(function(s, r) { return s + r.monto; }, 0);
+  var gastosAct   = gastos.filter(function(r) { return !r.selected; });
+  var ingresosAct = ingresos.filter(function(r) { return !r.selected; });
+  var totalGastos   = gastosAct.reduce(function(s, r) { return s + r.monto; }, 0);
+  var totalIngresos = ingresosAct.reduce(function(s, r) { return s + r.monto; }, 0);
   var neto = totalIngresos - totalGastos;
   var netoColor = neto >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
-  var nHist    = gastos.filter(function(r) { return r.categoria_source === 'historial'; }).length;
-  var nRegla   = gastos.filter(function(r) { return r.categoria_source === 'regla'; }).length;
-  var nRevisar = gastos.filter(function(r) { return r.categoria_source === 'default'; }).length;
+  var nHist    = gastosAct.filter(function(r) { return r.categoria_source === 'historial'; }).length;
+  var nRegla   = gastosAct.filter(function(r) { return r.categoria_source === 'regla'; }).length;
+  var nRevisar = gastosAct.filter(function(r) { return r.categoria_source === 'default'; }).length;
 
   // Datalist con todas las descripciones del historial
   var datalistHtml = '<datalist id="pdfDescOptions">';
@@ -1844,7 +1846,7 @@ function displayPdfPreview(banco) {
   if (_okS)       { _bgS='rgba(34,197,94,0.07)';  _bcS='rgba(34,197,94,0.4)';   _icS='var(--accent-green)'; _inS='fa-check-circle';        _mcS='var(--accent-green)'; }
   else if (_wnS)  { _bgS='rgba(245,158,11,0.07)'; _bcS='rgba(245,158,11,0.5)'; _icS='var(--accent-amber)'; _inS='fa-exclamation-triangle'; _mcS='var(--accent-amber)'; }
   else            { _bgS='rgba(239,68,68,0.07)';  _bcS='rgba(239,68,68,0.5)';  _icS='var(--accent-red)';   _inS='fa-exclamation-triangle'; _mcS='var(--accent-red)'; }
-  var _movsS = _pdfExcluirIngresos ? gastos.length : rows.length;
+  var _movsS = _pdfExcluirIngresos ? gastosAct.length : rows.filter(function(r){return !r.selected;}).length;
   var _vsep  = '<span style="width:1px;align-self:stretch;background:var(--border-color);flex-shrink:0;"></span>';
   var _rBar  = '<i class="fas ' + _inS + '" style="color:' + _icS + ';font-size:13px;flex-shrink:0;"></i>'
     + '<span style="font-size:14px;font-weight:700;color:' + _mcS + ';font-variant-numeric:tabular-nums;white-space:nowrap;">−$' + _formatNum(totalGastos) + '</span>'
