@@ -1914,7 +1914,7 @@ function displayPdfPreview(banco) {
     +       cuentaOpts
     +     '</select>'
     +   '</div>'
-    +   '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap;'
+    +   '<div id="pdfSummaryBar" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap;'
     +     'background:' + _bgS + ';border:1px solid ' + _bcS + ';border-radius:6px;padding:4px 10px;">'
     +     _rBar
     +   '</div>'
@@ -2161,11 +2161,55 @@ function updatePdfMonto(idx, value) {
   var v = parseFloat(value);
   if (!v || v < 0.01) return;
   _pdfParsedRows[idx].monto = v;
-  // Actualizar texto de impresión
   var printSpan = document.querySelector('.pdf-monto-print[data-idx="' + idx + '"]');
   if (printSpan) {
     var signo = _pdfParsedRows[idx].tipo === 'ingreso' ? '+' : '−';
     printSpan.textContent = signo + '$' + _formatNum(v);
+  }
+  _refreshPdfSummaryBar();
+}
+
+function _refreshPdfSummaryBar() {
+  var bar = document.getElementById('pdfSummaryBar');
+  if (!bar) return;
+  var active = _pdfParsedRows.filter(function(r) { return !r.selected; });
+  var gastosAct = active.filter(function(r) { return r.tipo === 'gasto'; });
+  var totalGastos = gastosAct.reduce(function(s, r) { return s + (parseFloat(r.monto) || 0); }, 0);
+  var movsCount = _pdfExcluirIngresos ? gastosAct.length : active.length;
+  var pnS = parseFloat((_pdfPagoSinInt || '').replace(/[$,]/g,'')) || 0;
+  var dfS = pnS > 0 ? totalGastos - pnS : 0;
+  var okS = pnS <= 0 || Math.abs(dfS) <= 1;
+  var wnS = !okS && pnS > 0 && Math.abs(dfS) / pnS <= 0.05;
+  var mcS = okS ? 'var(--accent-green)' : (wnS ? 'var(--accent-amber)' : 'var(--accent-red)');
+  var inS = okS ? 'fa-check-circle' : 'fa-exclamation-triangle';
+  var bgS = okS ? 'rgba(34,197,94,0.07)' : (wnS ? 'rgba(245,158,11,0.07)' : 'rgba(239,68,68,0.07)');
+  var bcS = okS ? 'rgba(34,197,94,0.4)'  : (wnS ? 'rgba(245,158,11,0.5)'  : 'rgba(239,68,68,0.5)');
+  var vsep = '<span style="width:1px;align-self:stretch;background:var(--border-color);flex-shrink:0;"></span>';
+  var html = '<i class="fas ' + inS + '" style="color:' + mcS + ';font-size:13px;flex-shrink:0;"></i>'
+    + '<span style="font-size:14px;font-weight:700;color:' + mcS + ';font-variant-numeric:tabular-nums;white-space:nowrap;">−$' + _formatNum(totalGastos) + '</span>'
+    + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">' + movsCount + ' mov.</span>';
+  if (_pdfFechaCorte) {
+    html += vsep + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+      + '<i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:10px;margin-right:3px;"></i>'
+      + 'Corte <strong style="color:var(--text-primary);">' + _pdfFechaCorte + '</strong></span>';
+  }
+  if (pnS > 0) {
+    html += vsep + '<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">'
+      + 'Sin int: <strong style="color:var(--accent-green);">$' + _formatNum(pnS) + '</strong></span>';
+    html += okS
+      ? '<span style="font-size:12px;color:var(--accent-green);white-space:nowrap;"><i class="fas fa-check"></i> Cuadra</span>'
+      : '<span style="font-size:12px;font-weight:600;color:' + mcS + ';white-space:nowrap;">'
+        + (dfS > 0 ? '⚠ Exceso $' + _formatNum(Math.abs(dfS)) : '⚠ Faltante $' + _formatNum(Math.abs(dfS)))
+        + '</span>';
+  }
+  bar.innerHTML = html;
+  bar.style.background = bgS;
+  bar.style.borderColor = bcS;
+  // Update "Importar N mov." button
+  var btn = document.getElementById('pdfImportarBtn');
+  if (btn) {
+    var nImp = (_pdfExcluirIngresos ? gastosAct : active).length;
+    btn.innerHTML = '<i class="fas fa-check"></i> Importar ' + nImp + ' mov.';
   }
 }
 
