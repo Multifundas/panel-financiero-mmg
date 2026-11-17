@@ -1089,12 +1089,13 @@ function _getSaldoApertura(cuenta) {
   return { saldo: s, fecha: cuenta.fecha_saldo_inicial || cuenta.created || '' };
 }
 
-function _calcMovimientosNetos(cuentaId, desdeExcl) {
+function _calcMovimientosNetos(cuentaId, desdeExcl, hastaIncl) {
   var movimientos = loadData(STORAGE_KEYS.movimientos) || [];
   var ingresos = 0, gastos = 0;
   movimientos.forEach(function(m) {
     if (m.cuenta_id !== cuentaId) return;
     if (desdeExcl && m.fecha <= desdeExcl) return;
+    if (hastaIncl && m.fecha > hastaIncl) return;
     if (m.tipo === 'ingreso') ingresos += m.monto;
     else if (m.tipo === 'gasto') gastos += m.monto;
   });
@@ -1133,7 +1134,7 @@ function cierreMensual() {
     var ultimoCierre = _getUltimoCierre(c);
     var fechaDefault = _getNextCierreDefault(ultimoCierre);
     var saldoInicioPeriodo = _getSaldoInicioCierre(c);
-    var movNetos = _calcMovimientosNetos(c.id, ultimoCierre);
+    var movNetos = _calcMovimientosNetos(c.id, ultimoCierre, fechaDefault);
     var esDebito = c.tipo === 'debito';
     var histCta = c.historial_saldos || [];
     var ultCierreLabel = histCta.length > 0 ? '<span style="font-size:14px;color:var(--accent-blue);"><i class="fas fa-calendar-check" style="margin-right:3px;"></i>Ult. cierre: ' + formatDate(ultimoCierre) + '</span>' : '<span style="font-size:14px;color:var(--text-muted);font-style:italic;">Sin cierres previos</span>';
