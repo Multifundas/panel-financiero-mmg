@@ -204,7 +204,7 @@ function filterMovimientos() {
 
   const cuentaMap = {};
   cuentas.forEach(c => { cuentaMap[c.id] = c; });
-  const catMap = { 'inter_cuentas': 'Inter cuentas' };
+  const catMap = { 'inter_cuentas': 'Transferencias entre cuentas' };
   categoriasGasto.forEach(cat => { catMap[cat.id] = cat.nombre; });
   categoriasIngreso.forEach(cat => { catMap[cat.id] = cat.nombre; });
 
@@ -1403,7 +1403,7 @@ function openTransferenciaModal() {
     '<div class="form-group"><label class="form-label">Motivo / Descripcion</label>' +
     '<input type="text" id="tmMotivo" class="form-input" placeholder="Ej: Inversion en CETES"></div>' +
     '<div class="form-group"><label class="form-label">Categoria</label>' +
-    '<select id="tmCategoria" class="form-select"><option value="inter_cuentas" selected>Inter cuentas</option></select></div>' +
+    '<select id="tmCategoria" class="form-select"><option value="inter_cuentas" selected>Transferencias entre cuentas</option></select></div>' +
     '</div>' +
     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">' +
     '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>' +
@@ -1726,7 +1726,7 @@ function mostrarDesgloseMovimientos(tipo) {
   var tiposCambio = loadData(STORAGE_KEYS.tipos_cambio) || {};
   var cuentaMap = {};
   cuentas.forEach(function(c) { cuentaMap[c.id] = c; });
-  var catMap = { 'inter_cuentas': 'Inter cuentas' };
+  var catMap = { 'inter_cuentas': 'Transferencias entre cuentas' };
   categoriasGasto.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
   categoriasIngreso.forEach(function(cat) { catMap[cat.id] = cat.nombre; });
 
